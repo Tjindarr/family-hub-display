@@ -320,25 +320,34 @@ export function usePersonData(config: DashboardConfig) {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    if (!config.personEntities || config.personEntities.length === 0) {
-      setPersons([]);
+    if (!isConfigured(config)) {
+      // Always show mock person in demo mode
+      const mockPersons = config.personEntities && config.personEntities.length > 0
+        ? config.personEntities.map((p) => ({
+            name: p.name || "Person",
+            pictureUrl: null,
+            location: "Home",
+            batteryPercent: 40 + Math.random() * 55,
+            isCharging: Math.random() > 0.5,
+            distanceKm: Math.random() * 20,
+            avatarSize: p.avatarSize,
+          }))
+        : [{
+            name: "Demo User",
+            pictureUrl: null,
+            location: "Home",
+            batteryPercent: 72,
+            isCharging: true,
+            distanceKm: 3.2,
+            avatarSize: undefined,
+          }];
+      setPersons(mockPersons);
       setLoading(false);
       return;
     }
 
-    if (!isConfigured(config)) {
-      // Mock data
-      setPersons(
-        config.personEntities.map((p) => ({
-          name: p.name || "Person",
-          pictureUrl: null,
-          location: "Home",
-          batteryPercent: 40 + Math.random() * 55,
-          isCharging: Math.random() > 0.5,
-          distanceKm: Math.random() * 20,
-          avatarSize: p.avatarSize,
-        }))
-      );
+    if (!config.personEntities || config.personEntities.length === 0) {
+      setPersons([]);
       setLoading(false);
       return;
     }
@@ -426,15 +435,17 @@ export function useCarData(config: DashboardConfig) {
 
   const fetchData = useCallback(async () => {
     const cc = config.carConfig;
-    if (!cc?.chargerEntity && !cc?.fuelRangeEntity && !cc?.batteryEntity) {
+
+    if (!isConfigured(config)) {
+      // Always show mock data in demo mode
+      setCharger({ status: "ready_to_charge", entityId: cc?.chargerEntity || "demo" });
+      setFuel({ rangeKm: 245, entityId: cc?.fuelRangeEntity || "demo" });
+      setBattery({ percent: 62, entityId: cc?.batteryEntity || "demo" });
       setLoading(false);
       return;
     }
 
-    if (!isConfigured(config)) {
-      setCharger({ status: "ready_to_charge", entityId: cc?.chargerEntity || "" });
-      setFuel({ rangeKm: 245, entityId: cc?.fuelRangeEntity || "" });
-      setBattery({ percent: 62, entityId: cc?.batteryEntity || "" });
+    if (!cc?.chargerEntity && !cc?.fuelRangeEntity && !cc?.batteryEntity) {
       setLoading(false);
       return;
     }
@@ -482,13 +493,9 @@ export function useEnergyUsageData(config: DashboardConfig) {
 
   const fetchData = useCallback(async () => {
     const ec = config.energyUsageConfig;
-    if (!ec?.monthlyCostEntity && !ec?.currentPowerEntity) {
-      setLoading(false);
-      return;
-    }
 
     if (!isConfigured(config)) {
-      // Mock data
+      // Always show mock data in demo mode
       const mockHistory = Array.from({ length: 12 }, (_, i) => ({
         time: `Day ${i * 2 + 1}`,
         cost: 200 + Math.random() * 800,
@@ -500,6 +507,11 @@ export function useEnergyUsageData(config: DashboardConfig) {
         watt: 200 + Math.random() * 2000,
       }));
       setPower({ currentWatt: 1240, maxWatt: 3800, powerHistory: mockPower });
+      setLoading(false);
+      return;
+    }
+
+    if (!ec?.monthlyCostEntity && !ec?.currentPowerEntity) {
       setLoading(false);
       return;
     }
