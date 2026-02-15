@@ -44,6 +44,7 @@ const Index = () => {
   const isMobile = useIsMobile();
 
   const gridColumns = isMobile ? 1 : (config.gridColumns || 4);
+  const rowColumns = config.rowColumns || {};
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
@@ -111,7 +112,8 @@ const Index = () => {
 
     for (const id of allWidgetIds) {
       const row = getRow(id);
-      const span = Math.min(getColSpan(id), gridColumns);
+      const rowCols = isMobile ? 1 : (rowColumns[row] || gridColumns);
+      const span = Math.min(getColSpan(id), rowCols);
       const rSpan = getRowSpan(id);
       if (!rowMap.has(row)) rowMap.set(row, []);
       rowMap.get(row)!.push({ id, span, rowSpan: rSpan });
@@ -119,20 +121,21 @@ const Index = () => {
 
     const sortedRows = [...rowMap.entries()].sort((a, b) => a[0] - b[0]);
 
-    return sortedRows.map(([, widgets]) => {
+    return sortedRows.map(([rowNum, widgets]) => {
+      const rowCols = isMobile ? 1 : (rowColumns[rowNum] || gridColumns);
       const totalSpan = widgets.reduce((s, w) => s + w.span, 0);
-      const remaining = gridColumns - totalSpan;
+      const remaining = rowCols - totalSpan;
+      let finalWidgets = widgets;
       if (remaining > 0 && widgets.length > 0) {
-        const stretched = [...widgets];
-        stretched[stretched.length - 1] = {
-          ...stretched[stretched.length - 1],
-          span: stretched[stretched.length - 1].span + remaining,
+        finalWidgets = [...widgets];
+        finalWidgets[finalWidgets.length - 1] = {
+          ...finalWidgets[finalWidgets.length - 1],
+          span: finalWidgets[finalWidgets.length - 1].span + remaining,
         };
-        return stretched;
       }
-      return widgets;
+      return { rowNum, widgets: finalWidgets, cols: rowCols };
     });
-  }, [allWidgetIds, gridColumns, config.widgetLayouts]);
+  }, [allWidgetIds, gridColumns, rowColumns, isMobile, config.widgetLayouts]);
 
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4 md:p-6">
@@ -167,28 +170,33 @@ const Index = () => {
       )}
 
       {/* Grid */}
-      <div
-        className="grid gap-2"
-        style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}
-      >
-        {rows.flat().map(({ id, span, rowSpan }) => {
-          const widget = renderWidget(id);
-          if (!widget) return null;
-          const mobileSpan = isMobile ? 1 : span;
-          const mobileRowSpan = isMobile ? 1 : rowSpan;
-          return (
-            <div
-              key={id}
-              style={{
-                gridColumn: `span ${mobileSpan}`,
-                gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
-                minHeight: id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined),
-              }}
-            >
-              {widget}
-            </div>
-          );
-        })}
+      <div className="grid gap-2">
+        {rows.map(({ rowNum, widgets, cols }) => (
+          <div
+            key={rowNum}
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+          >
+            {widgets.map(({ id, span, rowSpan: rSpan }) => {
+              const widget = renderWidget(id);
+              if (!widget) return null;
+              const mobileSpan = isMobile ? 1 : span;
+              const mobileRowSpan = isMobile ? 1 : rSpan;
+              return (
+                <div
+                  key={id}
+                  style={{
+                    gridColumn: `span ${mobileSpan}`,
+                    gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
+                    minHeight: id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined),
+                  }}
+                >
+                  {widget}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Kiosk exit hint */}

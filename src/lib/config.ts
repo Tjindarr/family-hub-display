@@ -35,6 +35,7 @@ export interface DashboardConfig {
   widgetLayouts: Record<string, WidgetLayout>;
   widgetOrder: string[]; // ordered widget IDs
   gridColumns: number; // number of grid columns (1-6)
+  rowColumns: Record<number, number>; // per-row column overrides (row number -> columns)
   configBackendUrl: string; // URL to a simple REST API for persisting config
   photoWidget: PhotoWidgetConfig;
   personEntities: PersonEntityConfig[];
@@ -102,6 +103,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   electricityForecastEntity: "",
   widgetLayouts: {},
   widgetOrder: [],
+  rowColumns: {},
   gridColumns: 4,
   configBackendUrl: "",
   photoWidget: { photos: [], intervalSeconds: 10 },
