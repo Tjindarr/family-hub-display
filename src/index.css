@@ -86,7 +86,7 @@
   }
 
   .widget-card {
-    @apply rounded-xl border border-border bg-card p-5 transition-all duration-300;
+    @apply rounded-xl border border-border bg-card p-1 transition-all duration-300;
     backdrop-filter: blur(10px);
   }
 
