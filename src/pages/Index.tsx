@@ -178,7 +178,8 @@ const Index = () => {
             className="grid gap-2"
             style={{
               gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-              ...(heightPx ? { height: `${heightPx}px` } : {}),
+              ...(heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : {}),
+              overflow: 'hidden',
             }}
           >
             {widgets.map(({ id, span, rowSpan: rSpan }) => {
