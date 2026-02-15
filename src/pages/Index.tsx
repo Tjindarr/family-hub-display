@@ -45,7 +45,10 @@ const Index = () => {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Home Dashboard
             </h1>
-            <ConnectionStatus isConfigured={isConfigured} />
+            <div className="flex items-center gap-3">
+              <ConnectionStatus isConfigured={isConfigured} />
+              <span className="text-xs text-muted-foreground">v1.0.0</span>
+            </div>
           </div>
         </header>
       )}
