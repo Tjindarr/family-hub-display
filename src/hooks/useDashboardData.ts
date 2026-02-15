@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { DashboardConfig, loadConfig, saveConfig, saveRemoteConfig, loadRemoteConfig, isConfigured } from "@/lib/config";
+import type { CalendarEntityConfig } from "@/lib/config";
 import {
   createHAClient,
   generateMockTemperatureHistory,
   generateMockElectricityPrices,
   generateMockCalendarEvents,
+  generateMockWeatherData,
 } from "@/lib/ha-api";
 import type { HACalendarEvent, ElectricityPrice, NordpoolPricePoint } from "@/lib/config";
 import type { PersonData } from "@/components/PersonWidget";
+import type { WeatherData } from "@/components/WeatherWidget";
 
 export function useDashboardConfig() {
   const [config, setConfig] = useState<DashboardConfig>(loadConfig);
@@ -127,12 +130,20 @@ export function useTemperatureData(config: DashboardConfig) {
 }
 
 export function useCalendarData(config: DashboardConfig) {
-  const [events, setEvents] = useState<HACalendarEvent[]>([]);
+  const [events, setEvents] = useState<(HACalendarEvent & { _prefix?: string; _color?: string })[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = useCallback(async () => {
+    // Get calendar configs (migrate from legacy string[] if needed)
+    const calConfigs: CalendarEntityConfig[] =
+      config.calendarEntityConfigs && config.calendarEntityConfigs.length > 0
+        ? config.calendarEntityConfigs
+        : config.calendarEntities.map((id) => ({ entityId: id, prefix: "", color: "" }));
+
     if (!isConfigured(config)) {
-      setEvents(generateMockCalendarEvents());
+      const mock = generateMockCalendarEvents();
+      // Apply prefix/color from first config to mock events
+      setEvents(mock.map((e) => ({ ...e, _prefix: calConfigs[0]?.prefix || "", _color: calConfigs[0]?.color || "" })));
       setLoading(false);
       return;
     }
@@ -141,10 +152,10 @@ export function useCalendarData(config: DashboardConfig) {
       const client = createHAClient(config);
       const now = new Date();
       const end = new Date(now.getTime() + 7 * 86400000);
-      const allEvents: HACalendarEvent[] = [];
-      for (const calId of config.calendarEntities) {
-        const ev = await client.getCalendarEvents(calId, now.toISOString(), end.toISOString());
-        allEvents.push(...ev);
+      const allEvents: (HACalendarEvent & { _prefix?: string; _color?: string })[] = [];
+      for (const cal of calConfigs) {
+        const ev = await client.getCalendarEvents(cal.entityId, now.toISOString(), end.toISOString());
+        allEvents.push(...ev.map((e) => ({ ...e, _prefix: cal.prefix, _color: cal.color })));
       }
       allEvents.sort((a, b) => {
         const aTime = a.start.dateTime || a.start.date || "";
@@ -166,6 +177,67 @@ export function useCalendarData(config: DashboardConfig) {
   }, [fetchEvents, config.refreshInterval]);
 
   return { events, loading };
+}
+
+export function useWeatherData(config: DashboardConfig) {
+  const [weather, setWeather] = useState<WeatherData>({
+    current: { temperature: 0, condition: "clear", humidity: 0, windSpeed: 0 },
+    forecast: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  const fetchWeather = useCallback(async () => {
+    const wc = config.weatherConfig;
+    if (!wc?.entityId) {
+      setWeather(generateMockWeatherData(wc?.forecastDays || 5));
+      setLoading(false);
+      return;
+    }
+
+    if (!isConfigured(config)) {
+      setWeather(generateMockWeatherData(wc.forecastDays));
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const client = createHAClient(config);
+      const state = await client.getState(wc.entityId);
+      const attrs = state.attributes || {};
+
+      const current = {
+        temperature: parseFloat(state.state) || attrs.temperature || 0,
+        condition: attrs.condition || state.state || "unknown",
+        humidity: attrs.humidity || 0,
+        windSpeed: attrs.wind_speed || 0,
+      };
+
+      const rawForecast: any[] = attrs.forecast || [];
+      const forecast = rawForecast.slice(0, wc.forecastDays).map((f: any) => ({
+        date: f.datetime || f.date || "",
+        tempHigh: f.temperature || f.tempHigh || 0,
+        tempLow: f.templow || f.temp_low || f.tempLow || 0,
+        condition: f.condition || "unknown",
+        precipitation: f.precipitation_probability ?? f.precipitation ?? null,
+        sunrise: f.sunrise || null,
+        sunset: f.sunset || null,
+      }));
+
+      setWeather({ current, forecast });
+    } catch (err) {
+      console.error("Failed to fetch weather data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [config]);
+
+  useEffect(() => {
+    fetchWeather();
+    const interval = setInterval(fetchWeather, config.refreshInterval * 1000);
+    return () => clearInterval(interval);
+  }, [fetchWeather, config.refreshInterval]);
+
+  return { weather, loading };
 }
 
 export function useElectricityPrices(config: DashboardConfig) {

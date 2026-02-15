@@ -6,6 +6,7 @@ import TemperatureWidget from "@/components/TemperatureWidget";
 import ElectricityWidget from "@/components/ElectricityWidget";
 import PhotoWidget from "@/components/PhotoWidget";
 import PersonWidget from "@/components/PersonWidget";
+import WeatherWidget from "@/components/WeatherWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { useKioskMode } from "@/hooks/useKioskMode";
@@ -17,6 +18,7 @@ import {
   useCalendarData,
   useElectricityPrices,
   usePersonData,
+  useWeatherData,
 } from "@/hooks/useDashboardData";
 
 function getDefaultWidgetIds(tempCount: number, personCount: number): string[] {
@@ -26,6 +28,7 @@ function getDefaultWidgetIds(tempCount: number, personCount: number): string[] {
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     "electricity",
     "calendar",
+    "weather",
     "photos",
   ];
 }
@@ -36,6 +39,7 @@ const Index = () => {
   const { events, loading: calLoading } = useCalendarData(config);
   const { nordpool, loading: priceLoading } = useElectricityPrices(config);
   const { persons, loading: personLoading } = usePersonData(config);
+  const { weather, loading: weatherLoading } = useWeatherData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -58,6 +62,15 @@ const Index = () => {
     if (id === "clock") return <ClockWidget />;
     if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} />;
     if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} />;
+    if (id === "weather") return (
+      <WeatherWidget
+        weather={weather}
+        loading={weatherLoading}
+        showPrecipitation={config.weatherConfig?.showPrecipitation ?? true}
+        showSunrise={config.weatherConfig?.showSunrise ?? true}
+        showSunset={config.weatherConfig?.showSunset ?? true}
+      />
+    );
     if (id === "photos") return <PhotoWidget config={config.photoWidget} />;
     if (id.startsWith("temp_")) {
       const idx = parseInt(id.split("_")[1], 10);
@@ -76,7 +89,7 @@ const Index = () => {
 
   const getColSpan = (id: string) => {
     if (config.widgetLayouts?.[id]?.colSpan) return config.widgetLayouts[id].colSpan;
-    if (id === "electricity" || id === "calendar") return 2;
+    if (id === "electricity" || id === "calendar" || id === "weather") return 2;
     if (id === "photos") return 2;
     return 1;
   };

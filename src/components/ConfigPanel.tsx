@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig } from "@/lib/config";
 import {
   DndContext,
   closestCenter,
@@ -109,6 +109,7 @@ function getDefaultWidgetIds(tempCount: number, personCount: number): string[] {
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     "electricity",
     "calendar",
+    "weather",
     "photos",
   ];
 }
@@ -120,7 +121,14 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [refreshInterval, setRefreshInterval] = useState(config.refreshInterval);
   const [configBackendUrl, setConfigBackendUrl] = useState(config.configBackendUrl || "");
   const [tempEntities, setTempEntities] = useState<TemperatureEntityConfig[]>(config.temperatureEntities);
-  const [calendarEntities, setCalendarEntities] = useState<string[]>(config.calendarEntities);
+  const [calendarEntityConfigs, setCalendarEntityConfigs] = useState<CalendarEntityConfig[]>(
+    config.calendarEntityConfigs && config.calendarEntityConfigs.length > 0
+      ? config.calendarEntityConfigs
+      : config.calendarEntities.map((id) => ({ entityId: id, prefix: "", color: "" }))
+  );
+  const [weatherConfig, setWeatherConfig] = useState<WeatherConfig>(
+    config.weatherConfig || { entityId: "weather.home", forecastDays: 5, showPrecipitation: true, showSunrise: true, showSunset: true }
+  );
   const [electricityEntity, setElectricityEntity] = useState(config.electricityPriceEntity);
   const [widgetLayouts, setWidgetLayouts] = useState<Record<string, WidgetLayout>>(config.widgetLayouts || {});
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
@@ -140,7 +148,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
   // Rebuild widget order when temp entities change
   const widgetItems = useMemo(() => {
-    const labelMap: Record<string, string> = { clock: "Clock", electricity: "Electricity Price", calendar: "Calendar", photos: "Photo Gallery" };
+    const labelMap: Record<string, string> = { clock: "Clock", electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery" };
     tempEntities.forEach((e, i) => { labelMap[`temp_${i}`] = e.label || `Sensor ${i + 1}`; });
     personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
 
@@ -189,7 +197,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       haToken,
       refreshInterval,
       temperatureEntities: tempEntities,
-      calendarEntities,
+      calendarEntities: calendarEntityConfigs.map((c) => c.entityId),
+      calendarEntityConfigs,
       electricityPriceEntity: electricityEntity,
       widgetLayouts,
       widgetOrder: finalOrder,
@@ -197,6 +206,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       configBackendUrl,
       photoWidget: photoConfig,
       personEntities,
+      weatherConfig,
     });
     setOpen(false);
   };
@@ -366,43 +376,134 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
           {/* Calendar */}
           <section className="space-y-3">
-            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
-              Calendar Entities
-            </h3>
-            {calendarEntities.map((cal, i) => (
-              <div key={i} className="flex gap-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+                Calendar Entities
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCalendarEntityConfigs([...calendarEntityConfigs, { entityId: "", prefix: "", color: "" }])}
+                className="text-primary"
+              >
+                <Plus className="mr-1 h-3 w-3" /> Add
+              </Button>
+            </div>
+            {calendarEntityConfigs.map((cal, i) => (
+              <div key={i} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Calendar {i + 1}</span>
+                  {calendarEntityConfigs.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive"
+                      onClick={() => setCalendarEntityConfigs(calendarEntityConfigs.filter((_, j) => j !== i))}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
                 <EntityAutocomplete
-                  value={cal}
+                  value={cal.entityId}
                   onChange={(val) => {
-                    const updated = [...calendarEntities];
-                    updated[i] = val;
-                    setCalendarEntities(updated);
+                    const updated = [...calendarEntityConfigs];
+                    updated[i] = { ...updated[i], entityId: val };
+                    setCalendarEntityConfigs(updated);
                   }}
                   config={config}
                   domainFilter="calendar"
                   placeholder="calendar.family"
                   className="bg-muted border-border text-sm"
                 />
-                {calendarEntities.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive"
-                    onClick={() => setCalendarEntities(calendarEntities.filter((_, j) => j !== i))}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Label className="text-xs text-muted-foreground">Prefix</Label>
+                    <Input
+                      value={cal.prefix}
+                      onChange={(e) => {
+                        const updated = [...calendarEntityConfigs];
+                        updated[i] = { ...updated[i], prefix: e.target.value };
+                        setCalendarEntityConfigs(updated);
+                      }}
+                      placeholder="e.g. 🏠 or [Work]"
+                      className="mt-1 bg-muted border-border text-sm"
+                    />
+                  </div>
+                  <div className="w-40">
+                    <Label className="text-xs text-muted-foreground">Text Color</Label>
+                    <Input
+                      value={cal.color}
+                      onChange={(e) => {
+                        const updated = [...calendarEntityConfigs];
+                        updated[i] = { ...updated[i], color: e.target.value };
+                        setCalendarEntityConfigs(updated);
+                      }}
+                      placeholder="hsl(200, 70%, 60%)"
+                      className="mt-1 bg-muted border-border text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             ))}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCalendarEntities([...calendarEntities, ""])}
-              className="text-primary"
-            >
-              <Plus className="mr-1 h-3 w-3" /> Add Calendar
-            </Button>
+          </section>
+
+          {/* Weather */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+              Weather
+            </h3>
+            <div>
+              <Label className="text-xs text-muted-foreground">Weather Entity</Label>
+              <EntityAutocomplete
+                value={weatherConfig.entityId}
+                onChange={(val) => setWeatherConfig((prev) => ({ ...prev, entityId: val }))}
+                config={config}
+                domainFilter="weather"
+                placeholder="weather.home"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Forecast Days</Label>
+              <Input
+                value={weatherConfig.forecastDays}
+                onChange={(e) => setWeatherConfig((prev) => ({ ...prev, forecastDays: Number(e.target.value) || 5 }))}
+                type="number"
+                min={1}
+                max={14}
+                className="mt-1 bg-muted border-border"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={weatherConfig.showPrecipitation}
+                  onChange={(e) => setWeatherConfig((prev) => ({ ...prev, showPrecipitation: e.target.checked }))}
+                  className="rounded border-border"
+                />
+                Show Precipitation
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={weatherConfig.showSunrise}
+                  onChange={(e) => setWeatherConfig((prev) => ({ ...prev, showSunrise: e.target.checked }))}
+                  className="rounded border-border"
+                />
+                Show Sunrise
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={weatherConfig.showSunset}
+                  onChange={(e) => setWeatherConfig((prev) => ({ ...prev, showSunset: e.target.checked }))}
+                  className="rounded border-border"
+                />
+                Show Sunset
+              </label>
+            </div>
           </section>
 
           {/* Person Cards */}

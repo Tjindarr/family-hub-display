@@ -2,8 +2,13 @@ import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { Calendar, Clock } from "lucide-react";
 import type { HACalendarEvent } from "@/lib/config";
 
+interface EnrichedCalendarEvent extends HACalendarEvent {
+  _prefix?: string;
+  _color?: string;
+}
+
 interface CalendarWidgetProps {
-  events: HACalendarEvent[];
+  events: EnrichedCalendarEvent[];
   loading: boolean;
 }
 
@@ -27,7 +32,7 @@ function getDayLabel(event: HACalendarEvent): string {
 
 export default function CalendarWidget({ events, loading }: CalendarWidgetProps) {
   // Group by day
-  const grouped = events.reduce<Record<string, HACalendarEvent[]>>((acc, event) => {
+  const grouped = events.reduce<Record<string, EnrichedCalendarEvent[]>>((acc, event) => {
     const label = getDayLabel(event);
     if (!acc[label]) acc[label] = [];
     acc[label].push(event);
@@ -70,7 +75,11 @@ export default function CalendarWidget({ events, loading }: CalendarWidgetProps)
                         {formatEventTime(event)}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-foreground">
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: event._color || undefined }}
+                    >
+                      {event._prefix ? `${event._prefix} ` : ""}
                       {event.summary}
                     </span>
                   </div>
