@@ -16,21 +16,19 @@ export function useDashboardConfig() {
   const [config, setConfig] = useState<DashboardConfig>(loadConfig);
   const [remoteLoaded, setRemoteLoaded] = useState(false);
 
-  // On mount, if a backend URL is configured, load remote config
+  // On mount, load remote config (built-in API or external backend)
   useEffect(() => {
     const localConfig = loadConfig();
-    if (localConfig.configBackendUrl && !remoteLoaded) {
-      loadRemoteConfig(localConfig.configBackendUrl).then((remote) => {
+    if (!remoteLoaded) {
+      const backendUrl = localConfig.configBackendUrl || undefined;
+      loadRemoteConfig(backendUrl).then((remote) => {
         if (remote) {
-          // Keep the backend URL from local (bootstrap)
           const merged = { ...remote, configBackendUrl: localConfig.configBackendUrl };
           setConfig(merged);
-          saveConfig(merged); // cache locally too
+          saveConfig(merged);
         }
         setRemoteLoaded(true);
       });
-    } else {
-      setRemoteLoaded(true);
     }
   }, []);
 
@@ -38,12 +36,11 @@ export function useDashboardConfig() {
     setConfig((prev) => {
       const next = { ...prev, ...updates };
       saveConfig(next);
-      // Also save to remote if configured
-      if (next.configBackendUrl) {
-        saveRemoteConfig(next.configBackendUrl, next).catch(() => {
-          console.warn("Failed to save to remote backend");
-        });
-      }
+      // Always save to remote (built-in API or external backend)
+      const backendUrl = next.configBackendUrl || undefined;
+      saveRemoteConfig(backendUrl, next).catch(() => {
+        console.warn("Failed to save to remote backend");
+      });
       return next;
     });
   }, []);
