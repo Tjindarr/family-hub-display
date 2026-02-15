@@ -108,7 +108,7 @@ function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boo
     "clock",
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
-    ...(hasCar ? ["car_charger", "car_fuel", "car_battery"] : []),
+    ...(hasCar ? ["car"] : []),
     "electricity",
     ...(hasEnergy ? ["monthly_energy", "power_usage"] : []),
     "calendar",
@@ -160,7 +160,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const widgetItems = useMemo(() => {
     const labelMap: Record<string, string> = {
       clock: "Clock", electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
-      car_charger: "Car Charger", car_fuel: "Fuel Range", car_battery: "Car Battery",
+      car: "Car / EV",
       monthly_energy: "Monthly Energy", power_usage: "Power Usage",
     };
     tempEntities.forEach((e, i) => { labelMap[`temp_${i}`] = e.label || `Sensor ${i + 1}`; });
@@ -177,7 +177,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "monthly_energy", "power_usage"].includes(id) ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage"].includes(id) ? 2 : 1,
     }));
   }, [widgetOrder, tempEntities, personEntities]);
 

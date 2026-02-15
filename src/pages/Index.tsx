@@ -7,9 +7,7 @@ import ElectricityWidget from "@/components/ElectricityWidget";
 import PhotoWidget from "@/components/PhotoWidget";
 import PersonWidget from "@/components/PersonWidget";
 import WeatherWidget from "@/components/WeatherWidget";
-import CarChargerWidget from "@/components/CarChargerWidget";
-import CarFuelWidget from "@/components/CarFuelWidget";
-import CarBatteryWidget from "@/components/CarBatteryWidget";
+import CarWidget from "@/components/CarWidget";
 import MonthlyEnergyWidget from "@/components/MonthlyEnergyWidget";
 import PowerUsageWidget from "@/components/PowerUsageWidget";
 import ConfigPanel from "@/components/ConfigPanel";
@@ -33,7 +31,7 @@ function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boo
     "clock",
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
-    ...(hasCar ? ["car_charger", "car_fuel", "car_battery"] : []),
+    ...(hasCar ? ["car"] : []),
     "electricity",
     ...(hasEnergy ? ["monthly_energy", "power_usage"] : []),
     "calendar",
@@ -106,9 +104,7 @@ const Index = () => {
       if (!person) return null;
       return <PersonWidget person={person} loading={personLoading} />;
     }
-    if (id === "car_charger") return <CarChargerWidget data={charger} loading={carLoading} />;
-    if (id === "car_fuel") return <CarFuelWidget data={fuel} loading={carLoading} />;
-    if (id === "car_battery") return <CarBatteryWidget data={battery} loading={carLoading} />;
+    if (id === "car") return <CarWidget charger={charger} fuel={fuel} battery={battery} loading={carLoading} />;
     if (id === "monthly_energy") return <MonthlyEnergyWidget data={monthly} loading={energyLoading} />;
     if (id === "power_usage") return <PowerUsageWidget data={power} loading={energyLoading} />;
     return null;
@@ -117,7 +113,7 @@ const Index = () => {
   const getColSpan = (id: string) => {
     if (config.widgetLayouts?.[id]?.colSpan) return config.widgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
-    if (id === "photos" || id === "monthly_energy" || id === "power_usage") return 2;
+    if (id === "photos" || id === "car" || id === "monthly_energy" || id === "power_usage") return 2;
     return 1;
   };
 
