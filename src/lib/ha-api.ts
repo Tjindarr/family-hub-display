@@ -1,5 +1,6 @@
 import { DashboardConfig, HAState, HACalendarEvent } from "./config";
 import type { NordpoolData } from "@/hooks/useDashboardData";
+import type { WeatherData } from "@/components/WeatherWidget";
 
 class HomeAssistantAPI {
   private baseUrl: string;
@@ -121,4 +122,32 @@ export function generateMockCalendarEvents(): HACalendarEvent[] {
     { summary: "Doctor Appointment", start: { dateTime: `${tomorrow}T09:00:00` }, end: { dateTime: `${tomorrow}T10:00:00` } },
     { summary: "Movie Night", start: { dateTime: `${tomorrow}T19:00:00` }, end: { dateTime: `${tomorrow}T21:30:00` } },
   ];
+}
+
+export function generateMockWeatherData(forecastDays = 5): WeatherData {
+  const conditions = ["sunny", "partlycloudy", "cloudy", "rainy", "clear", "snowy", "thunderstorm"];
+  const forecast = Array.from({ length: forecastDays }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i + 1);
+    const high = 15 + Math.random() * 15;
+    return {
+      date: d.toISOString().split("T")[0],
+      tempHigh: Math.round(high),
+      tempLow: Math.round(high - 5 - Math.random() * 5),
+      condition: conditions[Math.floor(Math.random() * conditions.length)],
+      precipitation: Math.round(Math.random() * 100),
+      sunrise: "06:" + String(Math.floor(20 + Math.random() * 30)).padStart(2, "0"),
+      sunset: "18:" + String(Math.floor(Math.random() * 50)).padStart(2, "0"),
+    };
+  });
+
+  return {
+    current: {
+      temperature: 18 + Math.random() * 10,
+      condition: conditions[Math.floor(Math.random() * conditions.length)],
+      humidity: 40 + Math.random() * 40,
+      windSpeed: Math.round(5 + Math.random() * 20),
+    },
+    forecast,
+  };
 }

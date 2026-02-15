@@ -9,11 +9,26 @@ export interface PhotoWidgetConfig {
   intervalSeconds: number; // rotation interval
 }
 
+export interface CalendarEntityConfig {
+  entityId: string;
+  prefix: string; // prefix appended to event summaries
+  color: string; // HSL color for event text
+}
+
+export interface WeatherConfig {
+  entityId: string; // weather.* entity
+  forecastDays: number; // number of days to forecast
+  showPrecipitation: boolean;
+  showSunrise: boolean;
+  showSunset: boolean;
+}
+
 export interface DashboardConfig {
   haUrl: string;
   haToken: string;
   refreshInterval: number; // seconds
-  calendarEntities: string[];
+  calendarEntities: string[]; // legacy, kept for migration
+  calendarEntityConfigs: CalendarEntityConfig[];
   temperatureEntities: TemperatureEntityConfig[];
   electricityPriceEntity: string;
   electricityForecastEntity: string;
@@ -23,6 +38,7 @@ export interface DashboardConfig {
   configBackendUrl: string; // URL to a simple REST API for persisting config
   photoWidget: PhotoWidgetConfig;
   personEntities: PersonEntityConfig[];
+  weatherConfig: WeatherConfig;
 }
 
 export interface TemperatureEntityConfig {
@@ -73,6 +89,9 @@ const DEFAULT_CONFIG: DashboardConfig = {
   haToken: "",
   refreshInterval: 30,
   calendarEntities: ["calendar.family"],
+  calendarEntityConfigs: [
+    { entityId: "calendar.family", prefix: "", color: "hsl(var(--foreground))" },
+  ],
   temperatureEntities: [
     { entityId: "sensor.living_room_temperature", label: "Living Room", color: "hsl(174, 72%, 50%)" },
     { entityId: "sensor.bedroom_temperature", label: "Bedroom", color: "hsl(32, 95%, 55%)" },
@@ -86,6 +105,13 @@ const DEFAULT_CONFIG: DashboardConfig = {
   configBackendUrl: "",
   photoWidget: { photos: [], intervalSeconds: 10 },
   personEntities: [],
+  weatherConfig: {
+    entityId: "weather.home",
+    forecastDays: 5,
+    showPrecipitation: true,
+    showSunrise: true,
+    showSunset: true,
+  },
 };
 
 export function loadConfig(): DashboardConfig {
