@@ -1,6 +1,12 @@
 export interface WidgetLayout {
   colSpan: number; // 1-6
   row: number; // which row (1-based)
+  rowSpan: number; // how many rows to span (1+)
+}
+
+export interface PhotoWidgetConfig {
+  photos: string[]; // base64 data URLs or remote URLs
+  intervalSeconds: number; // rotation interval
 }
 
 export interface DashboardConfig {
@@ -15,6 +21,7 @@ export interface DashboardConfig {
   widgetOrder: string[]; // ordered widget IDs
   gridColumns: number; // number of grid columns (1-6)
   configBackendUrl: string; // URL to a simple REST API for persisting config
+  photoWidget: PhotoWidgetConfig;
 }
 
 export interface TemperatureEntityConfig {
@@ -67,6 +74,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   widgetOrder: [],
   gridColumns: 4,
   configBackendUrl: "",
+  photoWidget: { photos: [], intervalSeconds: 10 },
 };
 
 export function loadConfig(): DashboardConfig {
