@@ -540,6 +540,38 @@ export function useEnergyUsageData(config: DashboardConfig) {
       let costHistory: { time: string; cost: number; kwh: number }[] = [];
       let powerHistory: { time: string; watt: number }[] = [];
 
+      // Fetch monthly cost/consumption history (last 30 days, daily samples)
+      if (ec.monthlyCostEntity) {
+        try {
+          const now = new Date();
+          const start = new Date(now.getTime() - 30 * 24 * 3600000);
+          const costHistoryRaw = await client.getHistory(ec.monthlyCostEntity, start.toISOString(), now.toISOString());
+          let kwhHistoryRaw: any[] | null = null;
+          if (ec.monthlyConsumptionEntity) {
+            try {
+              kwhHistoryRaw = await client.getHistory(ec.monthlyConsumptionEntity, start.toISOString(), now.toISOString());
+            } catch { /* ignore */ }
+          }
+          if (costHistoryRaw?.[0]) {
+            const costPoints = costHistoryRaw[0];
+            const kwhPoints = kwhHistoryRaw?.[0] || [];
+            // Sample ~12 points across the data
+            const step = Math.max(1, Math.floor(costPoints.length / 12));
+            costHistory = costPoints
+              .filter((_, i) => i % step === 0)
+              .map((s, i) => {
+                const matchingKwh = kwhPoints[Math.min(i * step, kwhPoints.length - 1)];
+                return {
+                  time: new Date(s.last_updated).toLocaleDateString([], { day: "2-digit", month: "short" }),
+                  cost: parseFloat(s.state) || 0,
+                  kwh: matchingKwh ? parseFloat(matchingKwh.state) || 0 : 0,
+                };
+              });
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Fetch power history (last 24 hours)
       if (ec.currentPowerEntity) {
         try {
           const now = new Date();
@@ -547,7 +579,7 @@ export function useEnergyUsageData(config: DashboardConfig) {
           const history = await client.getHistory(ec.currentPowerEntity, start.toISOString(), now.toISOString());
           if (history?.[0]) {
             powerHistory = history[0]
-              .filter((_, i) => i % 4 === 0) // sample every 4th point
+              .filter((_, i) => i % 4 === 0)
               .map((s) => ({
                 time: new Date(s.last_updated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
                 watt: parseFloat(s.state) || 0,
