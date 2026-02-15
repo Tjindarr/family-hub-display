@@ -10,6 +10,7 @@ export interface DashboardConfig {
 
 export interface TemperatureEntityConfig {
   entityId: string;
+  humidityEntityId?: string;
   label: string;
   color: string;
 }
@@ -35,6 +36,12 @@ export interface ElectricityPrice {
   price: number;
 }
 
+export interface NordpoolPricePoint {
+  start: string;
+  end: string;
+  value: number;
+}
+
 const DEFAULT_CONFIG: DashboardConfig = {
   haUrl: "",
   haToken: "",
@@ -45,8 +52,8 @@ const DEFAULT_CONFIG: DashboardConfig = {
     { entityId: "sensor.bedroom_temperature", label: "Bedroom", color: "hsl(32, 95%, 55%)" },
     { entityId: "sensor.outside_temperature", label: "Outside", color: "hsl(258, 60%, 60%)" },
   ],
-  electricityPriceEntity: "sensor.electricity_price",
-  electricityForecastEntity: "sensor.electricity_price_forecast",
+  electricityPriceEntity: "sensor.nordpool_kwh_se3_sek_3_10_025",
+  electricityForecastEntity: "",
 };
 
 export function loadConfig(): DashboardConfig {

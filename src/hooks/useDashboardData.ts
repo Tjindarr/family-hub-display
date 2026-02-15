@@ -6,7 +6,7 @@ import {
   generateMockElectricityPrices,
   generateMockCalendarEvents,
 } from "@/lib/ha-api";
-import type { HACalendarEvent, ElectricityPrice } from "@/lib/config";
+import type { HACalendarEvent, ElectricityPrice, NordpoolPricePoint } from "@/lib/config";
 
 export function useDashboardConfig() {
   const [config, setConfig] = useState<DashboardConfig>(loadConfig);
@@ -22,24 +22,40 @@ export function useDashboardConfig() {
   return { config, updateConfig, isConfigured: isConfigured(config) };
 }
 
+export interface TemperatureSensorData {
+  label: string;
+  color: string;
+  temperature: number | null;
+  humidity: number | null;
+  entityId: string;
+}
+
 export interface TemperatureSeries {
   label: string;
   color: string;
   data: { time: string; value: number }[];
 }
 
+export interface NordpoolData {
+  today: { time: Date; price: number }[];
+  tomorrow: { time: Date; price: number }[];
+  currentPrice: number;
+}
+
 export function useTemperatureData(config: DashboardConfig) {
-  const [series, setSeries] = useState<TemperatureSeries[]>([]);
+  const [sensors, setSensors] = useState<TemperatureSensorData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!isConfigured(config)) {
       // Mock data
-      setSeries(
+      setSensors(
         config.temperatureEntities.map((e) => ({
           label: e.label,
           color: e.color,
-          data: generateMockTemperatureHistory(),
+          temperature: 18 + Math.random() * 8,
+          humidity: e.humidityEntityId ? 40 + Math.random() * 30 : null,
+          entityId: e.entityId,
         }))
       );
       setLoading(false);
@@ -48,19 +64,26 @@ export function useTemperatureData(config: DashboardConfig) {
 
     try {
       const client = createHAClient(config);
-      const now = new Date();
-      const start = new Date(now.getTime() - 24 * 3600000).toISOString();
       const results = await Promise.all(
         config.temperatureEntities.map(async (entity) => {
-          const history = await client.getHistory(entity.entityId, start);
-          const data = (history[0] || []).map((s) => ({
-            time: new Date(s.last_changed).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            value: parseFloat(s.state) || 0,
-          }));
-          return { label: entity.label, color: entity.color, data };
+          const tempState = await client.getState(entity.entityId);
+          let humidity: number | null = null;
+          if (entity.humidityEntityId) {
+            try {
+              const humState = await client.getState(entity.humidityEntityId);
+              humidity = parseFloat(humState.state) || null;
+            } catch { /* ignore */ }
+          }
+          return {
+            label: entity.label,
+            color: entity.color,
+            temperature: parseFloat(tempState.state) || null,
+            humidity,
+            entityId: entity.entityId,
+          };
         })
       );
-      setSeries(results);
+      setSensors(results);
     } catch (err) {
       console.error("Failed to fetch temperature data:", err);
     } finally {
@@ -69,12 +92,12 @@ export function useTemperatureData(config: DashboardConfig) {
   }, [config]);
 
   useEffect(() => {
-    fetch();
-    const interval = setInterval(fetch, config.refreshInterval * 1000);
+    fetchData();
+    const interval = setInterval(fetchData, config.refreshInterval * 1000);
     return () => clearInterval(interval);
-  }, [fetch, config.refreshInterval]);
+  }, [fetchData, config.refreshInterval]);
 
-  return { series, loading };
+  return { sensors, loading };
 }
 
 export function useCalendarData(config: DashboardConfig) {
@@ -120,12 +143,13 @@ export function useCalendarData(config: DashboardConfig) {
 }
 
 export function useElectricityPrices(config: DashboardConfig) {
-  const [prices, setPrices] = useState<ElectricityPrice[]>([]);
+  const [nordpool, setNordpool] = useState<NordpoolData>({ today: [], tomorrow: [], currentPrice: 0 });
   const [loading, setLoading] = useState(true);
 
   const fetchPrices = useCallback(async () => {
     if (!isConfigured(config)) {
-      setPrices(generateMockElectricityPrices());
+      const mock = generateMockElectricityPrices();
+      setNordpool(mock);
       setLoading(false);
       return;
     }
@@ -133,16 +157,21 @@ export function useElectricityPrices(config: DashboardConfig) {
     try {
       const client = createHAClient(config);
       const state = await client.getState(config.electricityPriceEntity);
-      const forecast = state.attributes?.forecast || [];
-      const current: ElectricityPrice = {
-        time: "Now",
-        price: parseFloat(state.state) || 0,
-      };
-      const forecastPrices = forecast.map((f: any) => ({
-        time: new Date(f.start || f.datetime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        price: f.price || f.value || 0,
+      const rawToday: NordpoolPricePoint[] = state.attributes?.raw_today || [];
+      const rawTomorrow: NordpoolPricePoint[] = state.attributes?.raw_tomorrow || [];
+      const currentPrice = parseFloat(state.state) || 0;
+
+      const today = rawToday.map((p) => ({
+        time: new Date(p.start),
+        price: p.value,
       }));
-      setPrices([current, ...forecastPrices]);
+
+      const tomorrow = rawTomorrow.map((p) => ({
+        time: new Date(p.start),
+        price: p.value,
+      }));
+
+      setNordpool({ today, tomorrow, currentPrice });
     } catch (err) {
       console.error("Failed to fetch electricity prices:", err);
     } finally {
@@ -156,5 +185,5 @@ export function useElectricityPrices(config: DashboardConfig) {
     return () => clearInterval(interval);
   }, [fetchPrices, config.refreshInterval]);
 
-  return { prices, loading };
+  return { nordpool, loading };
 }

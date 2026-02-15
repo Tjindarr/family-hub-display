@@ -1,4 +1,5 @@
-import { DashboardConfig, HAState, HACalendarEvent, ElectricityPrice } from "./config";
+import { DashboardConfig, HAState, HACalendarEvent } from "./config";
+import type { NordpoolData } from "@/hooks/useDashboardData";
 
 class HomeAssistantAPI {
   private baseUrl: string;
@@ -57,7 +58,7 @@ export function createHAClient(config: DashboardConfig): HomeAssistantAPI {
   return new HomeAssistantAPI(config);
 }
 
-// Generate mock data for demo/unconfigured state
+// Mock data for demo/unconfigured state
 export function generateMockTemperatureHistory(hours = 24): { time: string; value: number }[] {
   const now = new Date();
   const data: { time: string; value: number }[] = [];
@@ -71,21 +72,41 @@ export function generateMockTemperatureHistory(hours = 24): { time: string; valu
   return data;
 }
 
-export function generateMockElectricityPrices(): ElectricityPrice[] {
+export function generateMockElectricityPrices(): NordpoolData {
   const now = new Date();
-  now.setMinutes(0, 0, 0);
-  const prices: ElectricityPrice[] = [];
-  for (let i = -6; i < 18; i++) {
-    const t = new Date(now.getTime() + i * 3600000);
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const today: { time: Date; price: number }[] = [];
+  for (let i = 0; i < 24; i++) {
+    const t = new Date(startOfDay.getTime() + i * 3600000);
     const hour = t.getHours();
-    // Simulate higher prices during peak hours
-    const base = hour >= 7 && hour <= 9 ? 0.35 : hour >= 17 && hour <= 20 ? 0.40 : 0.15;
-    prices.push({
-      time: t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      price: +(base + (Math.random() - 0.5) * 0.1).toFixed(3),
+    const base = hour >= 7 && hour <= 9 ? 0.85 : hour >= 17 && hour <= 20 ? 1.2 : 0.35;
+    today.push({
+      time: t,
+      price: +(base + (Math.random() - 0.5) * 0.3).toFixed(3),
     });
   }
-  return prices;
+
+  const tomorrowStart = new Date(startOfDay.getTime() + 86400000);
+  const tomorrow: { time: Date; price: number }[] = [];
+  // Simulate: tomorrow data available after 13:00
+  if (now.getHours() >= 13) {
+    for (let i = 0; i < 24; i++) {
+      const t = new Date(tomorrowStart.getTime() + i * 3600000);
+      const hour = t.getHours();
+      const base = hour >= 7 && hour <= 9 ? 0.75 : hour >= 17 && hour <= 20 ? 1.1 : 0.30;
+      tomorrow.push({
+        time: t,
+        price: +(base + (Math.random() - 0.5) * 0.25).toFixed(3),
+      });
+    }
+  }
+
+  const currentHour = now.getHours();
+  const currentPrice = today[currentHour]?.price || 0;
+
+  return { today, tomorrow, currentPrice };
 }
 
 export function generateMockCalendarEvents(): HACalendarEvent[] {

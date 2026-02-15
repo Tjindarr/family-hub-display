@@ -138,6 +138,17 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   placeholder="sensor.living_room_temperature"
                   className="bg-muted border-border text-sm"
                 />
+                <div>
+                  <Label className="text-xs text-muted-foreground">Humidity Entity (optional)</Label>
+                  <EntityAutocomplete
+                    value={entity.humidityEntityId || ""}
+                    onChange={(val) => updateTempEntity(i, { humidityEntityId: val || undefined })}
+                    config={config}
+                    domainFilter="sensor"
+                    placeholder="sensor.living_room_humidity"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Input
                     value={entity.label}
@@ -200,18 +211,21 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
           {/* Electricity */}
           <section className="space-y-3">
             <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
-              Electricity Price
+              Electricity Price (Nordpool)
             </h3>
             <div>
-              <Label className="text-xs text-muted-foreground">Price Entity</Label>
+              <Label className="text-xs text-muted-foreground">Nordpool Entity</Label>
               <EntityAutocomplete
                 value={electricityEntity}
                 onChange={setElectricityEntity}
                 config={config}
                 domainFilter="sensor"
-                placeholder="sensor.electricity_price"
+                placeholder="sensor.nordpool_kwh_se3_sek_3_10_025"
                 className="mt-1 bg-muted border-border text-sm"
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Uses raw_today & raw_tomorrow attributes for 48h view
+              </p>
             </div>
           </section>
 
