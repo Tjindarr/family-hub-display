@@ -39,63 +39,57 @@ export default function PersonWidget({ person, loading }: PersonWidgetProps) {
   const batteryBg = person.batteryPercent !== null ? getBatteryBg(person.batteryPercent) : undefined;
 
   return (
-    <div className="widget-card h-full flex flex-col gap-3">
-      {/* Header with avatar and name */}
-      <div className="flex items-center gap-3">
-        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-border bg-muted">
-          {person.pictureUrl ? (
-            <img
-              src={person.pictureUrl}
-              alt={person.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-muted-foreground">
-              {person.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-        </div>
-        <h3 className="text-sm font-semibold text-foreground truncate">{person.name}</h3>
+    <div className="widget-card h-full flex items-stretch gap-4">
+      {/* Avatar - left side, larger */}
+      <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border-2 border-border bg-muted">
+        {person.pictureUrl ? (
+          <img
+            src={person.pictureUrl}
+            alt={person.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-muted-foreground">
+            {person.name.charAt(0).toUpperCase()}
+          </div>
+        )}
       </div>
 
-      {/* Sensor rows */}
-      <div className="flex flex-col gap-2">
-        {/* Location */}
-        <div className="flex items-center gap-2.5">
-          <MapPin className="h-4 w-4 shrink-0 text-primary" />
-          <span className="text-sm text-foreground truncate">
-            {person.location ?? "—"}
-          </span>
+      {/* Info - right side */}
+      <div className="flex flex-col justify-center gap-2 min-w-0">
+        <h3 className="text-sm font-semibold text-foreground truncate">{person.name}</h3>
+
+        <div className="flex items-center gap-2">
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <span className="text-xs text-foreground truncate">{person.location ?? "—"}</span>
         </div>
 
-        {/* Battery */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {person.isCharging ? (
-            <BatteryCharging className="h-4 w-4 shrink-0" style={{ color: batteryColor }} />
+            <BatteryCharging className="h-3.5 w-3.5 shrink-0" style={{ color: batteryColor }} />
           ) : (
-            <Battery className="h-4 w-4 shrink-0" style={{ color: batteryColor }} />
+            <Battery className="h-3.5 w-3.5 shrink-0" style={{ color: batteryColor }} />
           )}
           {person.batteryPercent !== null ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span
-                className="rounded-full px-2 py-0.5 text-xs font-medium"
+                className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
                 style={{ backgroundColor: batteryBg, color: batteryColor }}
               >
                 {Math.round(person.batteryPercent)}%
               </span>
               {person.isCharging && (
-                <span className="text-[10px] text-muted-foreground">Charging</span>
+                <span className="text-[9px] text-muted-foreground">Charging</span>
               )}
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">—</span>
+            <span className="text-xs text-muted-foreground">—</span>
           )}
         </div>
 
-        {/* Distance */}
-        <div className="flex items-center gap-2.5">
-          <Navigation className="h-4 w-4 shrink-0 text-accent" />
-          <span className="text-sm text-foreground">
+        <div className="flex items-center gap-2">
+          <Navigation className="h-3.5 w-3.5 shrink-0 text-accent" />
+          <span className="text-xs text-foreground">
             {person.distanceKm !== null ? `${person.distanceKm.toFixed(1)} km` : "—"}
           </span>
         </div>
