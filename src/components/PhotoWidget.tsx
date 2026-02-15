@@ -8,7 +8,7 @@ interface PhotoWidgetProps {
 }
 
 export default function PhotoWidget({ config }: PhotoWidgetProps) {
-  const { photos, intervalSeconds } = config;
+  const { photos, intervalSeconds, displayMode = "contain" } = config;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fade, setFade] = useState(true);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -28,7 +28,6 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
     return () => clearInterval(timerRef.current);
   }, [advance, intervalSeconds, photos.length]);
 
-  // Reset index if photos shrink
   useEffect(() => {
     if (currentIndex >= photos.length) setCurrentIndex(0);
   }, [photos.length, currentIndex]);
@@ -47,13 +46,25 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
     );
   }
 
+  const src = photos[currentIndex];
+
   return (
     <Card className="h-full max-h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur" style={{ minHeight: 0 }}>
       <CardContent className="relative h-full max-h-full p-0 overflow-hidden" style={{ minHeight: 0 }}>
+        {displayMode === "blur-fill" && (
+          <img
+            src={src}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover blur-2xl scale-110 opacity-50"
+          />
+        )}
         <img
-          src={photos[currentIndex]}
+          src={src}
           alt={`Photo ${currentIndex + 1}`}
-          className="absolute inset-0 h-full w-full object-contain object-top transition-opacity duration-500"
+          className={`absolute inset-0 h-full w-full transition-opacity duration-500 ${
+            displayMode === "cover" ? "object-cover object-top" : "object-contain object-top"
+          }`}
           style={{ opacity: fade ? 1 : 0 }}
         />
         {photos.length > 1 && (

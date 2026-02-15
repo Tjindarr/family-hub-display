@@ -7,6 +7,7 @@ export interface WidgetLayout {
 export interface PhotoWidgetConfig {
   photos: string[]; // base64 data URLs or remote URLs
   intervalSeconds: number; // rotation interval
+  displayMode: "contain" | "cover" | "blur-fill"; // how to display photos
 }
 
 export interface CalendarEntityConfig {
@@ -108,7 +109,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   rowHeights: {},
   gridColumns: 4,
   configBackendUrl: "",
-  photoWidget: { photos: [], intervalSeconds: 10 },
+  photoWidget: { photos: [], intervalSeconds: 10, displayMode: "contain" },
   personEntities: [],
   weatherConfig: {
     entityId: "weather.home",
