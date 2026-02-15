@@ -3,8 +3,9 @@ import { Settings, X, Plus, Trash2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout } from "@/lib/config";
 
 interface ConfigPanelProps {
   config: DashboardConfig;
@@ -19,6 +20,18 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [tempEntities, setTempEntities] = useState<TemperatureEntityConfig[]>(config.temperatureEntities);
   const [calendarEntities, setCalendarEntities] = useState<string[]>(config.calendarEntities);
   const [electricityEntity, setElectricityEntity] = useState(config.electricityPriceEntity);
+  const [widgetLayouts, setWidgetLayouts] = useState<Record<string, WidgetLayout>>(config.widgetLayouts || {});
+
+  const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
+  const setColSpan = (id: string, span: number) =>
+    setWidgetLayouts((prev) => ({ ...prev, [id]: { colSpan: span } }));
+
+  const widgetIds = [
+    { id: "clock", label: "Clock", defaultSpan: 1 },
+    ...tempEntities.map((e, i) => ({ id: `temp_${i}`, label: e.label || `Sensor ${i + 1}`, defaultSpan: 1 })),
+    { id: "electricity", label: "Electricity Price", defaultSpan: 2 },
+    { id: "calendar", label: "Calendar", defaultSpan: 2 },
+  ];
 
   const handleSave = () => {
     onSave({
@@ -28,6 +41,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       temperatureEntities: tempEntities,
       calendarEntities,
       electricityPriceEntity: electricityEntity,
+      widgetLayouts,
     });
     setOpen(false);
   };
@@ -227,6 +241,35 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 Uses raw_today & raw_tomorrow attributes for 48h view
               </p>
             </div>
+          </section>
+
+          {/* Widget Layout */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+              Widget Layout (Column Span)
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Set how many columns each widget spans (1–4). The grid has 4 columns on desktop.
+            </p>
+            {widgetIds.map(({ id, label, defaultSpan }) => (
+              <div key={id} className="flex items-center justify-between gap-3">
+                <span className="text-sm text-foreground">{label}</span>
+                <Select
+                  value={String(getColSpan(id, defaultSpan))}
+                  onValueChange={(v) => setColSpan(id, Number(v))}
+                >
+                  <SelectTrigger className="w-20 bg-muted border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
           </section>
 
           <Button onClick={handleSave} className="w-full">

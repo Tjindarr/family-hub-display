@@ -1,3 +1,7 @@
+export interface WidgetLayout {
+  colSpan: number; // 1-4
+}
+
 export interface DashboardConfig {
   haUrl: string;
   haToken: string;
@@ -6,6 +10,7 @@ export interface DashboardConfig {
   temperatureEntities: TemperatureEntityConfig[];
   electricityPriceEntity: string;
   electricityForecastEntity: string;
+  widgetLayouts: Record<string, WidgetLayout>;
 }
 
 export interface TemperatureEntityConfig {
@@ -54,6 +59,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   ],
   electricityPriceEntity: "sensor.nordpool_kwh_se3_sek_3_10_025",
   electricityForecastEntity: "",
+  widgetLayouts: {},
 };
 
 export function loadConfig(): DashboardConfig {

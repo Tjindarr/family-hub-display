@@ -56,24 +56,24 @@ const Index = () => {
       {/* Grid */}
       <div className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
         {/* Clock */}
-        <div className="md:col-span-1">
+        <div style={{ gridColumn: `span ${config.widgetLayouts?.clock?.colSpan || 1}` }}>
           <ClockWidget />
         </div>
 
         {/* Temperature sensors - individual small cards */}
-        {tempSensors.map((sensor) => (
-          <div key={sensor.entityId} className="md:col-span-1">
+        {tempSensors.map((sensor, i) => (
+          <div key={sensor.entityId} style={{ gridColumn: `span ${config.widgetLayouts?.[`temp_${i}`]?.colSpan || 1}` }}>
             <TemperatureWidget sensor={sensor} loading={tempLoading} />
           </div>
         ))}
 
         {/* Electricity */}
-        <div className="md:col-span-1 xl:col-span-2">
+        <div style={{ gridColumn: `span ${config.widgetLayouts?.electricity?.colSpan || 2}` }}>
           <ElectricityWidget nordpool={nordpool} loading={priceLoading} />
         </div>
 
         {/* Calendar */}
-        <div className="md:col-span-1 xl:col-span-2">
+        <div style={{ gridColumn: `span ${config.widgetLayouts?.calendar?.colSpan || 2}` }}>
           <CalendarWidget events={events} loading={calLoading} />
         </div>
       </div>
