@@ -132,15 +132,14 @@ export function saveConfig(config: DashboardConfig): void {
 }
 
 /**
- * Load config from a remote REST backend (json-server, etc.)
- * Expects GET /config to return the config object.
+ * Load config from the built-in backend API or an external REST backend.
+ * If backendUrl is provided, uses that; otherwise uses relative /api/config.
  */
-export async function loadRemoteConfig(backendUrl: string): Promise<DashboardConfig | null> {
+export async function loadRemoteConfig(backendUrl?: string): Promise<DashboardConfig | null> {
   try {
-    const url = backendUrl.replace(/\/$/, "");
-    const res = await fetch(`${url}/config`);
+    const url = backendUrl ? `${backendUrl.replace(/\/$/, "")}/config` : "/api/config";
+    const res = await fetch(url);
     if (!res.ok) {
-      // If 404, the record doesn't exist yet — that's fine
       if (res.status === 404) return null;
       throw new Error(`HTTP ${res.status}`);
     }
@@ -153,13 +152,12 @@ export async function loadRemoteConfig(backendUrl: string): Promise<DashboardCon
 }
 
 /**
- * Save config to a remote REST backend.
- * Uses PUT /config to upsert the config object.
+ * Save config to the built-in backend API or an external REST backend.
  */
-export async function saveRemoteConfig(backendUrl: string, config: DashboardConfig): Promise<boolean> {
+export async function saveRemoteConfig(backendUrl: string | undefined, config: DashboardConfig): Promise<boolean> {
   try {
-    const url = backendUrl.replace(/\/$/, "");
-    const res = await fetch(`${url}/config`, {
+    const url = backendUrl ? `${backendUrl.replace(/\/$/, "")}/config` : "/api/config";
+    const res = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(config),
