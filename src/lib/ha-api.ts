@@ -63,14 +63,18 @@ class HomeAssistantAPI {
           type,
         }),
       });
-      // Response format: { "weather.entity": { forecast: [...] } }
-      if (result && typeof result === "object") {
-        const key = Object.keys(result).find((k) => k === entityId) || Object.keys(result)[0];
-        return result[key]?.forecast || [];
+      console.log("[Weather] Raw service response:", JSON.stringify(result).slice(0, 500));
+      
+      // The REST API may wrap in service_response
+      const data = result?.service_response || result;
+      
+      if (data && typeof data === "object") {
+        const key = Object.keys(data).find((k) => k === entityId) || Object.keys(data)[0];
+        return data[key]?.forecast || [];
       }
       return [];
     } catch (err) {
-      console.warn("weather.get_forecasts service call failed, falling back to attributes:", err);
+      console.warn("weather.get_forecasts service call failed:", err);
       return [];
     }
   }
