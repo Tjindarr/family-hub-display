@@ -1,15 +1,90 @@
-import { useState } from "react";
-import { Settings, X, Plus, Trash2, Save } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Settings, X, Plus, Trash2, Save, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout } from "@/lib/config";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface ConfigPanelProps {
   config: DashboardConfig;
   onSave: (updates: Partial<DashboardConfig>) => void;
+}
+
+interface SortableWidgetItemProps {
+  id: string;
+  label: string;
+  colSpan: number;
+  maxCols: number;
+  onColSpanChange: (span: number) => void;
+}
+
+function SortableWidgetItem({ id, label, colSpan, maxCols, onColSpanChange }: SortableWidgetItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
+    >
+      <div className="flex items-center gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <span className="text-sm text-foreground">{label}</span>
+      </div>
+      <Select
+        value={String(colSpan)}
+        onValueChange={(v) => onColSpanChange(Number(v))}
+      >
+        <SelectTrigger className="w-20 bg-muted border-border">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: maxCols }, (_, i) => i + 1).map((n) => (
+            <SelectItem key={n} value={String(n)}>{n} col{n > 1 ? "s" : ""}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function getDefaultWidgetIds(tempCount: number): string[] {
+  return [
+    "clock",
+    ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
+    "electricity",
+    "calendar",
+  ];
 }
 
 export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
@@ -21,19 +96,58 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [calendarEntities, setCalendarEntities] = useState<string[]>(config.calendarEntities);
   const [electricityEntity, setElectricityEntity] = useState(config.electricityPriceEntity);
   const [widgetLayouts, setWidgetLayouts] = useState<Record<string, WidgetLayout>>(config.widgetLayouts || {});
+  const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
+    const defaults = getDefaultWidgetIds(config.temperatureEntities.length);
+    if (config.widgetOrder && config.widgetOrder.length > 0) {
+      const validSet = new Set(defaults);
+      const ordered = config.widgetOrder.filter((id) => validSet.has(id));
+      const missing = defaults.filter((id) => !ordered.includes(id));
+      return [...ordered, ...missing];
+    }
+    return defaults;
+  });
+
+  // Rebuild widget order when temp entities change
+  const widgetItems = useMemo(() => {
+    const labelMap: Record<string, string> = { clock: "Clock", electricity: "Electricity Price", calendar: "Calendar" };
+    tempEntities.forEach((e, i) => { labelMap[`temp_${i}`] = e.label || `Sensor ${i + 1}`; });
+
+    const defaults = getDefaultWidgetIds(tempEntities.length);
+    const validSet = new Set(defaults);
+    const currentValid = widgetOrder.filter((id) => validSet.has(id));
+    const missing = defaults.filter((id) => !currentValid.includes(id));
+    const finalOrder = [...currentValid, ...missing];
+
+    return finalOrder.map((id) => ({
+      id,
+      label: labelMap[id] || id,
+      defaultSpan: id === "electricity" || id === "calendar" ? 2 : 1,
+    }));
+  }, [widgetOrder, tempEntities]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const setColSpan = (id: string, span: number) =>
     setWidgetLayouts((prev) => ({ ...prev, [id]: { colSpan: span } }));
 
-  const widgetIds = [
-    { id: "clock", label: "Clock", defaultSpan: 1 },
-    ...tempEntities.map((e, i) => ({ id: `temp_${i}`, label: e.label || `Sensor ${i + 1}`, defaultSpan: 1 })),
-    { id: "electricity", label: "Electricity Price", defaultSpan: 2 },
-    { id: "calendar", label: "Calendar", defaultSpan: 2 },
-  ];
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const ids = widgetItems.map((w) => w.id);
+      const oldIndex = ids.indexOf(String(active.id));
+      const newIndex = ids.indexOf(String(over.id));
+      const newOrder = arrayMove(ids, oldIndex, newIndex);
+      setWidgetOrder(newOrder);
+    }
+  };
 
   const handleSave = () => {
+    const finalOrder = widgetItems.map((w) => w.id);
     onSave({
       haUrl,
       haToken,
@@ -42,19 +156,30 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       calendarEntities,
       electricityPriceEntity: electricityEntity,
       widgetLayouts,
+      widgetOrder: finalOrder,
+      gridColumns,
     });
     setOpen(false);
   };
 
   const addTempEntity = () => {
+    const newIndex = tempEntities.length;
     setTempEntities([
       ...tempEntities,
       { entityId: "", label: "", color: "hsl(174, 72%, 50%)" },
     ]);
+    setWidgetOrder((prev) => [...prev, `temp_${newIndex}`]);
   };
 
   const removeTempEntity = (index: number) => {
     setTempEntities(tempEntities.filter((_, i) => i !== index));
+    setWidgetOrder((prev) => prev.filter((id) => id !== `temp_${index}`).map((id) => {
+      if (id.startsWith("temp_")) {
+        const idx = parseInt(id.split("_")[1], 10);
+        if (idx > index) return `temp_${idx - 1}`;
+      }
+      return id;
+    }));
   };
 
   const updateTempEntity = (index: number, updates: Partial<TemperatureEntityConfig>) => {
@@ -246,30 +371,50 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
           {/* Widget Layout */}
           <section className="space-y-3">
             <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
-              Widget Layout (Column Span)
+              Widget Layout
             </h3>
+            <div>
+              <Label className="text-xs text-muted-foreground">Grid Columns</Label>
+              <Select
+                value={String(gridColumns)}
+                onValueChange={(v) => setGridColumns(Number(v))}
+              >
+                <SelectTrigger className="mt-1 bg-muted border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
+                    <SelectItem key={n} value={String(n)}>{n} column{n > 1 ? "s" : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Set how many columns each widget spans (1–4). The grid has 4 columns on desktop.
+              Drag to reorder widgets. Set column span per widget.
             </p>
-            {widgetIds.map(({ id, label, defaultSpan }) => (
-              <div key={id} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-foreground">{label}</span>
-                <Select
-                  value={String(getColSpan(id, defaultSpan))}
-                  onValueChange={(v) => setColSpan(id, Number(v))}
-                >
-                  <SelectTrigger className="w-20 bg-muted border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={widgetItems.map((w) => w.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {widgetItems.map(({ id, label, defaultSpan }) => (
+                    <SortableWidgetItem
+                      key={id}
+                      id={id}
+                      label={label}
+                      colSpan={getColSpan(id, defaultSpan)}
+                      maxCols={gridColumns}
+                      onColSpanChange={(span) => setColSpan(id, span)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </section>
 
           <Button onClick={handleSave} className="w-full">

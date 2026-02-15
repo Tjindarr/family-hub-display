@@ -11,6 +11,8 @@ export interface DashboardConfig {
   electricityPriceEntity: string;
   electricityForecastEntity: string;
   widgetLayouts: Record<string, WidgetLayout>;
+  widgetOrder: string[]; // ordered widget IDs
+  gridColumns: number; // number of grid columns (1-6)
 }
 
 export interface TemperatureEntityConfig {
@@ -60,6 +62,8 @@ const DEFAULT_CONFIG: DashboardConfig = {
   electricityPriceEntity: "sensor.nordpool_kwh_se3_sek_3_10_025",
   electricityForecastEntity: "",
   widgetLayouts: {},
+  widgetOrder: [],
+  gridColumns: 4,
 };
 
 export function loadConfig(): DashboardConfig {
