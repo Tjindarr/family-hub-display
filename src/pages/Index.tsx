@@ -168,7 +168,7 @@ const Index = () => {
 
       {/* Grid */}
       <div
-        className="grid gap-3 sm:gap-4 md:gap-5"
+        className="grid gap-1"
         style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}
       >
         {rows.flat().map(({ id, span, rowSpan }) => {
