@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ClockWidget from "@/components/ClockWidget";
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
@@ -32,8 +33,9 @@ const Index = () => {
   const { events, loading: calLoading } = useCalendarData(config);
   const { nordpool, loading: priceLoading } = useElectricityPrices(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
+  const isMobile = useIsMobile();
 
-  const gridColumns = config.gridColumns || 4;
+  const gridColumns = isMobile ? 1 : (config.gridColumns || 4);
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
@@ -110,7 +112,7 @@ const Index = () => {
   }, [allWidgetIds, gridColumns, config.widgetLayouts]);
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
+    <div className="min-h-screen bg-background p-2 sm:p-4 md:p-6">
       {!isKiosk && (
         <>
           <ConfigPanel config={config} onSave={updateConfig} />
@@ -128,9 +130,9 @@ const Index = () => {
 
       {/* Header - hidden in kiosk */}
       {!isKiosk && (
-        <header className="mb-6 flex items-end justify-between">
+        <header className="mb-4 sm:mb-6 flex items-end justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Home Dashboard
             </h1>
             <div className="flex items-center gap-3">
@@ -143,19 +145,21 @@ const Index = () => {
 
       {/* Grid */}
       <div
-        className="grid gap-4 md:gap-5"
+        className="grid gap-3 sm:gap-4 md:gap-5"
         style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}
       >
         {rows.flat().map(({ id, span, rowSpan }) => {
           const widget = renderWidget(id);
           if (!widget) return null;
+          const mobileSpan = isMobile ? 1 : span;
+          const mobileRowSpan = isMobile ? 1 : rowSpan;
           return (
             <div
               key={id}
               style={{
-                gridColumn: `span ${span}`,
-                gridRow: rowSpan > 1 ? `span ${rowSpan}` : undefined,
-                minHeight: rowSpan > 1 ? `${rowSpan * 200}px` : undefined,
+                gridColumn: `span ${mobileSpan}`,
+                gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
+                minHeight: id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined),
               }}
             >
               {widget}
