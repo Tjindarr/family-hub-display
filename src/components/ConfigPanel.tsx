@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig } from "@/lib/config";
 import {
   DndContext,
   closestCenter,
@@ -102,10 +102,11 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, maxCols, onColSp
   );
 }
 
-function getDefaultWidgetIds(tempCount: number): string[] {
+function getDefaultWidgetIds(tempCount: number, personCount: number): string[] {
   return [
     "clock",
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
+    ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     "electricity",
     "calendar",
     "photos",
@@ -124,9 +125,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [widgetLayouts, setWidgetLayouts] = useState<Record<string, WidgetLayout>>(config.widgetLayouts || {});
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10 });
+  const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities.length);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -140,8 +142,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const widgetItems = useMemo(() => {
     const labelMap: Record<string, string> = { clock: "Clock", electricity: "Electricity Price", calendar: "Calendar", photos: "Photo Gallery" };
     tempEntities.forEach((e, i) => { labelMap[`temp_${i}`] = e.label || `Sensor ${i + 1}`; });
+    personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
 
-    const defaults = getDefaultWidgetIds(tempEntities.length);
+    const defaults = getDefaultWidgetIds(tempEntities.length, personEntities.length);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -152,7 +155,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       label: labelMap[id] || id,
       defaultSpan: id === "electricity" || id === "calendar" || id === "photos" ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities]);
+  }, [widgetOrder, tempEntities, personEntities]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -193,6 +196,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       gridColumns,
       configBackendUrl,
       photoWidget: photoConfig,
+      personEntities,
     });
     setOpen(false);
   };
@@ -401,7 +405,143 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
             </Button>
           </section>
 
-          {/* Electricity */}
+          {/* Person Cards */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+                Person Cards
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setPersonEntities([...personEntities, {
+                    name: "",
+                    entityPicture: "",
+                    locationEntity: "",
+                    batteryEntity: "",
+                    batteryChargingEntity: "",
+                    distanceEntity: "",
+                  }]);
+                  setWidgetOrder((prev) => [...prev, `person_${personEntities.length}`]);
+                }}
+                className="text-primary"
+              >
+                <Plus className="mr-1 h-3 w-3" /> Add
+              </Button>
+            </div>
+            {personEntities.map((person, i) => (
+              <div key={i} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Person {i + 1}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive"
+                    onClick={() => {
+                      setPersonEntities(personEntities.filter((_, j) => j !== i));
+                      setWidgetOrder((prev) => prev.filter((id) => id !== `person_${i}`).map((id) => {
+                        if (id.startsWith("person_")) {
+                          const idx = parseInt(id.split("_")[1], 10);
+                          if (idx > i) return `person_${idx - 1}`;
+                        }
+                        return id;
+                      }));
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+                <Input
+                  value={person.name}
+                  onChange={(e) => {
+                    const updated = [...personEntities];
+                    updated[i] = { ...updated[i], name: e.target.value };
+                    setPersonEntities(updated);
+                  }}
+                  placeholder="Name (e.g. John)"
+                  className="bg-muted border-border text-sm"
+                />
+                <div>
+                  <Label className="text-xs text-muted-foreground">Person Entity (for picture)</Label>
+                  <EntityAutocomplete
+                    value={person.entityPicture}
+                    onChange={(val) => {
+                      const updated = [...personEntities];
+                      updated[i] = { ...updated[i], entityPicture: val };
+                      setPersonEntities(updated);
+                    }}
+                    config={config}
+                    domainFilter="person"
+                    placeholder="person.john"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Location Sensor</Label>
+                  <EntityAutocomplete
+                    value={person.locationEntity}
+                    onChange={(val) => {
+                      const updated = [...personEntities];
+                      updated[i] = { ...updated[i], locationEntity: val };
+                      setPersonEntities(updated);
+                    }}
+                    config={config}
+                    domainFilter="sensor"
+                    placeholder="sensor.john_geocoded_location"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Battery Sensor</Label>
+                  <EntityAutocomplete
+                    value={person.batteryEntity}
+                    onChange={(val) => {
+                      const updated = [...personEntities];
+                      updated[i] = { ...updated[i], batteryEntity: val };
+                      setPersonEntities(updated);
+                    }}
+                    config={config}
+                    domainFilter="sensor"
+                    placeholder="sensor.john_phone_battery_level"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Charging Sensor (binary)</Label>
+                  <EntityAutocomplete
+                    value={person.batteryChargingEntity}
+                    onChange={(val) => {
+                      const updated = [...personEntities];
+                      updated[i] = { ...updated[i], batteryChargingEntity: val };
+                      setPersonEntities(updated);
+                    }}
+                    config={config}
+                    domainFilter="binary_sensor"
+                    placeholder="binary_sensor.john_phone_is_charging"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Distance from Home (km)</Label>
+                  <EntityAutocomplete
+                    value={person.distanceEntity}
+                    onChange={(val) => {
+                      const updated = [...personEntities];
+                      updated[i] = { ...updated[i], distanceEntity: val };
+                      setPersonEntities(updated);
+                    }}
+                    config={config}
+                    domainFilter="sensor"
+                    placeholder="sensor.john_distance_from_home"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
+              </div>
+            ))}
+          </section>
+
+
           <section className="space-y-3">
             <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
               Electricity Price (Nordpool)

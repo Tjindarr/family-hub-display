@@ -7,6 +7,7 @@ import {
   generateMockCalendarEvents,
 } from "@/lib/ha-api";
 import type { HACalendarEvent, ElectricityPrice, NordpoolPricePoint } from "@/lib/config";
+import type { PersonData } from "@/components/PersonWidget";
 
 export function useDashboardConfig() {
   const [config, setConfig] = useState<DashboardConfig>(loadConfig);
@@ -211,4 +212,104 @@ export function useElectricityPrices(config: DashboardConfig) {
   }, [fetchPrices, config.refreshInterval]);
 
   return { nordpool, loading };
+}
+
+export function usePersonData(config: DashboardConfig) {
+  const [persons, setPersons] = useState<PersonData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    if (!config.personEntities || config.personEntities.length === 0) {
+      setPersons([]);
+      setLoading(false);
+      return;
+    }
+
+    if (!isConfigured(config)) {
+      // Mock data
+      setPersons(
+        config.personEntities.map((p) => ({
+          name: p.name || "Person",
+          pictureUrl: null,
+          location: "Home",
+          batteryPercent: 40 + Math.random() * 55,
+          isCharging: Math.random() > 0.5,
+          distanceKm: Math.random() * 20,
+        }))
+      );
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const client = createHAClient(config);
+      const results = await Promise.all(
+        config.personEntities.map(async (pe) => {
+          let pictureUrl: string | null = null;
+          let location: string | null = null;
+          let batteryPercent: number | null = null;
+          let isCharging = false;
+          let distanceKm: number | null = null;
+
+          // Picture from person entity
+          if (pe.entityPicture) {
+            try {
+              const state = await client.getState(pe.entityPicture);
+              const pic = state.attributes?.entity_picture;
+              if (pic) {
+                pictureUrl = pic.startsWith("http") ? pic : `${config.haUrl}${pic}`;
+              }
+            } catch { /* ignore */ }
+          }
+
+          // Location
+          if (pe.locationEntity) {
+            try {
+              const state = await client.getState(pe.locationEntity);
+              location = state.state || null;
+            } catch { /* ignore */ }
+          }
+
+          // Battery
+          if (pe.batteryEntity) {
+            try {
+              const state = await client.getState(pe.batteryEntity);
+              batteryPercent = parseFloat(state.state) || null;
+            } catch { /* ignore */ }
+          }
+
+          // Charging
+          if (pe.batteryChargingEntity) {
+            try {
+              const state = await client.getState(pe.batteryChargingEntity);
+              isCharging = state.state === "on";
+            } catch { /* ignore */ }
+          }
+
+          // Distance
+          if (pe.distanceEntity) {
+            try {
+              const state = await client.getState(pe.distanceEntity);
+              distanceKm = parseFloat(state.state) || null;
+            } catch { /* ignore */ }
+          }
+
+          return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm };
+        })
+      );
+      setPersons(results);
+    } catch (err) {
+      console.error("Failed to fetch person data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [config]);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, config.refreshInterval * 1000);
+    return () => clearInterval(interval);
+  }, [fetchData, config.refreshInterval]);
+
+  return { persons, loading };
 }

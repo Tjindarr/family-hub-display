@@ -5,6 +5,7 @@ import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
 import ElectricityWidget from "@/components/ElectricityWidget";
 import PhotoWidget from "@/components/PhotoWidget";
+import PersonWidget from "@/components/PersonWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { useKioskMode } from "@/hooks/useKioskMode";
@@ -15,12 +16,14 @@ import {
   useTemperatureData,
   useCalendarData,
   useElectricityPrices,
+  usePersonData,
 } from "@/hooks/useDashboardData";
 
-function getDefaultWidgetIds(tempCount: number): string[] {
+function getDefaultWidgetIds(tempCount: number, personCount: number): string[] {
   return [
     "clock",
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
+    ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     "electricity",
     "calendar",
     "photos",
@@ -32,6 +35,7 @@ const Index = () => {
   const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config);
   const { events, loading: calLoading } = useCalendarData(config);
   const { nordpool, loading: priceLoading } = useElectricityPrices(config);
+  const { persons, loading: personLoading } = usePersonData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -39,7 +43,7 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities.length);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       // Use saved order, but add any new widgets not in order and remove stale ones
       const validSet = new Set(defaults);
@@ -60,6 +64,12 @@ const Index = () => {
       const sensor = tempSensors[idx];
       if (!sensor) return null;
       return <TemperatureWidget sensor={sensor} loading={tempLoading} />;
+    }
+    if (id.startsWith("person_")) {
+      const idx = parseInt(id.split("_")[1], 10);
+      const person = persons[idx];
+      if (!person) return null;
+      return <PersonWidget person={person} loading={personLoading} />;
     }
     return null;
   };
