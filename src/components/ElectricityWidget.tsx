@@ -1,7 +1,6 @@
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
-import { Zap } from "lucide-react";
 import type { NordpoolData } from "@/hooks/useDashboardData";
 
 interface ElectricityWidgetProps {
@@ -51,6 +50,11 @@ export default function ElectricityWidget({ nordpool, loading }: ElectricityWidg
   const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   const maxPrice = allPrices.length > 0 ? Math.max(...allPrices) : 0;
 
+  // Find the time of the lowest price
+  const allPoints = [...today, ...tomorrow];
+  const minPoint = allPoints.length > 0 ? allPoints.reduce((min, p) => p.price < min.price ? p : min, allPoints[0]) : null;
+  const minTimeStr = minPoint ? formatHour(minPoint.time) : "";
+
   // Find current time position
   const nowMs = Date.now();
 
@@ -61,26 +65,15 @@ export default function ElectricityWidget({ nordpool, loading }: ElectricityWidg
 
   return (
     <div className="widget-card h-full">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-chart-2" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Electricity Price
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={getPriceBadgeClass(currentPrice)}>
-            {currentPrice < 0.50 ? "Low" : currentPrice < 1.00 ? "Medium" : "High"}
-          </span>
-        </div>
-      </div>
-
-      {/* Current price */}
+      {/* Current price with badge */}
       <div className="mb-4 flex items-baseline gap-3">
         <span className="stat-value" style={{ color: getPriceColor(currentPrice) }}>
           {currentPrice.toFixed(2)}
         </span>
-        <span className="stat-label">kr/kWh now</span>
+        <span className="stat-label">kr/kWh</span>
+        <span className={getPriceBadgeClass(currentPrice)}>
+          {currentPrice < 0.50 ? "Low" : currentPrice < 1.00 ? "Medium" : "High"}
+        </span>
       </div>
 
       {loading ? (
@@ -183,6 +176,9 @@ export default function ElectricityWidget({ nordpool, loading }: ElectricityWidg
             <span className="font-mono font-medium" style={{ color: "hsl(120, 50%, 50%)" }}>
               {minPrice.toFixed(2)}
             </span>
+            {minTimeStr && (
+              <span className="text-muted-foreground ml-1">@ {minTimeStr}</span>
+            )}
           </div>
           <div>
             <span className="text-muted-foreground">Max </span>

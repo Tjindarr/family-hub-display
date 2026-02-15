@@ -12,7 +12,6 @@ export default function ClockWidget() {
 
   return (
     <div className="widget-card flex items-center gap-4">
-      <Clock className="h-5 w-5 text-primary animate-pulse-glow" />
       <div>
         <div className="stat-value text-foreground">
           {format(now, "HH:mm")}
