@@ -135,7 +135,7 @@ export function generateMockWeatherData(forecastDays = 5): WeatherData {
       tempHigh: Math.round(high),
       tempLow: Math.round(high - 5 - Math.random() * 5),
       condition: conditions[Math.floor(Math.random() * conditions.length)],
-      precipitation: Math.round(Math.random() * 100),
+      precipitation: +(Math.random() * 8).toFixed(1), // mm
       sunrise: "06:" + String(Math.floor(20 + Math.random() * 30)).padStart(2, "0"),
       sunset: "18:" + String(Math.floor(Math.random() * 50)).padStart(2, "0"),
     };
@@ -147,6 +147,10 @@ export function generateMockWeatherData(forecastDays = 5): WeatherData {
       condition: conditions[Math.floor(Math.random() * conditions.length)],
       humidity: 40 + Math.random() * 40,
       windSpeed: Math.round(5 + Math.random() * 20),
+      pressure: 1010 + Math.random() * 20,
+      cloudCoverage: Math.round(Math.random() * 100),
+      uvIndex: +(Math.random() * 6).toFixed(1),
+      windGustSpeed: Math.round(10 + Math.random() * 30),
     },
     forecast,
   };

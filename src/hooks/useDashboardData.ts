@@ -206,19 +206,25 @@ export function useWeatherData(config: DashboardConfig) {
       const attrs = state.attributes || {};
 
       const current = {
-        temperature: parseFloat(state.state) || attrs.temperature || 0,
+        temperature: attrs.temperature ?? parseFloat(state.state) ?? 0,
         condition: attrs.condition || state.state || "unknown",
         humidity: attrs.humidity || 0,
         windSpeed: attrs.wind_speed || 0,
+        dewPoint: attrs.dew_point,
+        cloudCoverage: attrs.cloud_coverage,
+        uvIndex: attrs.uv_index,
+        pressure: attrs.pressure,
+        windBearing: attrs.wind_bearing,
+        windGustSpeed: attrs.wind_gust_speed,
       };
 
       const rawForecast: any[] = attrs.forecast || [];
       const forecast = rawForecast.slice(0, wc.forecastDays).map((f: any) => ({
         date: f.datetime || f.date || "",
         tempHigh: f.temperature || f.tempHigh || 0,
-        tempLow: f.templow || f.temp_low || f.tempLow || 0,
+        tempLow: f.templow ?? f.temp_low ?? f.tempLow ?? 0,
         condition: f.condition || "unknown",
-        precipitation: f.precipitation_probability ?? f.precipitation ?? null,
+        precipitation: f.precipitation ?? null, // met.no provides mm
         sunrise: f.sunrise || null,
         sunset: f.sunset || null,
       }));
