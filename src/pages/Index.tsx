@@ -10,6 +10,7 @@ import WeatherWidget from "@/components/WeatherWidget";
 import CarWidget from "@/components/CarWidget";
 import MonthlyEnergyWidget from "@/components/MonthlyEnergyWidget";
 import PowerUsageWidget from "@/components/PowerUsageWidget";
+import FoodMenuWidget from "@/components/FoodMenuWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { useKioskMode } from "@/hooks/useKioskMode";
@@ -24,6 +25,7 @@ import {
   useWeatherData,
   useCarData,
   useEnergyUsageData,
+  useFoodMenuData,
 } from "@/hooks/useDashboardData";
 
 function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
@@ -35,6 +37,7 @@ function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boo
     "electricity",
     ...(hasEnergy ? ["monthly_energy", "power_usage"] : []),
     "calendar",
+    "food_menu",
     "weather",
     "photos",
   ];
@@ -49,6 +52,7 @@ const Index = () => {
   const { weather, loading: weatherLoading } = useWeatherData(config);
   const { charger, fuel, battery, loading: carLoading } = useCarData(config);
   const { monthly, power, loading: energyLoading } = useEnergyUsageData(config);
+  const { menuEvents, loading: menuLoading } = useFoodMenuData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -107,13 +111,14 @@ const Index = () => {
     if (id === "car") return <CarWidget charger={charger} fuel={fuel} battery={battery} loading={carLoading} />;
     if (id === "monthly_energy") return <MonthlyEnergyWidget data={monthly} loading={energyLoading} />;
     if (id === "power_usage") return <PowerUsageWidget data={power} loading={energyLoading} />;
+    if (id === "food_menu") return <FoodMenuWidget events={menuEvents} loading={menuLoading} />;
     return null;
   };
 
   const getColSpan = (id: string) => {
     if (config.widgetLayouts?.[id]?.colSpan) return config.widgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
-    if (id === "photos" || id === "car" || id === "monthly_energy" || id === "power_usage") return 2;
+    if (id === "photos" || id === "car" || id === "monthly_energy" || id === "power_usage" || id === "food_menu") return 2;
     return 1;
   };
 

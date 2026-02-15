@@ -37,6 +37,11 @@ export interface EnergyUsageConfig {
   maxPowerEntity: string; // sensor.tibber_pulse_berget_max_power
 }
 
+export interface FoodMenuConfig {
+  calendarEntity: string; // calendar entity for food menu
+  days: number; // number of days to show (default 5)
+}
+
 export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black";
 
 export const THEMES: { id: ThemeId; label: string }[] = [
@@ -68,6 +73,7 @@ export interface DashboardConfig {
   theme: ThemeId;
   carConfig: CarConfig;
   energyUsageConfig: EnergyUsageConfig;
+  foodMenuConfig: FoodMenuConfig;
 }
 
 export interface TemperatureEntityConfig {
@@ -155,6 +161,10 @@ const DEFAULT_CONFIG: DashboardConfig = {
     monthlyConsumptionEntity: "",
     currentPowerEntity: "",
     maxPowerEntity: "",
+  },
+  foodMenuConfig: {
+    calendarEntity: "",
+    days: 5,
   },
 };
 
