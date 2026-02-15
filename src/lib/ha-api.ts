@@ -12,7 +12,9 @@ class HomeAssistantAPI {
   }
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
-    const res = await fetch(`${this.baseUrl}/api${path}`, {
+    const separator = path.includes("?") ? "&" : "?";
+    const url = `${this.baseUrl}/api${path}`;
+    const res = await fetch(url, {
       ...options,
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -56,12 +58,11 @@ class HomeAssistantAPI {
 
   async getWeatherForecast(entityId: string, type: "daily" | "hourly" | "twice_daily" = "daily"): Promise<any[]> {
     try {
-      const result = await this.request<any>("/services/weather/get_forecasts", {
+      const result = await this.request<any>("/services/weather/get_forecasts?return_response", {
         method: "POST",
         body: JSON.stringify({
           target: { entity_id: entityId },
           type,
-          return_response: true,
         }),
       });
       console.log("[Weather] Raw service response:", JSON.stringify(result).slice(0, 500));
