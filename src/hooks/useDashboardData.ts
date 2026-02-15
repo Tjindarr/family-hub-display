@@ -18,14 +18,11 @@ export function useDashboardConfig() {
 
   // On mount, load remote config (built-in API or external backend)
   useEffect(() => {
-    const localConfig = loadConfig();
     if (!remoteLoaded) {
-      const backendUrl = localConfig.configBackendUrl || undefined;
-      loadRemoteConfig(backendUrl).then((remote) => {
+      loadRemoteConfig().then((remote) => {
         if (remote) {
-          const merged = { ...remote, configBackendUrl: localConfig.configBackendUrl };
-          setConfig(merged);
-          saveConfig(merged);
+          setConfig(remote);
+          saveConfig(remote);
         }
         setRemoteLoaded(true);
       });
@@ -36,9 +33,7 @@ export function useDashboardConfig() {
     setConfig((prev) => {
       const next = { ...prev, ...updates };
       saveConfig(next);
-      // Always save to remote (built-in API or external backend)
-      const backendUrl = next.configBackendUrl || undefined;
-      saveRemoteConfig(backendUrl, next).catch(() => {
+      saveRemoteConfig(undefined, next).catch(() => {
         console.warn("Failed to save to remote backend");
       });
       return next;
