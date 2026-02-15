@@ -650,6 +650,22 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     className="mt-1 bg-muted border-border text-sm"
                   />
                 </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Avatar Size (px)</Label>
+                  <Input
+                    value={person.avatarSize || 80}
+                    onChange={(e) => {
+                      const updated = [...personEntities];
+                      updated[i] = { ...updated[i], avatarSize: Number(e.target.value) || 80 };
+                      setPersonEntities(updated);
+                    }}
+                    type="number"
+                    min={40}
+                    max={300}
+                    placeholder="80"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
               </div>
             ))}
           </section>

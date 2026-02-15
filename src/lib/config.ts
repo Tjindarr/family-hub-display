@@ -50,11 +50,12 @@ export interface TemperatureEntityConfig {
 
 export interface PersonEntityConfig {
   name: string;
-  entityPicture: string; // HA person entity ID (for picture)
-  locationEntity: string; // sensor entity for zone/location name
-  batteryEntity: string; // sensor entity for battery %
-  batteryChargingEntity: string; // binary_sensor for charging state
-  distanceEntity: string; // sensor entity for distance from home (km)
+  entityPicture: string;
+  locationEntity: string;
+  batteryEntity: string;
+  batteryChargingEntity: string;
+  distanceEntity: string;
+  avatarSize?: number; // px, default 80
 }
 
 export interface HAState {

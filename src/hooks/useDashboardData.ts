@@ -322,6 +322,7 @@ export function usePersonData(config: DashboardConfig) {
           batteryPercent: 40 + Math.random() * 55,
           isCharging: Math.random() > 0.5,
           distanceKm: Math.random() * 20,
+          avatarSize: p.avatarSize,
         }))
       );
       setLoading(false);
@@ -381,7 +382,7 @@ export function usePersonData(config: DashboardConfig) {
             } catch { /* ignore */ }
           }
 
-          return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm };
+          return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm, avatarSize: pe.avatarSize };
         })
       );
       setPersons(results);
