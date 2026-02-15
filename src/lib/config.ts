@@ -1,5 +1,6 @@
 export interface WidgetLayout {
-  colSpan: number; // 1-4
+  colSpan: number; // 1-6
+  row: number; // which row (1-based)
 }
 
 export interface DashboardConfig {
