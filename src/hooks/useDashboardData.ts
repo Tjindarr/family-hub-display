@@ -218,13 +218,24 @@ export function useWeatherData(config: DashboardConfig) {
         windGustSpeed: attrs.wind_gust_speed,
       };
 
-      const rawForecast: any[] = attrs.forecast || [];
+      // Try the new service call first (HA 2024.3+), fall back to attributes
+      let rawForecast: any[] = [];
+      try {
+        rawForecast = await client.getWeatherForecast(wc.entityId, "daily");
+      } catch {
+        // ignore
+      }
+      // Fallback to state attributes if service call returned nothing
+      if (!rawForecast || rawForecast.length === 0) {
+        rawForecast = attrs.forecast || [];
+      }
+
       const forecast = rawForecast.slice(0, wc.forecastDays).map((f: any) => ({
         date: f.datetime || f.date || "",
         tempHigh: f.temperature || f.tempHigh || 0,
         tempLow: f.templow ?? f.temp_low ?? f.tempLow ?? 0,
         condition: f.condition || "unknown",
-        precipitation: f.precipitation ?? null, // met.no provides mm
+        precipitation: f.precipitation ?? null,
         sunrise: f.sunrise || null,
         sunset: f.sunset || null,
       }));
