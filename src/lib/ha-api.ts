@@ -61,7 +61,7 @@ class HomeAssistantAPI {
       const result = await this.request<any>("/services/weather/get_forecasts?return_response", {
         method: "POST",
         body: JSON.stringify({
-          target: { entity_id: entityId },
+          entity_id: entityId,
           type,
         }),
       });
