@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ClockWidget from "@/components/ClockWidget";
 import CalendarWidget from "@/components/CalendarWidget";
@@ -42,6 +42,11 @@ const Index = () => {
   const { weather, loading: weatherLoading } = useWeatherData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
+
+  // Apply theme
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", config.theme || "midnight-teal");
+  }, [config.theme]);
 
   const gridColumns = isMobile ? 1 : (config.gridColumns || 4);
   const rowColumns = config.rowColumns || {};

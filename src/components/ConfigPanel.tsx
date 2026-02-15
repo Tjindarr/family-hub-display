@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId } from "@/lib/config";
+import { THEMES } from "@/lib/config";
 import {
   DndContext,
   closestCenter,
@@ -136,6 +137,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [rowHeights, setRowHeights] = useState<Record<number, number>>(config.rowHeights || {});
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
+  const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length);
@@ -211,6 +213,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       photoWidget: photoConfig,
       personEntities,
       weatherConfig,
+      theme,
     });
     setOpen(false);
   };
@@ -296,6 +299,28 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 min={5}
                 className="mt-1 bg-muted border-border"
               />
+            </div>
+          </section>
+
+          {/* Theme */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+              Theme
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id)}
+                  className={`rounded-lg border px-3 py-2 text-sm text-left transition-colors ${
+                    theme === t.id
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-muted/30 text-muted-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
           </section>
 
