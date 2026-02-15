@@ -133,18 +133,12 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
         <div className="flex flex-col gap-1 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Droplets className="h-3 w-3" />
-            <span>{Math.round(weather.current.humidity)}%</span>
+            <span>{todayForecast?.precipitation != null ? `${todayForecast.precipitation} mm` : "0 mm"}</span>
           </div>
           <div className="flex items-center gap-1">
             <Wind className="h-3 w-3" />
             <span>{weather.current.windSpeed} km/h</span>
           </div>
-          {weather.current.cloudCoverage != null && (
-            <div className="flex items-center gap-1">
-              <Cloud className="h-3 w-3" />
-              <span>{Math.round(weather.current.cloudCoverage)}%</span>
-            </div>
-          )}
         </div>
       </div>
 
