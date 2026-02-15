@@ -40,7 +40,7 @@ export default function CalendarWidget({ events, loading }: CalendarWidgetProps)
   }, {});
 
   return (
-    <div className="widget-card h-full">
+    <div className="widget-card h-full flex flex-col">
       <div className="mb-4 flex items-center gap-2">
         <Calendar className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -57,7 +57,7 @@ export default function CalendarWidget({ events, loading }: CalendarWidgetProps)
       ) : events.length === 0 ? (
         <p className="text-sm text-muted-foreground">No upcoming events</p>
       ) : (
-        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+        <div className="space-y-4 flex-1 overflow-y-auto pr-1">
           {Object.entries(grouped).map(([day, dayEvents]) => (
             <div key={day}>
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary/70">
