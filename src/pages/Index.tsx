@@ -67,13 +67,13 @@ const Index = () => {
           </div>
         ))}
 
-        {/* Electricity - full width */}
-        <div className="md:col-span-2 xl:col-span-4">
+        {/* Electricity */}
+        <div className="md:col-span-1 xl:col-span-2">
           <ElectricityWidget nordpool={nordpool} loading={priceLoading} />
         </div>
 
         {/* Calendar */}
-        <div className="md:col-span-2 xl:col-span-4">
+        <div className="md:col-span-1 xl:col-span-2">
           <CalendarWidget events={events} loading={calLoading} />
         </div>
       </div>
