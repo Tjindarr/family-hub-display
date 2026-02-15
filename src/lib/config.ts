@@ -22,6 +22,7 @@ export interface DashboardConfig {
   gridColumns: number; // number of grid columns (1-6)
   configBackendUrl: string; // URL to a simple REST API for persisting config
   photoWidget: PhotoWidgetConfig;
+  personEntities: PersonEntityConfig[];
 }
 
 export interface TemperatureEntityConfig {
@@ -29,6 +30,15 @@ export interface TemperatureEntityConfig {
   humidityEntityId?: string;
   label: string;
   color: string;
+}
+
+export interface PersonEntityConfig {
+  name: string;
+  entityPicture: string; // HA person entity ID (for picture)
+  locationEntity: string; // sensor entity for zone/location name
+  batteryEntity: string; // sensor entity for battery %
+  batteryChargingEntity: string; // binary_sensor for charging state
+  distanceEntity: string; // sensor entity for distance from home (km)
 }
 
 export interface HAState {
@@ -75,6 +85,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   gridColumns: 4,
   configBackendUrl: "",
   photoWidget: { photos: [], intervalSeconds: 10 },
+  personEntities: [],
 };
 
 export function loadConfig(): DashboardConfig {
