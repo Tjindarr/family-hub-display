@@ -28,6 +28,15 @@ export default function CarBatteryWidget({ data, loading }: CarBatteryWidgetProp
     return <div className="widget-card h-full animate-pulse" />;
   }
 
+  if (!data.entityId) {
+    return (
+      <div className="widget-card h-full flex flex-col items-center justify-center gap-2">
+        <Battery className="h-8 w-8 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">No battery entity configured</span>
+      </div>
+    );
+  }
+
   const pct = data.percent ?? 0;
   const color = getBatteryColor(pct);
 

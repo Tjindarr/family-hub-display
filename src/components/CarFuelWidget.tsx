@@ -21,6 +21,15 @@ export default function CarFuelWidget({ data, loading }: CarFuelWidgetProps) {
     return <div className="widget-card h-full animate-pulse" />;
   }
 
+  if (!data.entityId) {
+    return (
+      <div className="widget-card h-full flex flex-col items-center justify-center gap-2">
+        <Fuel className="h-8 w-8 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">No fuel entity configured</span>
+      </div>
+    );
+  }
+
   const km = data.rangeKm ?? 0;
   const color = getFuelColor(km);
 
