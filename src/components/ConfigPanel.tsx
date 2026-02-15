@@ -33,11 +33,13 @@ interface SortableWidgetItemProps {
   id: string;
   label: string;
   colSpan: number;
+  row: number;
   maxCols: number;
   onColSpanChange: (span: number) => void;
+  onRowChange: (row: number) => void;
 }
 
-function SortableWidgetItem({ id, label, colSpan, maxCols, onColSpanChange }: SortableWidgetItemProps) {
+function SortableWidgetItem({ id, label, colSpan, row, maxCols, onColSpanChange, onRowChange }: SortableWidgetItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
@@ -49,31 +51,40 @@ function SortableWidgetItem({ id, label, colSpan, maxCols, onColSpanChange }: So
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
+      className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
     >
-      <div className="flex items-center gap-2">
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
-        <span className="text-sm text-foreground">{label}</span>
-      </div>
-      <Select
-        value={String(colSpan)}
-        onValueChange={(v) => onColSpanChange(Number(v))}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab touch-none text-muted-foreground hover:text-foreground shrink-0"
       >
-        <SelectTrigger className="w-20 bg-muted border-border">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {Array.from({ length: maxCols }, (_, i) => i + 1).map((n) => (
-            <SelectItem key={n} value={String(n)}>{n} col{n > 1 ? "s" : ""}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Label className="text-[10px] text-muted-foreground">Row</Label>
+        <Select value={String(row)} onValueChange={(v) => onRowChange(Number(v))}>
+          <SelectTrigger className="w-16 h-8 bg-muted border-border text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Label className="text-[10px] text-muted-foreground">Cols</Label>
+        <Select value={String(colSpan)} onValueChange={(v) => onColSpanChange(Number(v))}>
+          <SelectTrigger className="w-16 h-8 bg-muted border-border text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: maxCols }, (_, i) => i + 1).map((n) => (
+              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
@@ -127,8 +138,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   }, [widgetOrder, tempEntities]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
-  const setColSpan = (id: string, span: number) =>
-    setWidgetLayouts((prev) => ({ ...prev, [id]: { colSpan: span } }));
+  const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
+  const updateLayout = (id: string, updates: Partial<WidgetLayout>) =>
+    setWidgetLayouts((prev) => ({
+      ...prev,
+      [id]: { colSpan: prev[id]?.colSpan || 1, row: prev[id]?.row || 1, ...updates },
+    }));
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -408,8 +423,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       id={id}
                       label={label}
                       colSpan={getColSpan(id, defaultSpan)}
+                      row={getRow(id, id === "electricity" || id === "calendar" ? 2 : 1)}
                       maxCols={gridColumns}
-                      onColSpanChange={(span) => setColSpan(id, span)}
+                      onColSpanChange={(span) => updateLayout(id, { colSpan: span })}
+                      onRowChange={(row) => updateLayout(id, { row })}
                     />
                   ))}
                 </div>

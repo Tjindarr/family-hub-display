@@ -65,43 +65,37 @@ const Index = () => {
     return 1;
   };
 
-  // Group widgets into rows and stretch to fill each row
+  const getRow = (id: string) => {
+    if (config.widgetLayouts?.[id]?.row) return config.widgetLayouts[id].row;
+    if (id === "electricity" || id === "calendar") return 2;
+    return 1;
+  };
+
+  // Group widgets by row, then stretch last widget per row to fill
   const rows = useMemo(() => {
-    const result: { id: string; span: number }[][] = [];
-    let currentRow: { id: string; span: number }[] = [];
-    let usedCols = 0;
+    const rowMap = new Map<number, { id: string; span: number }[]>();
 
     for (const id of allWidgetIds) {
+      const row = getRow(id);
       const span = Math.min(getColSpan(id), gridColumns);
-      if (usedCols + span > gridColumns && currentRow.length > 0) {
-        result.push(currentRow);
-        currentRow = [];
-        usedCols = 0;
-      }
-      currentRow.push({ id, span });
-      usedCols += span;
-      if (usedCols >= gridColumns) {
-        result.push(currentRow);
-        currentRow = [];
-        usedCols = 0;
-      }
+      if (!rowMap.has(row)) rowMap.set(row, []);
+      rowMap.get(row)!.push({ id, span });
     }
-    if (currentRow.length > 0) result.push(currentRow);
 
-    // Stretch: distribute remaining columns to widgets in each row
-    return result.map((row) => {
-      const totalSpan = row.reduce((s, w) => s + w.span, 0);
+    const sortedRows = [...rowMap.entries()].sort((a, b) => a[0] - b[0]);
+
+    return sortedRows.map(([, widgets]) => {
+      const totalSpan = widgets.reduce((s, w) => s + w.span, 0);
       const remaining = gridColumns - totalSpan;
-      if (remaining > 0 && row.length > 0) {
-        // Add remaining to the last widget
-        const stretched = [...row];
+      if (remaining > 0 && widgets.length > 0) {
+        const stretched = [...widgets];
         stretched[stretched.length - 1] = {
           ...stretched[stretched.length - 1],
           span: stretched[stretched.length - 1].span + remaining,
         };
         return stretched;
       }
-      return row;
+      return widgets;
     });
   }, [allWidgetIds, gridColumns, config.widgetLayouts]);
 
