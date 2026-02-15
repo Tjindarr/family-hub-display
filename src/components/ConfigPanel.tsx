@@ -1,11 +1,11 @@
-import { useState, useMemo } from "react";
-import { Settings, X, Plus, Trash2, Save, GripVertical } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig } from "@/lib/config";
 import {
   DndContext,
   closestCenter,
@@ -34,12 +34,14 @@ interface SortableWidgetItemProps {
   label: string;
   colSpan: number;
   row: number;
+  rowSpan: number;
   maxCols: number;
   onColSpanChange: (span: number) => void;
   onRowChange: (row: number) => void;
+  onRowSpanChange: (span: number) => void;
 }
 
-function SortableWidgetItem({ id, label, colSpan, row, maxCols, onColSpanChange, onRowChange }: SortableWidgetItemProps) {
+function SortableWidgetItem({ id, label, colSpan, row, rowSpan, maxCols, onColSpanChange, onRowChange, onRowSpanChange }: SortableWidgetItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
@@ -64,7 +66,7 @@ function SortableWidgetItem({ id, label, colSpan, row, maxCols, onColSpanChange,
       <div className="flex items-center gap-1.5 shrink-0">
         <Label className="text-[10px] text-muted-foreground">Row</Label>
         <Select value={String(row)} onValueChange={(v) => onRowChange(Number(v))}>
-          <SelectTrigger className="w-16 h-8 bg-muted border-border text-xs">
+          <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -75,11 +77,22 @@ function SortableWidgetItem({ id, label, colSpan, row, maxCols, onColSpanChange,
         </Select>
         <Label className="text-[10px] text-muted-foreground">Cols</Label>
         <Select value={String(colSpan)} onValueChange={(v) => onColSpanChange(Number(v))}>
-          <SelectTrigger className="w-16 h-8 bg-muted border-border text-xs">
+          <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {Array.from({ length: maxCols }, (_, i) => i + 1).map((n) => (
+              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Label className="text-[10px] text-muted-foreground">Rows</Label>
+        <Select value={String(rowSpan)} onValueChange={(v) => onRowSpanChange(Number(v))}>
+          <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => (
               <SelectItem key={n} value={String(n)}>{n}</SelectItem>
             ))}
           </SelectContent>
@@ -95,6 +108,7 @@ function getDefaultWidgetIds(tempCount: number): string[] {
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
     "electricity",
     "calendar",
+    "photos",
   ];
 }
 
@@ -109,6 +123,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [electricityEntity, setElectricityEntity] = useState(config.electricityPriceEntity);
   const [widgetLayouts, setWidgetLayouts] = useState<Record<string, WidgetLayout>>(config.widgetLayouts || {});
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
+  const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10 });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const defaults = getDefaultWidgetIds(config.temperatureEntities.length);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
@@ -122,7 +138,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
   // Rebuild widget order when temp entities change
   const widgetItems = useMemo(() => {
-    const labelMap: Record<string, string> = { clock: "Clock", electricity: "Electricity Price", calendar: "Calendar" };
+    const labelMap: Record<string, string> = { clock: "Clock", electricity: "Electricity Price", calendar: "Calendar", photos: "Photo Gallery" };
     tempEntities.forEach((e, i) => { labelMap[`temp_${i}`] = e.label || `Sensor ${i + 1}`; });
 
     const defaults = getDefaultWidgetIds(tempEntities.length);
@@ -134,16 +150,17 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: id === "electricity" || id === "calendar" ? 2 : 1,
+      defaultSpan: id === "electricity" || id === "calendar" || id === "photos" ? 2 : 1,
     }));
   }, [widgetOrder, tempEntities]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
+  const getRowSpan = (id: string, fallback = 1) => widgetLayouts[id]?.rowSpan || fallback;
   const updateLayout = (id: string, updates: Partial<WidgetLayout>) =>
     setWidgetLayouts((prev) => ({
       ...prev,
-      [id]: { colSpan: prev[id]?.colSpan || 1, row: prev[id]?.row || 1, ...updates },
+      [id]: { colSpan: prev[id]?.colSpan || 1, row: prev[id]?.row || 1, rowSpan: prev[id]?.rowSpan || 1, ...updates },
     }));
 
   const sensors = useSensors(
@@ -175,6 +192,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       widgetOrder: finalOrder,
       gridColumns,
       configBackendUrl,
+      photoWidget: photoConfig,
     });
     setOpen(false);
   };
@@ -438,21 +456,90 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-2">
-                  {widgetItems.map(({ id, label, defaultSpan }) => (
-                    <SortableWidgetItem
-                      key={id}
-                      id={id}
-                      label={label}
-                      colSpan={getColSpan(id, defaultSpan)}
-                      row={getRow(id, id === "electricity" || id === "calendar" ? 2 : 1)}
-                      maxCols={gridColumns}
-                      onColSpanChange={(span) => updateLayout(id, { colSpan: span })}
-                      onRowChange={(row) => updateLayout(id, { row })}
-                    />
-                  ))}
+                  {widgetItems.map(({ id, label, defaultSpan }) => {
+                    const defaultRow = id === "electricity" || id === "calendar" ? 2 : 1;
+                    return (
+                      <SortableWidgetItem
+                        key={id}
+                        id={id}
+                        label={label}
+                        colSpan={getColSpan(id, defaultSpan)}
+                        row={getRow(id, defaultRow)}
+                        rowSpan={getRowSpan(id, 1)}
+                        maxCols={gridColumns}
+                        onColSpanChange={(span) => updateLayout(id, { colSpan: span })}
+                        onRowChange={(row) => updateLayout(id, { row })}
+                        onRowSpanChange={(rowSpan) => updateLayout(id, { rowSpan })}
+                      />
+                    );
+                  })}
                 </div>
               </SortableContext>
             </DndContext>
+          </section>
+
+          {/* Photo Gallery */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+              Photo Gallery
+            </h3>
+            <div>
+              <Label className="text-xs text-muted-foreground">Rotation Interval (seconds)</Label>
+              <Input
+                value={photoConfig.intervalSeconds}
+                onChange={(e) => setPhotoConfig((prev) => ({ ...prev, intervalSeconds: Number(e.target.value) || 10 }))}
+                type="number"
+                min={1}
+                className="mt-1 bg-muted border-border"
+              />
+            </div>
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  files.forEach((file) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const dataUrl = reader.result as string;
+                      setPhotoConfig((prev) => ({ ...prev, photos: [...prev.photos, dataUrl] }));
+                    };
+                    reader.readAsDataURL(file);
+                  });
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full"
+              >
+                <Upload className="mr-2 h-3 w-3" /> Upload Photos
+              </Button>
+            </div>
+            {photoConfig.photos.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {photoConfig.photos.map((photo, i) => (
+                  <div key={i} className="group relative aspect-square overflow-hidden rounded-md border border-border/50">
+                    <img src={photo} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      onClick={() => setPhotoConfig((prev) => ({ ...prev, photos: prev.photos.filter((_, j) => j !== i) }))}
+                      className="absolute right-1 top-1 rounded-full bg-destructive/80 p-0.5 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Photos are stored as base64 in config. For many/large photos, use a config backend.
+            </p>
           </section>
 
           <Button onClick={handleSave} className="w-full">

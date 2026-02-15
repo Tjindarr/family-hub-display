@@ -3,6 +3,7 @@ import ClockWidget from "@/components/ClockWidget";
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
 import ElectricityWidget from "@/components/ElectricityWidget";
+import PhotoWidget from "@/components/PhotoWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { useKioskMode } from "@/hooks/useKioskMode";
@@ -21,6 +22,7 @@ function getDefaultWidgetIds(tempCount: number): string[] {
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
     "electricity",
     "calendar",
+    "photos",
   ];
 }
 
@@ -50,6 +52,7 @@ const Index = () => {
     if (id === "clock") return <ClockWidget />;
     if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} />;
     if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} />;
+    if (id === "photos") return <PhotoWidget config={config.photoWidget} />;
     if (id.startsWith("temp_")) {
       const idx = parseInt(id.split("_")[1], 10);
       const sensor = tempSensors[idx];
@@ -62,24 +65,31 @@ const Index = () => {
   const getColSpan = (id: string) => {
     if (config.widgetLayouts?.[id]?.colSpan) return config.widgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar") return 2;
+    if (id === "photos") return 2;
     return 1;
   };
 
   const getRow = (id: string) => {
     if (config.widgetLayouts?.[id]?.row) return config.widgetLayouts[id].row;
     if (id === "electricity" || id === "calendar") return 2;
+    if (id === "photos") return 1;
     return 1;
+  };
+
+  const getRowSpan = (id: string) => {
+    return config.widgetLayouts?.[id]?.rowSpan || 1;
   };
 
   // Group widgets by row, then stretch last widget per row to fill
   const rows = useMemo(() => {
-    const rowMap = new Map<number, { id: string; span: number }[]>();
+    const rowMap = new Map<number, { id: string; span: number; rowSpan: number }[]>();
 
     for (const id of allWidgetIds) {
       const row = getRow(id);
       const span = Math.min(getColSpan(id), gridColumns);
+      const rSpan = getRowSpan(id);
       if (!rowMap.has(row)) rowMap.set(row, []);
-      rowMap.get(row)!.push({ id, span });
+      rowMap.get(row)!.push({ id, span, rowSpan: rSpan });
     }
 
     const sortedRows = [...rowMap.entries()].sort((a, b) => a[0] - b[0]);
@@ -136,11 +146,18 @@ const Index = () => {
         className="grid gap-4 md:gap-5"
         style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}
       >
-        {rows.flat().map(({ id, span }) => {
+        {rows.flat().map(({ id, span, rowSpan }) => {
           const widget = renderWidget(id);
           if (!widget) return null;
           return (
-            <div key={id} style={{ gridColumn: `span ${span}` }}>
+            <div
+              key={id}
+              style={{
+                gridColumn: `span ${span}`,
+                gridRow: rowSpan > 1 ? `span ${rowSpan}` : undefined,
+                minHeight: rowSpan > 1 ? `${rowSpan * 200}px` : undefined,
+              }}
+            >
               {widget}
             </div>
           );
