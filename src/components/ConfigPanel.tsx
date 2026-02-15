@@ -119,7 +119,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [haUrl, setHaUrl] = useState(config.haUrl);
   const [haToken, setHaToken] = useState(config.haToken);
   const [refreshInterval, setRefreshInterval] = useState(config.refreshInterval);
-  const [configBackendUrl, setConfigBackendUrl] = useState(config.configBackendUrl || "");
+  // configBackendUrl removed — config persistence is now built-in
   const [tempEntities, setTempEntities] = useState<TemperatureEntityConfig[]>(config.temperatureEntities);
   const [calendarEntityConfigs, setCalendarEntityConfigs] = useState<CalendarEntityConfig[]>(
     config.calendarEntityConfigs && config.calendarEntityConfigs.length > 0
@@ -203,7 +203,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       widgetLayouts,
       widgetOrder: finalOrder,
       gridColumns,
-      configBackendUrl,
+      configBackendUrl: "",
       photoWidget: photoConfig,
       personEntities,
       weatherConfig,
@@ -295,24 +295,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
             </div>
           </section>
 
-          {/* Config Backend */}
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
-              Config Persistence
-            </h3>
-            <div>
-              <Label className="text-xs text-muted-foreground">Backend URL (json-server)</Label>
-              <Input
-                value={configBackendUrl}
-                onChange={(e) => setConfigBackendUrl(e.target.value)}
-                placeholder="http://192.168.1.x:3001"
-                className="mt-1 bg-muted border-border"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Point to a json-server instance to persist settings across browsers. Leave empty to use browser storage only.
-              </p>
-            </div>
-          </section>
+          {/* Config persistence is now built-in via /api/config */}
 
           {/* Temperature Sensors */}
           <section className="space-y-3">
