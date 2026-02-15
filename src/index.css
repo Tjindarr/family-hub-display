@@ -62,6 +62,10 @@
     @apply border-border;
   }
 
+  html {
+    font-size: clamp(14px, 1.2vw, 18px);
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
