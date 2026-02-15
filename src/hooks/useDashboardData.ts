@@ -204,7 +204,6 @@ export function useWeatherData(config: DashboardConfig) {
       const client = createHAClient(config);
       const state = await client.getState(wc.entityId);
       const attrs = state.attributes || {};
-      console.log("[Weather] State for", wc.entityId, ":", state.state, "attrs keys:", Object.keys(attrs));
 
       const current = {
         temperature: attrs.temperature ?? parseFloat(state.state) ?? 0,
@@ -219,18 +218,14 @@ export function useWeatherData(config: DashboardConfig) {
         windGustSpeed: attrs.wind_gust_speed,
       };
 
-      // Try the new service call first (HA 2024.3+), fall back to attributes
       let rawForecast: any[] = [];
       try {
         rawForecast = await client.getWeatherForecast(wc.entityId, "daily");
-        console.log("[Weather] Service call result:", JSON.stringify(rawForecast?.slice(0, 2)));
-      } catch (e) {
-        console.warn("[Weather] Service call failed:", e);
+      } catch {
+        // ignore
       }
-      // Fallback to state attributes if service call returned nothing
       if (!rawForecast || rawForecast.length === 0) {
         rawForecast = attrs.forecast || [];
-        console.log("[Weather] Fallback to attrs.forecast, length:", rawForecast.length);
       }
 
       const forecast = rawForecast.slice(0, wc.forecastDays).map((f: any) => ({

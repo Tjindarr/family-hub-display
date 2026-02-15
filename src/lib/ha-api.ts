@@ -65,7 +65,7 @@ class HomeAssistantAPI {
           type,
         }),
       });
-      console.log("[Weather] Raw service response:", JSON.stringify(result).slice(0, 500));
+      
       
       // The REST API may wrap in service_response
       const data = result?.service_response || result;

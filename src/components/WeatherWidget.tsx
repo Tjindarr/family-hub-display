@@ -37,14 +37,16 @@ interface WeatherWidgetProps {
 
 function getWeatherIcon(condition: string, size = 20) {
   const c = condition.toLowerCase();
-  if (c.includes("thunder") || c.includes("lightning")) return <CloudLightning size={size} className="text-yellow-400" />;
-  if (c.includes("snow") || c.includes("sleet") || c.includes("hail")) return <CloudSnow size={size} className="text-blue-200" />;
-  if (c.includes("rain") || c.includes("pouring")) return <CloudRain size={size} className="text-blue-400" />;
+  if (c.includes("thunder") || c.includes("lightning")) return <CloudLightning size={size} className="text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]" />;
+  if (c.includes("snow") || c.includes("sleet") || c.includes("hail")) return <CloudSnow size={size} className="text-sky-300 drop-shadow-[0_0_4px_rgba(125,211,252,0.5)]" />;
+  if (c.includes("pouring") || c === "rainy") return <CloudRain size={size} className="text-blue-400 drop-shadow-[0_0_4px_rgba(96,165,250,0.5)]" />;
   if (c.includes("drizzle")) return <CloudDrizzle size={size} className="text-blue-300" />;
-  if (c.includes("fog") || c.includes("mist") || c.includes("haz")) return <CloudFog size={size} className="text-muted-foreground" />;
-  if (c.includes("cloud") || c.includes("overcast") || c.includes("partlycloudy")) return <Cloud size={size} className="text-muted-foreground" />;
-  if (c.includes("clear") || c.includes("sunny")) return <Sun size={size} className="text-yellow-400" />;
-  return <Cloud size={size} className="text-muted-foreground" />;
+  if (c.includes("fog") || c.includes("mist") || c.includes("haz")) return <CloudFog size={size} className="text-slate-400" />;
+  if (c === "partlycloudy" || c.includes("partly")) return <Cloud size={size} className="text-slate-300" />;
+  if (c.includes("cloud") || c.includes("overcast")) return <Cloud size={size} className="text-slate-400" />;
+  if (c.includes("clear-night") || c === "clear") return <Sun size={size} className="text-indigo-300 drop-shadow-[0_0_4px_rgba(165,180,252,0.5)]" />;
+  if (c.includes("sunny") || c.includes("clear")) return <Sun size={size} className="text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.6)]" />;
+  return <Cloud size={size} className="text-slate-400" />;
 }
 
 function formatShortDay(dateStr: string) {
