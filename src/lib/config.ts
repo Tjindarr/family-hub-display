@@ -1,0 +1,70 @@
+export interface DashboardConfig {
+  haUrl: string;
+  haToken: string;
+  refreshInterval: number; // seconds
+  calendarEntities: string[];
+  temperatureEntities: TemperatureEntityConfig[];
+  electricityPriceEntity: string;
+  electricityForecastEntity: string;
+}
+
+export interface TemperatureEntityConfig {
+  entityId: string;
+  label: string;
+  color: string;
+}
+
+export interface HAState {
+  entity_id: string;
+  state: string;
+  attributes: Record<string, any>;
+  last_changed: string;
+  last_updated: string;
+}
+
+export interface HACalendarEvent {
+  summary: string;
+  start: { dateTime?: string; date?: string };
+  end: { dateTime?: string; date?: string };
+  description?: string;
+  location?: string;
+}
+
+export interface ElectricityPrice {
+  time: string;
+  price: number;
+}
+
+const DEFAULT_CONFIG: DashboardConfig = {
+  haUrl: "",
+  haToken: "",
+  refreshInterval: 30,
+  calendarEntities: ["calendar.family"],
+  temperatureEntities: [
+    { entityId: "sensor.living_room_temperature", label: "Living Room", color: "hsl(174, 72%, 50%)" },
+    { entityId: "sensor.bedroom_temperature", label: "Bedroom", color: "hsl(32, 95%, 55%)" },
+    { entityId: "sensor.outside_temperature", label: "Outside", color: "hsl(258, 60%, 60%)" },
+  ],
+  electricityPriceEntity: "sensor.electricity_price",
+  electricityForecastEntity: "sensor.electricity_price_forecast",
+};
+
+export function loadConfig(): DashboardConfig {
+  try {
+    const stored = localStorage.getItem("ha-dashboard-config");
+    if (stored) {
+      return { ...DEFAULT_CONFIG, ...JSON.parse(stored) };
+    }
+  } catch (e) {
+    console.error("Failed to load config:", e);
+  }
+  return DEFAULT_CONFIG;
+}
+
+export function saveConfig(config: DashboardConfig): void {
+  localStorage.setItem("ha-dashboard-config", JSON.stringify(config));
+}
+
+export function isConfigured(config: DashboardConfig): boolean {
+  return config.haUrl.length > 0 && config.haToken.length > 0;
+}
