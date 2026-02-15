@@ -56,7 +56,7 @@ class HomeAssistantAPI {
 
   async getWeatherForecast(entityId: string, type: "daily" | "hourly" | "twice_daily" = "daily"): Promise<any[]> {
     try {
-      const result = await this.request<any>("/services/weather/get_forecasts", {
+      const result = await this.request<any>("/services/weather/get_forecasts?return_response", {
         method: "POST",
         body: JSON.stringify({
           target: { entity_id: entityId },
