@@ -430,18 +430,30 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       className="mt-1 bg-muted border-border text-sm"
                     />
                   </div>
-                  <div className="w-40">
+                  <div className="w-48">
                     <Label className="text-xs text-muted-foreground">Text Color</Label>
-                    <Input
-                      value={cal.color}
-                      onChange={(e) => {
-                        const updated = [...calendarEntityConfigs];
-                        updated[i] = { ...updated[i], color: e.target.value };
-                        setCalendarEntityConfigs(updated);
-                      }}
-                      placeholder="hsl(200, 70%, 60%)"
-                      className="mt-1 bg-muted border-border text-sm"
-                    />
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={cal.color && cal.color.startsWith("#") ? cal.color : "#ffffff"}
+                        onChange={(e) => {
+                          const updated = [...calendarEntityConfigs];
+                          updated[i] = { ...updated[i], color: e.target.value };
+                          setCalendarEntityConfigs(updated);
+                        }}
+                        className="h-8 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                      />
+                      <Input
+                        value={cal.color}
+                        onChange={(e) => {
+                          const updated = [...calendarEntityConfigs];
+                          updated[i] = { ...updated[i], color: e.target.value };
+                          setCalendarEntityConfigs(updated);
+                        }}
+                        placeholder="#3b82f6"
+                        className="bg-muted border-border text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
