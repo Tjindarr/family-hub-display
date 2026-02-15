@@ -38,7 +38,7 @@ app.put("/api/config", (req, res) => {
 app.use(express.static("/usr/share/nginx/html"));
 
 // SPA fallback
-app.get("*", (_req, res) => {
+app.get("/{*splat}", (_req, res) => {
   res.sendFile("/usr/share/nginx/html/index.html");
 });
 
