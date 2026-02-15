@@ -24,6 +24,16 @@ export interface WeatherConfig {
   showSunset: boolean;
 }
 
+export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black";
+
+export const THEMES: { id: ThemeId; label: string }[] = [
+  { id: "midnight-teal", label: "Midnight Teal" },
+  { id: "charcoal", label: "Charcoal" },
+  { id: "deep-ocean", label: "Deep Ocean" },
+  { id: "warm-ember", label: "Warm Ember" },
+  { id: "amoled-black", label: "AMOLED Black" },
+];
+
 export interface DashboardConfig {
   haUrl: string;
   haToken: string;
@@ -42,6 +52,7 @@ export interface DashboardConfig {
   photoWidget: PhotoWidgetConfig;
   personEntities: PersonEntityConfig[];
   weatherConfig: WeatherConfig;
+  theme: ThemeId;
 }
 
 export interface TemperatureEntityConfig {
@@ -118,6 +129,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
     showSunrise: true,
     showSunset: true,
   },
+  theme: "midnight-teal",
 };
 
 export function loadConfig(): DashboardConfig {
