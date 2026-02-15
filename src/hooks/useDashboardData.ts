@@ -619,32 +619,36 @@ export function useEnergyUsageData(config: DashboardConfig) {
 }
 
 export function useFoodMenuData(config: DashboardConfig) {
-  const [events, setEvents] = useState<{ summary: string; date: string; description?: string }[]>([]);
+  const [days, setDays] = useState<{ date: string; meals: string[] }[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     const fc = config.foodMenuConfig;
 
     if (!isConfigured(config)) {
-      // Mock data
       const now = new Date();
-      const days = fc?.days || 5;
-      const meals = ["Pasta Bolognese", "Chicken Stir Fry", "Fish Tacos", "Veggie Curry", "Meatballs & Mash", "Salmon & Rice", "Pizza Night"];
-      const mock = Array.from({ length: days }, (_, i) => {
+      const numDays = fc?.days || 5;
+      const allMeals = [
+        ["Pasta Bolognese", "Caesar Salad"],
+        ["Chicken Stir Fry"],
+        ["Fish Tacos", "Grilled Veggies"],
+        ["Veggie Curry", "Naan Bread", "Raita"],
+        ["Meatballs & Mash"],
+        ["Salmon & Rice"],
+        ["Pizza Night", "Garlic Bread"],
+      ];
+      const mock = Array.from({ length: numDays }, (_, i) => {
         const d = new Date(now);
         d.setDate(d.getDate() + i);
-        return {
-          summary: meals[i % meals.length],
-          date: d.toISOString().split("T")[0],
-        };
+        return { date: d.toISOString().split("T")[0], meals: allMeals[i % allMeals.length] };
       });
-      setEvents(mock);
+      setDays(mock);
       setLoading(false);
       return;
     }
 
     if (!fc?.calendarEntity) {
-      setEvents([]);
+      setDays([]);
       setLoading(false);
       return;
     }
@@ -654,16 +658,19 @@ export function useFoodMenuData(config: DashboardConfig) {
       const now = new Date();
       const end = new Date(now.getTime() + (fc.days || 5) * 86400000);
       const raw = await client.getCalendarEvents(fc.calendarEntity, now.toISOString(), end.toISOString());
-      // Map to one event per day (first event wins per date)
-      const byDate = new Map<string, { summary: string; date: string; description?: string }>();
+      // Group all events by date
+      const byDate = new Map<string, string[]>();
       for (const ev of raw) {
         const dt = ev.start.date || (ev.start.dateTime ? ev.start.dateTime.split("T")[0] : "");
-        if (dt && !byDate.has(dt)) {
-          byDate.set(dt, { summary: ev.summary, date: dt, description: ev.description });
+        if (dt) {
+          if (!byDate.has(dt)) byDate.set(dt, []);
+          byDate.get(dt)!.push(ev.summary);
         }
       }
-      const sorted = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
-      setEvents(sorted);
+      const sorted = [...byDate.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([date, meals]) => ({ date, meals }));
+      setDays(sorted);
     } catch (err) {
       console.error("Failed to fetch food menu:", err);
     } finally {
@@ -677,5 +684,5 @@ export function useFoodMenuData(config: DashboardConfig) {
     return () => clearInterval(interval);
   }, [fetchData, config.refreshInterval]);
 
-  return { menuEvents: events, loading };
+  return { menuDays: days, loading };
 }
