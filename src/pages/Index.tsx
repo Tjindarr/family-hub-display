@@ -16,9 +16,9 @@ import {
 
 const Index = () => {
   const { config, updateConfig, isConfigured } = useDashboardConfig();
-  const { series: tempSeries, loading: tempLoading } = useTemperatureData(config);
+  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config);
   const { events, loading: calLoading } = useCalendarData(config);
-  const { prices, loading: priceLoading } = useElectricityPrices(config);
+  const { nordpool, loading: priceLoading } = useElectricityPrices(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
 
   return (
@@ -54,17 +54,26 @@ const Index = () => {
       )}
 
       {/* Grid */}
-      <div className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+        {/* Clock */}
         <div className="md:col-span-1">
           <ClockWidget />
         </div>
-        <div className="xl:col-span-2">
-          <ElectricityWidget prices={prices} loading={priceLoading} />
+
+        {/* Temperature sensors - individual small cards */}
+        {tempSensors.map((sensor) => (
+          <div key={sensor.entityId} className="md:col-span-1">
+            <TemperatureWidget sensor={sensor} loading={tempLoading} />
+          </div>
+        ))}
+
+        {/* Electricity - full width */}
+        <div className="md:col-span-2 xl:col-span-4">
+          <ElectricityWidget nordpool={nordpool} loading={priceLoading} />
         </div>
-        <div className="md:col-span-2">
-          <TemperatureWidget series={tempSeries} loading={tempLoading} />
-        </div>
-        <div className="md:col-span-1 xl:col-span-1">
+
+        {/* Calendar */}
+        <div className="md:col-span-2 xl:col-span-4">
           <CalendarWidget events={events} loading={calLoading} />
         </div>
       </div>
