@@ -134,7 +134,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
   const [rowColumns, setRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
   const [rowHeights, setRowHeights] = useState<Record<number, number>>(config.rowHeights || {});
-  const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10 });
+  const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
@@ -828,8 +828,24 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 onChange={(e) => setPhotoConfig((prev) => ({ ...prev, intervalSeconds: Number(e.target.value) || 10 }))}
                 type="number"
                 min={1}
-                className="mt-1 bg-muted border-border"
+              className="mt-1 bg-muted border-border"
               />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Display Mode</Label>
+              <Select
+                value={photoConfig.displayMode || "contain"}
+                onValueChange={(v) => setPhotoConfig((prev) => ({ ...prev, displayMode: v as "contain" | "cover" | "blur-fill" }))}
+              >
+                <SelectTrigger className="mt-1 bg-muted border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="contain">Contain (full image, may letterbox)</SelectItem>
+                  <SelectItem value="cover">Cover (fill frame, may crop)</SelectItem>
+                  <SelectItem value="blur-fill">Blur fill (full image, blurred bg)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <input
