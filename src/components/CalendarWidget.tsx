@@ -1,5 +1,5 @@
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
-import { Calendar, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import type { HACalendarEvent } from "@/lib/config";
 
 interface EnrichedCalendarEvent extends HACalendarEvent {
@@ -41,12 +41,6 @@ export default function CalendarWidget({ events, loading }: CalendarWidgetProps)
 
   return (
     <div className="widget-card h-full flex flex-col">
-      <div className="mb-4 flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Calendar
-        </h3>
-      </div>
 
       {loading ? (
         <div className="space-y-3">

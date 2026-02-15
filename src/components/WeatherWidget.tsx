@@ -1,5 +1,5 @@
-import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, CloudFog, CloudSun, CloudMoon, Sunrise, Sunset, Droplets, Wind, Thermometer } from "lucide-react";
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, ComposedChart, CartesianGrid, Tooltip, Cell } from "recharts";
+import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, CloudFog, CloudSun, CloudMoon, Sunrise, Sunset, Droplets, Wind } from "lucide-react";
+import { Area, YAxis, ResponsiveContainer, ComposedChart, Bar, Tooltip } from "recharts";
 
 export interface WeatherForecastDay {
   date: string;
@@ -37,7 +37,6 @@ interface WeatherWidgetProps {
 
 function getWeatherIcon(condition: string, size = 20) {
   const c = condition.toLowerCase().replace(/[_-]/g, "");
-  // Most specific first
   if (c === "clearnight") return <Moon size={size} className="text-indigo-300 drop-shadow-[0_0_4px_rgba(165,180,252,0.6)]" />;
   if (c === "partlycloudy") return <CloudSun size={size} className="text-amber-300 drop-shadow-[0_0_4px_rgba(252,211,77,0.5)]" />;
   if (c.includes("thunder") || c.includes("lightning")) return <CloudLightning size={size} className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" />;
@@ -67,10 +66,6 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
   if (loading) {
     return (
       <div className="widget-card h-full">
-        <div className="mb-4 flex items-center gap-2">
-          <Sun className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Weather</h3>
-        </div>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />
@@ -80,10 +75,8 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
     );
   }
 
-  // Find today's forecast for sunrise/sunset
   const todayForecast = weather.forecast.find((d) => isToday(d.date));
 
-  // Chart data
   const chartData = weather.forecast.map((day) => ({
     name: formatShortDay(day.date),
     high: Math.round(day.tempHigh),
@@ -93,7 +86,6 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
     date: day.date,
   }));
 
-  // Temp range for chart domain
   const allTemps = chartData.flatMap((d) => [d.high, d.low]);
   const minTemp = Math.min(...allTemps) - 3;
   const maxTemp = Math.max(...allTemps) + 3;
@@ -101,32 +93,6 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
 
   return (
     <div className="widget-card h-full">
-      {/* Header row: title + current conditions */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sun className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Weather</h3>
-        </div>
-
-        {/* Sunrise/Sunset for today only */}
-        {(showSunrise || showSunset) && todayForecast && (
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {showSunrise && todayForecast.sunrise && (
-              <div className="flex items-center gap-1">
-                <Sunrise className="h-3.5 w-3.5 text-yellow-500" />
-                <span>{todayForecast.sunrise}</span>
-              </div>
-            )}
-            {showSunset && todayForecast.sunset && (
-              <div className="flex items-center gap-1">
-                <Sunset className="h-3.5 w-3.5 text-orange-400" />
-                <span>{todayForecast.sunset}</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* Current conditions */}
       <div className="mb-4 flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 p-3">
         {getWeatherIcon(weather.current.condition, 40)}
@@ -135,6 +101,22 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
           <div className="text-xs capitalize text-muted-foreground">{weather.current.condition.replace(/_/g, " ")}</div>
         </div>
         <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+          {(showSunrise || showSunset) && todayForecast && (
+            <>
+              {showSunrise && todayForecast.sunrise && (
+                <div className="flex items-center gap-1">
+                  <Sunrise className="h-3.5 w-3.5 text-yellow-500" />
+                  <span>{todayForecast.sunrise}</span>
+                </div>
+              )}
+              {showSunset && todayForecast.sunset && (
+                <div className="flex items-center gap-1">
+                  <Sunset className="h-3.5 w-3.5 text-orange-400" />
+                  <span>{todayForecast.sunset}</span>
+                </div>
+              )}
+            </>
+          )}
           <div className="flex items-center gap-1">
             <Droplets className="h-3 w-3" />
             <span>{todayForecast?.precipitation != null ? `${todayForecast.precipitation} mm` : "0 mm"}</span>
@@ -158,7 +140,6 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
           ))}
         </div>
 
-        {/* Combined chart: precipitation bars + temp lines */}
         <ResponsiveContainer width="100%" height={120}>
           <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
             {showPrecipitation && (
