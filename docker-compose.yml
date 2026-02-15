@@ -5,3 +5,12 @@ services:
     ports:
       - "3000:80"
     restart: unless-stopped
+
+  config-db:
+    image: vimagick/json-server
+    container_name: ha-dashboard-config-db
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./config-db.json:/data/db.json
+    restart: unless-stopped

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { DashboardConfig, loadConfig, saveConfig, isConfigured } from "@/lib/config";
+import { DashboardConfig, loadConfig, saveConfig, saveRemoteConfig, loadRemoteConfig, isConfigured } from "@/lib/config";
 import {
   createHAClient,
   generateMockTemperatureHistory,
@@ -10,11 +10,36 @@ import type { HACalendarEvent, ElectricityPrice, NordpoolPricePoint } from "@/li
 
 export function useDashboardConfig() {
   const [config, setConfig] = useState<DashboardConfig>(loadConfig);
+  const [remoteLoaded, setRemoteLoaded] = useState(false);
+
+  // On mount, if a backend URL is configured, load remote config
+  useEffect(() => {
+    const localConfig = loadConfig();
+    if (localConfig.configBackendUrl && !remoteLoaded) {
+      loadRemoteConfig(localConfig.configBackendUrl).then((remote) => {
+        if (remote) {
+          // Keep the backend URL from local (bootstrap)
+          const merged = { ...remote, configBackendUrl: localConfig.configBackendUrl };
+          setConfig(merged);
+          saveConfig(merged); // cache locally too
+        }
+        setRemoteLoaded(true);
+      });
+    } else {
+      setRemoteLoaded(true);
+    }
+  }, []);
 
   const updateConfig = useCallback((updates: Partial<DashboardConfig>) => {
     setConfig((prev) => {
       const next = { ...prev, ...updates };
       saveConfig(next);
+      // Also save to remote if configured
+      if (next.configBackendUrl) {
+        saveRemoteConfig(next.configBackendUrl, next).catch(() => {
+          console.warn("Failed to save to remote backend");
+        });
+      }
       return next;
     });
   }, []);
