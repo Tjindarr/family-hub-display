@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ClockWidget from "@/components/ClockWidget";
+
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
 import ElectricityWidget from "@/components/ElectricityWidget";
@@ -28,7 +28,7 @@ import {
 
 function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
   return [
-    "clock",
+    
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     ...(hasCar ? ["car"] : []),
@@ -79,7 +79,7 @@ const Index = () => {
   }, [config.widgetOrder, config.temperatureEntities.length, personCount, hasCar, hasEnergy]);
 
   const renderWidget = (id: string) => {
-    if (id === "clock") return <ClockWidget />;
+    
     if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} />;
     if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} />;
     if (id === "weather") return (

@@ -105,7 +105,7 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, maxCols, onColSp
 
 function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
   return [
-    "clock",
+    
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     ...(hasCar ? ["car"] : []),
@@ -159,7 +159,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   // Rebuild widget order when temp entities change
   const widgetItems = useMemo(() => {
     const labelMap: Record<string, string> = {
-      clock: "Clock", electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
+      electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
       car: "Car / EV",
       monthly_energy: "Monthly Energy", power_usage: "Power Usage",
     };
