@@ -1,4 +1,4 @@
-import { MapPin, Battery, BatteryCharging, Navigation } from "lucide-react";
+import { MapPin, Navigation } from "lucide-react";
 
 export interface PersonData {
   name: string;
@@ -24,6 +24,38 @@ function getBatteryBg(percent: number): string {
   if (percent >= 60) return "hsl(120 50% 50% / 0.15)";
   if (percent >= 30) return "hsl(32 95% 55% / 0.15)";
   return "hsl(0 72% 55% / 0.15)";
+}
+
+function BatteryIcon({ percent, isCharging, color }: { percent: number; isCharging: boolean; color: string }) {
+  // 4 bars max
+  const bars = Math.round((percent / 100) * 4);
+  return (
+    <svg width="20" height="12" viewBox="0 0 20 12" fill="none" className="shrink-0">
+      {/* Battery body */}
+      <rect x="0.5" y="0.5" width="16" height="11" rx="2" stroke={color} strokeWidth="1" fill="none" />
+      {/* Battery tip */}
+      <rect x="17" y="3" width="2.5" height="6" rx="1" fill={color} opacity="0.6" />
+      {/* Bars */}
+      {[0, 1, 2, 3].map((i) => (
+        <rect
+          key={i}
+          x={2 + i * 3.7}
+          y="2.5"
+          width="2.8"
+          height="7"
+          rx="0.5"
+          fill={i < bars ? color : "transparent"}
+          opacity={i < bars ? 0.9 : 0.15}
+          stroke={i >= bars ? color : "none"}
+          strokeWidth={i >= bars ? 0.3 : 0}
+        />
+      ))}
+      {/* Charging bolt */}
+      {isCharging && (
+        <polygon points="9,1 6,6.5 9,6.5 8,11 12,5.5 9,5.5 10,1" fill={color} opacity="0.9" />
+      )}
+    </svg>
+  );
 }
 
 export default function PersonWidget({ person, loading }: PersonWidgetProps) {
@@ -55,7 +87,7 @@ export default function PersonWidget({ person, loading }: PersonWidgetProps) {
         )}
       </div>
 
-      {/* Attributes - left-aligned */}
+      {/* Attributes */}
       <div className="flex flex-col justify-center gap-1.5 sm:gap-2 min-w-0">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-primary" />
@@ -63,23 +95,21 @@ export default function PersonWidget({ person, loading }: PersonWidgetProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {person.isCharging ? (
-            <BatteryCharging className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" style={{ color: batteryColor }} />
-          ) : (
-            <Battery className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" style={{ color: batteryColor }} />
-          )}
-          {person.batteryPercent !== null ? (
-            <div className="flex items-center gap-1.5">
-              <span
-                className="rounded-full px-2 py-0.5 text-xs sm:text-sm font-medium"
-                style={{ backgroundColor: batteryBg, color: batteryColor }}
-              >
-                {Math.round(person.batteryPercent)}%
-              </span>
-              {person.isCharging && (
-                <span className="text-[10px] sm:text-xs text-muted-foreground">Charging</span>
-              )}
-            </div>
+          {person.batteryPercent !== null && batteryColor ? (
+            <>
+              <BatteryIcon percent={person.batteryPercent} isCharging={person.isCharging} color={batteryColor} />
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="rounded-full px-2 py-0.5 text-xs sm:text-sm font-medium"
+                  style={{ backgroundColor: batteryBg, color: batteryColor }}
+                >
+                  {Math.round(person.batteryPercent)}%
+                </span>
+                {person.isCharging && (
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">Charging</span>
+                )}
+              </div>
+            </>
           ) : (
             <span className="text-sm sm:text-base text-muted-foreground">—</span>
           )}

@@ -48,12 +48,12 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
   }
 
   return (
-    <Card className="h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur">
-      <CardContent className="relative h-full p-0 overflow-hidden">
+    <Card className="h-full max-h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur" style={{ minHeight: 0 }}>
+      <CardContent className="relative h-full max-h-full p-0 overflow-hidden" style={{ minHeight: 0 }}>
         <img
           src={photos[currentIndex]}
           alt={`Photo ${currentIndex + 1}`}
-          className="h-full w-full object-cover transition-opacity duration-500"
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
           style={{ opacity: fade ? 1 : 0 }}
         />
         {photos.length > 1 && (
