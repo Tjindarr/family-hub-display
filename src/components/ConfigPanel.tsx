@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig } from "@/lib/config";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
@@ -112,6 +112,7 @@ function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boo
     "electricity",
     ...(hasEnergy ? ["monthly_energy", "power_usage"] : []),
     "calendar",
+    "food_menu",
     "weather",
     "photos",
   ];
@@ -142,6 +143,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
   const [carConfig, setCarConfig] = useState<CarConfig>(config.carConfig || { chargerEntity: "", fuelRangeEntity: "", batteryEntity: "" });
   const [energyConfig, setEnergyConfig] = useState<EnergyUsageConfig>(config.energyUsageConfig || { monthlyCostEntity: "", monthlyConsumptionEntity: "", currentPowerEntity: "", maxPowerEntity: "" });
+  const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
@@ -160,7 +162,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const widgetItems = useMemo(() => {
     const labelMap: Record<string, string> = {
       electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
-      car: "Car / EV",
+      car: "Car / EV", food_menu: "Food Menu",
       monthly_energy: "Monthly Energy", power_usage: "Power Usage",
     };
     tempEntities.forEach((e, i) => { labelMap[`temp_${i}`] = e.label || `Sensor ${i + 1}`; });
@@ -177,7 +179,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage"].includes(id) ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage", "food_menu"].includes(id) ? 2 : 1,
     }));
   }, [widgetOrder, tempEntities, personEntities]);
 
@@ -228,6 +230,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       theme,
       carConfig,
       energyUsageConfig: energyConfig,
+      foodMenuConfig: foodMenuConfig,
     });
     setOpen(false);
   };
@@ -486,7 +489,35 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
             ))}
           </section>
 
-          {/* Weather */}
+          {/* Food Menu */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+              Food Menu
+            </h3>
+            <div>
+              <Label className="text-xs text-muted-foreground">Calendar Entity</Label>
+              <EntityAutocomplete
+                value={foodMenuConfig.calendarEntity}
+                onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, calendarEntity: val }))}
+                config={config}
+                domainFilter="calendar"
+                placeholder="calendar.food_menu"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Days to Show</Label>
+              <Input
+                value={foodMenuConfig.days}
+                onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, days: Number(e.target.value) || 5 }))}
+                type="number"
+                min={1}
+                max={14}
+                className="mt-1 bg-muted border-border"
+              />
+            </div>
+          </section>
+
           <section className="space-y-3">
             <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
               Weather
