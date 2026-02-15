@@ -7,6 +7,7 @@ export interface PersonData {
   batteryPercent: number | null;
   isCharging: boolean;
   distanceKm: number | null;
+  avatarSize?: number;
 }
 
 interface PersonWidgetProps {
@@ -70,10 +71,15 @@ export default function PersonWidget({ person, loading }: PersonWidgetProps) {
   const batteryColor = person.batteryPercent !== null ? getBatteryColor(person.batteryPercent) : undefined;
   const batteryBg = person.batteryPercent !== null ? getBatteryBg(person.batteryPercent) : undefined;
 
+  const avatarPx = person.avatarSize || 80;
+
   return (
     <div className="widget-card h-full flex items-center gap-3 sm:gap-4">
-      {/* Avatar - constrained size */}
-      <div className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 overflow-hidden rounded-xl border-2 border-border bg-muted">
+      {/* Avatar - user-configurable size */}
+      <div
+        className="shrink-0 overflow-hidden rounded-xl border-2 border-border bg-muted"
+        style={{ width: avatarPx, height: avatarPx }}
+      >
         {person.pictureUrl ? (
           <img
             src={person.pictureUrl}
