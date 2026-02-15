@@ -49,7 +49,7 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
 
   return (
     <Card className="h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur">
-      <CardContent className="relative h-full p-0">
+      <CardContent className="relative h-full p-0 overflow-hidden">
         <img
           src={photos[currentIndex]}
           alt={`Photo ${currentIndex + 1}`}
