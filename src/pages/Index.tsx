@@ -52,7 +52,7 @@ const Index = () => {
   const { weather, loading: weatherLoading } = useWeatherData(config);
   const { charger, fuel, battery, loading: carLoading } = useCarData(config);
   const { monthly, power, loading: energyLoading } = useEnergyUsageData(config);
-  const { menuEvents, loading: menuLoading } = useFoodMenuData(config);
+  const { menuDays, loading: menuLoading } = useFoodMenuData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -111,7 +111,7 @@ const Index = () => {
     if (id === "car") return <CarWidget charger={charger} fuel={fuel} battery={battery} loading={carLoading} />;
     if (id === "monthly_energy") return <MonthlyEnergyWidget data={monthly} loading={energyLoading} />;
     if (id === "power_usage") return <PowerUsageWidget data={power} loading={energyLoading} />;
-    if (id === "food_menu") return <FoodMenuWidget events={menuEvents} loading={menuLoading} />;
+    if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} />;
     return null;
   };
 
