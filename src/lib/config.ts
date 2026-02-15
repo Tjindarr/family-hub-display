@@ -36,6 +36,7 @@ export interface DashboardConfig {
   widgetOrder: string[]; // ordered widget IDs
   gridColumns: number; // number of grid columns (1-6)
   rowColumns: Record<number, number>; // per-row column overrides (row number -> columns)
+  rowHeights: Record<number, number>; // per-row height in px (row number -> px)
   configBackendUrl: string; // URL to a simple REST API for persisting config
   photoWidget: PhotoWidgetConfig;
   personEntities: PersonEntityConfig[];
@@ -104,6 +105,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   widgetLayouts: {},
   widgetOrder: [],
   rowColumns: {},
+  rowHeights: {},
   gridColumns: 4,
   configBackendUrl: "",
   photoWidget: { photos: [], intervalSeconds: 10 },
