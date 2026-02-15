@@ -7,6 +7,11 @@ import ElectricityWidget from "@/components/ElectricityWidget";
 import PhotoWidget from "@/components/PhotoWidget";
 import PersonWidget from "@/components/PersonWidget";
 import WeatherWidget from "@/components/WeatherWidget";
+import CarChargerWidget from "@/components/CarChargerWidget";
+import CarFuelWidget from "@/components/CarFuelWidget";
+import CarBatteryWidget from "@/components/CarBatteryWidget";
+import MonthlyEnergyWidget from "@/components/MonthlyEnergyWidget";
+import PowerUsageWidget from "@/components/PowerUsageWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { useKioskMode } from "@/hooks/useKioskMode";
@@ -19,14 +24,18 @@ import {
   useElectricityPrices,
   usePersonData,
   useWeatherData,
+  useCarData,
+  useEnergyUsageData,
 } from "@/hooks/useDashboardData";
 
-function getDefaultWidgetIds(tempCount: number, personCount: number): string[] {
+function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
   return [
     "clock",
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
+    ...(hasCar ? ["car_charger", "car_fuel", "car_battery"] : []),
     "electricity",
+    ...(hasEnergy ? ["monthly_energy", "power_usage"] : []),
     "calendar",
     "weather",
     "photos",
@@ -40,8 +49,13 @@ const Index = () => {
   const { nordpool, loading: priceLoading } = useElectricityPrices(config);
   const { persons, loading: personLoading } = usePersonData(config);
   const { weather, loading: weatherLoading } = useWeatherData(config);
+  const { charger, fuel, battery, loading: carLoading } = useCarData(config);
+  const { monthly, power, loading: energyLoading } = useEnergyUsageData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
+
+  const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
+  const hasEnergy = !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
 
   // Apply theme
   useEffect(() => {
@@ -54,16 +68,15 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length, hasCar, hasEnergy);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
-      // Use saved order, but add any new widgets not in order and remove stale ones
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
       const missing = defaults.filter((id) => !ordered.includes(id));
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities.length]);
+  }, [config.widgetOrder, config.temperatureEntities.length, hasCar, hasEnergy]);
 
   const renderWidget = (id: string) => {
     if (id === "clock") return <ClockWidget />;
@@ -91,13 +104,18 @@ const Index = () => {
       if (!person) return null;
       return <PersonWidget person={person} loading={personLoading} />;
     }
+    if (id === "car_charger") return <CarChargerWidget data={charger} loading={carLoading} />;
+    if (id === "car_fuel") return <CarFuelWidget data={fuel} loading={carLoading} />;
+    if (id === "car_battery") return <CarBatteryWidget data={battery} loading={carLoading} />;
+    if (id === "monthly_energy") return <MonthlyEnergyWidget data={monthly} loading={energyLoading} />;
+    if (id === "power_usage") return <PowerUsageWidget data={power} loading={energyLoading} />;
     return null;
   };
 
   const getColSpan = (id: string) => {
     if (config.widgetLayouts?.[id]?.colSpan) return config.widgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
-    if (id === "photos") return 2;
+    if (id === "photos" || id === "monthly_energy" || id === "power_usage") return 2;
     return 1;
   };
 
