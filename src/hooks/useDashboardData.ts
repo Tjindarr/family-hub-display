@@ -358,19 +358,21 @@ export function usePersonData(config: DashboardConfig) {
             } catch { /* ignore */ }
           }
 
-          // Charging
+          // Charging — supports binary_sensor ("on") or text sensor ("Charging", "charging")
           if (pe.batteryChargingEntity) {
             try {
               const state = await client.getState(pe.batteryChargingEntity);
-              isCharging = state.state === "on";
+              const s = state.state.toLowerCase();
+              isCharging = s === "on" || s === "charging";
             } catch { /* ignore */ }
           }
 
-          // Distance
+          // Distance — preserve 0 as valid
           if (pe.distanceEntity) {
             try {
               const state = await client.getState(pe.distanceEntity);
-              distanceKm = parseFloat(state.state) || null;
+              const parsed = parseFloat(state.state);
+              distanceKm = isNaN(parsed) ? null : parsed;
             } catch { /* ignore */ }
           }
 
