@@ -133,6 +133,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [widgetLayouts, setWidgetLayouts] = useState<Record<string, WidgetLayout>>(config.widgetLayouts || {});
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
   const [rowColumns, setRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
+  const [rowHeights, setRowHeights] = useState<Record<number, number>>(config.rowHeights || {});
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10 });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -205,6 +206,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       widgetOrder: finalOrder,
       gridColumns,
       rowColumns,
+      rowHeights,
       configBackendUrl: "",
       photoWidget: photoConfig,
       personEntities,
@@ -736,6 +738,45 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                ));
+              })()}
+            </div>
+            {/* Per-row height overrides */}
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Height per Row (px)</Label>
+              {(() => {
+                const usedRows = new Set<number>();
+                widgetItems.forEach(({ id }) => {
+                  const defaultRow = id === "electricity" || id === "calendar" ? 2 : 1;
+                  usedRows.add(widgetLayouts[id]?.row || defaultRow);
+                });
+                const sortedRows = [...usedRows].sort((a, b) => a - b);
+                return sortedRows.map((row) => (
+                  <div key={row} className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-14">Row {row}</span>
+                    <Input
+                      type="number"
+                      min={50}
+                      max={1000}
+                      step={10}
+                      placeholder="auto"
+                      value={rowHeights[row] ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRowHeights((prev) => {
+                          const next = { ...prev };
+                          if (!val || val === "0") {
+                            delete next[row];
+                          } else {
+                            next[row] = Number(val);
+                          }
+                          return next;
+                        });
+                      }}
+                      className="w-28 h-7 bg-muted border-border text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">px</span>
                   </div>
                 ));
               })()}

@@ -45,6 +45,7 @@ const Index = () => {
 
   const gridColumns = isMobile ? 1 : (config.gridColumns || 4);
   const rowColumns = config.rowColumns || {};
+  const rowHeights = config.rowHeights || {};
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
@@ -133,9 +134,9 @@ const Index = () => {
           span: finalWidgets[finalWidgets.length - 1].span + remaining,
         };
       }
-      return { rowNum, widgets: finalWidgets, cols: rowCols };
+      return { rowNum, widgets: finalWidgets, cols: rowCols, heightPx: rowHeights[rowNum] };
     });
-  }, [allWidgetIds, gridColumns, rowColumns, isMobile, config.widgetLayouts]);
+  }, [allWidgetIds, gridColumns, rowColumns, rowHeights, isMobile, config.widgetLayouts]);
 
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4 md:p-6">
@@ -171,24 +172,34 @@ const Index = () => {
 
       {/* Grid */}
       <div className="grid gap-2">
-        {rows.map(({ rowNum, widgets, cols }) => (
+        {rows.map(({ rowNum, widgets, cols, heightPx }) => (
           <div
             key={rowNum}
             className="grid gap-2"
-            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+            style={{
+              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              ...(heightPx ? { height: `${heightPx}px` } : {}),
+            }}
           >
             {widgets.map(({ id, span, rowSpan: rSpan }) => {
               const widget = renderWidget(id);
               if (!widget) return null;
               const mobileSpan = isMobile ? 1 : span;
               const mobileRowSpan = isMobile ? 1 : rSpan;
+              // If row has a fixed height, multiply by rowSpan for multi-row widgets
+              const widgetHeight = heightPx && mobileRowSpan > 1
+                ? `${heightPx * mobileRowSpan}px`
+                : undefined;
               return (
                 <div
                   key={id}
                   style={{
                     gridColumn: `span ${mobileSpan}`,
                     gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
-                    minHeight: id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined),
+                    height: widgetHeight,
+                    minHeight: !heightPx
+                      ? (id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined))
+                      : undefined,
                   }}
                 >
                   {widget}
