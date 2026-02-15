@@ -132,6 +132,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [electricityEntity, setElectricityEntity] = useState(config.electricityPriceEntity);
   const [widgetLayouts, setWidgetLayouts] = useState<Record<string, WidgetLayout>>(config.widgetLayouts || {});
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
+  const [rowColumns, setRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10 });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -203,6 +204,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       widgetLayouts,
       widgetOrder: finalOrder,
       gridColumns,
+      rowColumns,
       configBackendUrl: "",
       photoWidget: photoConfig,
       personEntities,
@@ -694,6 +696,49 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            {/* Per-row column overrides */}
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Columns per Row (override)</Label>
+              {(() => {
+                const usedRows = new Set<number>();
+                widgetItems.forEach(({ id }) => {
+                  const defaultRow = id === "electricity" || id === "calendar" ? 2 : 1;
+                  usedRows.add(widgetLayouts[id]?.row || defaultRow);
+                });
+                const sortedRows = [...usedRows].sort((a, b) => a - b);
+                return sortedRows.map((row) => (
+                  <div key={row} className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-14">Row {row}</span>
+                    <Select
+                      value={String(rowColumns[row] || gridColumns)}
+                      onValueChange={(v) => {
+                        const val = Number(v);
+                        setRowColumns((prev) => {
+                          const next = { ...prev };
+                          if (val === gridColumns) {
+                            delete next[row];
+                          } else {
+                            next[row] = val;
+                          }
+                          return next;
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-28 h-7 bg-muted border-border text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6].map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n} col{n > 1 ? "s" : ""}{n === gridColumns ? " (default)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ));
+              })()}
             </div>
             <p className="text-xs text-muted-foreground">
               Drag to reorder widgets. Set column span per widget.
