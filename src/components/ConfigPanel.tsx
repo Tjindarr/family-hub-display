@@ -103,6 +103,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [haUrl, setHaUrl] = useState(config.haUrl);
   const [haToken, setHaToken] = useState(config.haToken);
   const [refreshInterval, setRefreshInterval] = useState(config.refreshInterval);
+  const [configBackendUrl, setConfigBackendUrl] = useState(config.configBackendUrl || "");
   const [tempEntities, setTempEntities] = useState<TemperatureEntityConfig[]>(config.temperatureEntities);
   const [calendarEntities, setCalendarEntities] = useState<string[]>(config.calendarEntities);
   const [electricityEntity, setElectricityEntity] = useState(config.electricityPriceEntity);
@@ -173,6 +174,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       widgetLayouts,
       widgetOrder: finalOrder,
       gridColumns,
+      configBackendUrl,
     });
     setOpen(false);
   };
@@ -258,6 +260,25 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 min={5}
                 className="mt-1 bg-muted border-border"
               />
+            </div>
+          </section>
+
+          {/* Config Backend */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+              Config Persistence
+            </h3>
+            <div>
+              <Label className="text-xs text-muted-foreground">Backend URL (json-server)</Label>
+              <Input
+                value={configBackendUrl}
+                onChange={(e) => setConfigBackendUrl(e.target.value)}
+                placeholder="http://192.168.1.x:3001"
+                className="mt-1 bg-muted border-border"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Point to a json-server instance to persist settings across browsers. Leave empty to use browser storage only.
+              </p>
             </div>
           </section>
 

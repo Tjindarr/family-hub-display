@@ -14,6 +14,7 @@ export interface DashboardConfig {
   widgetLayouts: Record<string, WidgetLayout>;
   widgetOrder: string[]; // ordered widget IDs
   gridColumns: number; // number of grid columns (1-6)
+  configBackendUrl: string; // URL to a simple REST API for persisting config
 }
 
 export interface TemperatureEntityConfig {
@@ -65,6 +66,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   widgetLayouts: {},
   widgetOrder: [],
   gridColumns: 4,
+  configBackendUrl: "",
 };
 
 export function loadConfig(): DashboardConfig {
@@ -81,6 +83,46 @@ export function loadConfig(): DashboardConfig {
 
 export function saveConfig(config: DashboardConfig): void {
   localStorage.setItem("ha-dashboard-config", JSON.stringify(config));
+}
+
+/**
+ * Load config from a remote REST backend (json-server, etc.)
+ * Expects GET /config to return the config object.
+ */
+export async function loadRemoteConfig(backendUrl: string): Promise<DashboardConfig | null> {
+  try {
+    const url = backendUrl.replace(/\/$/, "");
+    const res = await fetch(`${url}/config`);
+    if (!res.ok) {
+      // If 404, the record doesn't exist yet — that's fine
+      if (res.status === 404) return null;
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return { ...DEFAULT_CONFIG, ...data };
+  } catch (e) {
+    console.error("Failed to load remote config:", e);
+    return null;
+  }
+}
+
+/**
+ * Save config to a remote REST backend.
+ * Uses PUT /config to upsert the config object.
+ */
+export async function saveRemoteConfig(backendUrl: string, config: DashboardConfig): Promise<boolean> {
+  try {
+    const url = backendUrl.replace(/\/$/, "");
+    const res = await fetch(`${url}/config`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+    return res.ok;
+  } catch (e) {
+    console.error("Failed to save remote config:", e);
+    return false;
+  }
 }
 
 export function isConfigured(config: DashboardConfig): boolean {
