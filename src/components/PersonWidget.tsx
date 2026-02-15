@@ -28,15 +28,12 @@ function getBatteryBg(percent: number): string {
 }
 
 function BatteryIcon({ percent, isCharging, color }: { percent: number; isCharging: boolean; color: string }) {
-  // 4 bars max
   const bars = Math.round((percent / 100) * 4);
+  const displayColor = isCharging ? "hsl(120, 50%, 50%)" : color;
   return (
     <svg width="20" height="12" viewBox="0 0 20 12" fill="none" className="shrink-0">
-      {/* Battery body */}
-      <rect x="0.5" y="0.5" width="16" height="11" rx="2" stroke={color} strokeWidth="1" fill="none" />
-      {/* Battery tip */}
-      <rect x="17" y="3" width="2.5" height="6" rx="1" fill={color} opacity="0.6" />
-      {/* Bars */}
+      <rect x="0.5" y="0.5" width="16" height="11" rx="2" stroke={displayColor} strokeWidth="1" fill="none" />
+      <rect x="17" y="3" width="2.5" height="6" rx="1" fill={displayColor} opacity="0.6" />
       {[0, 1, 2, 3].map((i) => (
         <rect
           key={i}
@@ -45,15 +42,14 @@ function BatteryIcon({ percent, isCharging, color }: { percent: number; isChargi
           width="2.8"
           height="7"
           rx="0.5"
-          fill={i < bars ? color : "transparent"}
+          fill={i < bars ? displayColor : "transparent"}
           opacity={i < bars ? 0.9 : 0.15}
-          stroke={i >= bars ? color : "none"}
+          stroke={i >= bars ? displayColor : "none"}
           strokeWidth={i >= bars ? 0.3 : 0}
         />
       ))}
-      {/* Charging bolt */}
       {isCharging && (
-        <polygon points="9,1 6,6.5 9,6.5 8,11 12,5.5 9,5.5 10,1" fill={color} opacity="0.9" />
+        <polygon points="9,1 6,6.5 9,6.5 8,11 12,5.5 9,5.5 10,1" fill="hsl(50, 95%, 55%)" opacity="0.95" />
       )}
     </svg>
   );
@@ -111,9 +107,6 @@ export default function PersonWidget({ person, loading }: PersonWidgetProps) {
                 >
                   {Math.round(person.batteryPercent)}%
                 </span>
-                {person.isCharging && (
-                  <span className="text-[10px] sm:text-xs text-muted-foreground">Charging</span>
-                )}
               </div>
             </>
           ) : (
