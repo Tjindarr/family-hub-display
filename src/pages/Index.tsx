@@ -65,6 +65,46 @@ const Index = () => {
     return 1;
   };
 
+  // Group widgets into rows and stretch to fill each row
+  const rows = useMemo(() => {
+    const result: { id: string; span: number }[][] = [];
+    let currentRow: { id: string; span: number }[] = [];
+    let usedCols = 0;
+
+    for (const id of allWidgetIds) {
+      const span = Math.min(getColSpan(id), gridColumns);
+      if (usedCols + span > gridColumns && currentRow.length > 0) {
+        result.push(currentRow);
+        currentRow = [];
+        usedCols = 0;
+      }
+      currentRow.push({ id, span });
+      usedCols += span;
+      if (usedCols >= gridColumns) {
+        result.push(currentRow);
+        currentRow = [];
+        usedCols = 0;
+      }
+    }
+    if (currentRow.length > 0) result.push(currentRow);
+
+    // Stretch: distribute remaining columns to widgets in each row
+    return result.map((row) => {
+      const totalSpan = row.reduce((s, w) => s + w.span, 0);
+      const remaining = gridColumns - totalSpan;
+      if (remaining > 0 && row.length > 0) {
+        // Add remaining to the last widget
+        const stretched = [...row];
+        stretched[stretched.length - 1] = {
+          ...stretched[stretched.length - 1],
+          span: stretched[stretched.length - 1].span + remaining,
+        };
+        return stretched;
+      }
+      return row;
+    });
+  }, [allWidgetIds, gridColumns, config.widgetLayouts]);
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       {!isKiosk && (
@@ -102,10 +142,9 @@ const Index = () => {
         className="grid gap-4 md:gap-5"
         style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}
       >
-        {allWidgetIds.map((id) => {
+        {rows.flat().map(({ id, span }) => {
           const widget = renderWidget(id);
           if (!widget) return null;
-          const span = Math.min(getColSpan(id), gridColumns);
           return (
             <div key={id} style={{ gridColumn: `span ${span}` }}>
               {widget}
