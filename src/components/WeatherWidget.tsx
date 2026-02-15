@@ -139,10 +139,10 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
             <Wind className="h-3 w-3" />
             <span>{weather.current.windSpeed} km/h</span>
           </div>
-          {weather.current.pressure != null && (
+          {weather.current.cloudCoverage != null && (
             <div className="flex items-center gap-1">
-              <Thermometer className="h-3 w-3" />
-              <span>{Math.round(weather.current.pressure)} hPa</span>
+              <Cloud className="h-3 w-3" />
+              <span>{Math.round(weather.current.cloudCoverage)}%</span>
             </div>
           )}
         </div>
