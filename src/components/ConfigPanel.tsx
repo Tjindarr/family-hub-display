@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig } from "@/lib/config";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
@@ -103,12 +103,14 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, maxCols, onColSp
   );
 }
 
-function getDefaultWidgetIds(tempCount: number, personCount: number): string[] {
+function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
   return [
     "clock",
     ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
+    ...(hasCar ? ["car_charger", "car_fuel", "car_battery"] : []),
     "electricity",
+    ...(hasEnergy ? ["monthly_energy", "power_usage"] : []),
     "calendar",
     "weather",
     "photos",
@@ -138,9 +140,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
+  const [carConfig, setCarConfig] = useState<CarConfig>(config.carConfig || { chargerEntity: "", fuelRangeEntity: "", batteryEntity: "" });
+  const [energyConfig, setEnergyConfig] = useState<EnergyUsageConfig>(config.energyUsageConfig || { monthlyCostEntity: "", monthlyConsumptionEntity: "", currentPowerEntity: "", maxPowerEntity: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length);
+    const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
+    const hasEnergy = !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length, hasCar, hasEnergy);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -152,11 +158,17 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
   // Rebuild widget order when temp entities change
   const widgetItems = useMemo(() => {
-    const labelMap: Record<string, string> = { clock: "Clock", electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery" };
+    const labelMap: Record<string, string> = {
+      clock: "Clock", electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
+      car_charger: "Car Charger", car_fuel: "Fuel Range", car_battery: "Car Battery",
+      monthly_energy: "Monthly Energy", power_usage: "Power Usage",
+    };
     tempEntities.forEach((e, i) => { labelMap[`temp_${i}`] = e.label || `Sensor ${i + 1}`; });
     personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
 
-    const defaults = getDefaultWidgetIds(tempEntities.length, personEntities.length);
+    const hasCar = !!(carConfig.chargerEntity || carConfig.fuelRangeEntity || carConfig.batteryEntity);
+    const hasEnergy = !!(energyConfig.monthlyCostEntity || energyConfig.currentPowerEntity);
+    const defaults = getDefaultWidgetIds(tempEntities.length, personEntities.length, hasCar, hasEnergy);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -165,7 +177,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: id === "electricity" || id === "calendar" || id === "photos" ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "monthly_energy", "power_usage"].includes(id) ? 2 : 1,
     }));
   }, [widgetOrder, tempEntities, personEntities]);
 
@@ -214,6 +226,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       personEntities,
       weatherConfig,
       theme,
+      carConfig,
+      energyUsageConfig: energyConfig,
     });
     setOpen(false);
   };
@@ -680,6 +694,97 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 </div>
               </div>
             ))}
+          </section>
+
+          {/* Car Entities */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+              Car / EV
+            </h3>
+            <div>
+              <Label className="text-xs text-muted-foreground">Charger Status Entity</Label>
+              <EntityAutocomplete
+                value={carConfig.chargerEntity}
+                onChange={(val) => setCarConfig((prev) => ({ ...prev, chargerEntity: val }))}
+                config={config}
+                domainFilter="sensor"
+                placeholder="sensor.ehg4chqg_status"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Fuel Driving Range Entity</Label>
+              <EntityAutocomplete
+                value={carConfig.fuelRangeEntity}
+                onChange={(val) => setCarConfig((prev) => ({ ...prev, fuelRangeEntity: val }))}
+                config={config}
+                domainFilter="sensor"
+                placeholder="sensor.ceed_fuel_driving_range"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">EV Battery Level Entity</Label>
+              <EntityAutocomplete
+                value={carConfig.batteryEntity}
+                onChange={(val) => setCarConfig((prev) => ({ ...prev, batteryEntity: val }))}
+                config={config}
+                domainFilter="sensor"
+                placeholder="sensor.ceed_ev_battery_level"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
+          </section>
+
+          {/* Energy Usage */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
+              Energy Usage
+            </h3>
+            <div>
+              <Label className="text-xs text-muted-foreground">Monthly Cost Entity</Label>
+              <EntityAutocomplete
+                value={energyConfig.monthlyCostEntity}
+                onChange={(val) => setEnergyConfig((prev) => ({ ...prev, monthlyCostEntity: val }))}
+                config={config}
+                domainFilter="sensor"
+                placeholder="sensor.berget_monthly_cost"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Monthly Consumption Entity (kWh)</Label>
+              <EntityAutocomplete
+                value={energyConfig.monthlyConsumptionEntity}
+                onChange={(val) => setEnergyConfig((prev) => ({ ...prev, monthlyConsumptionEntity: val }))}
+                config={config}
+                domainFilter="sensor"
+                placeholder="sensor.berget_monthly_net_consumption"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Current Power Entity (W)</Label>
+              <EntityAutocomplete
+                value={energyConfig.currentPowerEntity}
+                onChange={(val) => setEnergyConfig((prev) => ({ ...prev, currentPowerEntity: val }))}
+                config={config}
+                domainFilter="sensor"
+                placeholder="sensor.tibber_pulse_berget_power"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Max Power Entity (W)</Label>
+              <EntityAutocomplete
+                value={energyConfig.maxPowerEntity}
+                onChange={(val) => setEnergyConfig((prev) => ({ ...prev, maxPowerEntity: val }))}
+                config={config}
+                domainFilter="sensor"
+                placeholder="sensor.tibber_pulse_berget_max_power"
+                className="mt-1 bg-muted border-border text-sm"
+              />
+            </div>
           </section>
 
 

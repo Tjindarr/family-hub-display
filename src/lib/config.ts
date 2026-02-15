@@ -24,6 +24,19 @@ export interface WeatherConfig {
   showSunset: boolean;
 }
 
+export interface CarConfig {
+  chargerEntity: string; // sensor.ehg4chqg_status
+  fuelRangeEntity: string; // sensor.ceed_fuel_driving_range
+  batteryEntity: string; // sensor.ceed_ev_battery_level
+}
+
+export interface EnergyUsageConfig {
+  monthlyCostEntity: string; // sensor.berget_monthly_cost
+  monthlyConsumptionEntity: string; // sensor.berget_monthly_net_consumption
+  currentPowerEntity: string; // sensor.tibber_pulse_berget_power
+  maxPowerEntity: string; // sensor.tibber_pulse_berget_max_power
+}
+
 export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black";
 
 export const THEMES: { id: ThemeId; label: string }[] = [
@@ -53,6 +66,8 @@ export interface DashboardConfig {
   personEntities: PersonEntityConfig[];
   weatherConfig: WeatherConfig;
   theme: ThemeId;
+  carConfig: CarConfig;
+  energyUsageConfig: EnergyUsageConfig;
 }
 
 export interface TemperatureEntityConfig {
@@ -130,6 +145,17 @@ const DEFAULT_CONFIG: DashboardConfig = {
     showSunset: true,
   },
   theme: "midnight-teal",
+  carConfig: {
+    chargerEntity: "",
+    fuelRangeEntity: "",
+    batteryEntity: "",
+  },
+  energyUsageConfig: {
+    monthlyCostEntity: "",
+    monthlyConsumptionEntity: "",
+    currentPowerEntity: "",
+    maxPowerEntity: "",
+  },
 };
 
 export function loadConfig(): DashboardConfig {

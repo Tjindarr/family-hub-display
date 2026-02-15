@@ -11,6 +11,11 @@ import {
 import type { HACalendarEvent, ElectricityPrice, NordpoolPricePoint } from "@/lib/config";
 import type { PersonData } from "@/components/PersonWidget";
 import type { WeatherData } from "@/components/WeatherWidget";
+import type { CarChargerData } from "@/components/CarChargerWidget";
+import type { CarFuelData } from "@/components/CarFuelWidget";
+import type { CarBatteryData } from "@/components/CarBatteryWidget";
+import type { MonthlyEnergyData } from "@/components/MonthlyEnergyWidget";
+import type { PowerUsageData } from "@/components/PowerUsageWidget";
 
 export function useDashboardConfig() {
   const [config, setConfig] = useState<DashboardConfig>(loadConfig);
@@ -411,4 +416,160 @@ export function usePersonData(config: DashboardConfig) {
   }, [fetchData, config.refreshInterval]);
 
   return { persons, loading };
+}
+
+export function useCarData(config: DashboardConfig) {
+  const [charger, setCharger] = useState<CarChargerData>({ status: "disconnected", entityId: "" });
+  const [fuel, setFuel] = useState<CarFuelData>({ rangeKm: null, entityId: "" });
+  const [battery, setBattery] = useState<CarBatteryData>({ percent: null, entityId: "" });
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    const cc = config.carConfig;
+    if (!cc?.chargerEntity && !cc?.fuelRangeEntity && !cc?.batteryEntity) {
+      setLoading(false);
+      return;
+    }
+
+    if (!isConfigured(config)) {
+      setCharger({ status: "ready_to_charge", entityId: cc?.chargerEntity || "" });
+      setFuel({ rangeKm: 245, entityId: cc?.fuelRangeEntity || "" });
+      setBattery({ percent: 62, entityId: cc?.batteryEntity || "" });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const client = createHAClient(config);
+      if (cc.chargerEntity) {
+        try {
+          const s = await client.getState(cc.chargerEntity);
+          setCharger({ status: s.state, entityId: cc.chargerEntity });
+        } catch { /* ignore */ }
+      }
+      if (cc.fuelRangeEntity) {
+        try {
+          const s = await client.getState(cc.fuelRangeEntity);
+          setFuel({ rangeKm: parseFloat(s.state) || 0, entityId: cc.fuelRangeEntity });
+        } catch { /* ignore */ }
+      }
+      if (cc.batteryEntity) {
+        try {
+          const s = await client.getState(cc.batteryEntity);
+          setBattery({ percent: parseFloat(s.state) || 0, entityId: cc.batteryEntity });
+        } catch { /* ignore */ }
+      }
+    } catch (err) {
+      console.error("Failed to fetch car data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [config]);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, config.refreshInterval * 1000);
+    return () => clearInterval(interval);
+  }, [fetchData, config.refreshInterval]);
+
+  return { charger, fuel, battery, loading };
+}
+
+export function useEnergyUsageData(config: DashboardConfig) {
+  const [monthly, setMonthly] = useState<MonthlyEnergyData>({ monthlyCost: null, monthlyKwh: null, costHistory: [] });
+  const [power, setPower] = useState<PowerUsageData>({ currentWatt: null, maxWatt: null, powerHistory: [] });
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    const ec = config.energyUsageConfig;
+    if (!ec?.monthlyCostEntity && !ec?.currentPowerEntity) {
+      setLoading(false);
+      return;
+    }
+
+    if (!isConfigured(config)) {
+      // Mock data
+      const mockHistory = Array.from({ length: 12 }, (_, i) => ({
+        time: `Day ${i * 2 + 1}`,
+        cost: 200 + Math.random() * 800,
+        kwh: 50 + Math.random() * 200,
+      }));
+      setMonthly({ monthlyCost: 547, monthlyKwh: 182, costHistory: mockHistory });
+      const mockPower = Array.from({ length: 24 }, (_, i) => ({
+        time: `${String(i).padStart(2, "0")}:00`,
+        watt: 200 + Math.random() * 2000,
+      }));
+      setPower({ currentWatt: 1240, maxWatt: 3800, powerHistory: mockPower });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const client = createHAClient(config);
+      let monthlyCost: number | null = null;
+      let monthlyKwh: number | null = null;
+      let currentWatt: number | null = null;
+      let maxWatt: number | null = null;
+
+      if (ec.monthlyCostEntity) {
+        try {
+          const s = await client.getState(ec.monthlyCostEntity);
+          monthlyCost = parseFloat(s.state) || 0;
+        } catch { /* ignore */ }
+      }
+      if (ec.monthlyConsumptionEntity) {
+        try {
+          const s = await client.getState(ec.monthlyConsumptionEntity);
+          monthlyKwh = parseFloat(s.state) || 0;
+        } catch { /* ignore */ }
+      }
+      if (ec.currentPowerEntity) {
+        try {
+          const s = await client.getState(ec.currentPowerEntity);
+          currentWatt = parseFloat(s.state) || 0;
+        } catch { /* ignore */ }
+      }
+      if (ec.maxPowerEntity) {
+        try {
+          const s = await client.getState(ec.maxPowerEntity);
+          maxWatt = parseFloat(s.state) || 0;
+        } catch { /* ignore */ }
+      }
+
+      // Try to get history for charts
+      let costHistory: { time: string; cost: number; kwh: number }[] = [];
+      let powerHistory: { time: string; watt: number }[] = [];
+
+      if (ec.currentPowerEntity) {
+        try {
+          const now = new Date();
+          const start = new Date(now.getTime() - 24 * 3600000);
+          const history = await client.getHistory(ec.currentPowerEntity, start.toISOString(), now.toISOString());
+          if (history?.[0]) {
+            powerHistory = history[0]
+              .filter((_, i) => i % 4 === 0) // sample every 4th point
+              .map((s) => ({
+                time: new Date(s.last_updated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
+                watt: parseFloat(s.state) || 0,
+              }));
+          }
+        } catch { /* ignore */ }
+      }
+
+      setMonthly({ monthlyCost, monthlyKwh, costHistory });
+      setPower({ currentWatt, maxWatt, powerHistory });
+    } catch (err) {
+      console.error("Failed to fetch energy data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [config]);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, config.refreshInterval * 1000);
+    return () => clearInterval(interval);
+  }, [fetchData, config.refreshInterval]);
+
+  return { monthly, power, loading };
 }
