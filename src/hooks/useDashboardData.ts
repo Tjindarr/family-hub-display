@@ -197,6 +197,22 @@ export function useWeatherData(config: DashboardConfig) {
       const state = await client.getState(wc.entityId);
       const attrs = state.attributes || {};
 
+      // Fetch sunrise/sunset from sun.sun entity
+      let sunriseStr: string | null = null;
+      let sunsetStr: string | null = null;
+      try {
+        const sunState = await client.getState("sun.sun");
+        const sunAttrs = sunState.attributes || {};
+        if (sunAttrs.next_rising) {
+          const d = new Date(sunAttrs.next_rising);
+          sunriseStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+        if (sunAttrs.next_setting) {
+          const d = new Date(sunAttrs.next_setting);
+          sunsetStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+      } catch { /* sun.sun not available */ }
+
       const current = {
         temperature: attrs.temperature ?? parseFloat(state.state) ?? 0,
         condition: attrs.condition || state.state || "unknown",
@@ -220,14 +236,15 @@ export function useWeatherData(config: DashboardConfig) {
         rawForecast = attrs.forecast || [];
       }
 
-      const forecast = rawForecast.slice(0, wc.forecastDays).map((f: any) => ({
+      const forecast = rawForecast.slice(0, wc.forecastDays).map((f: any, idx: number) => ({
         date: f.datetime || f.date || "",
         tempHigh: f.temperature || f.tempHigh || 0,
         tempLow: f.templow ?? f.temp_low ?? f.tempLow ?? 0,
         condition: f.condition || "unknown",
-        precipitation: f.precipitation ?? null,
-        sunrise: f.sunrise || null,
-        sunset: f.sunset || null,
+        precipitation: f.precipitation ?? f.precipitation_probability ?? null,
+        // Only attach sunrise/sunset to today's entry (first forecast day)
+        sunrise: idx === 0 ? (f.sunrise || sunriseStr) : (f.sunrise || null),
+        sunset: idx === 0 ? (f.sunset || sunsetStr) : (f.sunset || null),
       }));
 
       setWeather({ current, forecast });
