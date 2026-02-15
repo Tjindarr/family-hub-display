@@ -93,37 +93,44 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
 
   return (
     <div className="widget-card h-full">
-      {/* Current conditions */}
+      {/* Current conditions - 3 columns */}
       <div className="mb-4 flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 p-3">
-        {getWeatherIcon(weather.current.condition, 40)}
-        <div className="flex-1">
-          <div className="text-3xl font-bold text-foreground">{Math.round(weather.current.temperature)}°</div>
-          <div className="text-xs capitalize text-muted-foreground">{weather.current.condition.replace(/_/g, " ")}</div>
-        </div>
-        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-          {(showSunrise || showSunset) && todayForecast && (
-            <>
-              {showSunrise && todayForecast.sunrise && (
-                <div className="flex items-center gap-1">
-                  <Sunrise className="h-3.5 w-3.5 text-yellow-500" />
-                  <span>{todayForecast.sunrise}</span>
-                </div>
-              )}
-              {showSunset && todayForecast.sunset && (
-                <div className="flex items-center gap-1">
-                  <Sunset className="h-3.5 w-3.5 text-orange-400" />
-                  <span>{todayForecast.sunset}</span>
-                </div>
-              )}
-            </>
-          )}
-          <div className="flex items-center gap-1">
-            <Droplets className="h-3 w-3" />
-            <span>{todayForecast?.precipitation != null ? `${todayForecast.precipitation} mm` : "0 mm"}</span>
+        {/* Left: icon + temp */}
+        <div className="flex items-center gap-3">
+          {getWeatherIcon(weather.current.condition, 40)}
+          <div>
+            <div className="text-3xl font-bold text-foreground">{Math.round(weather.current.temperature)}°</div>
+            <div className="text-xs capitalize text-muted-foreground">{weather.current.condition.replace(/_/g, " ")}</div>
           </div>
-          <div className="flex items-center gap-1">
-            <Wind className="h-3 w-3" />
-            <span>{weather.current.windSpeed} km/h</span>
+        </div>
+
+        {/* Middle: sunrise/sunset */}
+        {(showSunrise || showSunset) && todayForecast && (
+          <div className="flex flex-col gap-1.5 border-l border-r border-border/40 px-5">
+            {showSunrise && todayForecast.sunrise && (
+              <div className="flex items-center gap-2">
+                <Sunrise className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm font-medium text-foreground">{todayForecast.sunrise}</span>
+              </div>
+            )}
+            {showSunset && todayForecast.sunset && (
+              <div className="flex items-center gap-2">
+                <Sunset className="h-4 w-4 text-orange-400" />
+                <span className="text-sm font-medium text-foreground">{todayForecast.sunset}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Right: precipitation + wind */}
+        <div className="ml-auto flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <Droplets className="h-4 w-4 text-blue-400" />
+            <span className="text-sm font-medium text-foreground">{todayForecast?.precipitation != null ? `${todayForecast.precipitation} mm` : "0 mm"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Wind className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">{weather.current.windSpeed} km/h</span>
           </div>
         </div>
       </div>
