@@ -53,6 +53,27 @@ class HomeAssistantAPI {
     if (endTime) path += `&end_time=${endTime}`;
     return this.request<HAState[][]>(path);
   }
+
+  async getWeatherForecast(entityId: string, type: "daily" | "hourly" | "twice_daily" = "daily"): Promise<any[]> {
+    try {
+      const result = await this.request<any>("/services/weather/get_forecasts", {
+        method: "POST",
+        body: JSON.stringify({
+          target: { entity_id: entityId },
+          type,
+        }),
+      });
+      // Response format: { "weather.entity": { forecast: [...] } }
+      if (result && typeof result === "object") {
+        const key = Object.keys(result).find((k) => k === entityId) || Object.keys(result)[0];
+        return result[key]?.forecast || [];
+      }
+      return [];
+    } catch (err) {
+      console.warn("weather.get_forecasts service call failed, falling back to attributes:", err);
+      return [];
+    }
+  }
 }
 
 export function createHAClient(config: DashboardConfig): HomeAssistantAPI {
