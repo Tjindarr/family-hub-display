@@ -39,7 +39,7 @@ export default function PersonWidget({ person, loading }: PersonWidgetProps) {
   const batteryBg = person.batteryPercent !== null ? getBatteryBg(person.batteryPercent) : undefined;
 
   return (
-    <div className="widget-card h-full flex items-stretch gap-3 sm:gap-4">
+    <div className="widget-card h-full flex items-stretch gap-0">
       {/* Avatar - left side */}
       <div className="h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-xl border-2 border-border bg-muted">
         {person.pictureUrl ? (
