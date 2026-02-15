@@ -1,0 +1,7 @@
+services:
+  ha-dashboard:
+    build: .
+    container_name: ha-dashboard
+    ports:
+      - "3000:80"
+    restart: unless-stopped
