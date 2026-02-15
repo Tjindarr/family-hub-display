@@ -29,6 +29,7 @@ export default function EntityAutocomplete({
   const [entities, setEntities] = useState<HAState[]>(cachedEntities || []);
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -39,12 +40,17 @@ export default function EntityAutocomplete({
       return;
     }
 
+    setFetchError(null);
     const client = createHAClient(config);
     client.getStates().then((states) => {
       cachedEntities = states;
       cacheTimestamp = Date.now();
       setEntities(states);
-    }).catch((err) => console.error("Failed to fetch entities:", err));
+      console.log(`Fetched ${states.length} entities from HA`);
+    }).catch((err) => {
+      console.error("Failed to fetch entities:", err);
+      setFetchError(err.message || "Connection failed");
+    });
   }, [config]);
 
   const filtered = useMemo(() => {
@@ -96,6 +102,11 @@ export default function EntityAutocomplete({
         placeholder={placeholder}
         className={className}
       />
+      {fetchError && (
+        <p className="mt-1 text-xs text-destructive">
+          Could not reach HA: {fetchError}
+        </p>
+      )}
       {showDropdown && (
         <div
           ref={listRef}
