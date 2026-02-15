@@ -54,8 +54,10 @@ const Index = () => {
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
-  const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
-  const hasEnergy = !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
+  const isDemo = !isConfigured;
+  const hasCar = isDemo || !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
+  const hasEnergy = isDemo || !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
+  const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   // Apply theme
   useEffect(() => {
@@ -68,7 +70,7 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length, hasCar, hasEnergy);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, personCount, hasCar, hasEnergy);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -76,7 +78,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities.length, hasCar, hasEnergy]);
+  }, [config.widgetOrder, config.temperatureEntities.length, personCount, hasCar, hasEnergy]);
 
   const renderWidget = (id: string) => {
     if (id === "clock") return <ClockWidget />;
