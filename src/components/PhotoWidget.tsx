@@ -53,7 +53,7 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
         <img
           src={photos[currentIndex]}
           alt={`Photo ${currentIndex + 1}`}
-          className="absolute inset-0 h-full w-full object-contain transition-opacity duration-500"
+          className="absolute inset-0 h-full w-full object-contain object-top transition-opacity duration-500"
           style={{ opacity: fade ? 1 : 0 }}
         />
         {photos.length > 1 && (
