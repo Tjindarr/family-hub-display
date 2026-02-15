@@ -3,6 +3,7 @@ import { Settings, X, Plus, Trash2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import EntityAutocomplete from "@/components/EntityAutocomplete";
 import type { DashboardConfig, TemperatureEntityConfig } from "@/lib/config";
 
 interface ConfigPanelProps {
@@ -129,9 +130,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-                <Input
+                <EntityAutocomplete
                   value={entity.entityId}
-                  onChange={(e) => updateTempEntity(i, { entityId: e.target.value })}
+                  onChange={(val) => updateTempEntity(i, { entityId: val })}
+                  config={config}
+                  domainFilter="sensor"
                   placeholder="sensor.living_room_temperature"
                   className="bg-muted border-border text-sm"
                 />
@@ -160,13 +163,15 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
             </h3>
             {calendarEntities.map((cal, i) => (
               <div key={i} className="flex gap-2">
-                <Input
+                <EntityAutocomplete
                   value={cal}
-                  onChange={(e) => {
+                  onChange={(val) => {
                     const updated = [...calendarEntities];
-                    updated[i] = e.target.value;
+                    updated[i] = val;
                     setCalendarEntities(updated);
                   }}
+                  config={config}
+                  domainFilter="calendar"
                   placeholder="calendar.family"
                   className="bg-muted border-border text-sm"
                 />
@@ -199,9 +204,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
             </h3>
             <div>
               <Label className="text-xs text-muted-foreground">Price Entity</Label>
-              <Input
+              <EntityAutocomplete
                 value={electricityEntity}
-                onChange={(e) => setElectricityEntity(e.target.value)}
+                onChange={setElectricityEntity}
+                config={config}
+                domainFilter="sensor"
                 placeholder="sensor.electricity_price"
                 className="mt-1 bg-muted border-border text-sm"
               />
