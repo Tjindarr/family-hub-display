@@ -1136,44 +1136,6 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
               ))}
             </section>
 
-
-            <Button onClick={handleSave} className="w-full">
-              <Save className="mr-2 h-4 w-4" /> Save Configuration
-            </Button>
-          </TabsContent>
-
-          {/* ===== PHOTOS TAB ===== */}
-          <TabsContent value="photos" className="space-y-6 mt-0">
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Photo Gallery</h3>
-              <div>
-                <Label className="text-xs text-muted-foreground">Rotation Interval (seconds)</Label>
-                <Input
-                  value={photoConfig.intervalSeconds}
-                  onChange={(e) => setPhotoConfig((prev) => ({ ...prev, intervalSeconds: Number(e.target.value) || 10 }))}
-                  type="number" min={1}
-                  className="mt-1 bg-muted border-border"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Display Mode</Label>
-                <Select
-                  value={photoConfig.displayMode || "contain"}
-                  onValueChange={(v) => setPhotoConfig((prev) => ({ ...prev, displayMode: v as "contain" | "cover" | "blur-fill" }))}
-                >
-                  <SelectTrigger className="mt-1 bg-muted border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="contain">Contain (full image, may letterbox)</SelectItem>
-                    <SelectItem value="cover">Cover (fill frame, may crop)</SelectItem>
-                    <SelectItem value="blur-fill">Blur fill (full image, blurred bg)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <PhotoManager />
-            </section>
-
             {/* RSS News Feeds */}
             <section className="space-y-3">
               <div className="flex items-center justify-between">
@@ -1224,6 +1186,43 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
+            </section>
+
+            <Button onClick={handleSave} className="w-full">
+              <Save className="mr-2 h-4 w-4" /> Save Configuration
+            </Button>
+          </TabsContent>
+
+          {/* ===== PHOTOS TAB ===== */}
+          <TabsContent value="photos" className="space-y-6 mt-0">
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Photo Gallery</h3>
+              <div>
+                <Label className="text-xs text-muted-foreground">Rotation Interval (seconds)</Label>
+                <Input
+                  value={photoConfig.intervalSeconds}
+                  onChange={(e) => setPhotoConfig((prev) => ({ ...prev, intervalSeconds: Number(e.target.value) || 10 }))}
+                  type="number" min={1}
+                  className="mt-1 bg-muted border-border"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Display Mode</Label>
+                <Select
+                  value={photoConfig.displayMode || "contain"}
+                  onValueChange={(v) => setPhotoConfig((prev) => ({ ...prev, displayMode: v as "contain" | "cover" | "blur-fill" }))}
+                >
+                  <SelectTrigger className="mt-1 bg-muted border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="contain">Contain (full image, may letterbox)</SelectItem>
+                    <SelectItem value="cover">Cover (fill frame, may crop)</SelectItem>
+                    <SelectItem value="blur-fill">Blur fill (full image, blurred bg)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <PhotoManager />
             </section>
 
             <Button onClick={handleSave} className="w-full">

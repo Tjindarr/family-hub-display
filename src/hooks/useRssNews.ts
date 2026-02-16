@@ -19,7 +19,7 @@ export function useRssNews(configs: RssNewsConfig[], refreshInterval: number) {
       configs.map(async (cfg) => {
         try {
           // Use a CORS proxy for RSS feeds
-          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(cfg.feedUrl)}`;
+          const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(cfg.feedUrl)}`;
           const res = await fetch(proxyUrl);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const text = await res.text();
