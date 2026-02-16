@@ -65,7 +65,7 @@ export default function CalendarWidget({ events, loading, fontSizes }: CalendarW
                 {dayEvents.map((event, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60"
+                    className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 px-0.5 py-0.5 transition-colors hover:bg-muted/60"
                   >
                     <div className="flex items-center gap-1.5 pt-0.5">
                       <Clock className="h-3 w-3 text-muted-foreground" />
