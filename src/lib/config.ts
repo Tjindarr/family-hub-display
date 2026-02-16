@@ -44,6 +44,7 @@ export interface FoodMenuConfig {
 }
 
 export type SensorChartType = "line" | "bar" | "area" | "step" | "scatter";
+export type ChartGrouping = "minute" | "hour" | "day";
 
 export interface SensorInfoItem {
   entityId: string;
@@ -66,6 +67,7 @@ export interface GeneralSensorConfig {
   icon: string; // lucide icon name (kebab-case)
   showGraph: boolean;
   historyHours: number; // 1, 6, 24, 168 (7d)
+  chartGrouping: ChartGrouping; // aggregate data by minute, hour or day
   chartSeries: SensorChartSeries[]; // sensors to plot on the graph
   topInfo: SensorInfoItem[]; // up to 4 sensors displayed at the top
   bottomInfo: SensorInfoItem[]; // up to 4 sensors displayed at the bottom

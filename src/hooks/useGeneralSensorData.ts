@@ -1,7 +1,48 @@
 import { useState, useEffect, useCallback } from "react";
-import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig } from "@/lib/config";
+import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig, ChartGrouping } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
+
+function getBucketKey(iso: string, grouping: ChartGrouping): string {
+  const d = new Date(iso);
+  if (grouping === "minute") {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()).toISOString();
+  }
+  if (grouping === "hour") {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()).toISOString();
+  }
+  // day
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+}
+
+function aggregateByGrouping(
+  points: Record<string, number | string>[],
+  grouping: ChartGrouping,
+  seriesCount: number
+): Record<string, number | string>[] {
+  if (points.length === 0) return [];
+  const buckets = new Map<string, { sum: Record<string, number>; count: number }>();
+  for (const p of points) {
+    const key = getBucketKey(String(p.time), grouping);
+    if (!buckets.has(key)) {
+      buckets.set(key, { sum: {}, count: 0 });
+    }
+    const b = buckets.get(key)!;
+    b.count++;
+    for (let i = 0; i < seriesCount; i++) {
+      const k = `series_${i}`;
+      b.sum[k] = (b.sum[k] || 0) + (typeof p[k] === "number" ? (p[k] as number) : 0);
+    }
+  }
+  return Array.from(buckets.entries()).map(([time, b]) => {
+    const point: Record<string, number | string> = { time };
+    for (let i = 0; i < seriesCount; i++) {
+      const k = `series_${i}`;
+      point[k] = b.sum[k] / b.count; // average
+    }
+    return point;
+  });
+}
 
 export function useGeneralSensorData(config: DashboardConfig) {
   const [dataMap, setDataMap] = useState<Record<string, GeneralSensorLiveData>>({});
@@ -116,13 +157,11 @@ export function useGeneralSensorData(config: DashboardConfig) {
           const step = Math.max(1, Math.floor(primaryHistory.length / 60));
           const sampledPrimary = primaryHistory.filter((_, i) => i % step === 0);
 
-          chartData = sampledPrimary.map((s, pointIdx) => {
+          const rawPoints = sampledPrimary.map((s, pointIdx) => {
             const point: Record<string, number | string> = {
               time: s.last_updated || s.last_changed,
             };
-            // For primary series
             point["series_0"] = parseFloat(s.state) || 0;
-            // For additional series, find closest time
             for (let seriesIdx = 1; seriesIdx < histories.length; seriesIdx++) {
               const h = histories[seriesIdx];
               const targetIdx = Math.min(pointIdx * step, h.length - 1);
@@ -130,6 +169,9 @@ export function useGeneralSensorData(config: DashboardConfig) {
             }
             return point;
           });
+
+          // Aggregate by grouping
+          chartData = aggregateByGrouping(rawPoints, sc.chartGrouping || "hour", histories.length);
         }
 
         result[sc.id] = { topValues, bottomValues, chartData, chartSeriesMeta };
