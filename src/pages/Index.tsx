@@ -12,6 +12,7 @@ import MonthlyEnergyWidget from "@/components/MonthlyEnergyWidget";
 import PowerUsageWidget from "@/components/PowerUsageWidget";
 import FoodMenuWidget from "@/components/FoodMenuWidget";
 import GeneralSensorWidget from "@/components/GeneralSensorWidget";
+import SensorGridWidget from "@/components/SensorGridWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { useKioskMode } from "@/hooks/useKioskMode";
@@ -29,6 +30,7 @@ import {
   useFoodMenuData,
 } from "@/hooks/useDashboardData";
 import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
+import { useSensorGridData } from "@/hooks/useSensorGridData";
 
 function getTempGroupIds(entities: { group?: number }[]): string[] {
   const seen = new Set<number>();
@@ -43,7 +45,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[], sensorGridIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -55,6 +57,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     "weather",
     "photos",
     ...generalSensorIds.map((id) => `general_${id}`),
+    ...sensorGridIds.map((id) => `sensorgrid_${id}`),
   ];
 }
 
@@ -69,6 +72,7 @@ const Index = () => {
   const { monthly, power, loading: energyLoading } = useEnergyUsageData(config);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
   const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config);
+  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -76,6 +80,7 @@ const Index = () => {
   const hasCar = isDemo || !!(config.carConfig?.chargerEntity?.trim() || config.carConfig?.fuelRangeEntity?.trim() || config.carConfig?.batteryEntity?.trim());
   const hasEnergy = isDemo || !!(config.energyUsageConfig?.monthlyCostEntity?.trim() || config.energyUsageConfig?.currentPowerEntity?.trim());
   const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
+  const sensorGridIds = (config.sensorGrids || []).map((s) => s.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   // Apply theme
@@ -89,7 +94,7 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, hasCar, hasEnergy, generalSensorIds);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, hasCar, hasEnergy, generalSensorIds, sensorGridIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -97,7 +102,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities, personCount, hasCar, hasEnergy, generalSensorIds]);
+  }, [config.widgetOrder, config.temperatureEntities, personCount, hasCar, hasEnergy, generalSensorIds, sensorGridIds]);
 
   const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
 
@@ -137,6 +142,13 @@ const Index = () => {
       if (!sensorConfig) return null;
       const sensorData = generalSensorData[sensorId];
       return <GeneralSensorWidget config={sensorConfig} data={sensorData} loading={generalSensorLoading} />;
+    }
+    if (id.startsWith("sensorgrid_")) {
+      const gridId = id.replace("sensorgrid_", "");
+      const gridConfig = (config.sensorGrids || []).find((s) => s.id === gridId);
+      if (!gridConfig) return null;
+      const gridData = sensorGridData[gridId];
+      return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} />;
     }
     return null;
   };
