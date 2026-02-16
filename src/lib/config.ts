@@ -2,6 +2,7 @@ export interface WidgetLayout {
   colSpan: number; // 1-6
   row: number; // which row (1-based)
   rowSpan: number; // how many rows to span (1+)
+  widgetGroup?: string; // optional group ID — widgets with same group stack in one card
 }
 
 export interface PhotoWidgetConfig {

@@ -36,13 +36,17 @@ interface SortableWidgetItemProps {
   colSpan: number;
   row: number;
   rowSpan: number;
+  widgetGroup: string;
   maxCols: number;
   onColSpanChange: (span: number) => void;
   onRowChange: (row: number) => void;
   onRowSpanChange: (span: number) => void;
+  onWidgetGroupChange: (group: string) => void;
 }
 
-function SortableWidgetItem({ id, label, colSpan, row, rowSpan, maxCols, onColSpanChange, onRowChange, onRowSpanChange }: SortableWidgetItemProps) {
+const WIDGET_GROUPS = ["", "A", "B", "C", "D", "E", "F", "G", "H"];
+
+function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, maxCols, onColSpanChange, onRowChange, onRowSpanChange, onWidgetGroupChange }: SortableWidgetItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
@@ -64,7 +68,18 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, maxCols, onColSp
         <GripVertical className="h-4 w-4" />
       </button>
       <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+        <Label className="text-[10px] text-muted-foreground">Grp</Label>
+        <Select value={widgetGroup} onValueChange={onWidgetGroupChange}>
+          <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            {WIDGET_GROUPS.map((g) => (
+              <SelectItem key={g || "none"} value={g || "none"}>{g || "—"}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Label className="text-[10px] text-muted-foreground">Row</Label>
         <Select value={String(row)} onValueChange={(v) => onRowChange(Number(v))}>
           <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
@@ -992,10 +1007,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         colSpan={getColSpan(id, defaultSpan)}
                         row={getRow(id, defaultRow)}
                         rowSpan={getRowSpan(id, 1)}
+                        widgetGroup={widgetLayouts[id]?.widgetGroup || ""}
                         maxCols={gridColumns}
                         onColSpanChange={(span) => updateLayout(id, { colSpan: span })}
                         onRowChange={(row) => updateLayout(id, { row })}
                         onRowSpanChange={(rowSpan) => updateLayout(id, { rowSpan })}
+                        onWidgetGroupChange={(group) => updateLayout(id, { widgetGroup: group === "none" ? "" : group })}
                       />
                     );
                   })}

@@ -94,6 +94,8 @@ const Index = () => {
     return defaults;
   }, [config.widgetOrder, config.temperatureEntities, personCount, hasCar, hasEnergy]);
 
+  const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
+
   const renderWidget = (id: string) => {
     
     if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} />;
@@ -210,43 +212,82 @@ const Index = () => {
 
       {/* Grid */}
       <div className="grid gap-2">
-        {rows.map(({ rowNum, widgets, cols, heightPx }) => (
-          <div
-            key={rowNum}
-            className="grid gap-2"
-            style={{
-              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-              ...(heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : {}),
-              overflow: 'hidden',
-            }}
-          >
-            {widgets.map(({ id, span, rowSpan: rSpan }) => {
-              const widget = renderWidget(id);
-              if (!widget) return null;
-              const mobileSpan = isMobile ? 1 : span;
-              const mobileRowSpan = isMobile ? 1 : rSpan;
-              // If row has a fixed height, multiply by rowSpan for multi-row widgets
-              const widgetHeight = heightPx && mobileRowSpan > 1
-                ? `${heightPx * mobileRowSpan}px`
-                : undefined;
-              return (
-                <div
-                  key={id}
-                  style={{
-                    gridColumn: `span ${mobileSpan}`,
-                    gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
-                    height: widgetHeight,
-                    minHeight: !heightPx
-                      ? (id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined))
-                      : undefined,
-                  }}
-                >
-                  {widget}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+        {rows.map(({ rowNum, widgets, cols, heightPx }) => {
+          // Group widgets by widgetGroup within each row
+          const rendered: { id: string; span: number; rSpan: number; groupId: string }[] = [];
+          const seenGroups = new Set<string>();
+
+          for (const w of widgets) {
+            const groupId = getWidgetGroup(w.id);
+            if (groupId && seenGroups.has(groupId)) continue; // already rendered as part of group
+            if (groupId) seenGroups.add(groupId);
+            rendered.push({ id: w.id, span: w.span, rSpan: w.rowSpan, groupId });
+          }
+
+          return (
+            <div
+              key={rowNum}
+              className="grid gap-2"
+              style={{
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                ...(heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : {}),
+                overflow: 'hidden',
+              }}
+            >
+              {rendered.map(({ id, span, rSpan, groupId }) => {
+                const mobileSpan = isMobile ? 1 : span;
+                const mobileRowSpan = isMobile ? 1 : rSpan;
+                const widgetHeight = heightPx && mobileRowSpan > 1
+                  ? `${heightPx * mobileRowSpan}px`
+                  : undefined;
+
+                // If this widget is the lead of a group, stack all group members
+                if (groupId) {
+                  const groupMembers = widgets.filter((w) => getWidgetGroup(w.id) === groupId);
+                  const groupWidgets = groupMembers.map((w) => ({ id: w.id, node: renderWidget(w.id) })).filter((w) => w.node);
+                  if (groupWidgets.length === 0) return null;
+                  return (
+                    <div
+                      key={id}
+                      className="widget-card h-full flex flex-col gap-2 overflow-hidden"
+                      style={{
+                        gridColumn: `span ${mobileSpan}`,
+                        gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
+                        height: widgetHeight,
+                        minHeight: !heightPx
+                          ? (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined)
+                          : undefined,
+                      }}
+                    >
+                      {groupWidgets.map(({ id: wId, node }) => (
+                        <div key={wId} className="flex-1 min-h-0">{node}</div>
+                      ))}
+                    </div>
+                  );
+                }
+
+                // Normal ungrouped widget
+                const widget = renderWidget(id);
+                if (!widget) return null;
+                return (
+                  <div
+                    key={id}
+                    style={{
+                      gridColumn: `span ${mobileSpan}`,
+                      gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
+                      height: widgetHeight,
+                      minHeight: !heightPx
+                        ? (id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined))
+                        : undefined,
+                    }}
+                  >
+                    {widget}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       {/* Kiosk exit hint */}
