@@ -28,9 +28,22 @@ import {
   useFoodMenuData,
 } from "@/hooks/useDashboardData";
 
-function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
+function getTempGroupIds(entities: { group?: number }[]): string[] {
+  const seen = new Set<number>();
+  const ids: string[] = [];
+  entities.forEach((e, i) => {
+    const g = e.group ?? i;
+    if (!seen.has(g)) {
+      seen.add(g);
+      ids.push(`temp_group_${g}`);
+    }
+  });
+  return ids;
+}
+
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
   return [
-    ...(tempCount > 0 ? ["temperatures"] : []),
+    ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     ...(hasCar ? ["car"] : []),
     "electricity",
@@ -71,7 +84,7 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, personCount, hasCar, hasEnergy);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, hasCar, hasEnergy);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -79,7 +92,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities.length, personCount, hasCar, hasEnergy]);
+  }, [config.widgetOrder, config.temperatureEntities, personCount, hasCar, hasEnergy]);
 
   const renderWidget = (id: string) => {
     
@@ -95,8 +108,11 @@ const Index = () => {
       />
     );
     if (id === "photos") return <PhotoWidget config={config.photoWidget} />;
-    if (id === "temperatures") {
-      return <TemperatureWidget sensors={tempSensors} loading={tempLoading} />;
+    if (id.startsWith("temp_group_")) {
+      const groupNum = parseInt(id.split("_")[2], 10);
+      const groupSensors = tempSensors.filter((_, i) => (config.temperatureEntities[i]?.group ?? i) === groupNum);
+      if (groupSensors.length === 0) return null;
+      return <TemperatureWidget sensors={groupSensors} loading={tempLoading} />;
     }
     if (id.startsWith("person_")) {
       const idx = parseInt(id.split("_")[1], 10);

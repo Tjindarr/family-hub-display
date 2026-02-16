@@ -81,6 +81,7 @@ export interface TemperatureEntityConfig {
   humidityEntityId?: string;
   label: string;
   color: string;
+  group?: number; // sensors with the same group number render in one widget
 }
 
 export interface PersonEntityConfig {
