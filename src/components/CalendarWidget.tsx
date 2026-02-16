@@ -27,7 +27,7 @@ function getDayLabel(event: HACalendarEvent): string {
   const date = getEventTime(event);
   if (isToday(date)) return "Today";
   if (isTomorrow(date)) return "Tomorrow";
-  return format(date, "EEEE, MMM d");
+  return format(date, "EEEE, yyyy-MM-dd");
 }
 
 export default function CalendarWidget({ events, loading }: CalendarWidgetProps) {
