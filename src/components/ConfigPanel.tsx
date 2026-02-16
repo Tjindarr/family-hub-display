@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping } from "@/lib/config";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
@@ -750,9 +750,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   onClick={() => {
                     const id = `gs_${Date.now()}`;
                     setGeneralSensors([...generalSensors, {
-                      id, label: "", showLabel: true, icon: "activity",
-                      showGraph: true, historyHours: 24,
-                      chartSeries: [], topInfo: [], bottomInfo: [],
+                       id, label: "", showLabel: true, icon: "activity",
+                       showGraph: true, historyHours: 24, chartGrouping: "hour" as ChartGrouping,
+                       chartSeries: [], topInfo: [], bottomInfo: [],
                     }]);
                   }}
                   className="text-primary"
@@ -796,18 +796,29 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       </Select>
                     </div>
                     <div className="w-24">
-                      <Label className="text-xs text-muted-foreground">History</Label>
-                      <Select value={String(gs.historyHours)} onValueChange={(v) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], historyHours: Number(v) }; setGeneralSensors(u); }}>
-                        <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1h</SelectItem>
-                          <SelectItem value="6">6h</SelectItem>
-                          <SelectItem value="24">24h</SelectItem>
-                          <SelectItem value="168">7d</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                       <Label className="text-xs text-muted-foreground">History</Label>
+                       <Select value={String(gs.historyHours)} onValueChange={(v) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], historyHours: Number(v) }; setGeneralSensors(u); }}>
+                         <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="1">1h</SelectItem>
+                           <SelectItem value="6">6h</SelectItem>
+                           <SelectItem value="24">24h</SelectItem>
+                           <SelectItem value="168">7d</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     <div className="w-24">
+                       <Label className="text-xs text-muted-foreground">Group by</Label>
+                       <Select value={gs.chartGrouping || "hour"} onValueChange={(v) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartGrouping: v as ChartGrouping }; setGeneralSensors(u); }}>
+                         <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="minute">Minute</SelectItem>
+                           <SelectItem value="hour">Hour</SelectItem>
+                           <SelectItem value="day">Day</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                   </div>
 
                   {/* Top Info */}
                   <div className="space-y-2">
