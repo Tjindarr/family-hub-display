@@ -103,10 +103,22 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, maxCols, onColSp
   );
 }
 
-function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
+function getTempGroupIds(entities: { group?: number }[]): string[] {
+  const seen = new Set<number>();
+  const ids: string[] = [];
+  entities.forEach((e, i) => {
+    const g = e.group ?? i;
+    if (!seen.has(g)) {
+      seen.add(g);
+      ids.push(`temp_group_${g}`);
+    }
+  });
+  return ids;
+}
+
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
   return [
-    
-    ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
+    ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     ...(hasCar ? ["car"] : []),
     "electricity",
@@ -148,7 +160,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
     const hasEnergy = !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities.length, (config.personEntities || []).length, hasCar, hasEnergy);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, hasCar, hasEnergy);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -165,12 +177,19 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       car: "Car / EV", food_menu: "Food Menu",
       monthly_energy: "Monthly Energy", power_usage: "Power Usage",
     };
-    tempEntities.forEach((e, i) => { labelMap[`temp_${i}`] = e.label || `Sensor ${i + 1}`; });
+    // Build labels for temp groups
+    const groupMap = new Map<number, string[]>();
+    tempEntities.forEach((e, i) => {
+      const g = e.group ?? i;
+      if (!groupMap.has(g)) groupMap.set(g, []);
+      groupMap.get(g)!.push(e.label || `Sensor ${i + 1}`);
+    });
+    groupMap.forEach((labels, g) => { labelMap[`temp_group_${g}`] = labels.join(" / "); });
     personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
 
     const hasCar = !!(carConfig.chargerEntity || carConfig.fuelRangeEntity || carConfig.batteryEntity);
     const hasEnergy = !!(energyConfig.monthlyCostEntity || energyConfig.currentPowerEntity);
-    const defaults = getDefaultWidgetIds(tempEntities.length, personEntities.length, hasCar, hasEnergy);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, hasCar, hasEnergy);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -236,23 +255,15 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   };
 
   const addTempEntity = () => {
-    const newIndex = tempEntities.length;
-    setTempEntities([
-      ...tempEntities,
-      { entityId: "", label: "", color: "hsl(174, 72%, 50%)" },
-    ]);
-    setWidgetOrder((prev) => [...prev, `temp_${newIndex}`]);
+    const newEntity = { entityId: "", label: "", color: "hsl(174, 72%, 50%)", group: tempEntities.length };
+    const updated = [...tempEntities, newEntity];
+    setTempEntities(updated);
+    // Widget order will auto-sync via widgetItems memo
   };
 
   const removeTempEntity = (index: number) => {
     setTempEntities(tempEntities.filter((_, i) => i !== index));
-    setWidgetOrder((prev) => prev.filter((id) => id !== `temp_${index}`).map((id) => {
-      if (id.startsWith("temp_")) {
-        const idx = parseInt(id.split("_")[1], 10);
-        if (idx > index) return `temp_${idx - 1}`;
-      }
-      return id;
-    }));
+    // Widget order will auto-sync via widgetItems memo
   };
 
   const updateTempEntity = (index: number, updates: Partial<TemperatureEntityConfig>) => {
@@ -398,6 +409,22 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     placeholder="hsl(174, 72%, 50%)"
                     className="w-40 bg-muted border-border text-sm"
                   />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Widget Group</Label>
+                  <Select
+                    value={String(entity.group ?? i)}
+                    onValueChange={(v) => updateTempEntity(i, { group: Number(v) })}
+                  >
+                    <SelectTrigger className="mt-1 bg-muted border-border text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: tempEntities.length }, (_, g) => (
+                        <SelectItem key={g} value={String(g)}>Group {g + 1}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             ))}
