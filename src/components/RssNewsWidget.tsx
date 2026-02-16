@@ -108,8 +108,11 @@ export default function RssNewsWidget({ items, loading, label, cycleIntervalSeco
         {item.imageUrl && (
           <div className="shrink-0 w-24 h-24 rounded-md overflow-hidden self-center">
             <img
+              key={item.imageUrl}
               src={item.imageUrl}
               alt={item.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           </div>

@@ -86,8 +86,11 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
           />
         )}
         <img
+          key={src}
           src={src}
           alt={`Photo ${currentIndex + 1}`}
+          loading="lazy"
+          decoding="async"
           className={`absolute inset-0 h-full w-full transition-opacity duration-500 ${
             displayMode === "cover" ? "object-cover object-top" : "object-contain object-top"
           }`}
