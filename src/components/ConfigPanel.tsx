@@ -58,17 +58,19 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
+      className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2 space-y-1.5"
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground shrink-0"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-      <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
-      <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+      <div className="flex items-center gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab touch-none text-muted-foreground hover:text-foreground shrink-0"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <span className="text-sm font-medium text-foreground truncate">{label}</span>
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap pl-6">
         <Label className="text-[10px] text-muted-foreground">Grp</Label>
         <Select value={widgetGroup} onValueChange={onWidgetGroupChange}>
           <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
