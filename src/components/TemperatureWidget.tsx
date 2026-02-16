@@ -57,41 +57,37 @@ export default function TemperatureWidget({ sensors, loading }: TemperatureWidge
     );
   }
 
-  // Check if any sensor has a chart enabled
-  const hasAnyChart = sensors.some((s) => s.showChart && s.history && s.history.length > 0);
-
   return (
-    <div className="widget-card h-full flex flex-col gap-3 relative overflow-hidden">
-      {/* Background charts — one per sensor with chart enabled */}
-      {hasAnyChart && sensors.map((sensor, i) => (
-        <SensorChart key={i} sensor={sensor} />
-      ))}
-
-      {/* Foreground content */}
+    <div className="widget-card h-full flex flex-col gap-3">
       {sensors.map((sensor, i) => (
-        <div key={i} className="flex items-center justify-between relative z-10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: sensor.color }} />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {sensor.label}
-              </span>
+        <div key={i} className="relative overflow-hidden rounded-lg">
+          {/* Background chart scoped to this sensor row */}
+          <SensorChart sensor={sensor} />
+
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: sensor.color }} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {sensor.label}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Thermometer className="h-4 w-4" style={{ color: sensor.color }} />
+                <span className="font-mono text-lg font-semibold text-foreground">
+                  {sensor.temperature !== null ? `${sensor.temperature.toFixed(1)}°` : "—"}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <Thermometer className="h-4 w-4" style={{ color: sensor.color }} />
-              <span className="font-mono text-lg font-semibold text-foreground">
-                {sensor.temperature !== null ? `${sensor.temperature.toFixed(1)}°` : "—"}
-              </span>
-            </div>
+            {sensor.humidity !== null && (
+              <div className="flex items-center gap-1.5">
+                <Droplets className="h-4 w-4 text-blue-400" />
+                <span className="font-mono text-sm text-muted-foreground">
+                  {sensor.humidity.toFixed(0)}%
+                </span>
+              </div>
+            )}
           </div>
-          {sensor.humidity !== null && (
-            <div className="flex items-center gap-1.5">
-              <Droplets className="h-4 w-4 text-blue-400" />
-              <span className="font-mono text-sm text-muted-foreground">
-                {sensor.humidity.toFixed(0)}%
-              </span>
-            </div>
-          )}
         </div>
       ))}
     </div>
