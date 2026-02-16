@@ -11,6 +11,7 @@ import CarWidget from "@/components/CarWidget";
 import MonthlyEnergyWidget from "@/components/MonthlyEnergyWidget";
 import PowerUsageWidget from "@/components/PowerUsageWidget";
 import FoodMenuWidget from "@/components/FoodMenuWidget";
+import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { useKioskMode } from "@/hooks/useKioskMode";
@@ -27,6 +28,7 @@ import {
   useEnergyUsageData,
   useFoodMenuData,
 } from "@/hooks/useDashboardData";
+import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
 
 function getTempGroupIds(entities: { group?: number }[]): string[] {
   const seen = new Set<number>();
@@ -41,7 +43,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -52,6 +54,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     "food_menu",
     "weather",
     "photos",
+    ...generalSensorIds.map((id) => `general_${id}`),
   ];
 }
 
@@ -65,12 +68,14 @@ const Index = () => {
   const { charger, fuel, battery, loading: carLoading } = useCarData(config);
   const { monthly, power, loading: energyLoading } = useEnergyUsageData(config);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
+  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
   const isDemo = !isConfigured;
   const hasCar = isDemo || !!(config.carConfig?.chargerEntity?.trim() || config.carConfig?.fuelRangeEntity?.trim() || config.carConfig?.batteryEntity?.trim());
   const hasEnergy = isDemo || !!(config.energyUsageConfig?.monthlyCostEntity?.trim() || config.energyUsageConfig?.currentPowerEntity?.trim());
+  const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   // Apply theme
@@ -84,7 +89,7 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, hasCar, hasEnergy);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, hasCar, hasEnergy, generalSensorIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -92,7 +97,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities, personCount, hasCar, hasEnergy]);
+  }, [config.widgetOrder, config.temperatureEntities, personCount, hasCar, hasEnergy, generalSensorIds]);
 
   const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
 
@@ -126,6 +131,13 @@ const Index = () => {
     if (id === "monthly_energy") return <MonthlyEnergyWidget data={monthly} loading={energyLoading} />;
     if (id === "power_usage") return <PowerUsageWidget data={power} loading={energyLoading} />;
     if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} />;
+    if (id.startsWith("general_")) {
+      const sensorId = id.replace("general_", "");
+      const sensorConfig = (config.generalSensors || []).find((s) => s.id === sensorId);
+      if (!sensorConfig) return null;
+      const sensorData = generalSensorData[sensorId];
+      return <GeneralSensorWidget config={sensorConfig} data={sensorData} loading={generalSensorLoading} />;
+    }
     return null;
   };
 
