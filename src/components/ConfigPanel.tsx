@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
+import PhotoManager from "@/components/PhotoManager";
 import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping } from "@/lib/config";
 import { THEMES } from "@/lib/config";
 import {
@@ -1003,48 +1004,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    files.forEach((file) => {
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        const dataUrl = reader.result as string;
-                        setPhotoConfig((prev) => ({ ...prev, photos: [...prev.photos, dataUrl] }));
-                      };
-                      reader.readAsDataURL(file);
-                    });
-                    e.target.value = "";
-                  }}
-                />
-                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="w-full">
-                  <Upload className="mr-2 h-3 w-3" /> Upload Photos
-                </Button>
-              </div>
-              {photoConfig.photos.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {photoConfig.photos.map((photo, i) => (
-                    <div key={i} className="group relative aspect-square overflow-hidden rounded-md border border-border/50">
-                      <img src={photo} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
-                      <button
-                        onClick={() => setPhotoConfig((prev) => ({ ...prev, photos: prev.photos.filter((_, j) => j !== i) }))}
-                        className="absolute right-1 top-1 rounded-full bg-destructive/80 p-0.5 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Photos are stored as base64 in config. For many/large photos, use a config backend.
-              </p>
+              <PhotoManager />
             </section>
 
             <Button onClick={handleSave} className="w-full">

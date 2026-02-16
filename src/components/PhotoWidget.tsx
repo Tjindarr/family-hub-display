@@ -3,15 +3,41 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ImageIcon } from "lucide-react";
 import type { PhotoWidgetConfig } from "@/lib/config";
 
+interface ServerPhoto {
+  filename: string;
+  url: string;
+  thumbUrl: string;
+}
+
 interface PhotoWidgetProps {
   config: PhotoWidgetConfig;
 }
 
 export default function PhotoWidget({ config }: PhotoWidgetProps) {
-  const { photos, intervalSeconds, displayMode = "contain" } = config;
+  const { intervalSeconds, displayMode = "contain" } = config;
+  const [photos, setPhotos] = useState<ServerPhoto[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fade, setFade] = useState(true);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  // Fetch photos from server
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const res = await fetch("/api/photos");
+        if (res.ok) {
+          const data = await res.json();
+          setPhotos(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch photos:", e);
+      }
+    };
+    fetchPhotos();
+    // Re-fetch periodically to pick up new uploads
+    const interval = setInterval(fetchPhotos, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const advance = useCallback(() => {
     if (photos.length <= 1) return;
@@ -46,7 +72,7 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
     );
   }
 
-  const src = photos[currentIndex];
+  const src = photos[currentIndex]?.url || "";
 
   return (
     <Card className="h-full max-h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur" style={{ minHeight: 0 }}>
@@ -69,12 +95,17 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
         />
         {photos.length > 1 && (
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
-            {photos.map((_, i) => (
+            {photos.length <= 20 && photos.map((_, i) => (
               <span
                 key={i}
                 className={`block h-1.5 w-1.5 rounded-full ${i === currentIndex ? "bg-foreground/80" : "bg-foreground/30"}`}
               />
             ))}
+            {photos.length > 20 && (
+              <span className="text-[10px] text-foreground/60 bg-background/40 rounded px-1.5">
+                {currentIndex + 1} / {photos.length}
+              </span>
+            )}
           </div>
         )}
       </CardContent>
