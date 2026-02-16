@@ -4,10 +4,12 @@ import {
   YAxis,
 } from "recharts";
 import type { TemperatureSensorData } from "@/hooks/useDashboardData";
+import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 interface TemperatureWidgetProps {
   sensors: TemperatureSensorData[];
   loading: boolean;
+  fontSizes?: ResolvedFontSizes;
 }
 
 function SensorChart({ sensor }: { sensor: TemperatureSensorData }) {
@@ -48,7 +50,9 @@ function SensorChart({ sensor }: { sensor: TemperatureSensorData }) {
   );
 }
 
-export default function TemperatureWidget({ sensors, loading }: TemperatureWidgetProps) {
+export default function TemperatureWidget({ sensors, loading, fontSizes }: TemperatureWidgetProps) {
+  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+
   if (loading) {
     return (
       <div className="widget-card h-full">
@@ -61,20 +65,19 @@ export default function TemperatureWidget({ sensors, loading }: TemperatureWidge
     <div className="widget-card h-full flex flex-col gap-3">
       {sensors.map((sensor, i) => (
         <div key={i} className="relative overflow-hidden rounded-lg">
-          {/* Background chart scoped to this sensor row */}
           <SensorChart sensor={sensor} />
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: sensor.color }} />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: fs.heading }}>
                   {sensor.label}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Thermometer className="h-4 w-4" style={{ color: sensor.color }} />
-                <span className="font-mono text-lg font-semibold text-foreground">
+                <span className="font-mono font-semibold text-foreground" style={{ fontSize: fs.value }}>
                   {sensor.temperature !== null ? `${sensor.temperature.toFixed(1)}°` : "—"}
                 </span>
               </div>
@@ -82,7 +85,7 @@ export default function TemperatureWidget({ sensors, loading }: TemperatureWidge
             {sensor.humidity !== null && (
               <div className="flex items-center gap-1.5">
                 <Droplets className="h-4 w-4 text-blue-400" />
-                <span className="font-mono text-sm text-muted-foreground">
+                <span className="font-mono text-muted-foreground" style={{ fontSize: fs.body }}>
                   {sensor.humidity.toFixed(0)}%
                 </span>
               </div>

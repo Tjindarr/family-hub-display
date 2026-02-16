@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
+import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import ColorPicker from "@/components/ColorPicker";
@@ -43,15 +44,17 @@ interface SortableWidgetItemProps {
   rowSpan: number;
   widgetGroup: string;
   maxCols: number;
+  fontSizes: WidgetFontSizes;
   onColSpanChange: (span: number) => void;
   onRowChange: (row: number) => void;
   onRowSpanChange: (span: number) => void;
   onWidgetGroupChange: (group: string) => void;
+  onFontSizeChange: (sizes: WidgetFontSizes) => void;
 }
 
 const WIDGET_GROUPS = ["", "A", "B", "C", "D", "E", "F", "G", "H"];
 
-function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, maxCols, onColSpanChange, onRowChange, onRowSpanChange, onWidgetGroupChange }: SortableWidgetItemProps) {
+function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, maxCols, fontSizes, onColSpanChange, onRowChange, onRowSpanChange, onWidgetGroupChange, onFontSizeChange }: SortableWidgetItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
@@ -121,6 +124,26 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
           </SelectContent>
         </Select>
       </div>
+      {/* Per-widget font sizes */}
+      <div className="flex items-center gap-1.5 flex-wrap pl-6">
+        <Label className="text-[10px] text-muted-foreground w-7">Font</Label>
+        <div className="flex items-center gap-0.5">
+          <span className="text-[9px] text-muted-foreground">H</span>
+          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.heading ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, heading: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[10px] px-1" />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <span className="text-[9px] text-muted-foreground">V</span>
+          <Input type="number" min={6} max={80} placeholder="—" value={fontSizes.value ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, value: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[10px] px-1" />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <span className="text-[9px] text-muted-foreground">B</span>
+          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.body ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, body: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[10px] px-1" />
+        </div>
+        <div className="flex items-center gap-0.5">
+          <span className="text-[9px] text-muted-foreground">L</span>
+          <Input type="number" min={6} max={40} placeholder="—" value={fontSizes.label ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, label: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[10px] px-1" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -179,6 +202,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
   const [sensorGrids, setSensorGrids] = useState<SensorGridConfig[]>(config.sensorGrids || []);
   const [rssFeeds, setRssFeeds] = useState<RssNewsConfig[]>(config.rssFeeds || []);
+  const [globalFontSizes, setGlobalFontSizes] = useState<GlobalFontSizes>(config.globalFontSizes || DEFAULT_FONT_SIZES);
+  const [widgetFontSizes, setWidgetFontSizes] = useState<Record<string, WidgetFontSizes>>(config.widgetFontSizes || {});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const gsIds = (config.generalSensors || []).map((s) => s.id);
@@ -276,6 +301,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       generalSensors,
       sensorGrids,
       rssFeeds,
+      globalFontSizes,
+      widgetFontSizes,
     });
     setOpen(false);
   };
@@ -1232,6 +1259,30 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
           {/* ===== LAYOUT TAB ===== */}
           <TabsContent value="layout" className="space-y-6 mt-0">
+            {/* Global Font Sizes */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Text Sizes (px)</h3>
+              <p className="text-xs text-muted-foreground">Global defaults. Per-widget overrides below.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Heading</Label>
+                  <Input type="number" min={6} max={60} value={globalFontSizes.heading} onChange={(e) => setGlobalFontSizes((p) => ({ ...p, heading: Number(e.target.value) || 12 }))} className="mt-1 bg-muted border-border" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Value</Label>
+                  <Input type="number" min={6} max={80} value={globalFontSizes.value} onChange={(e) => setGlobalFontSizes((p) => ({ ...p, value: Number(e.target.value) || 18 }))} className="mt-1 bg-muted border-border" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Body</Label>
+                  <Input type="number" min={6} max={60} value={globalFontSizes.body} onChange={(e) => setGlobalFontSizes((p) => ({ ...p, body: Number(e.target.value) || 14 }))} className="mt-1 bg-muted border-border" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Label</Label>
+                  <Input type="number" min={6} max={40} value={globalFontSizes.label} onChange={(e) => setGlobalFontSizes((p) => ({ ...p, label: Number(e.target.value) || 10 }))} className="mt-1 bg-muted border-border" />
+                </div>
+              </div>
+            </section>
+
             <section className="space-y-3">
               <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Grid</h3>
               <div>
@@ -1344,10 +1395,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                           rowSpan={getRowSpan(id, 1)}
                           widgetGroup={widgetLayouts[id]?.widgetGroup || ""}
                           maxCols={gridColumns}
+                          fontSizes={widgetFontSizes[id] || {}}
                           onColSpanChange={(span) => updateLayout(id, { colSpan: span })}
                           onRowChange={(row) => updateLayout(id, { row })}
                           onRowSpanChange={(rowSpan) => updateLayout(id, { rowSpan })}
                           onWidgetGroupChange={(group) => updateLayout(id, { widgetGroup: group === "none" ? "" : group })}
+                          onFontSizeChange={(sizes) => setWidgetFontSizes((prev) => ({ ...prev, [id]: sizes }))}
                         />
                       );
                     })}

@@ -6,6 +6,7 @@ import {
 import type { LucideProps } from "lucide-react";
 import dynamicIconImports from "lucide-react/dynamicIconImports";
 import type { GeneralSensorConfig, SensorChartType } from "@/lib/config";
+import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 // Dynamic icon loader
 interface DynIconProps extends Omit<LucideProps, "ref"> {
@@ -41,6 +42,7 @@ interface GeneralSensorWidgetProps {
   config: GeneralSensorConfig;
   data: GeneralSensorLiveData;
   loading: boolean;
+  fontSizes?: ResolvedFontSizes;
 }
 
 function formatTickByGrouping(iso: string, grouping?: string): string {
@@ -52,14 +54,14 @@ function formatTickByGrouping(iso: string, grouping?: string): string {
     if (grouping === "minute") {
       return d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
     }
-    // hour (default)
     return d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
   } catch {
     return iso;
   }
 }
 
-export default function GeneralSensorWidget({ config, data, loading }: GeneralSensorWidgetProps) {
+export default function GeneralSensorWidget({ config, data, loading, fontSizes }: GeneralSensorWidgetProps) {
+  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const { topValues, bottomValues, chartData, chartSeriesMeta } = data || { topValues: [], bottomValues: [], chartData: [], chartSeriesMeta: [] };
 
   // Compute stats per series
@@ -86,13 +88,13 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
 
   return (
     <div className="widget-card h-full flex flex-col">
-      {/* Header: icon + label + top info */}
+      {/* Header: icon + label */}
       <div className="flex items-center gap-3 mb-2">
         {config.icon && (
           <DynIcon name={config.icon} className="h-5 w-5 text-primary shrink-0" />
         )}
         {config.showLabel && config.label && (
-          <span className="text-sm font-medium text-foreground">{config.label}</span>
+          <span className="font-medium text-foreground" style={{ fontSize: fs.body }}>{config.label}</span>
         )}
       </div>
 
@@ -101,11 +103,11 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
         <div className="flex items-baseline gap-4 mb-3 flex-wrap">
           {topValues.map((tv, i) => (
             <div key={i} className="flex items-baseline gap-1">
-              <span className="stat-value text-lg" style={{ color: tv.color || undefined }}>
+              <span className="font-mono font-bold" style={{ color: tv.color || undefined, fontSize: fs.value }}>
                 {tv.value}
               </span>
-              {tv.unit && <span className="stat-label text-xs">{tv.unit}</span>}
-              {tv.label && <span className="text-[10px] text-muted-foreground">{tv.label}</span>}
+              {tv.unit && <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{tv.unit}</span>}
+              {tv.label && <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{tv.label}</span>}
             </div>
           ))}
         </div>
@@ -129,11 +131,11 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
                 dataKey="time"
                 ticks={ticks}
                 tickFormatter={(v) => formatTickByGrouping(v, config.chartGrouping)}
-                tick={{ fill: "hsl(215, 12%, 55%)", fontSize: 10 }}
+                tick={{ fill: "hsl(215, 12%, 55%)", fontSize: fs.label }}
                 axisLine={{ stroke: "hsl(220, 14%, 20%)" }}
               />
               <YAxis
-                tick={{ fill: "hsl(215, 12%, 55%)", fontSize: 10 }}
+                tick={{ fill: "hsl(215, 12%, 55%)", fontSize: fs.label }}
                 axisLine={{ stroke: "hsl(220, 14%, 20%)" }}
                 domain={["auto", "auto"]}
               />
@@ -143,7 +145,7 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
                   border: "1px solid hsl(220, 14%, 20%)",
                   borderRadius: "8px",
                   color: "hsl(210, 20%, 92%)",
-                  fontSize: 12,
+                  fontSize: fs.body,
                 }}
                 labelFormatter={(v) => {
                   const d = new Date(String(v));
@@ -156,46 +158,14 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
                   case "bar":
                     return <Bar key={s.dataKey} dataKey={s.dataKey} fill={s.color} opacity={0.8} name={s.label} />;
                   case "area":
-                    return (
-                      <Area
-                        key={s.dataKey}
-                        type="monotone"
-                        dataKey={s.dataKey}
-                        stroke={s.color}
-                        strokeWidth={2}
-                        fill={`url(#grad_${s.dataKey})`}
-                        dot={false}
-                        name={s.label}
-                      />
-                    );
+                    return <Area key={s.dataKey} type="monotone" dataKey={s.dataKey} stroke={s.color} strokeWidth={2} fill={`url(#grad_${s.dataKey})`} dot={false} name={s.label} />;
                   case "step":
-                    return (
-                      <Area
-                        key={s.dataKey}
-                        type="stepAfter"
-                        dataKey={s.dataKey}
-                        stroke={s.color}
-                        strokeWidth={2}
-                        fill={`url(#grad_${s.dataKey})`}
-                        dot={false}
-                        name={s.label}
-                      />
-                    );
+                    return <Area key={s.dataKey} type="stepAfter" dataKey={s.dataKey} stroke={s.color} strokeWidth={2} fill={`url(#grad_${s.dataKey})`} dot={false} name={s.label} />;
                   case "scatter":
                     return <Scatter key={s.dataKey} dataKey={s.dataKey} fill={s.color} name={s.label} />;
                   case "line":
                   default:
-                    return (
-                      <Line
-                        key={s.dataKey}
-                        type="monotone"
-                        dataKey={s.dataKey}
-                        stroke={s.color}
-                        strokeWidth={2}
-                        dot={false}
-                        name={s.label}
-                      />
-                    );
+                    return <Line key={s.dataKey} type="monotone" dataKey={s.dataKey} stroke={s.color} strokeWidth={2} dot={false} name={s.label} />;
                 }
               })}
             </ComposedChart>
@@ -205,7 +175,7 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
 
       {/* Bottom info values */}
       {bottomValues.length > 0 && (
-        <div className="mt-2 flex gap-4 text-xs flex-wrap">
+        <div className="mt-2 flex gap-4 flex-wrap" style={{ fontSize: fs.label }}>
           {bottomValues.map((bv, i) => (
             <div key={i} className="flex items-baseline gap-1">
               {bv.label && <span className="text-muted-foreground">{bv.label}</span>}
@@ -215,26 +185,19 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
               {bv.unit && <span className="text-muted-foreground">{bv.unit}</span>}
             </div>
           ))}
-          {/* Series stats (avg/min/max) */}
           {seriesStats.length > 0 && (
             <div className="ml-auto flex gap-3">
               <div>
                 <span className="text-muted-foreground">Avg </span>
-                <span className="font-mono font-medium text-foreground">
-                  {seriesStats[0].avg.toFixed(1)}
-                </span>
+                <span className="font-mono font-medium text-foreground">{seriesStats[0].avg.toFixed(1)}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Min </span>
-                <span className="font-mono font-medium" style={{ color: "hsl(120, 50%, 50%)" }}>
-                  {seriesStats[0].min.toFixed(1)}
-                </span>
+                <span className="font-mono font-medium" style={{ color: "hsl(120, 50%, 50%)" }}>{seriesStats[0].min.toFixed(1)}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Max </span>
-                <span className="font-mono font-medium" style={{ color: "hsl(0, 72%, 55%)" }}>
-                  {seriesStats[0].max.toFixed(1)}
-                </span>
+                <span className="font-mono font-medium" style={{ color: "hsl(0, 72%, 55%)" }}>{seriesStats[0].max.toFixed(1)}</span>
               </div>
             </div>
           )}

@@ -2,10 +2,12 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
 import type { NordpoolData } from "@/hooks/useDashboardData";
+import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 interface ElectricityWidgetProps {
   nordpool: NordpoolData;
   loading: boolean;
+  fontSizes?: ResolvedFontSizes;
 }
 
 function getPriceColor(price: number): string {
@@ -24,7 +26,8 @@ function formatHour(date: Date): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-export default function ElectricityWidget({ nordpool, loading }: ElectricityWidgetProps) {
+export default function ElectricityWidget({ nordpool, loading, fontSizes }: ElectricityWidgetProps) {
+  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const { today, tomorrow, currentPrice } = nordpool;
 
   // Merge into chart data
@@ -67,11 +70,11 @@ export default function ElectricityWidget({ nordpool, loading }: ElectricityWidg
     <div className="widget-card h-full">
       {/* Current price with badge */}
       <div className="mb-4 flex items-baseline gap-3">
-        <span className="stat-value" style={{ color: getPriceColor(currentPrice) }}>
+        <span className="font-mono font-bold" style={{ color: getPriceColor(currentPrice), fontSize: fs.value }}>
           {currentPrice.toFixed(2)}
         </span>
-        <span className="stat-label">kr/kWh</span>
-        <span className={getPriceBadgeClass(currentPrice)}>
+        <span className="text-muted-foreground" style={{ fontSize: fs.label }}>kr/kWh</span>
+        <span className={getPriceBadgeClass(currentPrice)} style={{ fontSize: fs.label }}>
           {currentPrice < 0.50 ? "Low" : currentPrice < 1.00 ? "Medium" : "High"}
         </span>
       </div>
@@ -98,11 +101,11 @@ export default function ElectricityWidget({ nordpool, loading }: ElectricityWidg
               domain={["dataMin", "dataMax"]}
               ticks={ticks}
               tickFormatter={(val) => formatHour(new Date(val))}
-              tick={{ fill: "hsl(215, 12%, 55%)", fontSize: 10 }}
+              tick={{ fill: "hsl(215, 12%, 55%)", fontSize: fs.label }}
               axisLine={{ stroke: "hsl(220, 14%, 20%)" }}
             />
             <YAxis
-              tick={{ fill: "hsl(215, 12%, 55%)", fontSize: 10 }}
+              tick={{ fill: "hsl(215, 12%, 55%)", fontSize: fs.label }}
               axisLine={{ stroke: "hsl(220, 14%, 20%)" }}
               domain={[0, "auto"]}
               tickFormatter={(v) => v.toFixed(1)}
@@ -117,7 +120,7 @@ export default function ElectricityWidget({ nordpool, loading }: ElectricityWidg
                 border: "1px solid hsl(220, 14%, 20%)",
                 borderRadius: "8px",
                 color: "hsl(210, 20%, 92%)",
-                fontSize: 12,
+                fontSize: fs.body,
               }}
               formatter={(value: number, name: string) => [
                 `${value.toFixed(3)} kr/kWh`,
@@ -154,7 +157,7 @@ export default function ElectricityWidget({ nordpool, loading }: ElectricityWidg
       )}
 
       {/* Stats row */}
-      <div className="mt-3 flex gap-6 text-xs">
+      <div className="mt-3 flex gap-6" style={{ fontSize: fs.label }}>
         <div className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full" style={{ background: "hsl(210, 100%, 50%)" }} />
           <span className="text-muted-foreground">Idag</span>

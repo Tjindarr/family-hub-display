@@ -1,14 +1,16 @@
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { UtensilsCrossed } from "lucide-react";
+import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 export interface FoodMenuDay {
-  date: string; // YYYY-MM-DD
+  date: string;
   meals: string[];
 }
 
 interface FoodMenuWidgetProps {
   days: FoodMenuDay[];
   loading: boolean;
+  fontSizes?: ResolvedFontSizes;
 }
 
 function getDayLabel(dateStr: string): string {
@@ -22,12 +24,14 @@ function getShortDate(dateStr: string): string {
   return format(parseISO(dateStr), "d/M");
 }
 
-export default function FoodMenuWidget({ days, loading }: FoodMenuWidgetProps) {
+export default function FoodMenuWidget({ days, loading, fontSizes }: FoodMenuWidgetProps) {
+  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+
   return (
     <div className="widget-card h-full flex flex-col">
       <div className="flex items-center gap-2 mb-3">
         <UtensilsCrossed className="h-4 w-4 text-primary" />
-        <span className="text-xs font-medium uppercase tracking-wider text-primary/70">Menu</span>
+        <span className="font-medium uppercase tracking-wider text-primary/70" style={{ fontSize: fs.heading }}>Menu</span>
       </div>
 
       {loading ? (
@@ -37,7 +41,7 @@ export default function FoodMenuWidget({ days, loading }: FoodMenuWidgetProps) {
           ))}
         </div>
       ) : days.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No meals planned</p>
+        <p className="text-muted-foreground" style={{ fontSize: fs.body }}>No meals planned</p>
       ) : (
         <div className="space-y-1.5 flex-1 overflow-y-auto">
           {days.map((day, i) => (
@@ -46,12 +50,12 @@ export default function FoodMenuWidget({ days, loading }: FoodMenuWidgetProps) {
               className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 transition-colors hover:bg-muted/60"
             >
               <div className="shrink-0 w-16 pt-0.5">
-                <span className="text-xs font-medium text-primary/80">{getDayLabel(day.date)}</span>
-                <span className="block text-[10px] text-muted-foreground">{getShortDate(day.date)}</span>
+                <span className="font-medium text-primary/80" style={{ fontSize: fs.heading }}>{getDayLabel(day.date)}</span>
+                <span className="block text-muted-foreground" style={{ fontSize: fs.label }}>{getShortDate(day.date)}</span>
               </div>
               <div className="flex-1 min-w-0">
                 {day.meals.map((meal, j) => (
-                  <span key={j} className="text-sm font-medium text-foreground block truncate">
+                  <span key={j} className="font-medium text-foreground block truncate" style={{ fontSize: fs.body }}>
                     {meal}
                   </span>
                 ))}

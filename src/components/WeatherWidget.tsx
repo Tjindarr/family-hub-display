@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, CloudFog, CloudSun, CloudMoon, Sunrise, Sunset, Droplets, Wind } from "lucide-react";
 import { Area, YAxis, ResponsiveContainer, ComposedChart, Bar, Tooltip } from "recharts";
+import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 export interface WeatherForecastDay {
   date: string;
   tempHigh: number;
   tempLow: number;
   condition: string;
-  precipitation: number | null; // mm
+  precipitation: number | null;
   sunrise: string | null;
   sunset: string | null;
 }
@@ -35,6 +36,7 @@ interface WeatherWidgetProps {
   showPrecipitation: boolean;
   showSunrise: boolean;
   showSunset: boolean;
+  fontSizes?: ResolvedFontSizes;
 }
 
 function getWeatherIcon(condition: string, size = 20) {
@@ -64,7 +66,8 @@ function isToday(dateStr: string) {
   return d.toDateString() === now.toDateString();
 }
 
-export default function WeatherWidget({ weather, loading, showPrecipitation, showSunrise, showSunset }: WeatherWidgetProps) {
+export default function WeatherWidget({ weather, loading, showPrecipitation, showSunrise, showSunset, fontSizes }: WeatherWidgetProps) {
+  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -100,25 +103,28 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
   const maxTemp = Math.max(...allTemps) + 3;
   const maxPrecip = Math.max(...chartData.map((d) => d.precipitation), 1);
 
+  // Scale large text proportionally from value size
+  const xlSize = Math.round(fs.value * 1.67);
+
   return (
     <div className="widget-card h-full">
       {/* Current conditions - 3 columns */}
       <div className="mb-4 flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
         {/* Left: time + date */}
         <div>
-          <div className="text-3xl font-bold text-foreground">
+          <div className="font-bold text-foreground" style={{ fontSize: xlSize }}>
             {format(now, "HH:mm")}
-            <span className="text-lg text-muted-foreground">:{format(now, "ss")}</span>
+            <span className="text-muted-foreground" style={{ fontSize: fs.value }}>:{format(now, "ss")}</span>
           </div>
-          <div className="text-xs text-muted-foreground">{format(now, "EEEE, yyyy-MM-dd")}</div>
+          <div className="text-muted-foreground" style={{ fontSize: fs.heading }}>{format(now, "EEEE, yyyy-MM-dd")}</div>
         </div>
 
         {/* Center: icon + temp */}
         <div className="flex items-center gap-3">
           {getWeatherIcon(weather.current.condition, 40)}
           <div>
-            <div className="text-3xl font-bold text-foreground">{Math.round(weather.current.temperature)}°</div>
-            <div className="text-xs capitalize text-muted-foreground">{weather.current.condition.replace(/_/g, " ")}</div>
+            <div className="font-bold text-foreground" style={{ fontSize: xlSize }}>{Math.round(weather.current.temperature)}°</div>
+            <div className="capitalize text-muted-foreground" style={{ fontSize: fs.heading }}>{weather.current.condition.replace(/_/g, " ")}</div>
           </div>
         </div>
 
@@ -128,13 +134,13 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
             {showSunrise && todayForecast.sunrise && (
               <div className="flex items-center gap-2">
                 <Sunrise className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium text-foreground">{todayForecast.sunrise}</span>
+                <span className="font-medium text-foreground" style={{ fontSize: fs.body }}>{todayForecast.sunrise}</span>
               </div>
             )}
             {showSunset && todayForecast.sunset && (
               <div className="flex items-center gap-2">
                 <Sunset className="h-4 w-4 text-orange-400" />
-                <span className="text-sm font-medium text-foreground">{todayForecast.sunset}</span>
+                <span className="font-medium text-foreground" style={{ fontSize: fs.body }}>{todayForecast.sunset}</span>
               </div>
             )}
           </div>
@@ -147,7 +153,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
         <div className="flex justify-around mb-1">
           {chartData.map((d, i) => (
             <div key={i} className="flex flex-col items-center gap-0.5">
-              <span className="text-[10px] font-medium text-muted-foreground">{d.name}</span>
+              <span className="font-medium text-muted-foreground" style={{ fontSize: fs.label }}>{d.name}</span>
               {getWeatherIcon(d.condition, 16)}
             </div>
           ))}
@@ -165,28 +171,8 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
                 isAnimationActive={false}
               />
             )}
-            <Area
-              type="monotone"
-              dataKey="high"
-              yAxisId="temp"
-              stroke="hsl(0, 70%, 60%)"
-              fill="hsl(0, 70%, 60%)"
-              fillOpacity={0.1}
-              strokeWidth={2}
-              dot={{ r: 3, fill: "hsl(0, 70%, 60%)" }}
-              isAnimationActive={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="low"
-              yAxisId="temp"
-              stroke="hsl(210, 70%, 60%)"
-              fill="hsl(210, 70%, 60%)"
-              fillOpacity={0.1}
-              strokeWidth={2}
-              dot={{ r: 3, fill: "hsl(210, 70%, 60%)" }}
-              isAnimationActive={false}
-            />
+            <Area type="monotone" dataKey="high" yAxisId="temp" stroke="hsl(0, 70%, 60%)" fill="hsl(0, 70%, 60%)" fillOpacity={0.1} strokeWidth={2} dot={{ r: 3, fill: "hsl(0, 70%, 60%)" }} isAnimationActive={false} />
+            <Area type="monotone" dataKey="low" yAxisId="temp" stroke="hsl(210, 70%, 60%)" fill="hsl(210, 70%, 60%)" fillOpacity={0.1} strokeWidth={2} dot={{ r: 3, fill: "hsl(210, 70%, 60%)" }} isAnimationActive={false} />
             <YAxis yAxisId="temp" domain={[minTemp, maxTemp]} hide />
             <YAxis yAxisId="precip" domain={[0, maxPrecip * 4]} hide orientation="right" />
             <Tooltip
@@ -194,7 +180,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
                 backgroundColor: "hsl(var(--card))",
                 border: "1px solid hsl(var(--border))",
                 borderRadius: "8px",
-                fontSize: "12px",
+                fontSize: fs.body,
                 color: "hsl(var(--foreground))",
               }}
               formatter={(value: number, name: string) => {
@@ -211,10 +197,10 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
         <div className="flex justify-around mt-0.5">
           {chartData.map((d, i) => (
             <div key={i} className="flex flex-col items-center">
-              <span className="text-xs font-semibold text-foreground">{d.high}°</span>
-              <span className="text-[10px] text-muted-foreground">{d.low}°</span>
+              <span className="font-semibold text-foreground" style={{ fontSize: fs.heading }}>{d.high}°</span>
+              <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{d.low}°</span>
               {showPrecipitation && d.precipitation > 0 && (
-                <span className="text-[9px] text-blue-400">{d.precipitation} mm</span>
+                <span className="text-blue-400" style={{ fontSize: Math.max(fs.label - 1, 8) }}>{d.precipitation} mm</span>
               )}
             </div>
           ))}
