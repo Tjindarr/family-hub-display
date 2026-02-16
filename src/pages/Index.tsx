@@ -30,8 +30,7 @@ import {
 
 function getDefaultWidgetIds(tempCount: number, personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
   return [
-    
-    ...Array.from({ length: tempCount }, (_, i) => `temp_${i}`),
+    ...(tempCount > 0 ? ["temperatures"] : []),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     ...(hasCar ? ["car"] : []),
     "electricity",
@@ -96,11 +95,8 @@ const Index = () => {
       />
     );
     if (id === "photos") return <PhotoWidget config={config.photoWidget} />;
-    if (id.startsWith("temp_")) {
-      const idx = parseInt(id.split("_")[1], 10);
-      const sensor = tempSensors[idx];
-      if (!sensor) return null;
-      return <TemperatureWidget sensor={sensor} loading={tempLoading} />;
+    if (id === "temperatures") {
+      return <TemperatureWidget sensors={tempSensors} loading={tempLoading} />;
     }
     if (id.startsWith("person_")) {
       const idx = parseInt(id.split("_")[1], 10);
