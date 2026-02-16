@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig } from "@/lib/config";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import ColorPicker from "@/components/ColorPicker";
@@ -138,13 +138,11 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
-    ...(hasCar ? ["car"] : []),
     "electricity",
-    ...(hasEnergy ? ["monthly_energy", "power_usage"] : []),
     "calendar",
     "food_menu",
     "weather",
@@ -177,20 +175,16 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
-  const [carConfig, setCarConfig] = useState<CarConfig>(config.carConfig || { chargerEntity: "", fuelRangeEntity: "", batteryEntity: "" });
-  const [energyConfig, setEnergyConfig] = useState<EnergyUsageConfig>(config.energyUsageConfig || { monthlyCostEntity: "", monthlyConsumptionEntity: "", currentPowerEntity: "", maxPowerEntity: "" });
   const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5 });
   const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
   const [sensorGrids, setSensorGrids] = useState<SensorGridConfig[]>(config.sensorGrids || []);
   const [rssFeeds, setRssFeeds] = useState<RssNewsConfig[]>(config.rssFeeds || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
-    const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
-    const hasEnergy = !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
     const gsIds = (config.generalSensors || []).map((s) => s.id);
     const sgIds = (config.sensorGrids || []).map((s) => s.id);
     const rsIds = (config.rssFeeds || []).map((s) => s.id);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, hasCar, hasEnergy, gsIds, sgIds, rsIds);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -203,8 +197,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const widgetItems = useMemo(() => {
     const labelMap: Record<string, string> = {
       electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
-      car: "Car / EV", food_menu: "Food Menu",
-      monthly_energy: "Monthly Energy", power_usage: "Power Usage",
+      food_menu: "Food Menu",
     };
     const groupMap = new Map<number, string[]>();
     tempEntities.forEach((e, i) => {
@@ -218,12 +211,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     sensorGrids.forEach((sg) => { labelMap[`sensorgrid_${sg.id}`] = sg.label || `Grid ${sg.id}`; });
     rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
 
-    const hasCar = !!(carConfig.chargerEntity || carConfig.fuelRangeEntity || carConfig.batteryEntity);
-    const hasEnergy = !!(energyConfig.monthlyCostEntity || energyConfig.currentPowerEntity);
     const gsIds = generalSensors.map((s) => s.id);
     const sgIds = sensorGrids.map((s) => s.id);
     const rsIds = rssFeeds.map((s) => s.id);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, hasCar, hasEnergy, gsIds, sgIds, rsIds);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -232,9 +223,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("rss_") ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("rss_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, carConfig, energyConfig, generalSensors, sensorGrids, rssFeeds]);
+  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, rssFeeds]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -281,8 +272,6 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       personEntities,
       weatherConfig,
       theme,
-      carConfig,
-      energyUsageConfig: energyConfig,
       foodMenuConfig: foodMenuConfig,
       generalSensors,
       sensorGrids,
@@ -778,43 +767,6 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
               ))}
             </section>
 
-            {/* Car / EV */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Car / EV</h3>
-              <div>
-                <Label className="text-xs text-muted-foreground">Charger Status Entity</Label>
-                <EntityAutocomplete value={carConfig.chargerEntity} onChange={(val) => setCarConfig((prev) => ({ ...prev, chargerEntity: val }))} config={config} domainFilter="sensor" placeholder="sensor.ehg4chqg_status" className="mt-1 bg-muted border-border text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Fuel Driving Range Entity</Label>
-                <EntityAutocomplete value={carConfig.fuelRangeEntity} onChange={(val) => setCarConfig((prev) => ({ ...prev, fuelRangeEntity: val }))} config={config} domainFilter="sensor" placeholder="sensor.ceed_fuel_driving_range" className="mt-1 bg-muted border-border text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">EV Battery Level Entity</Label>
-                <EntityAutocomplete value={carConfig.batteryEntity} onChange={(val) => setCarConfig((prev) => ({ ...prev, batteryEntity: val }))} config={config} domainFilter="sensor" placeholder="sensor.ceed_ev_battery_level" className="mt-1 bg-muted border-border text-sm" />
-              </div>
-            </section>
-
-            {/* Energy Usage */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Energy Usage</h3>
-              <div>
-                <Label className="text-xs text-muted-foreground">Monthly Cost Entity</Label>
-                <EntityAutocomplete value={energyConfig.monthlyCostEntity} onChange={(val) => setEnergyConfig((prev) => ({ ...prev, monthlyCostEntity: val }))} config={config} domainFilter="sensor" placeholder="sensor.berget_monthly_cost" className="mt-1 bg-muted border-border text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Monthly Consumption Entity (kWh)</Label>
-                <EntityAutocomplete value={energyConfig.monthlyConsumptionEntity} onChange={(val) => setEnergyConfig((prev) => ({ ...prev, monthlyConsumptionEntity: val }))} config={config} domainFilter="sensor" placeholder="sensor.berget_monthly_net_consumption" className="mt-1 bg-muted border-border text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Current Power Entity (W)</Label>
-                <EntityAutocomplete value={energyConfig.currentPowerEntity} onChange={(val) => setEnergyConfig((prev) => ({ ...prev, currentPowerEntity: val }))} config={config} domainFilter="sensor" placeholder="sensor.tibber_pulse_berget_power" className="mt-1 bg-muted border-border text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Max Power Entity (W)</Label>
-                <EntityAutocomplete value={energyConfig.maxPowerEntity} onChange={(val) => setEnergyConfig((prev) => ({ ...prev, maxPowerEntity: val }))} config={config} domainFilter="sensor" placeholder="sensor.tibber_pulse_berget_max_power" className="mt-1 bg-muted border-border text-sm" />
-              </div>
-            </section>
 
             {/* General Sensors */}
             <section className="space-y-3">
