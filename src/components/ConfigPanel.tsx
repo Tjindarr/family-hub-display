@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -288,6 +288,27 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     setTempEntities(tempEntities.map((e, i) => (i === index ? { ...e, ...updates } : e)));
   };
 
+  const [panelWidth, setPanelWidth] = useState(448);
+  const dragStartRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragStartRef.current = { startX: e.clientX, startWidth: panelWidth };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragStartRef.current) return;
+      const diff = dragStartRef.current.startX - ev.clientX;
+      const newW = Math.max(350, Math.min(900, dragStartRef.current.startWidth + diff));
+      setPanelWidth(newW);
+    };
+    const onUp = () => {
+      dragStartRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [panelWidth]);
+
   if (!open) {
     return (
       <Button
@@ -301,9 +322,20 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     );
   }
 
+
+
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end">
-      <div className="h-full w-full max-w-md overflow-y-auto border-l border-border bg-card p-6 shadow-2xl">
+      {/* Drag handle */}
+      <div
+        onMouseDown={handleDragStart}
+        className="h-full w-2 cursor-col-resize flex items-center justify-center hover:bg-primary/20 transition-colors"
+        style={{ marginRight: 0 }}
+      >
+        <div className="h-8 w-1 rounded-full bg-muted-foreground/40" />
+      </div>
+      <div className="h-full overflow-y-auto border-l border-border bg-card p-6 shadow-2xl" style={{ width: panelWidth }}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Dashboard Settings</h2>
           <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
@@ -315,6 +347,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
           <TabsList className="w-full mb-4">
             <TabsTrigger value="connection" className="flex-1 text-xs">Connection</TabsTrigger>
             <TabsTrigger value="widgets" className="flex-1 text-xs">Widgets</TabsTrigger>
+            <TabsTrigger value="photos" className="flex-1 text-xs">Photos</TabsTrigger>
             <TabsTrigger value="layout" className="flex-1 text-xs">Layout</TabsTrigger>
           </TabsList>
 
@@ -935,7 +968,14 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
               ))}
             </section>
 
-            {/* Photo Gallery */}
+
+            <Button onClick={handleSave} className="w-full">
+              <Save className="mr-2 h-4 w-4" /> Save Configuration
+            </Button>
+          </TabsContent>
+
+          {/* ===== PHOTOS TAB ===== */}
+          <TabsContent value="photos" className="space-y-6 mt-0">
             <section className="space-y-3">
               <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Photo Gallery</h3>
               <div>
