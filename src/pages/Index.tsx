@@ -7,9 +7,6 @@ import ElectricityWidget from "@/components/ElectricityWidget";
 import PhotoWidget from "@/components/PhotoWidget";
 import PersonWidget from "@/components/PersonWidget";
 import WeatherWidget from "@/components/WeatherWidget";
-import CarWidget from "@/components/CarWidget";
-import MonthlyEnergyWidget from "@/components/MonthlyEnergyWidget";
-import PowerUsageWidget from "@/components/PowerUsageWidget";
 import FoodMenuWidget from "@/components/FoodMenuWidget";
 import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import SensorGridWidget from "@/components/SensorGridWidget";
@@ -25,8 +22,6 @@ import {
   useElectricityPrices,
   usePersonData,
   useWeatherData,
-  useCarData,
-  useEnergyUsageData,
   useFoodMenuData,
 } from "@/hooks/useDashboardData";
 import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
@@ -45,13 +40,11 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[], sensorGridIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
-    ...(hasCar ? ["car"] : []),
     "electricity",
-    ...(hasEnergy ? ["monthly_energy", "power_usage"] : []),
     "calendar",
     "food_menu",
     "weather",
@@ -90,16 +83,12 @@ const Index = () => {
   const { nordpool, loading: priceLoading } = useElectricityPrices(config);
   const { persons, loading: personLoading } = usePersonData(config);
   const { weather, loading: weatherLoading } = useWeatherData(config);
-  const { charger, fuel, battery, loading: carLoading } = useCarData(config);
-  const { monthly, power, loading: energyLoading } = useEnergyUsageData(config);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
   const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config);
   const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
-  const hasCar = isDemo || !!(config.carConfig?.chargerEntity?.trim() || config.carConfig?.fuelRangeEntity?.trim() || config.carConfig?.batteryEntity?.trim());
-  const hasEnergy = isDemo || !!(config.energyUsageConfig?.monthlyCostEntity?.trim() || config.energyUsageConfig?.currentPowerEntity?.trim());
   const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
@@ -115,7 +104,7 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, hasCar, hasEnergy, generalSensorIds, sensorGridIds);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -123,7 +112,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities, personCount, hasCar, hasEnergy, generalSensorIds, sensorGridIds]);
+  }, [config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds]);
 
   const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
 
@@ -153,9 +142,6 @@ const Index = () => {
       if (!person) return null;
       return <PersonWidget person={person} loading={personLoading} />;
     }
-    if (id === "car") return <CarWidget charger={charger} fuel={fuel} battery={battery} loading={carLoading} />;
-    if (id === "monthly_energy") return <MonthlyEnergyWidget data={monthly} loading={energyLoading} />;
-    if (id === "power_usage") return <PowerUsageWidget data={power} loading={energyLoading} />;
     if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} />;
     if (id.startsWith("general_")) {
       const sensorId = id.replace("general_", "");
@@ -177,7 +163,7 @@ const Index = () => {
   const getColSpan = (id: string) => {
     if (config.widgetLayouts?.[id]?.colSpan) return config.widgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
-    if (id === "photos" || id === "car" || id === "monthly_energy" || id === "power_usage" || id === "food_menu") return 2;
+    if (id === "photos" || id === "food_menu") return 2;
     return 1;
   };
 
