@@ -10,6 +10,7 @@ import PhotoManager from "@/components/PhotoManager";
 import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap } from "@/lib/config";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import ColorPicker from "@/components/ColorPicker";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
@@ -467,11 +468,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       placeholder="Label"
                       className="bg-muted border-border text-sm"
                     />
-                    <Input
+                    <ColorPicker
                       value={entity.color}
-                      onChange={(e) => updateTempEntity(i, { color: e.target.value })}
-                      placeholder="hsl(174, 72%, 50%)"
-                      className="w-40 bg-muted border-border text-sm"
+                      onChange={(val) => updateTempEntity(i, { color: val })}
+                      className="w-48"
                     />
                   </div>
                   <div>
@@ -907,7 +907,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         </div>
                         <Input value={ti.label} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
                         <Input value={ti.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
-                        <Input value={ti.color} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], color: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
+                        <ColorPicker value={ti.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], color: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} className="w-28" />
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], topInfo: u[gsIdx].topInfo.filter((_, j) => j !== tiIdx) }; setGeneralSensors(u); }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -940,7 +940,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                               <SelectItem value="scatter">Scatter</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Input value={cs.color} onChange={(e) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], color: e.target.value }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
+                          <ColorPicker value={cs.color} onChange={(val) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], color: val }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} className="w-28" />
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartSeries: u[gsIdx].chartSeries.filter((_, j) => j !== csIdx) }; setGeneralSensors(u); }}>
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -966,7 +966,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         </div>
                         <Input value={bi.label} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
                         <Input value={bi.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
-                        <Input value={bi.color} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], color: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
+                        <ColorPicker value={bi.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], color: val }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} className="w-28" />
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], bottomInfo: u[gsIdx].bottomInfo.filter((_, j) => j !== biIdx) }; setGeneralSensors(u); }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -1093,7 +1093,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                           <Input value={cell.label} onChange={(e) => updateCell({ label: e.target.value })} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
                           <Input value={cell.icon} onChange={(e) => updateCell({ icon: e.target.value })} placeholder="Icon" className="w-16 bg-muted border-border text-xs h-7" />
                           <Input value={cell.unit} onChange={(e) => updateCell({ unit: e.target.value })} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
-                          <Input value={cell.color} onChange={(e) => updateCell({ color: e.target.value })} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
+                          <ColorPicker value={cell.color} onChange={(val) => updateCell({ color: val })} className="w-28" />
                         </div>
 
                         {/* Value Mapping */}
@@ -1162,11 +1162,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                                 intervals[ivIdx] = { ...intervals[ivIdx], icon: e.target.value };
                                 updateCell({ intervals });
                               }} placeholder="Icon" className="w-16 bg-muted border-border text-xs h-6" />
-                              <Input value={iv.color} onChange={(e) => {
+                              <ColorPicker value={iv.color} onChange={(val) => {
                                 const intervals = [...(cell.intervals || [])];
-                                intervals[ivIdx] = { ...intervals[ivIdx], color: e.target.value };
+                                intervals[ivIdx] = { ...intervals[ivIdx], color: val };
                                 updateCell({ intervals });
-                              }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-6" />
+                              }} className="w-28" />
                             </div>
                           ))}
                         </div>
