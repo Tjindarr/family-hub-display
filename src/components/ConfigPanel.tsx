@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap } from "@/lib/config";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
@@ -986,7 +988,17 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     const id = `sg_${Date.now()}`;
                     setSensorGrids([...sensorGrids, {
                       id, label: "", rows: 2, columns: 2,
-                      cells: Array.from({ length: 4 }, () => ({ entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))" })),
+                      cells: Array.from({ length: 4 }, () => ({
+                        entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))",
+                        useIntervals: false,
+                        intervals: [
+                          { min: 0, max: 25, icon: "circle", color: "hsl(120, 70%, 45%)" },
+                          { min: 25, max: 50, icon: "circle", color: "hsl(60, 70%, 50%)" },
+                          { min: 50, max: 75, icon: "circle", color: "hsl(30, 90%, 50%)" },
+                          { min: 75, max: 100, icon: "circle", color: "hsl(0, 70%, 50%)" },
+                        ],
+                        valueMaps: [],
+                      })),
                     }]);
                   }}
                   className="text-primary"
@@ -1015,7 +1027,17 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         const u = [...sensorGrids];
                         const totalCells = newRows * sg.columns;
                         const cells = [...sg.cells];
-                        while (cells.length < totalCells) cells.push({ entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))" });
+                        while (cells.length < totalCells) cells.push({
+                          entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))",
+                          useIntervals: false,
+                          intervals: [
+                            { min: 0, max: 25, icon: "circle", color: "hsl(120, 70%, 45%)" },
+                            { min: 25, max: 50, icon: "circle", color: "hsl(60, 70%, 50%)" },
+                            { min: 50, max: 75, icon: "circle", color: "hsl(30, 90%, 50%)" },
+                            { min: 75, max: 100, icon: "circle", color: "hsl(0, 70%, 50%)" },
+                          ],
+                          valueMaps: [],
+                        });
                         u[sgIdx] = { ...u[sgIdx], rows: newRows, cells: cells.slice(0, totalCells) };
                         setSensorGrids(u);
                       }}>
@@ -1030,7 +1052,17 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         const u = [...sensorGrids];
                         const totalCells = sg.rows * newCols;
                         const cells = [...sg.cells];
-                        while (cells.length < totalCells) cells.push({ entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))" });
+                        while (cells.length < totalCells) cells.push({
+                          entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))",
+                          useIntervals: false,
+                          intervals: [
+                            { min: 0, max: 25, icon: "circle", color: "hsl(120, 70%, 45%)" },
+                            { min: 25, max: 50, icon: "circle", color: "hsl(60, 70%, 50%)" },
+                            { min: 50, max: 75, icon: "circle", color: "hsl(30, 90%, 50%)" },
+                            { min: 75, max: 100, icon: "circle", color: "hsl(0, 70%, 50%)" },
+                          ],
+                          valueMaps: [],
+                        });
                         u[sgIdx] = { ...u[sgIdx], columns: newCols, cells: cells.slice(0, totalCells) };
                         setSensorGrids(u);
                       }}>
@@ -1043,18 +1075,104 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   {/* Cells */}
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Cells ({sg.rows} × {sg.columns})</Label>
-                    {sg.cells.map((cell, cIdx) => (
-                      <div key={cIdx} className="flex gap-1.5 items-end">
-                        <span className="text-[10px] text-muted-foreground w-4 shrink-0">{cIdx + 1}</span>
-                        <div className="flex-1">
-                          <EntityAutocomplete value={cell.entityId} onChange={(val) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], entityId: val }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                    {sg.cells.map((cell, cIdx) => {
+                      const updateCell = (patch: Partial<SensorGridCellConfig>) => {
+                        const u = [...sensorGrids];
+                        const cells = [...u[sgIdx].cells];
+                        cells[cIdx] = { ...cells[cIdx], ...patch };
+                        u[sgIdx] = { ...u[sgIdx], cells };
+                        setSensorGrids(u);
+                      };
+                      return (
+                      <div key={cIdx} className="space-y-1">
+                        <div className="flex gap-1.5 items-end">
+                          <span className="text-[10px] text-muted-foreground w-4 shrink-0">{cIdx + 1}</span>
+                          <div className="flex-1">
+                            <EntityAutocomplete value={cell.entityId} onChange={(val) => updateCell({ entityId: val })} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                          </div>
+                          <Input value={cell.label} onChange={(e) => updateCell({ label: e.target.value })} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
+                          <Input value={cell.icon} onChange={(e) => updateCell({ icon: e.target.value })} placeholder="Icon" className="w-16 bg-muted border-border text-xs h-7" />
+                          <Input value={cell.unit} onChange={(e) => updateCell({ unit: e.target.value })} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
+                          <Input value={cell.color} onChange={(e) => updateCell({ color: e.target.value })} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
                         </div>
-                        <Input value={cell.label} onChange={(e) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], label: e.target.value }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
-                        <Input value={cell.icon} onChange={(e) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], icon: e.target.value }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} placeholder="Icon" className="w-16 bg-muted border-border text-xs h-7" />
-                        <Input value={cell.unit} onChange={(e) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], unit: e.target.value }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
-                        <Input value={cell.color} onChange={(e) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], color: e.target.value }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
+
+                        {/* Value Mapping */}
+                        <div className="pl-5 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground">Value Mapping</span>
+                            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1 text-primary" onClick={() => {
+                              updateCell({ valueMaps: [...(cell.valueMaps || []), { from: "", to: "" }] });
+                            }}>+ Add</Button>
+                          </div>
+                          {(cell.valueMaps || []).map((vm, vmIdx) => (
+                            <div key={vmIdx} className="flex gap-1 items-center">
+                              <Input value={vm.from} onChange={(e) => {
+                                const maps = [...(cell.valueMaps || [])];
+                                maps[vmIdx] = { ...maps[vmIdx], from: e.target.value };
+                                updateCell({ valueMaps: maps });
+                              }} placeholder="From" className="w-16 bg-muted border-border text-xs h-6" />
+                              <span className="text-[10px] text-muted-foreground">→</span>
+                              <Input value={vm.to} onChange={(e) => {
+                                const maps = [...(cell.valueMaps || [])];
+                                maps[vmIdx] = { ...maps[vmIdx], to: e.target.value };
+                                updateCell({ valueMaps: maps });
+                              }} placeholder="To" className="w-16 bg-muted border-border text-xs h-6" />
+                              <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => {
+                                updateCell({ valueMaps: (cell.valueMaps || []).filter((_, j) => j !== vmIdx) });
+                              }}><Trash2 className="h-2.5 w-2.5" /></Button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Conditional Intervals */}
+                        <div className="pl-5 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={cell.useIntervals || false}
+                              onCheckedChange={(checked) => {
+                                updateCell({
+                                  useIntervals: !!checked,
+                                  intervals: cell.intervals?.length ? cell.intervals : [
+                                    { min: 0, max: 25, icon: "circle", color: "hsl(120, 70%, 45%)" },
+                                    { min: 25, max: 50, icon: "circle", color: "hsl(60, 70%, 50%)" },
+                                    { min: 50, max: 75, icon: "circle", color: "hsl(30, 90%, 50%)" },
+                                    { min: 75, max: 100, icon: "circle", color: "hsl(0, 70%, 50%)" },
+                                  ],
+                                });
+                              }}
+                              className="h-3 w-3"
+                            />
+                            <span className="text-[10px] text-muted-foreground">Conditional icon/color (4 intervals)</span>
+                          </div>
+                          {cell.useIntervals && (cell.intervals || []).map((iv, ivIdx) => (
+                            <div key={ivIdx} className="flex gap-1 items-center">
+                              <span className="text-[9px] text-muted-foreground w-3">{ivIdx + 1}</span>
+                              <Input value={iv.min} onChange={(e) => {
+                                const intervals = [...(cell.intervals || [])];
+                                intervals[ivIdx] = { ...intervals[ivIdx], min: Number(e.target.value) || 0 };
+                                updateCell({ intervals });
+                              }} type="number" placeholder="Min" className="w-14 bg-muted border-border text-xs h-6" />
+                              <Input value={iv.max} onChange={(e) => {
+                                const intervals = [...(cell.intervals || [])];
+                                intervals[ivIdx] = { ...intervals[ivIdx], max: Number(e.target.value) || 0 };
+                                updateCell({ intervals });
+                              }} type="number" placeholder="Max" className="w-14 bg-muted border-border text-xs h-6" />
+                              <Input value={iv.icon} onChange={(e) => {
+                                const intervals = [...(cell.intervals || [])];
+                                intervals[ivIdx] = { ...intervals[ivIdx], icon: e.target.value };
+                                updateCell({ intervals });
+                              }} placeholder="Icon" className="w-16 bg-muted border-border text-xs h-6" />
+                              <Input value={iv.color} onChange={(e) => {
+                                const intervals = [...(cell.intervals || [])];
+                                intervals[ivIdx] = { ...intervals[ivIdx], color: e.target.value };
+                                updateCell({ intervals });
+                              }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-6" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}

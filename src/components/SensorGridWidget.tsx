@@ -1,7 +1,7 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import type { LucideProps } from "lucide-react";
 import dynamicIconImports from "lucide-react/dynamicIconImports";
-import type { SensorGridConfig } from "@/lib/config";
+import type { SensorGridConfig, SensorGridCellConfig } from "@/lib/config";
 
 // Dynamic icon loader (shared pattern)
 const iconCache: Record<string, React.ComponentType<Omit<LucideProps, "ref">>> = {};
@@ -28,6 +28,32 @@ interface SensorGridWidgetProps {
   loading: boolean;
 }
 
+function resolveCell(cell: SensorGridCellConfig, rawValue: string | undefined) {
+  let displayValue = rawValue ?? "—";
+  let icon = cell.icon;
+  let color = cell.color;
+
+  // Apply value mapping
+  if (cell.valueMaps?.length && rawValue != null) {
+    const match = cell.valueMaps.find((m) => m.from === rawValue);
+    if (match) displayValue = match.to;
+  }
+
+  // Apply interval-based icon/color
+  if (cell.useIntervals && cell.intervals?.length && rawValue != null) {
+    const num = parseFloat(rawValue);
+    if (!isNaN(num)) {
+      const matched = cell.intervals.find((iv) => num >= iv.min && num <= iv.max);
+      if (matched) {
+        icon = matched.icon || icon;
+        color = matched.color || color;
+      }
+    }
+  }
+
+  return { displayValue, icon, color };
+}
+
 export default function SensorGridWidget({ config, data, loading }: SensorGridWidgetProps) {
   if (loading) {
     return <div className="widget-card h-full animate-pulse" />;
@@ -47,16 +73,17 @@ export default function SensorGridWidget({ config, data, loading }: SensorGridWi
         {config.cells.map((cell, i) => {
           if (!cell.entityId) return <div key={i} />;
           const cellData = values[i];
+          const { displayValue, icon, color } = resolveCell(cell, cellData?.value);
           return (
             <div
               key={i}
               className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 p-2 min-w-0"
             >
-              {cell.icon && (
+              {icon && (
                 <DynIcon
-                  name={cell.icon}
+                  name={icon}
                   className="h-4 w-4 shrink-0"
-                  style={{ color: cell.color || undefined }}
+                  style={{ color: color || undefined }}
                 />
               )}
               <span className="text-[10px] text-muted-foreground truncate max-w-full text-center">
@@ -65,9 +92,9 @@ export default function SensorGridWidget({ config, data, loading }: SensorGridWi
               <div className="flex items-baseline gap-0.5">
                 <span
                   className="font-mono text-sm font-semibold"
-                  style={{ color: cell.color || undefined }}
+                  style={{ color: color || undefined }}
                 >
-                  {cellData?.value ?? "—"}
+                  {displayValue}
                 </span>
                 {cellData?.unit && (
                   <span className="text-[10px] text-muted-foreground">{cellData.unit}</span>
