@@ -167,6 +167,23 @@ app.delete("/api/photos/:filename", (req, res) => {
   }
 });
 
+// --- RSS Proxy ---
+app.get("/api/rss", async (req, res) => {
+  const feedUrl = req.query.url;
+  if (!feedUrl) return res.status(400).json({ error: "Missing url parameter" });
+  try {
+    const response = await fetch(feedUrl, {
+      headers: { "User-Agent": "HomeDash/1.0" },
+    });
+    if (!response.ok) return res.status(response.status).json({ error: `Upstream ${response.status}` });
+    const text = await response.text();
+    res.set("Content-Type", "application/xml; charset=utf-8");
+    res.send(text);
+  } catch (err) {
+    res.status(502).json({ error: "Failed to fetch feed" });
+  }
+});
+
 // --- Static files ---
 app.use(express.static("/usr/share/nginx/html"));
 
