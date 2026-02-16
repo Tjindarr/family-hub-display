@@ -73,12 +73,27 @@ export interface GeneralSensorConfig {
   bottomInfo: SensorInfoItem[]; // up to 4 sensors displayed at the bottom
 }
 
+export interface SensorGridCellInterval {
+  min: number;
+  max: number;
+  icon: string;
+  color: string;
+}
+
+export interface SensorGridValueMap {
+  from: string; // raw value from sensor
+  to: string;   // displayed value
+}
+
 export interface SensorGridCellConfig {
   entityId: string;
   label: string;
   icon: string; // lucide icon name (kebab-case)
   unit: string;
   color: string;
+  useIntervals?: boolean; // enable conditional icon/color based on value
+  intervals?: SensorGridCellInterval[]; // exactly 4 intervals
+  valueMaps?: SensorGridValueMap[]; // value rewrite rules
 }
 
 export interface SensorGridConfig {
