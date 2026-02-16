@@ -55,6 +55,16 @@ function BatteryIcon({ percent, isCharging, color }: { percent: number; isChargi
   );
 }
 
+function formatLocation(raw: string | null): string | null {
+  if (!raw) return null;
+  // Pattern like "not_home, house, 11, Södra Bergvägen" → extract last part (street name)
+  const parts = raw.split(",").map((s) => s.trim());
+  if (parts.length >= 2 && parts[0] === "not_home") {
+    return parts[parts.length - 1] || raw;
+  }
+  return raw;
+}
+
 export default function PersonWidget({ person, loading }: PersonWidgetProps) {
   if (loading) {
     return (
@@ -93,7 +103,7 @@ export default function PersonWidget({ person, loading }: PersonWidgetProps) {
       <div className="flex flex-col justify-center gap-1.5 sm:gap-2 min-w-0">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-primary" />
-          <span className="text-sm sm:text-base text-foreground truncate">{person.location ?? "—"}</span>
+          <span className="text-sm sm:text-base text-foreground truncate">{formatLocation(person.location) ?? "—"}</span>
         </div>
 
         <div className="flex items-center gap-2">
