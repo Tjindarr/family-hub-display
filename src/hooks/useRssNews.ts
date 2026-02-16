@@ -19,10 +19,32 @@ export function useRssNews(configs: RssNewsConfig[], refreshInterval: number) {
       configs.map(async (cfg) => {
         try {
           // Use a CORS proxy for RSS feeds
-          const proxyUrl = `/api/rss?url=${encodeURIComponent(cfg.feedUrl)}`;
-          const res = await fetch(proxyUrl);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const text = await res.text();
+          // Try local backend proxy first, then external CORS proxies as fallback
+          let text = "";
+          const proxies = [
+            `/api/rss?url=${encodeURIComponent(cfg.feedUrl)}`,
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(cfg.feedUrl)}`,
+            `https://corsproxy.io/?url=${encodeURIComponent(cfg.feedUrl)}`,
+          ];
+          let fetched = false;
+          for (const proxyUrl of proxies) {
+            try {
+              const r = await fetch(proxyUrl);
+              const ct = r.headers.get("content-type") || "";
+              // Skip if local proxy returned HTML (SPA fallback)
+              if (proxyUrl.startsWith("/") && !ct.includes("xml")) continue;
+              if (!r.ok) continue;
+              text = await r.text();
+              // Verify it looks like XML
+              if (text.trim().startsWith("<")) {
+                fetched = true;
+                break;
+              }
+            } catch {
+              continue;
+            }
+          }
+          if (!fetched) throw new Error("All proxies failed");
           const parser = new DOMParser();
           const doc = parser.parseFromString(text, "text/xml");
           const items = Array.from(doc.querySelectorAll("item")).slice(0, cfg.maxItems || 15);
