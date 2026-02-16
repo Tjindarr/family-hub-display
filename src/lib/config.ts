@@ -43,6 +43,13 @@ export interface FoodMenuConfig {
   days: number; // number of days to show (default 5)
 }
 
+export interface RssNewsConfig {
+  id: string;
+  label: string;
+  feedUrl: string;
+  maxItems: number; // max items to display (default 15)
+}
+
 export type SensorChartType = "line" | "bar" | "area" | "step" | "scatter";
 export type ChartGrouping = "minute" | "hour" | "day";
 
@@ -138,6 +145,7 @@ export interface DashboardConfig {
   foodMenuConfig: FoodMenuConfig;
   generalSensors: GeneralSensorConfig[];
   sensorGrids: SensorGridConfig[];
+  rssFeeds: RssNewsConfig[];
 }
 
 export interface TemperatureEntityConfig {
@@ -235,6 +243,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   },
   generalSensors: [],
   sensorGrids: [],
+  rssFeeds: [],
 };
 
 export function loadConfig(): DashboardConfig {

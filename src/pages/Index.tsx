@@ -10,6 +10,7 @@ import WeatherWidget from "@/components/WeatherWidget";
 import FoodMenuWidget from "@/components/FoodMenuWidget";
 import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import SensorGridWidget from "@/components/SensorGridWidget";
+import RssNewsWidget from "@/components/RssNewsWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { useKioskMode } from "@/hooks/useKioskMode";
@@ -26,6 +27,7 @@ import {
 } from "@/hooks/useDashboardData";
 import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
 import { useSensorGridData } from "@/hooks/useSensorGridData";
+import { useRssNews } from "@/hooks/useRssNews";
 
 function getTempGroupIds(entities: { group?: number }[]): string[] {
   const seen = new Set<number>();
@@ -40,7 +42,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -51,6 +53,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     "photos",
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
+    ...rssIds.map((id) => `rss_${id}`),
   ];
 }
 
@@ -86,11 +89,14 @@ const Index = () => {
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
   const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config);
   const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig);
+  const rssFeeds = config.rssFeeds || [];
+  const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
   const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
+  const rssIds = rssFeeds.map((f) => f.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   // Apply theme
@@ -104,7 +110,7 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -112,7 +118,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds]);
+  }, [config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds]);
 
   const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
 
@@ -156,6 +162,12 @@ const Index = () => {
       if (!gridConfig) return null;
       const gridData = sensorGridData[gridId];
       return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} />;
+    }
+    if (id.startsWith("rss_")) {
+      const rssId = id.replace("rss_", "");
+      const rssCfg = rssFeeds.find((f) => f.id === rssId);
+      if (!rssCfg) return null;
+      return <RssNewsWidget items={rssData[rssId] || []} loading={rssLoading} label={rssCfg.label} />;
     }
     return null;
   };
