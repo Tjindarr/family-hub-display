@@ -49,7 +49,7 @@ export default function FoodMenuWidget({ days, loading, fontSizes }: FoodMenuWid
               key={i}
               className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 px-0.5 py-0.5 transition-colors hover:bg-muted/60"
             >
-              <div className="shrink-0 w-16 pt-0.5">
+              <div className="shrink-0 w-16 pt-0.5" style={{ marginRight: 15 }}>
                 <span className="font-medium text-primary/80" style={{ fontSize: fs.heading }}>{getDayLabel(day.date)}</span>
                 <span className="block text-muted-foreground" style={{ fontSize: fs.label }}>{getShortDate(day.date)}</span>
               </div>
