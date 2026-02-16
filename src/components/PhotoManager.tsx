@@ -38,26 +38,23 @@ export default function PhotoManager() {
 
     setUploading(true);
     try {
-      // Convert files to base64 for JSON upload
-      const files = await Promise.all(
-        fileList.map(
-          (file) =>
-            new Promise<{ name: string; data: string }>((resolve) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve({ name: file.name, data: reader.result as string });
-              reader.readAsDataURL(file);
-            })
-        )
-      );
+      // Upload files one at a time to avoid payload size issues
+      for (const file of fileList) {
+        const data = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
 
-      // Upload in batches of 20
-      for (let i = 0; i < files.length; i += 20) {
-        const batch = files.slice(i, i + 20);
-        await fetch("/api/photos/upload", {
+        const res = await fetch("/api/photos/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ files: batch }),
+          body: JSON.stringify({ files: [{ name: file.name, data }] }),
         });
+
+        if (!res.ok) {
+          console.error(`Failed to upload ${file.name}:`, await res.text());
+        }
       }
 
       await fetchPhotos();
