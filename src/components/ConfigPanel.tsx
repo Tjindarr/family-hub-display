@@ -187,6 +187,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       ? config.calendarEntityConfigs
       : config.calendarEntities.map((id) => ({ entityId: id, prefix: "", color: "" }))
   );
+  const [calendarDayColor, setCalendarDayColor] = useState(config.calendarDayColor || "");
+  const [calendarTimeColor, setCalendarTimeColor] = useState(config.calendarTimeColor || "");
   const [weatherConfig, setWeatherConfig] = useState<WeatherConfig>(
     config.weatherConfig || { entityId: "weather.home", forecastDays: 5, showPrecipitation: true, showSunrise: true, showSunset: true }
   );
@@ -286,6 +288,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       temperatureEntities: tempEntities,
       calendarEntities: calendarEntityConfigs.map((c) => c.entityId),
       calendarEntityConfigs,
+      calendarDayColor,
+      calendarTimeColor,
       electricityPriceEntity: electricityEntity,
       widgetLayouts,
       widgetOrder: finalOrder,
@@ -621,6 +625,44 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
+
+              {/* General calendar colors */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">Day Label Color</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={calendarDayColor && calendarDayColor.startsWith("#") ? calendarDayColor : "#ffffff"}
+                      onChange={(e) => setCalendarDayColor(e.target.value)}
+                      className="h-8 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                    />
+                    <Input
+                      value={calendarDayColor}
+                      onChange={(e) => setCalendarDayColor(e.target.value)}
+                      placeholder="default"
+                      className="bg-muted border-border text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">Time Color</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={calendarTimeColor && calendarTimeColor.startsWith("#") ? calendarTimeColor : "#ffffff"}
+                      onChange={(e) => setCalendarTimeColor(e.target.value)}
+                      className="h-8 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                    />
+                    <Input
+                      value={calendarTimeColor}
+                      onChange={(e) => setCalendarTimeColor(e.target.value)}
+                      placeholder="default"
+                      className="bg-muted border-border text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
             </section>
 
             {/* Weather */}
