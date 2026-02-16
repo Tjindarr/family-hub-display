@@ -191,7 +191,7 @@ const Index = () => {
   }, [allWidgetIds, gridColumns, rowColumns, rowHeights, isMobile, config.widgetLayouts]);
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4 md:p-6">
+    <div className="min-h-screen bg-background p-2">
       {!isKiosk && (
         <>
           <ConfigPanel config={config} onSave={updateConfig} />
