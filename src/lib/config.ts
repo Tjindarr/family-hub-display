@@ -73,6 +73,22 @@ export interface GeneralSensorConfig {
   bottomInfo: SensorInfoItem[]; // up to 4 sensors displayed at the bottom
 }
 
+export interface SensorGridCellConfig {
+  entityId: string;
+  label: string;
+  icon: string; // lucide icon name (kebab-case)
+  unit: string;
+  color: string;
+}
+
+export interface SensorGridConfig {
+  id: string;
+  label: string;
+  rows: number; // 1-6
+  columns: number; // 1-6
+  cells: SensorGridCellConfig[]; // row-major order, length = rows * columns
+}
+
 export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black";
 
 export const THEMES: { id: ThemeId; label: string }[] = [
@@ -106,6 +122,7 @@ export interface DashboardConfig {
   energyUsageConfig: EnergyUsageConfig;
   foodMenuConfig: FoodMenuConfig;
   generalSensors: GeneralSensorConfig[];
+  sensorGrids: SensorGridConfig[];
 }
 
 export interface TemperatureEntityConfig {
@@ -202,6 +219,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
     days: 5,
   },
   generalSensors: [],
+  sensorGrids: [],
 };
 
 export function loadConfig(): DashboardConfig {

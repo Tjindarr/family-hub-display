@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig } from "@/lib/config";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
@@ -135,7 +135,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[], sensorGridIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -147,6 +147,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     "weather",
     "photos",
     ...generalSensorIds.map((id) => `general_${id}`),
+    ...sensorGridIds.map((id) => `sensorgrid_${id}`),
   ];
 }
 
@@ -176,12 +177,14 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [energyConfig, setEnergyConfig] = useState<EnergyUsageConfig>(config.energyUsageConfig || { monthlyCostEntity: "", monthlyConsumptionEntity: "", currentPowerEntity: "", maxPowerEntity: "" });
   const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5 });
   const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
+  const [sensorGrids, setSensorGrids] = useState<SensorGridConfig[]>(config.sensorGrids || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
     const hasEnergy = !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
     const gsIds = (config.generalSensors || []).map((s) => s.id);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, hasCar, hasEnergy, gsIds);
+    const sgIds = (config.sensorGrids || []).map((s) => s.id);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, hasCar, hasEnergy, gsIds, sgIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -206,11 +209,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     groupMap.forEach((labels, g) => { labelMap[`temp_group_${g}`] = labels.join(" / "); });
     personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
     generalSensors.forEach((gs) => { labelMap[`general_${gs.id}`] = gs.label || `Sensor ${gs.id}`; });
+    sensorGrids.forEach((sg) => { labelMap[`sensorgrid_${sg.id}`] = sg.label || `Grid ${sg.id}`; });
 
     const hasCar = !!(carConfig.chargerEntity || carConfig.fuelRangeEntity || carConfig.batteryEntity);
     const hasEnergy = !!(energyConfig.monthlyCostEntity || energyConfig.currentPowerEntity);
     const gsIds = generalSensors.map((s) => s.id);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, hasCar, hasEnergy, gsIds);
+    const sgIds = sensorGrids.map((s) => s.id);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, hasCar, hasEnergy, gsIds, sgIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -219,9 +224,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage", "food_menu"].includes(id) || id.startsWith("general_") ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, carConfig, energyConfig, generalSensors]);
+  }, [widgetOrder, tempEntities, personEntities, carConfig, energyConfig, generalSensors, sensorGrids]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -272,6 +277,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       energyUsageConfig: energyConfig,
       foodMenuConfig: foodMenuConfig,
       generalSensors,
+      sensorGrids,
     });
     setOpen(false);
   };
@@ -962,6 +968,91 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], bottomInfo: u[gsIdx].bottomInfo.filter((_, j) => j !== biIdx) }; setGeneralSensors(u); }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </section>
+
+            {/* Sensor Grids */}
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Sensor Grids</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `sg_${Date.now()}`;
+                    setSensorGrids([...sensorGrids, {
+                      id, label: "", rows: 2, columns: 2,
+                      cells: Array.from({ length: 4 }, () => ({ entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))" })),
+                    }]);
+                  }}
+                  className="text-primary"
+                >
+                  <Plus className="mr-1 h-3 w-3" /> Add
+                </Button>
+              </div>
+              {sensorGrids.map((sg, sgIdx) => (
+                <div key={sg.id} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Sensor Grid {sgIdx + 1}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setSensorGrids(sensorGrids.filter((_, j) => j !== sgIdx))}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground">Label</Label>
+                      <Input value={sg.label} onChange={(e) => { const u = [...sensorGrids]; u[sgIdx] = { ...u[sgIdx], label: e.target.value }; setSensorGrids(u); }} placeholder="Sensor Grid" className="mt-1 bg-muted border-border text-sm" />
+                    </div>
+                    <div className="w-20">
+                      <Label className="text-xs text-muted-foreground">Rows</Label>
+                      <Select value={String(sg.rows)} onValueChange={(v) => {
+                        const newRows = Number(v);
+                        const u = [...sensorGrids];
+                        const totalCells = newRows * sg.columns;
+                        const cells = [...sg.cells];
+                        while (cells.length < totalCells) cells.push({ entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))" });
+                        u[sgIdx] = { ...u[sgIdx], rows: newRows, cells: cells.slice(0, totalCells) };
+                        setSensorGrids(u);
+                      }}>
+                        <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>{Array.from({ length: 6 }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-20">
+                      <Label className="text-xs text-muted-foreground">Columns</Label>
+                      <Select value={String(sg.columns)} onValueChange={(v) => {
+                        const newCols = Number(v);
+                        const u = [...sensorGrids];
+                        const totalCells = sg.rows * newCols;
+                        const cells = [...sg.cells];
+                        while (cells.length < totalCells) cells.push({ entityId: "", label: "", icon: "circle", unit: "", color: "hsl(var(--foreground))" });
+                        u[sgIdx] = { ...u[sgIdx], columns: newCols, cells: cells.slice(0, totalCells) };
+                        setSensorGrids(u);
+                      }}>
+                        <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>{Array.from({ length: 6 }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Cells */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Cells ({sg.rows} × {sg.columns})</Label>
+                    {sg.cells.map((cell, cIdx) => (
+                      <div key={cIdx} className="flex gap-1.5 items-end">
+                        <span className="text-[10px] text-muted-foreground w-4 shrink-0">{cIdx + 1}</span>
+                        <div className="flex-1">
+                          <EntityAutocomplete value={cell.entityId} onChange={(val) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], entityId: val }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                        <Input value={cell.label} onChange={(e) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], label: e.target.value }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
+                        <Input value={cell.icon} onChange={(e) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], icon: e.target.value }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} placeholder="Icon" className="w-16 bg-muted border-border text-xs h-7" />
+                        <Input value={cell.unit} onChange={(e) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], unit: e.target.value }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
+                        <Input value={cell.color} onChange={(e) => { const u = [...sensorGrids]; const cells = [...u[sgIdx].cells]; cells[cIdx] = { ...cells[cIdx], color: e.target.value }; u[sgIdx] = { ...u[sgIdx], cells }; setSensorGrids(u); }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
                       </div>
                     ))}
                   </div>
