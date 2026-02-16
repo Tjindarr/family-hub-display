@@ -114,6 +114,8 @@ export interface TemperatureEntityConfig {
   label: string;
   color: string;
   group?: number; // sensors with the same group number render in one widget
+  showChart?: boolean; // show a background chart with 24h history
+  chartType?: SensorChartType; // chart type for the background chart
 }
 
 export interface PersonEntityConfig {

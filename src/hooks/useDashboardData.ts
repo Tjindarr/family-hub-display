@@ -54,6 +54,9 @@ export interface TemperatureSensorData {
   temperature: number | null;
   humidity: number | null;
   entityId: string;
+  showChart?: boolean;
+  chartType?: string;
+  history?: { time: string; value: number }[];
 }
 
 export interface TemperatureSeries {
@@ -82,6 +85,14 @@ export function useTemperatureData(config: DashboardConfig) {
           temperature: 18 + Math.random() * 8,
           humidity: e.humidityEntityId ? 40 + Math.random() * 30 : null,
           entityId: e.entityId,
+          showChart: e.showChart,
+          chartType: e.chartType,
+          history: e.showChart
+            ? Array.from({ length: 48 }, (_, i) => {
+                const d = new Date(Date.now() - (47 - i) * 30 * 60000);
+                return { time: d.toISOString(), value: 18 + Math.random() * 8 };
+              })
+            : undefined,
         }))
       );
       setLoading(false);
@@ -90,6 +101,8 @@ export function useTemperatureData(config: DashboardConfig) {
 
     try {
       const client = createHAClient(config);
+      const now = new Date();
+      const historyStart = new Date(now.getTime() - 24 * 3600000);
       const results = await Promise.all(
         config.temperatureEntities.map(async (entity) => {
           const tempState = await client.getState(entity.entityId);
@@ -100,12 +113,32 @@ export function useTemperatureData(config: DashboardConfig) {
               humidity = parseFloat(humState.state) || null;
             } catch { /* ignore */ }
           }
+          let history: { time: string; value: number }[] | undefined;
+          if (entity.showChart) {
+            try {
+              const raw = await client.getHistory(entity.entityId, historyStart.toISOString(), now.toISOString());
+              if (raw?.[0]) {
+                const points = raw[0];
+                const step = Math.max(1, Math.floor(points.length / 60));
+                history = points
+                  .filter((_, i) => i % step === 0)
+                  .map((s: any) => ({
+                    time: s.last_updated,
+                    value: parseFloat(s.state) || 0,
+                  }))
+                  .filter((p) => !isNaN(p.value));
+              }
+            } catch { /* ignore */ }
+          }
           return {
             label: entity.label,
             color: entity.color,
             temperature: parseFloat(tempState.state) || null,
             humidity,
             entityId: entity.entityId,
+            showChart: entity.showChart,
+            chartType: entity.chartType,
+            history,
           };
         })
       );

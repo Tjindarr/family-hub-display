@@ -448,6 +448,34 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={entity.showChart ?? false}
+                        onChange={(e) => updateTempEntity(i, { showChart: e.target.checked })}
+                        className="accent-primary"
+                      />
+                      <span className="text-xs text-muted-foreground">Show 24h chart</span>
+                    </label>
+                    {entity.showChart && (
+                      <Select
+                        value={entity.chartType || "line"}
+                        onValueChange={(v) => updateTempEntity(i, { chartType: v as any })}
+                      >
+                        <SelectTrigger className="w-24 h-7 bg-muted border-border text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="line">Line</SelectItem>
+                          <SelectItem value="area">Area</SelectItem>
+                          <SelectItem value="bar">Bar</SelectItem>
+                          <SelectItem value="step">Step</SelectItem>
+                          <SelectItem value="scatter">Scatter</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                 </div>
               ))}
             </section>
