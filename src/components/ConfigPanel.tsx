@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries } from "@/lib/config";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
@@ -134,7 +134,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -145,6 +145,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     "food_menu",
     "weather",
     "photos",
+    ...generalSensorIds.map((id) => `general_${id}`),
   ];
 }
 
@@ -173,11 +174,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [carConfig, setCarConfig] = useState<CarConfig>(config.carConfig || { chargerEntity: "", fuelRangeEntity: "", batteryEntity: "" });
   const [energyConfig, setEnergyConfig] = useState<EnergyUsageConfig>(config.energyUsageConfig || { monthlyCostEntity: "", monthlyConsumptionEntity: "", currentPowerEntity: "", maxPowerEntity: "" });
   const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5 });
+  const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
     const hasEnergy = !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, hasCar, hasEnergy);
+    const gsIds = (config.generalSensors || []).map((s) => s.id);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, hasCar, hasEnergy, gsIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -201,10 +204,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     });
     groupMap.forEach((labels, g) => { labelMap[`temp_group_${g}`] = labels.join(" / "); });
     personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
+    generalSensors.forEach((gs) => { labelMap[`general_${gs.id}`] = gs.label || `Sensor ${gs.id}`; });
 
     const hasCar = !!(carConfig.chargerEntity || carConfig.fuelRangeEntity || carConfig.batteryEntity);
     const hasEnergy = !!(energyConfig.monthlyCostEntity || energyConfig.currentPowerEntity);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, hasCar, hasEnergy);
+    const gsIds = generalSensors.map((s) => s.id);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, hasCar, hasEnergy, gsIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -213,9 +218,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage", "food_menu"].includes(id) ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage", "food_menu"].includes(id) || id.startsWith("general_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, carConfig, energyConfig]);
+  }, [widgetOrder, tempEntities, personEntities, carConfig, energyConfig, generalSensors]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -265,6 +270,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       carConfig,
       energyUsageConfig: energyConfig,
       foodMenuConfig: foodMenuConfig,
+      generalSensors,
     });
     setOpen(false);
   };
@@ -732,6 +738,162 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 <Label className="text-xs text-muted-foreground">Max Power Entity (W)</Label>
                 <EntityAutocomplete value={energyConfig.maxPowerEntity} onChange={(val) => setEnergyConfig((prev) => ({ ...prev, maxPowerEntity: val }))} config={config} domainFilter="sensor" placeholder="sensor.tibber_pulse_berget_max_power" className="mt-1 bg-muted border-border text-sm" />
               </div>
+            </section>
+
+            {/* General Sensors */}
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">General Sensors</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `gs_${Date.now()}`;
+                    setGeneralSensors([...generalSensors, {
+                      id, label: "", showLabel: true, icon: "activity",
+                      showGraph: true, historyHours: 24,
+                      chartSeries: [], topInfo: [], bottomInfo: [],
+                    }]);
+                  }}
+                  className="text-primary"
+                >
+                  <Plus className="mr-1 h-3 w-3" /> Add
+                </Button>
+              </div>
+              {generalSensors.map((gs, gsIdx) => (
+                <div key={gs.id} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Sensor Card {gsIdx + 1}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setGeneralSensors(generalSensors.filter((_, j) => j !== gsIdx))}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground">Label</Label>
+                      <Input value={gs.label} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], label: e.target.value }; setGeneralSensors(u); }} placeholder="Power Meter" className="mt-1 bg-muted border-border text-sm" />
+                    </div>
+                    <div className="w-24">
+                      <Label className="text-xs text-muted-foreground">Show Label</Label>
+                      <Select value={gs.showLabel ? "yes" : "no"} onValueChange={(v) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], showLabel: v === "yes" }; setGeneralSensors(u); }}>
+                        <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground">Icon (lucide name)</Label>
+                      <Input value={gs.icon} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], icon: e.target.value }; setGeneralSensors(u); }} placeholder="activity" className="mt-1 bg-muted border-border text-sm" />
+                    </div>
+                    <div className="w-24">
+                      <Label className="text-xs text-muted-foreground">Graph</Label>
+                      <Select value={gs.showGraph ? "yes" : "no"} onValueChange={(v) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], showGraph: v === "yes" }; setGeneralSensors(u); }}>
+                        <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-24">
+                      <Label className="text-xs text-muted-foreground">History</Label>
+                      <Select value={String(gs.historyHours)} onValueChange={(v) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], historyHours: Number(v) }; setGeneralSensors(u); }}>
+                        <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1h</SelectItem>
+                          <SelectItem value="6">6h</SelectItem>
+                          <SelectItem value="24">24h</SelectItem>
+                          <SelectItem value="168">7d</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Top Info */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Top Info (up to 4 sensors)</Label>
+                      {gs.topInfo.length < 4 && (
+                        <Button variant="ghost" size="sm" className="h-5 text-[10px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], topInfo: [...u[gsIdx].topInfo, { entityId: "", label: "", unit: "", color: "hsl(var(--foreground))" }] }; setGeneralSensors(u); }}>
+                          <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
+                        </Button>
+                      )}
+                    </div>
+                    {gs.topInfo.map((ti, tiIdx) => (
+                      <div key={tiIdx} className="flex gap-1.5 items-end">
+                        <div className="flex-1">
+                          <EntityAutocomplete value={ti.entityId} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                        <Input value={ti.label} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
+                        <Input value={ti.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
+                        <Input value={ti.color} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], color: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], topInfo: u[gsIdx].topInfo.filter((_, j) => j !== tiIdx) }; setGeneralSensors(u); }}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Chart Series */}
+                  {gs.showGraph && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">Chart Series</Label>
+                        <Button variant="ghost" size="sm" className="h-5 text-[10px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartSeries: [...u[gsIdx].chartSeries, { entityId: "", label: "", color: "hsl(174, 72%, 50%)", chartType: "line" }] }; setGeneralSensors(u); }}>
+                          <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
+                        </Button>
+                      </div>
+                      {gs.chartSeries.map((cs, csIdx) => (
+                        <div key={csIdx} className="flex gap-1.5 items-end">
+                          <div className="flex-1">
+                            <EntityAutocomplete value={cs.entityId} onChange={(val) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                          </div>
+                          <Input value={cs.label} onChange={(e) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
+                          <Select value={cs.chartType} onValueChange={(v) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], chartType: v as SensorChartType }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }}>
+                            <SelectTrigger className="w-20 h-7 bg-muted border-border text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="line">Line</SelectItem>
+                              <SelectItem value="bar">Bar</SelectItem>
+                              <SelectItem value="area">Area</SelectItem>
+                              <SelectItem value="step">Step</SelectItem>
+                              <SelectItem value="scatter">Scatter</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input value={cs.color} onChange={(e) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], color: e.target.value }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartSeries: u[gsIdx].chartSeries.filter((_, j) => j !== csIdx) }; setGeneralSensors(u); }}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Bottom Info */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Bottom Info (up to 4 sensors)</Label>
+                      {gs.bottomInfo.length < 4 && (
+                        <Button variant="ghost" size="sm" className="h-5 text-[10px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], bottomInfo: [...u[gsIdx].bottomInfo, { entityId: "", label: "", unit: "", color: "hsl(var(--foreground))" }] }; setGeneralSensors(u); }}>
+                          <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
+                        </Button>
+                      )}
+                    </div>
+                    {gs.bottomInfo.map((bi, biIdx) => (
+                      <div key={biIdx} className="flex gap-1.5 items-end">
+                        <div className="flex-1">
+                          <EntityAutocomplete value={bi.entityId} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                        <Input value={bi.label} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
+                        <Input value={bi.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
+                        <Input value={bi.color} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], color: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Color" className="w-20 bg-muted border-border text-xs h-7" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], bottomInfo: u[gsIdx].bottomInfo.filter((_, j) => j !== biIdx) }; setGeneralSensors(u); }}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </section>
 
             {/* Photo Gallery */}

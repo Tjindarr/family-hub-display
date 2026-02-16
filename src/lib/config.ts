@@ -43,6 +43,34 @@ export interface FoodMenuConfig {
   days: number; // number of days to show (default 5)
 }
 
+export type SensorChartType = "line" | "bar" | "area" | "step" | "scatter";
+
+export interface SensorInfoItem {
+  entityId: string;
+  label: string;
+  unit: string;
+  color: string;
+}
+
+export interface SensorChartSeries {
+  entityId: string;
+  label: string;
+  color: string;
+  chartType: SensorChartType;
+}
+
+export interface GeneralSensorConfig {
+  id: string; // unique ID for this sensor card
+  label: string;
+  showLabel: boolean;
+  icon: string; // lucide icon name (kebab-case)
+  showGraph: boolean;
+  historyHours: number; // 1, 6, 24, 168 (7d)
+  chartSeries: SensorChartSeries[]; // sensors to plot on the graph
+  topInfo: SensorInfoItem[]; // up to 4 sensors displayed at the top
+  bottomInfo: SensorInfoItem[]; // up to 4 sensors displayed at the bottom
+}
+
 export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black";
 
 export const THEMES: { id: ThemeId; label: string }[] = [
@@ -75,6 +103,7 @@ export interface DashboardConfig {
   carConfig: CarConfig;
   energyUsageConfig: EnergyUsageConfig;
   foodMenuConfig: FoodMenuConfig;
+  generalSensors: GeneralSensorConfig[];
 }
 
 export interface TemperatureEntityConfig {
@@ -168,6 +197,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
     calendarEntity: "",
     days: 5,
   },
+  generalSensors: [],
 };
 
 export function loadConfig(): DashboardConfig {
