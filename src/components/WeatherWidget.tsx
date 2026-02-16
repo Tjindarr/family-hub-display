@@ -109,7 +109,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
   return (
     <div className="widget-card h-full">
       {/* Current conditions - 3 columns */}
-      <div className="mb-4 flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
+      <div className="mb-4 flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-[2px]">
         {/* Left: time + date */}
         <div>
           <div className="font-bold text-foreground" style={{ fontSize: xlSize }}>
@@ -148,7 +148,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
       </div>
 
       {/* Forecast chart */}
-      <div className="rounded-lg border border-border/50 bg-muted/30 p-2">
+      <div className="rounded-lg border border-border/50 bg-muted/30 p-[2px]">
         {/* Day labels + icons */}
         <div className="flex justify-around mb-1">
           {chartData.map((d, i) => (
