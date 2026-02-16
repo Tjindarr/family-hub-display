@@ -12,6 +12,8 @@ interface CalendarWidgetProps {
   events: EnrichedCalendarEvent[];
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
+  dayColor?: string;
+  timeColor?: string;
 }
 
 function getEventTime(event: HACalendarEvent): Date {
@@ -32,7 +34,7 @@ function getDayLabel(event: HACalendarEvent): string {
   return format(date, "EEEE, yyyy-MM-dd");
 }
 
-export default function CalendarWidget({ events, loading, fontSizes }: CalendarWidgetProps) {
+export default function CalendarWidget({ events, loading, fontSizes, dayColor, timeColor }: CalendarWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
 
   // Group by day
@@ -58,7 +60,7 @@ export default function CalendarWidget({ events, loading, fontSizes }: CalendarW
         <div className="space-y-4 flex-1 overflow-y-auto pr-1">
           {Object.entries(grouped).map(([day, dayEvents]) => (
             <div key={day}>
-              <p className="mb-2 font-medium uppercase tracking-wider text-primary/70" style={{ fontSize: fs.heading }}>
+              <p className="mb-2 font-medium uppercase tracking-wider text-primary/70" style={{ fontSize: fs.heading, color: dayColor || undefined }}>
                 {day}
               </p>
               <div className="space-y-2">
@@ -69,7 +71,7 @@ export default function CalendarWidget({ events, loading, fontSizes }: CalendarW
                   >
                     <div className="flex items-center gap-1.5 pt-0.5">
                       <Clock className="h-3 w-3 text-muted-foreground" />
-                      <span className="font-mono text-muted-foreground" style={{ fontSize: fs.label }}>
+                      <span className="font-mono text-muted-foreground" style={{ fontSize: fs.label, color: timeColor || undefined }}>
                         {formatEventTime(event)}
                       </span>
                     </div>

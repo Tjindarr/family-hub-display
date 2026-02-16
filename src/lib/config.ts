@@ -141,6 +141,8 @@ export interface DashboardConfig {
   refreshInterval: number; // seconds
   calendarEntities: string[]; // legacy, kept for migration
   calendarEntityConfigs: CalendarEntityConfig[];
+  calendarDayColor: string; // color for day labels (e.g. "Today", "Tomorrow")
+  calendarTimeColor: string; // color for time labels (e.g. "14:00")
   temperatureEntities: TemperatureEntityConfig[];
   electricityPriceEntity: string;
   electricityForecastEntity: string;
@@ -219,6 +221,8 @@ const DEFAULT_CONFIG: DashboardConfig = {
   calendarEntityConfigs: [
     { entityId: "calendar.family", prefix: "", color: "hsl(var(--foreground))" },
   ],
+  calendarDayColor: "",
+  calendarTimeColor: "",
   temperatureEntities: [
     { entityId: "sensor.living_room_temperature", label: "Living Room", color: "hsl(174, 72%, 50%)" },
     { entityId: "sensor.bedroom_temperature", label: "Bedroom", color: "hsl(32, 95%, 55%)" },
