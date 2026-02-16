@@ -49,9 +49,11 @@ export function useRssNews(configs: RssNewsConfig[], refreshInterval: number) {
           const doc = parser.parseFromString(text, "text/xml");
           const items = Array.from(doc.querySelectorAll("item")).slice(0, cfg.maxItems || 15);
           results[cfg.id] = items.map((item) => ({
-            title: item.querySelector("title")?.textContent || "",
-            link: item.querySelector("link")?.textContent || "",
+            title: item.querySelector("title")?.textContent?.trim() || "",
+            link: item.querySelector("link")?.textContent?.trim() || "",
             pubDate: item.querySelector("pubDate")?.textContent || "",
+            description: item.querySelector("description")?.textContent?.trim() || "",
+            imageUrl: item.querySelector("enclosure")?.getAttribute("url") || "",
           }));
         } catch (err) {
           console.error(`Failed to fetch RSS feed ${cfg.feedUrl}:`, err);
