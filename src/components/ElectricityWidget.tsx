@@ -110,8 +110,7 @@ export default function ElectricityWidget({ nordpool, loading }: ElectricityWidg
             <Tooltip
               labelFormatter={(val) => {
                 const d = new Date(val);
-                return d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" }) +
-                  " " + formatHour(d);
+                return d.toLocaleDateString("sv-SE") + " " + formatHour(d);
               }}
               contentStyle={{
                 backgroundColor: "hsl(220, 18%, 13%)",

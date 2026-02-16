@@ -110,7 +110,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
             {format(now, "HH:mm")}
             <span className="text-lg text-muted-foreground">:{format(now, "ss")}</span>
           </div>
-          <div className="text-xs text-muted-foreground">{format(now, "EEEE, MMMM d, yyyy")}</div>
+          <div className="text-xs text-muted-foreground">{format(now, "EEEE, yyyy-MM-dd")}</div>
         </div>
 
         {/* Center: icon + temp */}

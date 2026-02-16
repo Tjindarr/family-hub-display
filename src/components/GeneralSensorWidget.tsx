@@ -43,10 +43,17 @@ interface GeneralSensorWidgetProps {
   loading: boolean;
 }
 
-function formatHour(iso: string): string {
+function formatTickByGrouping(iso: string, grouping?: string): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+    if (grouping === "day") {
+      return d.toLocaleDateString("sv-SE", { month: "2-digit", day: "2-digit" });
+    }
+    if (grouping === "minute") {
+      return d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
+    }
+    // hour (default)
+    return d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
   } catch {
     return iso;
   }
@@ -121,7 +128,7 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
               <XAxis
                 dataKey="time"
                 ticks={ticks}
-                tickFormatter={(v) => formatHour(v)}
+                tickFormatter={(v) => formatTickByGrouping(v, config.chartGrouping)}
                 tick={{ fill: "hsl(215, 12%, 55%)", fontSize: 10 }}
                 axisLine={{ stroke: "hsl(220, 14%, 20%)" }}
               />
@@ -138,7 +145,11 @@ export default function GeneralSensorWidget({ config, data, loading }: GeneralSe
                   color: "hsl(210, 20%, 92%)",
                   fontSize: 12,
                 }}
-                labelFormatter={(v) => formatHour(String(v))}
+                labelFormatter={(v) => {
+                  const d = new Date(String(v));
+                  if (config.chartGrouping === "day") return d.toLocaleDateString("sv-SE");
+                  return d.toLocaleDateString("sv-SE") + " " + d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
+                }}
               />
               {chartSeriesMeta.map((s) => {
                 switch (s.chartType) {

@@ -18,7 +18,7 @@ export default function ClockWidget() {
           <span className="text-lg text-muted-foreground">:{format(now, "ss")}</span>
         </div>
         <p className="stat-label mt-0.5">
-          {format(now, "EEEE, MMMM d, yyyy")}
+          {format(now, "EEEE, yyyy-MM-dd")}
         </p>
       </div>
     </div>
