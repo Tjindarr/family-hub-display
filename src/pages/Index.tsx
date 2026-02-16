@@ -63,6 +63,28 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
 
 const Index = () => {
   const { config, updateConfig, isConfigured } = useDashboardConfig();
+  const isDemo = !isConfigured;
+
+  // Compute effective sensor grids (inject demo data when unconfigured)
+  const effectiveSensorGrids = useMemo(() => {
+    if (isDemo && (config.sensorGrids || []).length === 0) {
+      return [{ id: "demo_grid", label: "Sensors", rows: 2, columns: 3, cells: [
+        { entityId: "sensor.demo_1", label: "Humidity", icon: "droplets", unit: "%", color: "hsl(200, 70%, 55%)" },
+        { entityId: "sensor.demo_2", label: "Pressure", icon: "gauge", unit: "hPa", color: "hsl(32, 95%, 55%)" },
+        { entityId: "sensor.demo_3", label: "Wind", icon: "wind", unit: "m/s", color: "hsl(174, 72%, 50%)" },
+        { entityId: "sensor.demo_4", label: "UV Index", icon: "sun", unit: "", color: "hsl(45, 90%, 55%)" },
+        { entityId: "sensor.demo_5", label: "CO₂", icon: "cloud", unit: "ppm", color: "hsl(258, 60%, 60%)" },
+        { entityId: "sensor.demo_6", label: "Noise", icon: "volume-2", unit: "dB", color: "hsl(0, 72%, 55%)" },
+      ]}];
+    }
+    return config.sensorGrids || [];
+  }, [isDemo, config.sensorGrids]);
+
+  const effectiveConfig = useMemo(() => ({
+    ...config,
+    sensorGrids: effectiveSensorGrids,
+  }), [config, effectiveSensorGrids]);
+
   const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config);
   const { events, loading: calLoading } = useCalendarData(config);
   const { nordpool, loading: priceLoading } = useElectricityPrices(config);
@@ -72,15 +94,14 @@ const Index = () => {
   const { monthly, power, loading: energyLoading } = useEnergyUsageData(config);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
   const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config);
-  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(config);
+  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
-  const isDemo = !isConfigured;
   const hasCar = isDemo || !!(config.carConfig?.chargerEntity?.trim() || config.carConfig?.fuelRangeEntity?.trim() || config.carConfig?.batteryEntity?.trim());
   const hasEnergy = isDemo || !!(config.energyUsageConfig?.monthlyCostEntity?.trim() || config.energyUsageConfig?.currentPowerEntity?.trim());
   const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
-  const sensorGridIds = (config.sensorGrids || []).map((s) => s.id);
+  const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   // Apply theme
@@ -145,7 +166,7 @@ const Index = () => {
     }
     if (id.startsWith("sensorgrid_")) {
       const gridId = id.replace("sensorgrid_", "");
-      const gridConfig = (config.sensorGrids || []).find((s) => s.id === gridId);
+      const gridConfig = effectiveSensorGrids.find((s) => s.id === gridId);
       if (!gridConfig) return null;
       const gridData = sensorGridData[gridId];
       return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} />;
