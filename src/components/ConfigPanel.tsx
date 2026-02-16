@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, CarConfig, EnergyUsageConfig, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig } from "@/lib/config";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import ColorPicker from "@/components/ColorPicker";
@@ -138,7 +138,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[], sensorGridIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, hasCar: boolean, hasEnergy: boolean, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -151,6 +151,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     "photos",
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
+    ...rssIds.map((id) => `rss_${id}`),
   ];
 }
 
@@ -181,13 +182,15 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5 });
   const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
   const [sensorGrids, setSensorGrids] = useState<SensorGridConfig[]>(config.sensorGrids || []);
+  const [rssFeeds, setRssFeeds] = useState<RssNewsConfig[]>(config.rssFeeds || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const hasCar = !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
     const hasEnergy = !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
     const gsIds = (config.generalSensors || []).map((s) => s.id);
     const sgIds = (config.sensorGrids || []).map((s) => s.id);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, hasCar, hasEnergy, gsIds, sgIds);
+    const rsIds = (config.rssFeeds || []).map((s) => s.id);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, hasCar, hasEnergy, gsIds, sgIds, rsIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -213,12 +216,14 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
     generalSensors.forEach((gs) => { labelMap[`general_${gs.id}`] = gs.label || `Sensor ${gs.id}`; });
     sensorGrids.forEach((sg) => { labelMap[`sensorgrid_${sg.id}`] = sg.label || `Grid ${sg.id}`; });
+    rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
 
     const hasCar = !!(carConfig.chargerEntity || carConfig.fuelRangeEntity || carConfig.batteryEntity);
     const hasEnergy = !!(energyConfig.monthlyCostEntity || energyConfig.currentPowerEntity);
     const gsIds = generalSensors.map((s) => s.id);
     const sgIds = sensorGrids.map((s) => s.id);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, hasCar, hasEnergy, gsIds, sgIds);
+    const rsIds = rssFeeds.map((s) => s.id);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, hasCar, hasEnergy, gsIds, sgIds, rsIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -227,9 +232,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "car", "monthly_energy", "power_usage", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("rss_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, carConfig, energyConfig, generalSensors, sensorGrids]);
+  }, [widgetOrder, tempEntities, personEntities, carConfig, energyConfig, generalSensors, sensorGrids, rssFeeds]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -281,6 +286,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       foodMenuConfig: foodMenuConfig,
       generalSensors,
       sensorGrids,
+      rssFeeds,
     });
     setOpen(false);
   };
@@ -1214,6 +1220,58 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 </Select>
               </div>
               <PhotoManager />
+            </section>
+
+            {/* RSS News Feeds */}
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">RSS News Feeds</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `rss_${Date.now()}`;
+                    setRssFeeds([...rssFeeds, { id, label: "News", feedUrl: "", maxItems: 15 }]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Feed
+                </Button>
+              </div>
+              {rssFeeds.map((feed, idx) => (
+                <div key={feed.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+                  <Button variant="ghost" size="icon" className="absolute right-1 top-1 h-6 w-6" onClick={() => setRssFeeds(rssFeeds.filter((_, i) => i !== idx))}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Label</Label>
+                    <Input
+                      value={feed.label}
+                      onChange={(e) => setRssFeeds(rssFeeds.map((f, i) => i === idx ? { ...f, label: e.target.value } : f))}
+                      className="mt-1 bg-muted border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Feed URL</Label>
+                    <Input
+                      value={feed.feedUrl}
+                      onChange={(e) => setRssFeeds(rssFeeds.map((f, i) => i === idx ? { ...f, feedUrl: e.target.value } : f))}
+                      placeholder="https://example.com/rss.xml"
+                      className="mt-1 bg-muted border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Max Items</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={feed.maxItems}
+                      onChange={(e) => setRssFeeds(rssFeeds.map((f, i) => i === idx ? { ...f, maxItems: Number(e.target.value) || 15 } : f))}
+                      className="mt-1 bg-muted border-border"
+                    />
+                  </div>
+                </div>
+              ))}
             </section>
 
             <Button onClick={handleSave} className="w-full">
