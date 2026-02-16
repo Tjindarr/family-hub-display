@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo } from "react";
 import type { LucideProps } from "lucide-react";
 import dynamicIconImports from "lucide-react/dynamicIconImports";
 import type { SensorGridConfig, SensorGridCellConfig } from "@/lib/config";
+import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 // Dynamic icon loader (shared pattern)
 const iconCache: Record<string, React.ComponentType<Omit<LucideProps, "ref">>> = {};
@@ -26,6 +27,7 @@ interface SensorGridWidgetProps {
   config: SensorGridConfig;
   data: SensorGridLiveData | undefined;
   loading: boolean;
+  fontSizes?: ResolvedFontSizes;
 }
 
 function resolveCell(cell: SensorGridCellConfig, rawValue: string | undefined) {
@@ -54,7 +56,9 @@ function resolveCell(cell: SensorGridCellConfig, rawValue: string | undefined) {
   return { displayValue, icon, color };
 }
 
-export default function SensorGridWidget({ config, data, loading }: SensorGridWidgetProps) {
+export default function SensorGridWidget({ config, data, loading, fontSizes }: SensorGridWidgetProps) {
+  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+
   if (loading) {
     return <div className="widget-card h-full animate-pulse" />;
   }
@@ -86,18 +90,18 @@ export default function SensorGridWidget({ config, data, loading }: SensorGridWi
                   style={{ color: color || undefined }}
                 />
               )}
-              <span className="text-[10px] text-muted-foreground truncate max-w-full text-center">
+              <span className="text-muted-foreground truncate max-w-full text-center" style={{ fontSize: fs.label }}>
                 {cell.label}
               </span>
               <div className="flex items-baseline gap-0.5">
                 <span
-                  className="font-mono text-sm font-semibold"
-                  style={{ color: color || undefined }}
+                  className="font-mono font-semibold"
+                  style={{ color: color || undefined, fontSize: fs.body }}
                 >
                   {displayValue}
                 </span>
                 {cellData?.unit && (
-                  <span className="text-[10px] text-muted-foreground">{cellData.unit}</span>
+                  <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{cellData.unit}</span>
                 )}
               </div>
             </div>

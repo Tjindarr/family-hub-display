@@ -1,3 +1,17 @@
+export interface WidgetFontSizes {
+  heading?: number; // section headers (px)
+  value?: number;   // main data values (px)
+  body?: number;    // body/readable text (px)
+  label?: number;   // small labels/units (px)
+}
+
+export interface GlobalFontSizes {
+  heading: number; // default 12
+  value: number;   // default 18
+  body: number;    // default 14
+  label: number;   // default 10
+}
+
 export interface WidgetLayout {
   colSpan: number; // 1-6
   row: number; // which row (1-based)
@@ -146,6 +160,8 @@ export interface DashboardConfig {
   generalSensors: GeneralSensorConfig[];
   sensorGrids: SensorGridConfig[];
   rssFeeds: RssNewsConfig[];
+  globalFontSizes: GlobalFontSizes;
+  widgetFontSizes: Record<string, WidgetFontSizes>;
 }
 
 export interface TemperatureEntityConfig {
@@ -244,6 +260,8 @@ const DEFAULT_CONFIG: DashboardConfig = {
   generalSensors: [],
   sensorGrids: [],
   rssFeeds: [],
+  globalFontSizes: { heading: 12, value: 18, body: 14, label: 10 },
+  widgetFontSizes: {},
 };
 
 export function loadConfig(): DashboardConfig {

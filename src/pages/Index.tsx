@@ -28,6 +28,7 @@ import {
 import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
 import { useSensorGridData } from "@/hooks/useSensorGridData";
 import { useRssNews } from "@/hooks/useRssNews";
+import { resolveFontSizes } from "@/lib/fontSizes";
 
 function getTempGroupIds(entities: { group?: number }[]): string[] {
   const seen = new Set<number>();
@@ -108,6 +109,10 @@ const Index = () => {
   const rowColumns = config.rowColumns || {};
   const rowHeights = config.rowHeights || {};
 
+  // Font size resolver
+  const getFontSizes = (widgetId: string) =>
+    resolveFontSizes(config.globalFontSizes, config.widgetFontSizes?.[widgetId]);
+
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
     const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds);
@@ -123,9 +128,10 @@ const Index = () => {
   const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
 
   const renderWidget = (id: string) => {
-    
-    if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} />;
-    if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} />;
+    const fs = getFontSizes(id);
+
+    if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} fontSizes={fs} />;
+    if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} fontSizes={fs} />;
     if (id === "weather") return (
       <WeatherWidget
         weather={weather}
@@ -133,6 +139,7 @@ const Index = () => {
         showPrecipitation={config.weatherConfig?.showPrecipitation ?? true}
         showSunrise={config.weatherConfig?.showSunrise ?? true}
         showSunset={config.weatherConfig?.showSunset ?? true}
+        fontSizes={fs}
       />
     );
     if (id === "photos") return <PhotoWidget config={config.photoWidget} />;
@@ -140,34 +147,34 @@ const Index = () => {
       const groupNum = parseInt(id.split("_")[2], 10);
       const groupSensors = tempSensors.filter((_, i) => (config.temperatureEntities[i]?.group ?? i) === groupNum);
       if (groupSensors.length === 0) return null;
-      return <TemperatureWidget sensors={groupSensors} loading={tempLoading} />;
+      return <TemperatureWidget sensors={groupSensors} loading={tempLoading} fontSizes={fs} />;
     }
     if (id.startsWith("person_")) {
       const idx = parseInt(id.split("_")[1], 10);
       const person = persons[idx];
       if (!person) return null;
-      return <PersonWidget person={person} loading={personLoading} />;
+      return <PersonWidget person={person} loading={personLoading} fontSizes={fs} />;
     }
-    if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} />;
+    if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} fontSizes={fs} />;
     if (id.startsWith("general_")) {
       const sensorId = id.replace("general_", "");
       const sensorConfig = (config.generalSensors || []).find((s) => s.id === sensorId);
       if (!sensorConfig) return null;
       const sensorData = generalSensorData[sensorId];
-      return <GeneralSensorWidget config={sensorConfig} data={sensorData} loading={generalSensorLoading} />;
+      return <GeneralSensorWidget config={sensorConfig} data={sensorData} loading={generalSensorLoading} fontSizes={fs} />;
     }
     if (id.startsWith("sensorgrid_")) {
       const gridId = id.replace("sensorgrid_", "");
       const gridConfig = effectiveSensorGrids.find((s) => s.id === gridId);
       if (!gridConfig) return null;
       const gridData = sensorGridData[gridId];
-      return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} />;
+      return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} fontSizes={fs} />;
     }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
       if (!rssCfg) return null;
-      return <RssNewsWidget items={rssData[rssId] || []} loading={rssLoading} label={rssCfg.label} />;
+      return <RssNewsWidget items={rssData[rssId] || []} loading={rssLoading} label={rssCfg.label} fontSizes={fs} />;
     }
     return null;
   };

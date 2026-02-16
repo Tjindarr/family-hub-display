@@ -1,6 +1,7 @@
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { Clock } from "lucide-react";
 import type { HACalendarEvent } from "@/lib/config";
+import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 interface EnrichedCalendarEvent extends HACalendarEvent {
   _prefix?: string;
@@ -10,6 +11,7 @@ interface EnrichedCalendarEvent extends HACalendarEvent {
 interface CalendarWidgetProps {
   events: EnrichedCalendarEvent[];
   loading: boolean;
+  fontSizes?: ResolvedFontSizes;
 }
 
 function getEventTime(event: HACalendarEvent): Date {
@@ -30,7 +32,9 @@ function getDayLabel(event: HACalendarEvent): string {
   return format(date, "EEEE, yyyy-MM-dd");
 }
 
-export default function CalendarWidget({ events, loading }: CalendarWidgetProps) {
+export default function CalendarWidget({ events, loading, fontSizes }: CalendarWidgetProps) {
+  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+
   // Group by day
   const grouped = events.reduce<Record<string, EnrichedCalendarEvent[]>>((acc, event) => {
     const label = getDayLabel(event);
@@ -49,12 +53,12 @@ export default function CalendarWidget({ events, loading }: CalendarWidgetProps)
           ))}
         </div>
       ) : events.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No upcoming events</p>
+        <p style={{ fontSize: fs.body }} className="text-muted-foreground">No upcoming events</p>
       ) : (
         <div className="space-y-4 flex-1 overflow-y-auto pr-1">
           {Object.entries(grouped).map(([day, dayEvents]) => (
             <div key={day}>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary/70">
+              <p className="mb-2 font-medium uppercase tracking-wider text-primary/70" style={{ fontSize: fs.heading }}>
                 {day}
               </p>
               <div className="space-y-2">
@@ -65,13 +69,13 @@ export default function CalendarWidget({ events, loading }: CalendarWidgetProps)
                   >
                     <div className="flex items-center gap-1.5 pt-0.5">
                       <Clock className="h-3 w-3 text-muted-foreground" />
-                      <span className="font-mono text-xs text-muted-foreground">
+                      <span className="font-mono text-muted-foreground" style={{ fontSize: fs.label }}>
                         {formatEventTime(event)}
                       </span>
                     </div>
                     <span
-                      className="text-sm font-medium"
-                      style={{ color: event._color || undefined }}
+                      className="font-medium"
+                      style={{ color: event._color || undefined, fontSize: fs.body }}
                     >
                       {event._prefix ? `${event._prefix} ` : ""}
                       {event.summary}

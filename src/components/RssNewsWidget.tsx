@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Newspaper, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 export interface RssNewsItem {
   title: string;
@@ -15,6 +16,7 @@ interface RssNewsWidgetProps {
   loading: boolean;
   label?: string;
   cycleIntervalSeconds?: number;
+  fontSizes?: ResolvedFontSizes;
 }
 
 function formatTime(dateStr: string): string {
@@ -34,7 +36,8 @@ function formatTime(dateStr: string): string {
   }
 }
 
-export default function RssNewsWidget({ items, loading, label, cycleIntervalSeconds = 8 }: RssNewsWidgetProps) {
+export default function RssNewsWidget({ items, loading, label, cycleIntervalSeconds = 8, fontSizes }: RssNewsWidgetProps) {
+  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -66,7 +69,7 @@ export default function RssNewsWidget({ items, loading, label, cycleIntervalSeco
   if (items.length === 0) {
     return (
       <div className="widget-card h-full p-2">
-        <p className="text-xs text-muted-foreground">Inga nyheter</p>
+        <p className="text-muted-foreground" style={{ fontSize: fs.label }}>Inga nyheter</p>
       </div>
     );
   }
@@ -84,21 +87,21 @@ export default function RssNewsWidget({ items, loading, label, cycleIntervalSeco
         {/* Left: text content */}
         <div className="flex-1 flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider truncate">
+            <span className="text-muted-foreground font-medium uppercase tracking-wider truncate" style={{ fontSize: fs.label }}>
               {label || "Nyheter"}
             </span>
-            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+            <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: fs.label }}>
               · {formatTime(item.pubDate)}
             </span>
             <ExternalLink className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto" />
           </div>
 
-          <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
+          <h3 className="font-semibold text-foreground leading-snug line-clamp-2" style={{ fontSize: fs.body }}>
             {item.title}
           </h3>
 
           {item.description && (
-            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-5 flex-1">
+            <p className="text-muted-foreground leading-relaxed line-clamp-5 flex-1" style={{ fontSize: fs.heading }}>
               {item.description}
             </p>
           )}
