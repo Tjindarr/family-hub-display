@@ -69,8 +69,8 @@ const Index = () => {
   const isMobile = useIsMobile();
 
   const isDemo = !isConfigured;
-  const hasCar = isDemo || !!(config.carConfig?.chargerEntity || config.carConfig?.fuelRangeEntity || config.carConfig?.batteryEntity);
-  const hasEnergy = isDemo || !!(config.energyUsageConfig?.monthlyCostEntity || config.energyUsageConfig?.currentPowerEntity);
+  const hasCar = isDemo || !!(config.carConfig?.chargerEntity?.trim() || config.carConfig?.fuelRangeEntity?.trim() || config.carConfig?.batteryEntity?.trim());
+  const hasEnergy = isDemo || !!(config.energyUsageConfig?.monthlyCostEntity?.trim() || config.energyUsageConfig?.currentPowerEntity?.trim());
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   // Apply theme
