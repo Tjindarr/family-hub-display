@@ -175,6 +175,7 @@ export interface TemperatureEntityConfig {
   group?: number; // sensors with the same group number render in one widget
   showChart?: boolean; // show a background chart with 24h history
   chartType?: SensorChartType; // chart type for the background chart
+  roundTemperature?: boolean; // round temperature to nearest integer
 }
 
 export interface PersonEntityConfig {

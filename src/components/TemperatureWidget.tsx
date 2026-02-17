@@ -78,7 +78,9 @@ export default function TemperatureWidget({ sensors, loading, fontSizes }: Tempe
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Thermometer className="h-4 w-4" style={{ color: sensor.color }} />
                 <span className="font-mono font-semibold text-foreground" style={{ fontSize: fs.value }}>
-                  {sensor.temperature !== null ? `${sensor.temperature.toFixed(1)}°` : "—"}
+                  {sensor.temperature !== null
+                    ? `${sensor.roundTemperature ? Math.round(sensor.temperature) : sensor.temperature.toFixed(1)}°`
+                    : "—"}
                 </span>
               </div>
             </div>
