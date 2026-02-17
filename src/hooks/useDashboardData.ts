@@ -474,11 +474,16 @@ export function useFoodMenuData(config: DashboardConfig) {
         ["Salmon & Rice"],
         ["Pizza Night", "Garlic Bread"],
       ];
-      const mock = Array.from({ length: numDays }, (_, i) => {
+      const skipWk = fc?.skipWeekends ?? false;
+      const mock: { date: string; meals: string[] }[] = [];
+      let offset = 0;
+      while (mock.length < numDays) {
         const d = new Date(now);
-        d.setDate(d.getDate() + i);
-        return { date: d.toISOString().split("T")[0], meals: allMeals[i % allMeals.length] };
-      });
+        d.setDate(d.getDate() + offset);
+        offset++;
+        if (skipWk && (d.getDay() === 0 || d.getDay() === 6)) continue;
+        mock.push({ date: d.toISOString().split("T")[0], meals: allMeals[mock.length % allMeals.length] });
+      }
       setDays(mock);
       setLoading(false);
       return;
@@ -504,8 +509,14 @@ export function useFoodMenuData(config: DashboardConfig) {
           byDate.get(dt)!.push(ev.summary);
         }
       }
+      const skipWk = fc.skipWeekends ?? false;
       const sorted = [...byDate.entries()]
         .sort((a, b) => a[0].localeCompare(b[0]))
+        .filter(([date]) => {
+          if (!skipWk) return true;
+          const day = new Date(date).getDay();
+          return day !== 0 && day !== 6;
+        })
         .map(([date, meals]) => ({ date, meals }));
       setDays(sorted);
     } catch (err) {

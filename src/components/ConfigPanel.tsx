@@ -200,7 +200,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
-  const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5 });
+  const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5, skipWeekends: false });
   const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
   const [sensorGrids, setSensorGrids] = useState<SensorGridConfig[]>(config.sensorGrids || []);
   const [rssFeeds, setRssFeeds] = useState<RssNewsConfig[]>(config.rssFeeds || []);
@@ -730,6 +730,14 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   max={14}
                   className="mt-1 bg-muted border-border"
                 />
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <Checkbox
+                  id="skipWeekends"
+                  checked={foodMenuConfig.skipWeekends ?? false}
+                  onCheckedChange={(checked) => setFoodMenuConfig((prev) => ({ ...prev, skipWeekends: !!checked }))}
+                />
+                <Label htmlFor="skipWeekends" className="text-xs text-muted-foreground cursor-pointer">Skip weekends (Sat &amp; Sun)</Label>
               </div>
             </section>
 
