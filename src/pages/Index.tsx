@@ -280,8 +280,8 @@ const Index = () => {
               className="grid gap-2"
               style={{
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                ...(heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : {}),
-                overflow: 'hidden',
+                ...(!isMobile && heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : {}),
+                ...(!isMobile && heightPx ? { overflow: 'hidden' } : {}),
               }}
             >
               {rendered.map(({ id, span, rSpan, groupId }) => {
