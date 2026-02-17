@@ -112,11 +112,10 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
       <div className="mb-4 flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-[2px]">
         {/* Left: time + date */}
         <div>
-          <div className="font-bold text-foreground" style={{ fontSize: xlSize }}>
+          <div className="font-bold text-foreground" style={{ fontSize: Math.round(xlSize * 1.4) }}>
             {format(now, "HH:mm")}
-            <span className="text-muted-foreground" style={{ fontSize: fs.value }}>:{format(now, "ss")}</span>
+            <span className="text-muted-foreground" style={{ fontSize: Math.round(fs.value * 1.2) }}>:{format(now, "ss")}</span>
           </div>
-          <div className="text-muted-foreground" style={{ fontSize: fs.heading }}>{format(now, "EEEE, yyyy-MM-dd")}</div>
         </div>
 
         {/* Center: icon + temp */}
