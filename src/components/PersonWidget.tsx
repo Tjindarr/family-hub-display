@@ -1,4 +1,4 @@
-import { MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation, Home, Briefcase, School, ShoppingCart, Dumbbell, Church, Building2, Heart, Star, Coffee, Utensils, Car, Plane, Train, TreePine, type LucideIcon } from "lucide-react";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 export interface PersonData {
@@ -9,6 +9,7 @@ export interface PersonData {
   isCharging: boolean;
   distanceKm: number | null;
   avatarSize?: number;
+  zoneIcon?: string | null;
 }
 
 interface PersonWidgetProps {
@@ -66,6 +67,34 @@ function formatLocation(raw: string | null): string | null {
   return raw;
 }
 
+const mdiToLucide: Record<string, LucideIcon> = {
+  "mdi:home": Home,
+  "mdi:home-variant": Home,
+  "mdi:briefcase": Briefcase,
+  "mdi:school": School,
+  "mdi:cart": ShoppingCart,
+  "mdi:shopping": ShoppingCart,
+  "mdi:dumbbell": Dumbbell,
+  "mdi:church": Church,
+  "mdi:office-building": Building2,
+  "mdi:hospital": Building2,
+  "mdi:heart": Heart,
+  "mdi:star": Star,
+  "mdi:coffee": Coffee,
+  "mdi:food": Utensils,
+  "mdi:restaurant": Utensils,
+  "mdi:car": Car,
+  "mdi:airplane": Plane,
+  "mdi:train": Train,
+  "mdi:tree": TreePine,
+  "mdi:forest": TreePine,
+};
+
+function getZoneIcon(zoneIcon?: string | null): LucideIcon {
+  if (!zoneIcon) return MapPin;
+  return mdiToLucide[zoneIcon] || MapPin;
+}
+
 export default function PersonWidget({ person, loading, fontSizes }: PersonWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
 
@@ -101,7 +130,7 @@ export default function PersonWidget({ person, loading, fontSizes }: PersonWidge
       {/* Attributes */}
       <div className="flex flex-col justify-center gap-1.5 sm:gap-2 min-w-0">
         <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-primary" />
+          {(() => { const ZoneIcon = getZoneIcon(person.zoneIcon); return <ZoneIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-primary" />; })()}
           <span className="text-foreground truncate" style={{ fontSize: fs.body }}>{formatLocation(person.location) ?? "—"}</span>
         </div>
 
