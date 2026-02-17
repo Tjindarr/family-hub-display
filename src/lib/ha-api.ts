@@ -56,6 +56,17 @@ class HomeAssistantAPI {
     return this.request<HAState[][]>(path);
   }
 
+  async getStatistics(
+    entityIds: string[],
+    startTime: string,
+    endTime?: string,
+    period: "5minute" | "hour" | "day" | "week" | "month" = "hour"
+  ): Promise<Record<string, { start: string; end: string; mean?: number; min?: number; max?: number; sum?: number; change?: number; state?: number }[]>> {
+    let path = `/history/statistics/${startTime}?statistic_ids=${entityIds.join(",")}&period=${period}`;
+    if (endTime) path += `&end_time=${endTime}`;
+    return this.request(path);
+  }
+
   async getWeatherForecast(entityId: string, type: "daily" | "hourly" | "twice_daily" = "daily"): Promise<any[]> {
     try {
       const result = await this.request<any>("/services/weather/get_forecasts?return_response", {
