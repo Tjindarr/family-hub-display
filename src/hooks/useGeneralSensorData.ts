@@ -177,7 +177,7 @@ async function fetchHistoryChart(
   return aggregateByGrouping(sorted, grouping, histories.length, aggregation);
 }
 
-/** Fetch chart data using the HA statistics API (more accurate for energy/delta) */
+/** Fetch chart data using HA statistics API where available, history API as fallback per-series */
 async function fetchStatisticsChart(
   client: ReturnType<typeof createHAClient>,
   sc: GeneralSensorConfig,
@@ -187,32 +187,49 @@ async function fetchStatisticsChart(
 ): Promise<Record<string, number | string>[]> {
   const entityIds = sc.chartSeries.map((cs) => cs.entityId);
   const statsPeriod = grouping === "day" ? "hour" : grouping === "minute" ? "5minute" : "hour";
-  const statsData = await client.getStatistics(
-    entityIds,
-    start.toISOString(),
-    now.toISOString(),
-    statsPeriod
-  );
+
+  let statsData: Record<string, { start: number; change?: number }[]> = {};
+  try {
+    statsData = await client.getStatistics(entityIds, start.toISOString(), now.toISOString(), statsPeriod);
+  } catch (err) {
+    console.warn("[Delta/Stats] Statistics API failed entirely:", err);
+    throw err;
+  }
 
   console.log("[Delta/Stats] Statistics API response keys:", Object.keys(statsData));
 
-  // Build chart data from statistics using 'change' field
+  const seriesWithStats: number[] = [];
+  const seriesNeedHistory: number[] = [];
+
+  for (let i = 0; i < sc.chartSeries.length; i++) {
+    const entityId = sc.chartSeries[i].entityId;
+    const stats = statsData[entityId] || [];
+    if (stats.length > 0) {
+      seriesWithStats.push(i);
+      console.log(`[Delta/Stats] ${entityId}: ${stats.length} stats entries`);
+    } else {
+      seriesNeedHistory.push(i);
+      console.log(`[Delta/Stats] ${entityId}: no stats, will use history fallback`);
+    }
+  }
+
+  if (seriesWithStats.length === 0) {
+    throw new Error("No series have statistics data available");
+  }
+
+  // Build chart data from statistics
   const timeMap = new Map<string, Record<string, number | string>>();
 
-  for (let seriesIdx = 0; seriesIdx < sc.chartSeries.length; seriesIdx++) {
+  for (const seriesIdx of seriesWithStats) {
     const entityId = sc.chartSeries[seriesIdx].entityId;
     const stats = statsData[entityId] || [];
     const key = `series_${seriesIdx}`;
 
-    console.log(`[Delta/Stats] Stats for ${entityId}: ${stats.length} entries, sample:`,
-      stats.length > 0 ? JSON.stringify(stats[0]) : "none");
-
     for (const entry of stats) {
-      // WebSocket returns start as epoch (seconds), convert to ISO string
+      // HA WebSocket returns start as epoch milliseconds
       const ts = typeof entry.start === "number"
-        ? new Date(entry.start * 1000).toISOString()
+        ? new Date(entry.start).toISOString()
         : String(entry.start);
-      // 'change' = delta for this statistics period (what HA energy dashboard uses)
       const val = entry.change ?? 0;
       if (!timeMap.has(ts)) {
         timeMap.set(ts, { time: ts });
@@ -221,11 +238,43 @@ async function fetchStatisticsChart(
     }
   }
 
+  // For series without statistics, fetch history and compute delta manually
+  for (const seriesIdx of seriesNeedHistory) {
+    const cs = sc.chartSeries[seriesIdx];
+    const key = `series_${seriesIdx}`;
+    try {
+      const raw = await client.getHistory(cs.entityId, start.toISOString(), now.toISOString());
+      const histEntries = raw?.[0] || [];
+      const bucketLast = new Map<string, number>();
+      for (const entry of histEntries) {
+        const ts = entry.last_updated || entry.last_changed;
+        if (!ts) continue;
+        const val = parseFloat(entry.state);
+        if (isNaN(val)) continue;
+        const bucketKey = getBucketKey(ts, statsPeriod === "5minute" ? "minute" : "hour");
+        bucketLast.set(bucketKey, val);
+      }
+      const sortedBuckets = Array.from(bucketLast.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      for (let bIdx = 0; bIdx < sortedBuckets.length; bIdx++) {
+        const [, lastVal] = sortedBuckets[bIdx];
+        const delta = bIdx > 0 ? lastVal - sortedBuckets[bIdx - 1][1] : 0;
+        const bucketTime = sortedBuckets[bIdx][0];
+        const syntheticTs = bucketTime.includes("T") ? new Date(bucketTime).toISOString() : new Date(bucketTime + "T00:00:00").toISOString();
+        if (!timeMap.has(syntheticTs)) {
+          timeMap.set(syntheticTs, { time: syntheticTs });
+        }
+        timeMap.get(syntheticTs)![key] = delta;
+      }
+    } catch {
+      console.warn(`[Delta/Stats] History fallback failed for ${cs.entityId}`);
+    }
+  }
+
   let chartData = Array.from(timeMap.values()).sort(
     (a, b) => new Date(String(a.time)).getTime() - new Date(String(b.time)).getTime()
   );
 
-  // Aggregate hourly stats into daily sums for day grouping
+  // Aggregate hourly data into daily sums for day grouping
   if (grouping === "day") {
     const dayBuckets = new Map<string, Record<string, number>>();
     for (const point of chartData) {
@@ -247,7 +296,8 @@ async function fetchStatisticsChart(
 
   console.log("[Delta/Stats] Final chart data:", JSON.stringify(chartData.map(r => ({
     d: r.time,
-    v: typeof r.series_0 === "number" ? Math.round((r.series_0 as number) * 100) / 100 : r.series_0,
+    s0: typeof r.series_0 === "number" ? Math.round((r.series_0 as number) * 100) / 100 : r.series_0,
+    s1: typeof r.series_1 === "number" ? Math.round((r.series_1 as number) * 100) / 100 : r.series_1,
   }))));
 
   return chartData;
