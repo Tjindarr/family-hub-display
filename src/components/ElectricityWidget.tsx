@@ -50,12 +50,16 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
 
   const allPrices = [...today.map((p) => p.price), ...tomorrow.map((p) => p.price)];
   const avgPrice = allPrices.length > 0 ? allPrices.reduce((s, p) => s + p, 0) / allPrices.length : 0;
-  const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+  
   const maxPrice = allPrices.length > 0 ? Math.max(...allPrices) : 0;
 
-  // Find the time of the lowest price
+  // Find the cheapest hour from now onwards
   const allPoints = [...today, ...tomorrow];
-  const minPoint = allPoints.length > 0 ? allPoints.reduce((min, p) => p.price < min.price ? p : min, allPoints[0]) : null;
+  const futurePoints = allPoints.filter((p) => p.time.getTime() >= nowMs);
+  const minPoint = futurePoints.length > 0
+    ? futurePoints.reduce((min, p) => p.price < min.price ? p : min, futurePoints[0])
+    : null;
+  const minPrice = minPoint ? minPoint.price : (allPrices.length > 0 ? Math.min(...allPrices) : 0);
   const minTimeStr = minPoint ? formatHour(minPoint.time) : "";
 
   // Find current time position
