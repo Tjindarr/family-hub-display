@@ -188,15 +188,20 @@ async function fetchStatisticsChart(
   const entityIds = sc.chartSeries.map((cs) => cs.entityId);
   const statsPeriod = grouping === "day" ? "hour" : grouping === "minute" ? "5minute" : "hour";
 
-  let statsData: Record<string, { start: number; change?: number }[]> = {};
+  // Request one extra day before visible range so we have a baseline for the first visible day
+  const extraStart = new Date(start.getTime() - 24 * 3600000);
+  const visibleStartKey = start.toLocaleDateString("sv-SE");
+
+  let statsData: Record<string, { start: number; change?: number; sum?: number }[]> = {};
   try {
-    statsData = await client.getStatistics(entityIds, start.toISOString(), now.toISOString(), statsPeriod);
+    statsData = await client.getStatistics(entityIds, extraStart.toISOString(), now.toISOString(), statsPeriod);
   } catch (err) {
     console.warn("[Delta/Stats] Statistics API failed entirely:", err);
     throw err;
   }
 
   console.log("[Delta/Stats] Statistics API response keys:", Object.keys(statsData));
+  console.log("[Delta/Stats] visibleStartKey:", visibleStartKey);
 
   const seriesWithStats: number[] = [];
   const seriesNeedHistory: number[] = [];
@@ -231,43 +236,32 @@ async function fetchStatisticsChart(
     for (const entry of stats) {
       const ts = typeof entry.start === "number" ? new Date(entry.start) : new Date(String(entry.start));
       const dayKey = ts.toLocaleDateString("sv-SE");
-      const sumVal = (entry as any).sum;
+      const sumVal = entry.sum;
       if (typeof sumVal === "number") {
         dayLastSum.set(dayKey, sumVal);
       }
     }
 
     const sortedDays = Array.from(dayLastSum.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-    for (let i = 0; i < sortedDays.length; i++) {
+    console.log(`[Delta/Stats] ${entityId} daily sums:`, JSON.stringify(sortedDays.map(([d, s]) => ({ d, sum: Math.round(s * 100) / 100 }))));
+
+    for (let i = 1; i < sortedDays.length; i++) {
       const [day, lastSum] = sortedDays[i];
-      const prevSum = i > 0 ? sortedDays[i - 1][1] : lastSum; // first day: use change-sum fallback below
-      const delta = i > 0 ? lastSum - prevSum : 0;
+      const prevSum = sortedDays[i - 1][1];
+      const delta = Math.round((lastSum - prevSum) * 100) / 100;
 
       if (!dayBuckets.has(day)) dayBuckets.set(day, {});
       dayBuckets.get(day)![key] = delta;
     }
-
-    // For first day, sum the "change" values instead (since there's no previous day sum)
-    if (sortedDays.length > 0) {
-      const firstDay = sortedDays[0][0];
-      let firstDayChangeSum = 0;
-      for (const entry of stats) {
-        const ts = typeof entry.start === "number" ? new Date(entry.start) : new Date(String(entry.start));
-        if (ts.toLocaleDateString("sv-SE") === firstDay) {
-          firstDayChangeSum += entry.change ?? 0;
-        }
-      }
-      if (!dayBuckets.has(firstDay)) dayBuckets.set(firstDay, {});
-      dayBuckets.get(firstDay)![key] = Math.round(firstDayChangeSum * 100) / 100;
-    }
   }
 
   // For series without statistics, fetch history and compute delta manually per day
+  // Also request one extra day before for baseline
   for (const seriesIdx of seriesNeedHistory) {
     const cs = sc.chartSeries[seriesIdx];
     const key = `series_${seriesIdx}`;
     try {
-      const raw = await client.getHistory(cs.entityId, start.toISOString(), now.toISOString());
+      const raw = await client.getHistory(cs.entityId, extraStart.toISOString(), now.toISOString());
       const histEntries = raw?.[0] || [];
 
       // Get last value per day
@@ -282,6 +276,8 @@ async function fetchStatisticsChart(
       }
 
       const sortedDays = Array.from(dayLastVal.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      console.log(`[Delta/Stats] ${cs.entityId} history daily last vals:`, JSON.stringify(sortedDays.map(([d, v]) => ({ d, v: Math.round(v * 100) / 100 }))));
+
       for (let i = 1; i < sortedDays.length; i++) {
         const [day, lastVal] = sortedDays[i];
         const delta = lastVal - sortedDays[i - 1][1];
@@ -293,7 +289,9 @@ async function fetchStatisticsChart(
     }
   }
 
+  // Filter out the extra baseline day — only keep visible range
   let chartData: Record<string, number | string>[] = Array.from(dayBuckets.entries())
+    .filter(([day]) => day >= visibleStartKey)
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([day, vals]) => ({ time: day, ...vals }));
 
