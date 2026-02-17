@@ -152,7 +152,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
           {chartData.map((d, i) => (
             <div key={i} className="flex flex-col items-center gap-0.5">
               <span className="font-medium text-muted-foreground" style={{ fontSize: fs.label }}>{d.name}</span>
-              {getWeatherIcon(d.condition, 16)}
+              {getWeatherIcon(d.condition, 32)}
             </div>
           ))}
         </div>
