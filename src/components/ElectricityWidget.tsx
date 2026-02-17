@@ -50,8 +50,10 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
 
   const allPrices = [...today.map((p) => p.price), ...tomorrow.map((p) => p.price)];
   const avgPrice = allPrices.length > 0 ? allPrices.reduce((s, p) => s + p, 0) / allPrices.length : 0;
-  
   const maxPrice = allPrices.length > 0 ? Math.max(...allPrices) : 0;
+
+  // Find current time position
+  const nowMs = Date.now();
 
   // Find the cheapest hour from now onwards
   const allPoints = [...today, ...tomorrow];
@@ -61,9 +63,6 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
     : null;
   const minPrice = minPoint ? minPoint.price : (allPrices.length > 0 ? Math.min(...allPrices) : 0);
   const minTimeStr = minPoint ? formatHour(minPoint.time) : "";
-
-  // Find current time position
-  const nowMs = Date.now();
 
   // Custom tick: show every 3rd hour
   const ticks = chartData
