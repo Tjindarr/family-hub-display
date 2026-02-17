@@ -81,7 +81,7 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
           return (
             <div
               key={i}
-              className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 p-2 min-w-0"
+              className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 p-2 min-w-0 text-center"
             >
               {icon && (
                 <DynIcon
@@ -93,9 +93,9 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
               <span className="text-muted-foreground max-w-full text-center leading-tight break-words" style={{ fontSize: cell.labelFontSize || fs.label }}>
                 {cell.label}
               </span>
-              <div className="flex items-baseline gap-0.5">
+              <div className="flex items-baseline justify-center gap-0.5">
                 <span
-                  className="font-mono font-semibold"
+                  className="font-mono font-semibold text-center"
                   style={{ color: color || undefined, fontSize: cell.fontSize || fs.body }}
                 >
                   {displayValue}
