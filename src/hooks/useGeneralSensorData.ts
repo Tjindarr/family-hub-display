@@ -217,82 +217,85 @@ async function fetchStatisticsChart(
     throw new Error("No series have statistics data available");
   }
 
-  // Build chart data from statistics
-  const timeMap = new Map<string, Record<string, number | string>>();
+  // Build daily chart data using cumulative "sum" for accuracy (same as HA energy dashboard)
+  // For each day: delta = last_sum_of_day - last_sum_of_previous_day
+  const dayBuckets = new Map<string, Record<string, number>>();
 
   for (const seriesIdx of seriesWithStats) {
     const entityId = sc.chartSeries[seriesIdx].entityId;
     const stats = statsData[entityId] || [];
     const key = `series_${seriesIdx}`;
 
+    // Group stats by local day, keeping last "sum" value per day
+    const dayLastSum = new Map<string, number>();
     for (const entry of stats) {
-      // HA WebSocket returns start as epoch milliseconds
-      const ts = typeof entry.start === "number"
-        ? new Date(entry.start).toISOString()
-        : String(entry.start);
-      const val = entry.change ?? 0;
-      if (!timeMap.has(ts)) {
-        timeMap.set(ts, { time: ts });
+      const ts = typeof entry.start === "number" ? new Date(entry.start) : new Date(String(entry.start));
+      const dayKey = ts.toLocaleDateString("sv-SE");
+      const sumVal = (entry as any).sum;
+      if (typeof sumVal === "number") {
+        dayLastSum.set(dayKey, sumVal);
       }
-      timeMap.get(ts)![key] = val;
+    }
+
+    const sortedDays = Array.from(dayLastSum.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    for (let i = 0; i < sortedDays.length; i++) {
+      const [day, lastSum] = sortedDays[i];
+      const prevSum = i > 0 ? sortedDays[i - 1][1] : lastSum; // first day: use change-sum fallback below
+      const delta = i > 0 ? lastSum - prevSum : 0;
+
+      if (!dayBuckets.has(day)) dayBuckets.set(day, {});
+      dayBuckets.get(day)![key] = delta;
+    }
+
+    // For first day, sum the "change" values instead (since there's no previous day sum)
+    if (sortedDays.length > 0) {
+      const firstDay = sortedDays[0][0];
+      let firstDayChangeSum = 0;
+      for (const entry of stats) {
+        const ts = typeof entry.start === "number" ? new Date(entry.start) : new Date(String(entry.start));
+        if (ts.toLocaleDateString("sv-SE") === firstDay) {
+          firstDayChangeSum += entry.change ?? 0;
+        }
+      }
+      if (!dayBuckets.has(firstDay)) dayBuckets.set(firstDay, {});
+      dayBuckets.get(firstDay)![key] = Math.round(firstDayChangeSum * 100) / 100;
     }
   }
 
-  // For series without statistics, fetch history and compute delta manually
+  // For series without statistics, fetch history and compute delta manually per day
   for (const seriesIdx of seriesNeedHistory) {
     const cs = sc.chartSeries[seriesIdx];
     const key = `series_${seriesIdx}`;
     try {
       const raw = await client.getHistory(cs.entityId, start.toISOString(), now.toISOString());
       const histEntries = raw?.[0] || [];
-      const bucketLast = new Map<string, number>();
+
+      // Get last value per day
+      const dayLastVal = new Map<string, number>();
       for (const entry of histEntries) {
         const ts = entry.last_updated || entry.last_changed;
         if (!ts) continue;
         const val = parseFloat(entry.state);
         if (isNaN(val)) continue;
-        const bucketKey = getBucketKey(ts, statsPeriod === "5minute" ? "minute" : "hour");
-        bucketLast.set(bucketKey, val);
+        const dayKey = new Date(ts).toLocaleDateString("sv-SE");
+        dayLastVal.set(dayKey, val);
       }
-      const sortedBuckets = Array.from(bucketLast.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-      for (let bIdx = 0; bIdx < sortedBuckets.length; bIdx++) {
-        const [, lastVal] = sortedBuckets[bIdx];
-        const delta = bIdx > 0 ? lastVal - sortedBuckets[bIdx - 1][1] : 0;
-        const bucketTime = sortedBuckets[bIdx][0];
-        const syntheticTs = bucketTime.includes("T") ? new Date(bucketTime).toISOString() : new Date(bucketTime + "T00:00:00").toISOString();
-        if (!timeMap.has(syntheticTs)) {
-          timeMap.set(syntheticTs, { time: syntheticTs });
-        }
-        timeMap.get(syntheticTs)![key] = delta;
+
+      const sortedDays = Array.from(dayLastVal.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      for (let i = 1; i < sortedDays.length; i++) {
+        const [day, lastVal] = sortedDays[i];
+        const delta = lastVal - sortedDays[i - 1][1];
+        if (!dayBuckets.has(day)) dayBuckets.set(day, {});
+        dayBuckets.get(day)![key] = Math.round(delta * 100) / 100;
       }
     } catch {
       console.warn(`[Delta/Stats] History fallback failed for ${cs.entityId}`);
     }
   }
 
-  let chartData = Array.from(timeMap.values()).sort(
-    (a, b) => new Date(String(a.time)).getTime() - new Date(String(b.time)).getTime()
-  );
-
-  // Aggregate hourly data into daily sums for day grouping
-  if (grouping === "day") {
-    const dayBuckets = new Map<string, Record<string, number>>();
-    for (const point of chartData) {
-      const dayKey = new Date(String(point.time)).toLocaleDateString("sv-SE");
-      if (!dayBuckets.has(dayKey)) {
-        dayBuckets.set(dayKey, {});
-      }
-      const bucket = dayBuckets.get(dayKey)!;
-      for (let i = 0; i < sc.chartSeries.length; i++) {
-        const k = `series_${i}`;
-        bucket[k] = (bucket[k] || 0) + (typeof point[k] === "number" ? (point[k] as number) : 0);
-      }
-    }
-    chartData = Array.from(dayBuckets.entries()).map(([day, vals]) => ({
-      time: day,
-      ...vals,
-    }));
-  }
+  let chartData: Record<string, number | string>[] = Array.from(dayBuckets.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([day, vals]) => ({ time: day, ...vals }));
 
   console.log("[Delta/Stats] Final chart data:", JSON.stringify(chartData.map(r => ({
     d: r.time,
