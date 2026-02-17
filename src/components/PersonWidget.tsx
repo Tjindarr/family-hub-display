@@ -1,5 +1,6 @@
 import { MapPin, Navigation, Home, Briefcase, School, ShoppingCart, Dumbbell, Church, Building2, Heart, Star, Coffee, Utensils, Car, Plane, Train, TreePine, type LucideIcon } from "lucide-react";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
+import type { PersonCardFontSizes } from "@/lib/config";
 
 export interface PersonData {
   name: string;
@@ -16,6 +17,7 @@ interface PersonWidgetProps {
   person: PersonData;
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
+  personFontSizes?: PersonCardFontSizes;
 }
 
 function getBatteryColor(percent: number): string {
@@ -95,8 +97,9 @@ function getZoneIcon(zoneIcon?: string | null): LucideIcon {
   return mdiToLucide[zoneIcon] || MapPin;
 }
 
-export default function PersonWidget({ person, loading, fontSizes }: PersonWidgetProps) {
+export default function PersonWidget({ person, loading, fontSizes, personFontSizes }: PersonWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+  const pfs = personFontSizes || {};
 
   if (loading) {
     return (
@@ -131,7 +134,7 @@ export default function PersonWidget({ person, loading, fontSizes }: PersonWidge
       <div className="flex flex-col justify-center gap-1.5 sm:gap-2 min-w-0">
         <div className="flex items-center gap-2">
           {(() => { const ZoneIcon = getZoneIcon(person.zoneIcon); return <ZoneIcon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-primary" />; })()}
-          <span className="text-foreground truncate" style={{ fontSize: fs.body }}>{formatLocation(person.location) ?? "—"}</span>
+          <span className="text-foreground truncate" style={{ fontSize: pfs.locationSize || fs.body }}>{formatLocation(person.location) ?? "—"}</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -141,7 +144,7 @@ export default function PersonWidget({ person, loading, fontSizes }: PersonWidge
               <div className="flex items-center gap-1.5">
                 <span
                   className="rounded-full px-2 py-0.5 font-medium"
-                  style={{ backgroundColor: batteryBg, color: batteryColor, fontSize: fs.heading }}
+                  style={{ backgroundColor: batteryBg, color: batteryColor, fontSize: pfs.batterySize || fs.heading }}
                 >
                   {Math.round(person.batteryPercent)}%
                 </span>
@@ -154,7 +157,7 @@ export default function PersonWidget({ person, loading, fontSizes }: PersonWidge
 
         <div className="flex items-center gap-2">
           <Navigation className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-accent" />
-          <span className="text-foreground" style={{ fontSize: fs.body }}>
+          <span className="text-foreground" style={{ fontSize: pfs.distanceSize || fs.body }}>
             {person.distanceKm !== null ? `${person.distanceKm.toFixed(1)} km` : "—"}
           </span>
         </div>

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -238,6 +238,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [rssFeeds, setRssFeeds] = useState<RssNewsConfig[]>(config.rssFeeds || []);
   const [globalFontSizes, setGlobalFontSizes] = useState<GlobalFontSizes>(config.globalFontSizes || DEFAULT_FONT_SIZES);
   const [widgetFontSizes, setWidgetFontSizes] = useState<Record<string, WidgetFontSizes>>(config.widgetFontSizes || {});
+  const [personCardFontSizes, setPersonCardFontSizes] = useState<PersonCardFontSizes>(config.personCardFontSizes || {});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const gsIds = (config.generalSensors || []).map((s) => s.id);
@@ -340,6 +341,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       rssFeeds,
       globalFontSizes,
       widgetFontSizes,
+      personCardFontSizes,
     });
     setOpen(false);
   };
@@ -907,6 +909,24 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 </Button>
               }
             >
+              {/* Person Card Font Sizes */}
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
+                <span className="text-xs text-muted-foreground font-medium">Text Sizes (all person cards)</span>
+                <div className="flex gap-2 flex-wrap">
+                  <div className="w-24">
+                    <Label className="text-xs text-muted-foreground">Location px</Label>
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.locationSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, locationSize: Number(e.target.value) || undefined }))} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
+                  </div>
+                  <div className="w-24">
+                    <Label className="text-xs text-muted-foreground">Battery px</Label>
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.batterySize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, batterySize: Number(e.target.value) || undefined }))} placeholder="12" className="mt-1 bg-muted border-border text-xs h-8" />
+                  </div>
+                  <div className="w-24">
+                    <Label className="text-xs text-muted-foreground">Distance px</Label>
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.distanceSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, distanceSize: Number(e.target.value) || undefined }))} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
+                  </div>
+                </div>
+              </div>
               {personEntities.map((person, i) => (
                 <div key={i} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
                   <div className="flex items-center justify-between">

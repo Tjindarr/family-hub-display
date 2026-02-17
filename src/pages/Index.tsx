@@ -153,7 +153,7 @@ const Index = () => {
       const idx = parseInt(id.split("_")[1], 10);
       const person = persons[idx];
       if (!person) return null;
-      return <PersonWidget person={person} loading={personLoading} fontSizes={fs} />;
+      return <PersonWidget person={person} loading={personLoading} fontSizes={fs} personFontSizes={config.personCardFontSizes} />;
     }
     if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} fontSizes={fs} />;
     if (id.startsWith("general_")) {
