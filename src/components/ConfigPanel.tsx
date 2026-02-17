@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -189,6 +189,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   );
   const [calendarDayColor, setCalendarDayColor] = useState(config.calendarDayColor || "");
   const [calendarTimeColor, setCalendarTimeColor] = useState(config.calendarTimeColor || "");
+  const [calendarDisplay, setCalendarDisplay] = useState<CalendarDisplayConfig>(
+    config.calendarDisplay || {
+      showEventBody: false, showEndDate: false, hideAllDayText: false, showWeekNumber: false,
+      fontSizeDay: 12, fontSizeTime: 10, fontSizeTitle: 14, fontSizeBody: 12,
+    }
+  );
   const [weatherConfig, setWeatherConfig] = useState<WeatherConfig>(
     config.weatherConfig || { entityId: "weather.home", forecastDays: 5, showPrecipitation: true, showSunrise: true, showSunset: true }
   );
@@ -290,6 +296,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       calendarEntityConfigs,
       calendarDayColor,
       calendarTimeColor,
+      calendarDisplay,
       electricityPriceEntity: electricityEntity,
       widgetLayouts,
       widgetOrder: finalOrder,
@@ -700,6 +707,63 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       className="bg-muted border-border text-sm"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Calendar display options */}
+              <div className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-3">
+                <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Display Options</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={calendarDisplay.showEventBody}
+                      onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, showEventBody: !!v })}
+                    />
+                    Show event body
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={calendarDisplay.showEndDate}
+                      onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, showEndDate: !!v })}
+                    />
+                    Show end time
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={calendarDisplay.hideAllDayText}
+                      onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, hideAllDayText: !!v })}
+                    />
+                    Hide "All day" text
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={calendarDisplay.showWeekNumber}
+                      onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, showWeekNumber: !!v })}
+                    />
+                    Show week number
+                  </label>
+                </div>
+
+                <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Font Sizes (px)</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ["fontSizeDay", "Day label"],
+                    ["fontSizeTime", "Time"],
+                    ["fontSizeTitle", "Event title"],
+                    ["fontSizeBody", "Event body"],
+                  ] as const).map(([key, label]) => (
+                    <div key={key}>
+                      <Label className="text-xs text-muted-foreground">{label}</Label>
+                      <Input
+                        type="number"
+                        min={6}
+                        max={48}
+                        value={calendarDisplay[key]}
+                        onChange={(e) => setCalendarDisplay({ ...calendarDisplay, [key]: Number(e.target.value) || 12 })}
+                        className="mt-1 bg-muted border-border text-sm"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>

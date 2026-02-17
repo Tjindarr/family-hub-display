@@ -31,6 +31,17 @@ export interface CalendarEntityConfig {
   color: string; // HSL color for event text
 }
 
+export interface CalendarDisplayConfig {
+  showEventBody: boolean;
+  showEndDate: boolean;
+  hideAllDayText: boolean;
+  showWeekNumber: boolean;
+  fontSizeDay: number;    // px
+  fontSizeTime: number;   // px
+  fontSizeTitle: number;  // px
+  fontSizeBody: number;   // px
+}
+
 export interface WeatherConfig {
   entityId: string; // weather.* entity
   forecastDays: number; // number of days to forecast
@@ -146,6 +157,7 @@ export interface DashboardConfig {
   calendarEntityConfigs: CalendarEntityConfig[];
   calendarDayColor: string; // color for day labels (e.g. "Today", "Tomorrow")
   calendarTimeColor: string; // color for time labels (e.g. "14:00")
+  calendarDisplay: CalendarDisplayConfig;
   temperatureEntities: TemperatureEntityConfig[];
   electricityPriceEntity: string;
   electricityForecastEntity: string;
@@ -227,6 +239,16 @@ const DEFAULT_CONFIG: DashboardConfig = {
   ],
   calendarDayColor: "",
   calendarTimeColor: "",
+  calendarDisplay: {
+    showEventBody: false,
+    showEndDate: false,
+    hideAllDayText: false,
+    showWeekNumber: false,
+    fontSizeDay: 12,
+    fontSizeTime: 10,
+    fontSizeTitle: 14,
+    fontSizeBody: 12,
+  },
   temperatureEntities: [
     { entityId: "sensor.living_room_temperature", label: "Living Room", color: "hsl(174, 72%, 50%)" },
     { entityId: "sensor.bedroom_temperature", label: "Bedroom", color: "hsl(32, 95%, 55%)" },
