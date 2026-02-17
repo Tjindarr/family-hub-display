@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, CalendarEntityConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -929,9 +929,22 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                            <SelectItem value="minute">Minute</SelectItem>
                            <SelectItem value="hour">Hour</SelectItem>
                            <SelectItem value="day">Day</SelectItem>
-                         </SelectContent>
-                       </Select>
-                     </div>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="w-24">
+                        <Label className="text-xs text-muted-foreground">Aggregation</Label>
+                        <Select value={gs.chartAggregation || "average"} onValueChange={(v) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartAggregation: v as ChartAggregation }; setGeneralSensors(u); }}>
+                          <SelectTrigger className="mt-1 bg-muted border-border text-xs h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="average">Average</SelectItem>
+                            <SelectItem value="max">Max</SelectItem>
+                            <SelectItem value="min">Min</SelectItem>
+                            <SelectItem value="sum">Sum</SelectItem>
+                            <SelectItem value="last">Last</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                    </div>
 
                   {/* Top Info */}
