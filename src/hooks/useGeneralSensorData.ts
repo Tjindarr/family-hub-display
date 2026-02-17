@@ -5,19 +5,113 @@ import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
 
 function getBucketKey(iso: string, grouping: ChartGrouping): string {
   const d = new Date(iso);
-  // Use sv-SE locale to bucket in Swedish local time
   if (grouping === "day") {
-    return d.toLocaleDateString("sv-SE"); // "2025-02-17"
+    return d.toLocaleDateString("sv-SE");
   }
   if (grouping === "minute") {
     const date = d.toLocaleDateString("sv-SE");
     const time = d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
     return `${date}T${time}`;
   }
-  // hour
   const date = d.toLocaleDateString("sv-SE");
   const hour = d.toLocaleTimeString("sv-SE", { hour: "2-digit", hour12: false });
   return `${date}T${hour}:00`;
+}
+
+/**
+ * Compute delta (change) per time period using exact boundary interpolation.
+ * For each period boundary (e.g. midnight for day grouping), finds the last known
+ * sensor value at that boundary. Delta = value_at(next_boundary) - value_at(this_boundary).
+ * This avoids issues with sparse data or irregular reporting intervals.
+ */
+function computeDelta(
+  sorted: Record<string, number | string>[],
+  seriesCount: number,
+  periodStart: Date,
+  periodEnd: Date,
+  grouping: ChartGrouping
+): Record<string, number | string>[] {
+  if (sorted.length === 0) return [];
+
+  // Build time boundaries in local time
+  const boundaries: number[] = [];
+  const cursor = new Date(periodStart);
+
+  if (grouping === "day") {
+    cursor.setHours(0, 0, 0, 0);
+  } else if (grouping === "hour") {
+    cursor.setMinutes(0, 0, 0);
+  } else {
+    cursor.setSeconds(0, 0);
+  }
+
+  // Add boundaries up through one period past the end
+  const endMs = periodEnd.getTime();
+  while (cursor.getTime() <= endMs) {
+    boundaries.push(cursor.getTime());
+    if (grouping === "day") {
+      cursor.setDate(cursor.getDate() + 1);
+    } else if (grouping === "hour") {
+      cursor.setHours(cursor.getHours() + 1);
+    } else {
+      cursor.setMinutes(cursor.getMinutes() + 1);
+    }
+  }
+  // Final boundary (e.g. tomorrow midnight) — its value will be the last known value
+  boundaries.push(cursor.getTime());
+
+  if (boundaries.length < 2) return [];
+
+  // For each series, find the sensor value at each boundary.
+  // value_at(boundary) = last known value from a data point with timestamp < boundary
+  const boundaryValues: number[][] = [];
+
+  for (let si = 0; si < seriesCount; si++) {
+    const k = `series_${si}`;
+    const bVals = new Array(boundaries.length).fill(0);
+    let lastVal = 0;
+    let bIdx = 0;
+
+    for (const p of sorted) {
+      const t = new Date(String(p.time)).getTime();
+
+      // Record lastVal for all boundaries we've passed
+      while (bIdx < boundaries.length && boundaries[bIdx] <= t) {
+        bVals[bIdx] = lastVal;
+        bIdx++;
+      }
+
+      if (typeof p[k] === "number") {
+        lastVal = p[k] as number;
+      }
+    }
+
+    // Fill remaining boundaries with the final known value
+    while (bIdx < boundaries.length) {
+      bVals[bIdx] = lastVal;
+      bIdx++;
+    }
+
+    boundaryValues.push(bVals);
+  }
+
+  // Delta per period = value_at(boundary[i+1]) - value_at(boundary[i])
+  const result: Record<string, number | string>[] = [];
+  const numPeriods = boundaries.length - 1;
+
+  for (let i = 0; i < numPeriods; i++) {
+    if (boundaries[i] > endMs) break; // Don't show future periods
+    const point: Record<string, number | string> = {
+      time: new Date(boundaries[i]).toISOString(),
+    };
+    for (let si = 0; si < seriesCount; si++) {
+      const k = `series_${si}`;
+      point[k] = boundaryValues[si][i + 1] - boundaryValues[si][i];
+    }
+    result.push(point);
+  }
+
+  return result;
 }
 
 function aggregateByGrouping(
@@ -45,8 +139,7 @@ function aggregateByGrouping(
   const entries = Array.from(buckets.entries());
   const result: Record<string, number | string>[] = [];
 
-  for (let eIdx = 0; eIdx < entries.length; eIdx++) {
-    const [time, b] = entries[eIdx];
+  for (const [time, b] of entries) {
     const point: Record<string, number | string> = { time };
     for (let i = 0; i < seriesCount; i++) {
       const k = `series_${i}`;
@@ -64,20 +157,6 @@ function aggregateByGrouping(
         case "last":
           point[k] = b.last[k] ?? 0;
           break;
-        case "delta": {
-          // Delta: difference between last value in this bucket and last value in previous bucket
-          const currentLast = b.last[k] ?? 0;
-          if (eIdx > 0) {
-            const prevBucket = entries[eIdx - 1][1];
-            const prevLast = prevBucket.last[k] ?? 0;
-            point[k] = currentLast - prevLast;
-          } else {
-            // First bucket: difference between last and first value within the bucket
-            const firstVal = vals.length > 0 ? vals[0] : 0;
-            point[k] = currentLast - firstVal;
-          }
-          break;
-        }
         case "average":
         default:
           point[k] = vals.reduce((a, v) => a + v, 0) / vals.length;
@@ -104,7 +183,7 @@ export function useGeneralSensorData(config: DashboardConfig) {
     const isDemo = !checkConfigured(config);
 
     if (isDemo) {
-      // Generate mock data for each sensor card
+      // ... keep existing code (mock data generation)
       const mock: Record<string, GeneralSensorLiveData> = {};
       for (const sc of sensors) {
         const topValues = sc.topInfo.map((ti) => ({
@@ -185,10 +264,9 @@ export function useGeneralSensorData(config: DashboardConfig) {
         if (sc.showGraph && sc.chartSeries.length > 0) {
           const now = new Date();
           const grouping = sc.chartGrouping || "hour";
+          const aggregation = sc.chartAggregation || "average";
           let start: Date;
           if (grouping === "day") {
-            // For day grouping: show N days including today
-            // e.g. 168h = 7 days → today + 6 previous days, starting from midnight 6 days ago
             const totalDays = Math.max(Math.ceil(sc.historyHours / 24), 7);
             const todayMidnight = new Date(now);
             todayMidnight.setHours(0, 0, 0, 0);
@@ -197,7 +275,7 @@ export function useGeneralSensorData(config: DashboardConfig) {
             start = new Date(now.getTime() - sc.historyHours * 3600000);
           }
 
-          // Fetch history and current state in parallel for each series
+          // Fetch history and current state in parallel
           const [histories, currentStates] = await Promise.all([
             Promise.all(
               sc.chartSeries.map(async (cs) => {
@@ -220,7 +298,7 @@ export function useGeneralSensorData(config: DashboardConfig) {
             ),
           ]);
 
-          // Build a unified timeline from ALL series timestamps
+          // Build unified timeline
           const timeMap = new Map<string, Record<string, number | string>>();
 
           for (let seriesIdx = 0; seriesIdx < histories.length; seriesIdx++) {
@@ -237,7 +315,7 @@ export function useGeneralSensorData(config: DashboardConfig) {
               timeMap.get(ts)![key] = val;
             }
 
-            // Inject current state as the latest data point for accurate "today" values
+            // Inject current state for accurate "now" value
             const curState = currentStates[seriesIdx];
             if (curState) {
               const curVal = parseFloat(curState.state);
@@ -268,8 +346,12 @@ export function useGeneralSensorData(config: DashboardConfig) {
             }
           }
 
-          // Aggregate by grouping (uses all raw points for accurate bucketing)
-          chartData = aggregateByGrouping(sorted, grouping, histories.length, sc.chartAggregation || "average");
+          // Use boundary-based delta for "delta" aggregation, bucket-based for all others
+          if (aggregation === "delta") {
+            chartData = computeDelta(sorted, histories.length, start, now, grouping);
+          } else {
+            chartData = aggregateByGrouping(sorted, grouping, histories.length, aggregation);
+          }
         }
 
         result[sc.id] = { topValues, bottomValues, chartData, chartSeriesMeta };
