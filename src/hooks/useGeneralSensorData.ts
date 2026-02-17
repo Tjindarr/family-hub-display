@@ -5,14 +5,19 @@ import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
 
 function getBucketKey(iso: string, grouping: ChartGrouping): string {
   const d = new Date(iso);
+  // Use sv-SE locale to bucket in Swedish local time
+  if (grouping === "day") {
+    return d.toLocaleDateString("sv-SE"); // "2025-02-17"
+  }
   if (grouping === "minute") {
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()).toISOString();
+    const date = d.toLocaleDateString("sv-SE");
+    const time = d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
+    return `${date}T${time}`;
   }
-  if (grouping === "hour") {
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()).toISOString();
-  }
-  // day
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+  // hour
+  const date = d.toLocaleDateString("sv-SE");
+  const hour = d.toLocaleTimeString("sv-SE", { hour: "2-digit", hour12: false });
+  return `${date}T${hour}:00`;
 }
 
 function aggregateByGrouping(
@@ -139,7 +144,10 @@ export function useGeneralSensorData(config: DashboardConfig) {
 
         if (sc.showGraph && sc.chartSeries.length > 0) {
           const now = new Date();
-          const start = new Date(now.getTime() - sc.historyHours * 3600000);
+          // For day grouping, fetch at least 7 days regardless of historyHours
+          const grouping = sc.chartGrouping || "hour";
+          const minHours = grouping === "day" ? Math.max(sc.historyHours, 168) : sc.historyHours;
+          const start = new Date(now.getTime() - minHours * 3600000);
 
           const histories = await Promise.all(
             sc.chartSeries.map(async (cs) => {
@@ -152,26 +160,42 @@ export function useGeneralSensorData(config: DashboardConfig) {
             })
           );
 
-          // Merge histories by time — use the first series as time base, sample ~60 points
-          const primaryHistory = histories[0] || [];
-          const step = Math.max(1, Math.floor(primaryHistory.length / 60));
-          const sampledPrimary = primaryHistory.filter((_, i) => i % step === 0);
+          // Build a unified timeline from ALL series timestamps
+          const timeMap = new Map<string, Record<string, number | string>>();
 
-          const rawPoints = sampledPrimary.map((s, pointIdx) => {
-            const point: Record<string, number | string> = {
-              time: s.last_updated || s.last_changed,
-            };
-            point["series_0"] = parseFloat(s.state) || 0;
-            for (let seriesIdx = 1; seriesIdx < histories.length; seriesIdx++) {
-              const h = histories[seriesIdx];
-              const targetIdx = Math.min(pointIdx * step, h.length - 1);
-              point[`series_${seriesIdx}`] = targetIdx >= 0 ? (parseFloat(h[targetIdx]?.state) || 0) : 0;
+          for (let seriesIdx = 0; seriesIdx < histories.length; seriesIdx++) {
+            const h = histories[seriesIdx];
+            for (const entry of h) {
+              const ts = entry.last_updated || entry.last_changed;
+              if (!ts) continue;
+              const val = parseFloat(entry.state);
+              if (isNaN(val)) continue;
+              const key = `series_${seriesIdx}`;
+              if (!timeMap.has(ts)) {
+                timeMap.set(ts, { time: ts });
+              }
+              timeMap.get(ts)![key] = val;
             }
-            return point;
-          });
+          }
 
-          // Aggregate by grouping
-          chartData = aggregateByGrouping(rawPoints, sc.chartGrouping || "hour", histories.length);
+          // Sort by time and forward-fill missing series values
+          const sorted = Array.from(timeMap.values()).sort(
+            (a, b) => new Date(String(a.time)).getTime() - new Date(String(b.time)).getTime()
+          );
+          const lastKnown: Record<string, number> = {};
+          for (const point of sorted) {
+            for (let i = 0; i < histories.length; i++) {
+              const k = `series_${i}`;
+              if (typeof point[k] === "number") {
+                lastKnown[k] = point[k] as number;
+              } else {
+                point[k] = lastKnown[k] ?? 0;
+              }
+            }
+          }
+
+          // Aggregate by grouping (uses all raw points for accurate bucketing)
+          chartData = aggregateByGrouping(sorted, grouping, histories.length);
         }
 
         result[sc.id] = { topValues, bottomValues, chartData, chartSeriesMeta };
