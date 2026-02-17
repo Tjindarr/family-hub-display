@@ -51,6 +51,7 @@ export interface TemperatureSensorData {
   entityId: string;
   showChart?: boolean;
   chartType?: string;
+  roundTemperature?: boolean;
   history?: { time: string; value: number }[];
 }
 
@@ -82,6 +83,7 @@ export function useTemperatureData(config: DashboardConfig) {
           entityId: e.entityId,
           showChart: e.showChart,
           chartType: e.chartType,
+          roundTemperature: e.roundTemperature,
           history: e.showChart
             ? Array.from({ length: 48 }, (_, i) => {
                 const d = new Date(Date.now() - (47 - i) * 30 * 60000);
@@ -133,6 +135,7 @@ export function useTemperatureData(config: DashboardConfig) {
             entityId: entity.entityId,
             showChart: entity.showChart,
             chartType: entity.chartType,
+            roundTemperature: entity.roundTemperature,
             history,
           };
         })

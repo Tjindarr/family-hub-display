@@ -526,6 +526,15 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       />
                       <span className="text-xs text-muted-foreground">Show 24h chart</span>
                     </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={entity.roundTemperature ?? false}
+                        onChange={(e) => updateTempEntity(i, { roundTemperature: e.target.checked })}
+                        className="accent-primary"
+                      />
+                      <span className="text-xs text-muted-foreground">Round temperature</span>
+                    </label>
                     {entity.showChart && (
                       <Select
                         value={entity.chartType || "line"}
