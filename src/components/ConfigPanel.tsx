@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from "react";
-import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image, Download, ClipboardCopy, ClipboardPaste } from "lucide-react";
+import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image, Download, ClipboardCopy, ClipboardPaste, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,31 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+
+function CollapsibleSection({ title, actions, children, defaultOpen = false }: {
+  title: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center gap-1.5 text-sm font-medium uppercase tracking-wider text-primary hover:text-primary/80 transition-colors">
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? '' : '-rotate-90'}`} />
+            {title}
+          </button>
+        </CollapsibleTrigger>
+        {actions}
+      </div>
+      <CollapsibleContent className="space-y-3 mt-3">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 interface ConfigPanelProps {
   config: DashboardConfig;
@@ -353,13 +379,17 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     <div className="fixed inset-0 z-50 flex items-start justify-end">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-      <div className="relative h-full overflow-y-auto border-l border-border bg-card p-6 shadow-2xl w-2/3 max-w-full">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="relative h-full flex flex-col border-l border-border bg-card shadow-2xl w-2/3 max-w-full">
+        {/* Sticky header */}
+        <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
           <h2 className="text-lg font-semibold text-foreground">Dashboard Settings</h2>
           <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
             <X className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-6">
 
         <Tabs defaultValue="connection" className="w-full">
           <TabsList className="w-full mb-4">
@@ -480,23 +510,19 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
               </p>
             </section>
 
-            <Button onClick={handleSave} className="w-full">
-              <Save className="mr-2 h-4 w-4" /> Save Configuration
-            </Button>
           </TabsContent>
 
           {/* ===== WIDGETS TAB ===== */}
           <TabsContent value="widgets" className="space-y-6 mt-0">
             {/* Temperature Sensors */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">
-                  Temperature Sensors
-                </h3>
+            <CollapsibleSection
+              title="Temperature Sensors"
+              actions={
                 <Button variant="ghost" size="sm" onClick={addTempEntity} className="text-primary">
                   <Plus className="mr-1 h-3 w-3" /> Add
                 </Button>
-              </div>
+              }
+            >
               {tempEntities.map((entity, i) => (
                 <div key={i} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
                   <div className="flex items-center justify-between">
@@ -592,12 +618,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
-            </section>
+            </CollapsibleSection>
 
             {/* Calendar */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Calendar</h3>
+            <CollapsibleSection
+              title="Calendar"
+              actions={
                 <Button
                   variant="ghost"
                   size="sm"
@@ -606,7 +632,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 >
                   <Plus className="mr-1 h-3 w-3" /> Add
                 </Button>
-              </div>
+              }
+            >
               {calendarEntityConfigs.map((cal, i) => (
                 <div key={i} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
                   <div className="flex items-center justify-between">
@@ -766,11 +793,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   ))}
                 </div>
               </div>
-            </section>
+            </CollapsibleSection>
 
             {/* Weather */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Weather</h3>
+            <CollapsibleSection title="Weather">
               <div>
                 <Label className="text-xs text-muted-foreground">Weather Entity</Label>
                 <EntityAutocomplete
@@ -807,11 +833,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   Show Sunset
                 </label>
               </div>
-            </section>
+            </CollapsibleSection>
 
             {/* Food Menu */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Food Menu</h3>
+            <CollapsibleSection title="Food Menu">
               <div>
                 <Label className="text-xs text-muted-foreground">Calendar Entity</Label>
                 <EntityAutocomplete
@@ -842,11 +867,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 />
                 <Label htmlFor="skipWeekends" className="text-xs text-muted-foreground cursor-pointer">Skip weekends (Sat &amp; Sun)</Label>
               </div>
-            </section>
+            </CollapsibleSection>
 
             {/* Electricity */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Electricity Price</h3>
+            <CollapsibleSection title="Electricity Price">
               <div>
                 <Label className="text-xs text-muted-foreground">Nordpool Entity</Label>
                 <EntityAutocomplete
@@ -861,12 +885,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   Uses raw_today & raw_tomorrow attributes for 48h view
                 </p>
               </div>
-            </section>
+            </CollapsibleSection>
 
             {/* Person Cards */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Person Cards</h3>
+            <CollapsibleSection
+              title="Person Cards"
+              actions={
                 <Button
                   variant="ghost"
                   size="sm"
@@ -881,7 +905,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 >
                   <Plus className="mr-1 h-3 w-3" /> Add
                 </Button>
-              </div>
+              }
+            >
               {personEntities.map((person, i) => (
                 <div key={i} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
                   <div className="flex items-center justify-between">
@@ -945,13 +970,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
-            </section>
-
+            </CollapsibleSection>
 
             {/* General Sensors */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">General Sensors</h3>
+            <CollapsibleSection
+              title="General Sensors"
+              actions={
                 <Button
                   variant="ghost"
                   size="sm"
@@ -967,7 +991,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 >
                   <Plus className="mr-1 h-3 w-3" /> Add
                 </Button>
-              </div>
+              }
+            >
               {generalSensors.map((gs, gsIdx) => (
                 <div key={gs.id} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-3">
                   <div className="flex items-center justify-between">
@@ -1127,12 +1152,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
-            </section>
+            </CollapsibleSection>
 
             {/* Sensor Grids */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Sensor Grids</h3>
+            <CollapsibleSection
+              title="Sensor Grids"
+              actions={
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1157,7 +1182,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 >
                   <Plus className="mr-1 h-3 w-3" /> Add
                 </Button>
-              </div>
+              }
+            >
               {sensorGrids.map((sg, sgIdx) => (
                 <div key={sg.id} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-3">
                   <div className="flex items-center justify-between">
@@ -1328,12 +1354,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
-            </section>
+            </CollapsibleSection>
 
             {/* RSS News Feeds */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium uppercase tracking-wider text-primary">RSS News Feeds</h3>
+            <CollapsibleSection
+              title="RSS News Feeds"
+              actions={
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1344,7 +1370,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 >
                   <Plus className="h-4 w-4 mr-1" /> Add Feed
                 </Button>
-              </div>
+              }
+            >
               {rssFeeds.map((feed, idx) => (
                 <div key={feed.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
                   <Button variant="ghost" size="icon" className="absolute right-1 top-1 h-6 w-6" onClick={() => setRssFeeds(rssFeeds.filter((_, i) => i !== idx))}>
@@ -1380,11 +1407,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
-            </section>
+            </CollapsibleSection>
 
-            <Button onClick={handleSave} className="w-full">
-              <Save className="mr-2 h-4 w-4" /> Save Configuration
-            </Button>
           </TabsContent>
 
           {/* ===== PHOTOS TAB ===== */}
@@ -1419,9 +1443,6 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
               <PhotoManager />
             </section>
 
-            <Button onClick={handleSave} className="w-full">
-              <Save className="mr-2 h-4 w-4" /> Save Configuration
-            </Button>
           </TabsContent>
 
           {/* ===== LAYOUT TAB ===== */}
@@ -1576,11 +1597,16 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
               </DndContext>
             </section>
 
-            <Button onClick={handleSave} className="w-full">
-              <Save className="mr-2 h-4 w-4" /> Save Configuration
-            </Button>
           </TabsContent>
         </Tabs>
+        </div>
+
+        {/* Sticky footer */}
+        <div className="shrink-0 border-t border-border p-4">
+          <Button onClick={handleSave} className="w-full">
+            <Save className="mr-2 h-4 w-4" /> Save Configuration
+          </Button>
+        </div>
       </div>
     </div>
   );
