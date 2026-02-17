@@ -33,7 +33,8 @@ interface SensorGridWidgetProps {
 function resolveCell(cell: SensorGridCellConfig, rawValue: string | undefined) {
   let displayValue = rawValue ?? "—";
   let icon = cell.icon;
-  let color = cell.color;
+  let iconColor = cell.color;
+  let valueColor = cell.valueColor || cell.color;
 
   // Apply value mapping
   if (cell.valueMaps?.length && rawValue != null) {
@@ -48,12 +49,13 @@ function resolveCell(cell: SensorGridCellConfig, rawValue: string | undefined) {
       const matched = cell.intervals.find((iv) => num >= iv.min && num <= iv.max);
       if (matched) {
         icon = matched.icon || icon;
-        color = matched.color || color;
+        iconColor = matched.color || iconColor;
+        valueColor = matched.color || valueColor;
       }
     }
   }
 
-  return { displayValue, icon, color };
+  return { displayValue, icon, iconColor, valueColor };
 }
 
 export default function SensorGridWidget({ config, data, loading, fontSizes }: SensorGridWidgetProps) {
@@ -77,7 +79,7 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
         {config.cells.map((cell, i) => {
           if (!cell.entityId) return <div key={i} />;
           const cellData = values[i];
-          const { displayValue, icon, color } = resolveCell(cell, cellData?.value);
+          const { displayValue, icon, iconColor, valueColor } = resolveCell(cell, cellData?.value);
           return (
             <div
               key={i}
@@ -87,7 +89,7 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
                 <DynIcon
                   name={icon}
                   className="shrink-0"
-                  style={{ color: color || undefined, width: cell.iconSize || 16, height: cell.iconSize || 16 }}
+                  style={{ color: iconColor || undefined, width: cell.iconSize || 16, height: cell.iconSize || 16 }}
                 />
               )}
               <span className="text-muted-foreground max-w-full text-center leading-tight break-words" style={{ fontSize: cell.labelFontSize || fs.label }}>
@@ -96,7 +98,7 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
               <div className="flex items-baseline justify-center gap-0.5">
                 <span
                   className="font-mono font-semibold text-center"
-                  style={{ color: color || undefined, fontSize: cell.fontSize || fs.body }}
+                  style={{ color: valueColor || undefined, fontSize: cell.fontSize || fs.body }}
                 >
                   {displayValue}
                 </span>

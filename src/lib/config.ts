@@ -127,7 +127,8 @@ export interface SensorGridCellConfig {
   label: string;
   icon: string; // lucide icon name (kebab-case)
   unit: string;
-  color: string;
+  color: string; // icon color
+  valueColor?: string; // separate value text color (falls back to color)
   iconSize?: number; // icon size in px (default 16)
   fontSize?: number; // value font size in px
   labelFontSize?: number; // label font size in px
