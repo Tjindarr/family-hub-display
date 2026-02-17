@@ -1325,7 +1325,14 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                           <Input value={cell.label} onChange={(e) => updateCell({ label: e.target.value })} placeholder="Label" className="flex-1 bg-muted border-border text-xs h-8" />
                           <Input value={cell.icon} onChange={(e) => updateCell({ icon: e.target.value })} placeholder="Icon" className="w-28 bg-muted border-border text-xs h-8" />
                           <Input value={cell.unit} onChange={(e) => updateCell({ unit: e.target.value })} placeholder="Unit" className="w-16 bg-muted border-border text-xs h-8" />
-                          <ColorPicker value={cell.color} onChange={(val) => updateCell({ color: val })} className="w-36" />
+                          <div className="flex flex-col gap-0.5">
+                            <Label className="text-[10px] text-muted-foreground">Icon</Label>
+                            <ColorPicker value={cell.color} onChange={(val) => updateCell({ color: val })} className="w-36" />
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <Label className="text-[10px] text-muted-foreground">Value</Label>
+                            <ColorPicker value={cell.valueColor || cell.color} onChange={(val) => updateCell({ valueColor: val })} className="w-36" />
+                          </div>
                         </div>
                         <div className="flex gap-2 items-end pl-5">
                           <div className="w-16">
