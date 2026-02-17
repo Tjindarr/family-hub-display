@@ -123,7 +123,6 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
           {getWeatherIcon(weather.current.condition, 40)}
           <div>
             <div className="font-bold text-foreground" style={{ fontSize: xlSize }}>{Math.round(weather.current.temperature)}°</div>
-            <div className="capitalize text-muted-foreground" style={{ fontSize: fs.heading }}>{weather.current.condition.replace(/_/g, " ")}</div>
           </div>
         </div>
 
