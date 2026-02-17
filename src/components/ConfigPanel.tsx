@@ -942,6 +942,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                             <SelectItem value="min">Min</SelectItem>
                             <SelectItem value="sum">Sum</SelectItem>
                             <SelectItem value="last">Last</SelectItem>
+                            <SelectItem value="delta">Delta (change)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

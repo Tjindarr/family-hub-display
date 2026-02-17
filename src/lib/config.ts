@@ -67,7 +67,7 @@ export interface RssNewsConfig {
 
 export type SensorChartType = "line" | "bar" | "area" | "step" | "scatter";
 export type ChartGrouping = "minute" | "hour" | "day";
-export type ChartAggregation = "average" | "max" | "min" | "sum" | "last";
+export type ChartAggregation = "average" | "max" | "min" | "sum" | "last" | "delta";
 
 export interface SensorInfoItem {
   entityId: string;
