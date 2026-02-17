@@ -6,7 +6,7 @@ import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
 function getBucketKey(iso: string, grouping: ChartGrouping): string {
   const d = new Date(iso);
   if (grouping === "day") {
-    return d.toLocaleDateString("sv-SE");
+    return d.toLocaleDateString("sv-SE"); // "2025-02-17"
   }
   if (grouping === "minute") {
     const date = d.toLocaleDateString("sv-SE");
@@ -18,115 +18,6 @@ function getBucketKey(iso: string, grouping: ChartGrouping): string {
   return `${date}T${hour}:00`;
 }
 
-/**
- * Compute delta (change) per time period using exact boundary interpolation.
- * For each period boundary (e.g. midnight for day grouping), finds the last known
- * sensor value at that boundary. Delta = value_at(next_boundary) - value_at(this_boundary).
- * This avoids issues with sparse data or irregular reporting intervals.
- */
-function computeDelta(
-  sorted: Record<string, number | string>[],
-  seriesCount: number,
-  periodStart: Date,
-  periodEnd: Date,
-  grouping: ChartGrouping
-): Record<string, number | string>[] {
-  if (sorted.length === 0) return [];
-
-  // Build time boundaries in local time
-  const boundaries: number[] = [];
-  const cursor = new Date(periodStart);
-
-  if (grouping === "day") {
-    cursor.setHours(0, 0, 0, 0);
-  } else if (grouping === "hour") {
-    cursor.setMinutes(0, 0, 0);
-  } else {
-    cursor.setSeconds(0, 0);
-  }
-
-  // Add boundaries up through one period past the end
-  const endMs = periodEnd.getTime();
-  while (cursor.getTime() <= endMs) {
-    boundaries.push(cursor.getTime());
-    if (grouping === "day") {
-      cursor.setDate(cursor.getDate() + 1);
-    } else if (grouping === "hour") {
-      cursor.setHours(cursor.getHours() + 1);
-    } else {
-      cursor.setMinutes(cursor.getMinutes() + 1);
-    }
-  }
-  // Final boundary (e.g. tomorrow midnight) — its value will be the last known value
-  boundaries.push(cursor.getTime());
-
-  if (boundaries.length < 2) return [];
-
-  // For each series, find the sensor value at each boundary.
-  // value_at(boundary) = last known value from a data point with timestamp < boundary
-  const boundaryValues: number[][] = [];
-
-  for (let si = 0; si < seriesCount; si++) {
-    const k = `series_${si}`;
-    const bVals = new Array(boundaries.length).fill(0);
-    let lastVal = 0;
-    let bIdx = 0;
-
-    for (const p of sorted) {
-      const t = new Date(String(p.time)).getTime();
-
-      // Record lastVal for all boundaries we've passed
-      while (bIdx < boundaries.length && boundaries[bIdx] <= t) {
-        bVals[bIdx] = lastVal;
-        bIdx++;
-      }
-
-      if (typeof p[k] === "number") {
-        lastVal = p[k] as number;
-      }
-    }
-
-    // Fill remaining boundaries with the final known value
-    while (bIdx < boundaries.length) {
-      bVals[bIdx] = lastVal;
-      bIdx++;
-    }
-
-    boundaryValues.push(bVals);
-  }
-
-  // Debug logging
-  console.log("[Delta Debug] Grouping:", grouping);
-  console.log("[Delta Debug] Boundaries (local):", boundaries.map(b => new Date(b).toLocaleString("sv-SE")));
-  console.log("[Delta Debug] Boundary values (series_0):", boundaryValues[0]);
-  console.log("[Delta Debug] First 5 sorted points:", sorted.slice(0, 5).map(p => ({ time: p.time, series_0: p.series_0 })));
-  console.log("[Delta Debug] Last 5 sorted points:", sorted.slice(-5).map(p => ({ time: p.time, series_0: p.series_0 })));
-  console.log("[Delta Debug] Total sorted points:", sorted.length);
-
-  // Delta per period = value_at(boundary[i+1]) - value_at(boundary[i])
-  const result: Record<string, number | string>[] = [];
-  const numPeriods = boundaries.length - 1;
-
-  for (let i = 0; i < numPeriods; i++) {
-    if (boundaries[i] > endMs) break;
-    const point: Record<string, number | string> = {
-      time: new Date(boundaries[i]).toISOString(),
-    };
-    for (let si = 0; si < seriesCount; si++) {
-      const k = `series_${si}`;
-      point[k] = boundaryValues[si][i + 1] - boundaryValues[si][i];
-    }
-    result.push(point);
-  }
-
-  console.debug("[Delta Debug] Result deltas:", result.map(r => ({
-    day: new Date(String(r.time)).toLocaleDateString("sv-SE"),
-    delta: r.series_0
-  })));
-
-  return result;
-}
-
 function aggregateByGrouping(
   points: Record<string, number | string>[],
   grouping: ChartGrouping,
@@ -134,11 +25,11 @@ function aggregateByGrouping(
   aggregation: ChartAggregation = "average"
 ): Record<string, number | string>[] {
   if (points.length === 0) return [];
-  const buckets = new Map<string, { values: Record<string, number[]>; last: Record<string, number> }>();
+  const buckets = new Map<string, { values: Record<string, number[]>; first: Record<string, number>; last: Record<string, number> }>();
   for (const p of points) {
     const key = getBucketKey(String(p.time), grouping);
     if (!buckets.has(key)) {
-      buckets.set(key, { values: {}, last: {} });
+      buckets.set(key, { values: {}, first: {}, last: {} });
     }
     const b = buckets.get(key)!;
     for (let i = 0; i < seriesCount; i++) {
@@ -146,13 +37,15 @@ function aggregateByGrouping(
       const val = typeof p[k] === "number" ? (p[k] as number) : 0;
       if (!b.values[k]) b.values[k] = [];
       b.values[k].push(val);
+      if (!(k in b.first)) b.first[k] = val;
       b.last[k] = val;
     }
   }
   const entries = Array.from(buckets.entries());
   const result: Record<string, number | string>[] = [];
 
-  for (const [time, b] of entries) {
+  for (let eIdx = 0; eIdx < entries.length; eIdx++) {
+    const [time, b] = entries[eIdx];
     const point: Record<string, number | string> = { time };
     for (let i = 0; i < seriesCount; i++) {
       const k = `series_${i}`;
@@ -170,6 +63,19 @@ function aggregateByGrouping(
         case "last":
           point[k] = b.last[k] ?? 0;
           break;
+        case "delta": {
+          // Delta: difference between last value in this bucket and last value in previous bucket
+          const currentLast = b.last[k] ?? 0;
+          if (eIdx > 0) {
+            const prevBucket = entries[eIdx - 1][1];
+            const prevLast = prevBucket.last[k] ?? 0;
+            point[k] = currentLast - prevLast;
+          } else {
+            // First bucket: difference between last and first value within the bucket
+            point[k] = currentLast - (b.first[k] ?? 0);
+          }
+          break;
+        }
         case "average":
         default:
           point[k] = vals.reduce((a, v) => a + v, 0) / vals.length;
@@ -178,6 +84,22 @@ function aggregateByGrouping(
     }
     result.push(point);
   }
+
+  // Debug logging for delta
+  if (aggregation === "delta") {
+    console.log("[Delta] Browser timezone:", Intl.DateTimeFormat().resolvedOptions().timeZone);
+    console.log("[Delta] Buckets:", entries.map(([key, b]) => ({
+      bucket: key,
+      first: b.first["series_0"],
+      last: b.last["series_0"],
+      count: b.values["series_0"]?.length || 0,
+    })));
+    console.log("[Delta] Result:", result.map(r => ({
+      day: r.time,
+      delta: typeof r.series_0 === "number" ? r.series_0.toFixed(2) : r.series_0,
+    })));
+  }
+
   return result;
 }
 
@@ -196,7 +118,6 @@ export function useGeneralSensorData(config: DashboardConfig) {
     const isDemo = !checkConfigured(config);
 
     if (isDemo) {
-      // ... keep existing code (mock data generation)
       const mock: Record<string, GeneralSensorLiveData> = {};
       for (const sc of sensors) {
         const topValues = sc.topInfo.map((ti) => ({
@@ -241,7 +162,6 @@ export function useGeneralSensorData(config: DashboardConfig) {
       const result: Record<string, GeneralSensorLiveData> = {};
 
       for (const sc of sensors) {
-        // Fetch top info
         const topValues = await Promise.all(
           sc.topInfo.map(async (ti) => {
             try {
@@ -253,7 +173,6 @@ export function useGeneralSensorData(config: DashboardConfig) {
           })
         );
 
-        // Fetch bottom info
         const bottomValues = await Promise.all(
           sc.bottomInfo.map(async (bi) => {
             try {
@@ -265,7 +184,6 @@ export function useGeneralSensorData(config: DashboardConfig) {
           })
         );
 
-        // Fetch chart history
         let chartData: Record<string, number | string>[] = [];
         const chartSeriesMeta = sc.chartSeries.map((cs, idx) => ({
           dataKey: `series_${idx}`,
@@ -359,12 +277,7 @@ export function useGeneralSensorData(config: DashboardConfig) {
             }
           }
 
-          // Use boundary-based delta for "delta" aggregation, bucket-based for all others
-          if (aggregation === "delta") {
-            chartData = computeDelta(sorted, histories.length, start, now, grouping);
-          } else {
-            chartData = aggregateByGrouping(sorted, grouping, histories.length, aggregation);
-          }
+          chartData = aggregateByGrouping(sorted, grouping, histories.length, aggregation);
         }
 
         result[sc.id] = { topValues, bottomValues, chartData, chartSeriesMeta };
