@@ -88,16 +88,16 @@ function aggregateByGrouping(
   // Debug logging for delta
   if (aggregation === "delta") {
     console.log("[Delta] Browser timezone:", Intl.DateTimeFormat().resolvedOptions().timeZone);
-    console.log("[Delta] Buckets:", entries.map(([key, b]) => ({
-      bucket: key,
-      first: b.first["series_0"],
-      last: b.last["series_0"],
-      count: b.values["series_0"]?.length || 0,
-    })));
-    console.log("[Delta] Result:", result.map(r => ({
-      day: r.time,
-      delta: typeof r.series_0 === "number" ? r.series_0.toFixed(2) : r.series_0,
-    })));
+    console.log("[Delta] Buckets:", JSON.stringify(entries.map(([key, b]) => ({
+      b: key,
+      f: Math.round((b.first["series_0"] ?? 0) * 100) / 100,
+      l: Math.round((b.last["series_0"] ?? 0) * 100) / 100,
+      n: b.values["series_0"]?.length || 0,
+    }))));
+    console.log("[Delta] Deltas:", JSON.stringify(result.map(r => ({
+      d: r.time,
+      v: typeof r.series_0 === "number" ? Math.round(r.series_0 * 100) / 100 : r.series_0,
+    }))));
   }
 
   return result;
