@@ -51,7 +51,7 @@ class HomeAssistantAPI {
     startTime: string,
     endTime?: string
   ): Promise<HAState[][]> {
-    let path = `/history/period/${startTime}?filter_entity_id=${entityId}&minimal_response&no_attributes`;
+    let path = `/history/period/${startTime}?filter_entity_id=${entityId}&minimal_response&no_attributes&significant_changes_only=0`;
     if (endTime) path += `&end_time=${endTime}`;
     return this.request<HAState[][]>(path);
   }
