@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image } from "lucide-react";
+import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image, Download, ClipboardCopy, ClipboardPaste } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -441,6 +441,61 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </button>
                 ))}
               </div>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Import / Export Config</h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    const json = JSON.stringify(config, null, 2);
+                    const blob = new Blob([json], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "homedash-config.json";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  <Download className="mr-1 h-3 w-3" /> Export
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = ".json";
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        try {
+                          const imported = JSON.parse(ev.target?.result as string);
+                          onSave(imported);
+                          setOpen(false);
+                          window.location.reload();
+                        } catch {
+                          alert("Invalid config file");
+                        }
+                      };
+                      reader.readAsText(file);
+                    };
+                    input.click();
+                  }}
+                >
+                  <Upload className="mr-1 h-3 w-3" /> Import
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Export downloads your current config as JSON. Import loads a previously exported config file.
+              </p>
             </section>
 
             <Button onClick={handleSave} className="w-full">
