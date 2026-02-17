@@ -1336,13 +1336,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                                 const maps = [...(cell.valueMaps || [])];
                                 maps[vmIdx] = { ...maps[vmIdx], from: e.target.value };
                                 updateCell({ valueMaps: maps });
-                              }} placeholder="From" className="w-24 bg-muted border-border text-xs h-7" />
+                              }} placeholder="From" className="w-48 bg-muted border-border text-xs h-8" />
                               <span className="text-[12px] text-muted-foreground">→</span>
                               <Input value={vm.to} onChange={(e) => {
                                 const maps = [...(cell.valueMaps || [])];
                                 maps[vmIdx] = { ...maps[vmIdx], to: e.target.value };
                                 updateCell({ valueMaps: maps });
-                              }} placeholder="To" className="w-24 bg-muted border-border text-xs h-7" />
+                              }} placeholder="To" className="w-48 bg-muted border-border text-xs h-8" />
                               <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => {
                                 updateCell({ valueMaps: (cell.valueMaps || []).filter((_, j) => j !== vmIdx) });
                               }}><Trash2 className="h-2.5 w-2.5" /></Button>
