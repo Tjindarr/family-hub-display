@@ -185,11 +185,16 @@ export function useGeneralSensorData(config: DashboardConfig) {
         if (sc.showGraph && sc.chartSeries.length > 0) {
           const now = new Date();
           const grouping = sc.chartGrouping || "hour";
-          // For day grouping, fetch at least 7 days and snap to midnight so first day is complete
-          const minHours = grouping === "day" ? Math.max(sc.historyHours, 168) : sc.historyHours;
-          const start = new Date(now.getTime() - minHours * 3600000);
+          let start: Date;
           if (grouping === "day") {
-            start.setHours(0, 0, 0, 0);
+            // For day grouping: show N days including today
+            // e.g. 168h = 7 days → today + 6 previous days, starting from midnight 6 days ago
+            const totalDays = Math.max(Math.ceil(sc.historyHours / 24), 7);
+            const todayMidnight = new Date(now);
+            todayMidnight.setHours(0, 0, 0, 0);
+            start = new Date(todayMidnight.getTime() - (totalDays - 1) * 24 * 3600000);
+          } else {
+            start = new Date(now.getTime() - sc.historyHours * 3600000);
           }
 
           // Fetch history and current state in parallel for each series
