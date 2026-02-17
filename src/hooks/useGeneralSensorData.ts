@@ -95,12 +95,19 @@ function computeDelta(
     boundaryValues.push(bVals);
   }
 
+  // Debug logging
+  console.debug("[Delta Debug] Grouping:", grouping);
+  console.debug("[Delta Debug] Boundaries (local):", boundaries.map(b => new Date(b).toLocaleString("sv-SE")));
+  console.debug("[Delta Debug] Boundary values (series_0):", boundaryValues[0]);
+  console.debug("[Delta Debug] First 5 sorted points:", sorted.slice(0, 5).map(p => ({ time: p.time, series_0: p.series_0 })));
+  console.debug("[Delta Debug] Last 5 sorted points:", sorted.slice(-5).map(p => ({ time: p.time, series_0: p.series_0 })));
+
   // Delta per period = value_at(boundary[i+1]) - value_at(boundary[i])
   const result: Record<string, number | string>[] = [];
   const numPeriods = boundaries.length - 1;
 
   for (let i = 0; i < numPeriods; i++) {
-    if (boundaries[i] > endMs) break; // Don't show future periods
+    if (boundaries[i] > endMs) break;
     const point: Record<string, number | string> = {
       time: new Date(boundaries[i]).toISOString(),
     };
@@ -110,6 +117,11 @@ function computeDelta(
     }
     result.push(point);
   }
+
+  console.debug("[Delta Debug] Result deltas:", result.map(r => ({
+    day: new Date(String(r.time)).toLocaleDateString("sv-SE"),
+    delta: r.series_0
+  })));
 
   return result;
 }
