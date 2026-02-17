@@ -67,6 +67,7 @@ export interface RssNewsConfig {
 
 export type SensorChartType = "line" | "bar" | "area" | "step" | "scatter";
 export type ChartGrouping = "minute" | "hour" | "day";
+export type ChartAggregation = "average" | "max" | "min" | "sum" | "last";
 
 export interface SensorInfoItem {
   entityId: string;
@@ -90,6 +91,7 @@ export interface GeneralSensorConfig {
   showGraph: boolean;
   historyHours: number; // 1, 6, 24, 168 (7d)
   chartGrouping: ChartGrouping; // aggregate data by minute, hour or day
+  chartAggregation?: ChartAggregation; // how to combine values in each bucket (default: average)
   chartSeries: SensorChartSeries[]; // sensors to plot on the graph
   topInfo: SensorInfoItem[]; // up to 4 sensors displayed at the top
   bottomInfo: SensorInfoItem[]; // up to 4 sensors displayed at the bottom

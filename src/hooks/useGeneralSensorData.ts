@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig, ChartGrouping } from "@/lib/config";
+import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig, ChartGrouping, ChartAggregation } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
 
@@ -23,27 +23,48 @@ function getBucketKey(iso: string, grouping: ChartGrouping): string {
 function aggregateByGrouping(
   points: Record<string, number | string>[],
   grouping: ChartGrouping,
-  seriesCount: number
+  seriesCount: number,
+  aggregation: ChartAggregation = "average"
 ): Record<string, number | string>[] {
   if (points.length === 0) return [];
-  const buckets = new Map<string, { sum: Record<string, number>; count: number }>();
+  const buckets = new Map<string, { values: Record<string, number[]>; last: Record<string, number> }>();
   for (const p of points) {
     const key = getBucketKey(String(p.time), grouping);
     if (!buckets.has(key)) {
-      buckets.set(key, { sum: {}, count: 0 });
+      buckets.set(key, { values: {}, last: {} });
     }
     const b = buckets.get(key)!;
-    b.count++;
     for (let i = 0; i < seriesCount; i++) {
       const k = `series_${i}`;
-      b.sum[k] = (b.sum[k] || 0) + (typeof p[k] === "number" ? (p[k] as number) : 0);
+      const val = typeof p[k] === "number" ? (p[k] as number) : 0;
+      if (!b.values[k]) b.values[k] = [];
+      b.values[k].push(val);
+      b.last[k] = val;
     }
   }
   return Array.from(buckets.entries()).map(([time, b]) => {
     const point: Record<string, number | string> = { time };
     for (let i = 0; i < seriesCount; i++) {
       const k = `series_${i}`;
-      point[k] = b.sum[k] / b.count; // average
+      const vals = b.values[k] || [0];
+      switch (aggregation) {
+        case "max":
+          point[k] = Math.max(...vals);
+          break;
+        case "min":
+          point[k] = Math.min(...vals);
+          break;
+        case "sum":
+          point[k] = vals.reduce((a, v) => a + v, 0);
+          break;
+        case "last":
+          point[k] = b.last[k] ?? 0;
+          break;
+        case "average":
+        default:
+          point[k] = vals.reduce((a, v) => a + v, 0) / vals.length;
+          break;
+      }
     }
     return point;
   });
@@ -195,7 +216,7 @@ export function useGeneralSensorData(config: DashboardConfig) {
           }
 
           // Aggregate by grouping (uses all raw points for accurate bucketing)
-          chartData = aggregateByGrouping(sorted, grouping, histories.length);
+          chartData = aggregateByGrouping(sorted, grouping, histories.length, sc.chartAggregation || "average");
         }
 
         result[sc.id] = { topValues, bottomValues, chartData, chartSeriesMeta };
