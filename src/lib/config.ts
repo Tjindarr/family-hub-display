@@ -184,6 +184,7 @@ export interface DashboardConfig {
   rssFeeds: RssNewsConfig[];
   globalFontSizes: GlobalFontSizes;
   widgetFontSizes: Record<string, WidgetFontSizes>;
+  personCardFontSizes: PersonCardFontSizes;
 }
 
 export interface TemperatureEntityConfig {
@@ -195,6 +196,12 @@ export interface TemperatureEntityConfig {
   showChart?: boolean; // show a background chart with 24h history
   chartType?: SensorChartType; // chart type for the background chart
   roundTemperature?: boolean; // round temperature to nearest integer
+}
+
+export interface PersonCardFontSizes {
+  locationSize?: number; // px
+  batterySize?: number;  // px
+  distanceSize?: number; // px
 }
 
 export interface PersonEntityConfig {
@@ -298,6 +305,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   rssFeeds: [],
   globalFontSizes: { heading: 12, value: 18, body: 14, label: 10 },
   widgetFontSizes: {},
+  personCardFontSizes: {},
 };
 
 export function loadConfig(): DashboardConfig {
