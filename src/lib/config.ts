@@ -55,6 +55,7 @@ export interface EnergyUsageConfig {
 export interface FoodMenuConfig {
   calendarEntity: string; // calendar entity for food menu
   days: number; // number of days to show (default 5)
+  skipWeekends: boolean; // skip Saturday and Sunday when counting days forward
 }
 
 export interface RssNewsConfig {
@@ -260,6 +261,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   foodMenuConfig: {
     calendarEntity: "",
     days: 5,
+    skipWeekends: false,
   },
   generalSensors: [],
   sensorGrids: [],
