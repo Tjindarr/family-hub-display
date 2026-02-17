@@ -42,7 +42,11 @@ function aggregateByGrouping(
       b.last[k] = val;
     }
   }
-  return Array.from(buckets.entries()).map(([time, b]) => {
+  const entries = Array.from(buckets.entries());
+  const result: Record<string, number | string>[] = [];
+
+  for (let eIdx = 0; eIdx < entries.length; eIdx++) {
+    const [time, b] = entries[eIdx];
     const point: Record<string, number | string> = { time };
     for (let i = 0; i < seriesCount; i++) {
       const k = `series_${i}`;
@@ -60,14 +64,29 @@ function aggregateByGrouping(
         case "last":
           point[k] = b.last[k] ?? 0;
           break;
+        case "delta": {
+          // Delta: difference between last value in this bucket and last value in previous bucket
+          const currentLast = b.last[k] ?? 0;
+          if (eIdx > 0) {
+            const prevBucket = entries[eIdx - 1][1];
+            const prevLast = prevBucket.last[k] ?? 0;
+            point[k] = currentLast - prevLast;
+          } else {
+            // First bucket: difference between last and first value within the bucket
+            const firstVal = vals.length > 0 ? vals[0] : 0;
+            point[k] = currentLast - firstVal;
+          }
+          break;
+        }
         case "average":
         default:
           point[k] = vals.reduce((a, v) => a + v, 0) / vals.length;
           break;
       }
     }
-    return point;
-  });
+    result.push(point);
+  }
+  return result;
 }
 
 export function useGeneralSensorData(config: DashboardConfig) {
