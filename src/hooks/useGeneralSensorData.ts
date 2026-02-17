@@ -189,16 +189,28 @@ export function useGeneralSensorData(config: DashboardConfig) {
           const minHours = grouping === "day" ? Math.max(sc.historyHours, 168) : sc.historyHours;
           const start = new Date(now.getTime() - minHours * 3600000);
 
-          const histories = await Promise.all(
-            sc.chartSeries.map(async (cs) => {
-              try {
-                const raw = await client.getHistory(cs.entityId, start.toISOString(), now.toISOString());
-                return raw?.[0] || [];
-              } catch {
-                return [];
-              }
-            })
-          );
+          // Fetch history and current state in parallel for each series
+          const [histories, currentStates] = await Promise.all([
+            Promise.all(
+              sc.chartSeries.map(async (cs) => {
+                try {
+                  const raw = await client.getHistory(cs.entityId, start.toISOString(), now.toISOString());
+                  return raw?.[0] || [];
+                } catch {
+                  return [];
+                }
+              })
+            ),
+            Promise.all(
+              sc.chartSeries.map(async (cs) => {
+                try {
+                  return await client.getState(cs.entityId);
+                } catch {
+                  return null;
+                }
+              })
+            ),
+          ]);
 
           // Build a unified timeline from ALL series timestamps
           const timeMap = new Map<string, Record<string, number | string>>();
@@ -215,6 +227,20 @@ export function useGeneralSensorData(config: DashboardConfig) {
                 timeMap.set(ts, { time: ts });
               }
               timeMap.get(ts)![key] = val;
+            }
+
+            // Inject current state as the latest data point for accurate "today" values
+            const curState = currentStates[seriesIdx];
+            if (curState) {
+              const curVal = parseFloat(curState.state);
+              if (!isNaN(curVal)) {
+                const curTs = now.toISOString();
+                const key = `series_${seriesIdx}`;
+                if (!timeMap.has(curTs)) {
+                  timeMap.set(curTs, { time: curTs });
+                }
+                timeMap.get(curTs)![key] = curVal;
+              }
             }
           }
 
