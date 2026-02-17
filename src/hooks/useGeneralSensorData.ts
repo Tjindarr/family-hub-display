@@ -208,7 +208,10 @@ async function fetchStatisticsChart(
       stats.length > 0 ? JSON.stringify(stats[0]) : "none");
 
     for (const entry of stats) {
-      const ts = entry.start;
+      // WebSocket returns start as epoch (seconds), convert to ISO string
+      const ts = typeof entry.start === "number"
+        ? new Date(entry.start * 1000).toISOString()
+        : String(entry.start);
       // 'change' = delta for this statistics period (what HA energy dashboard uses)
       const val = entry.change ?? 0;
       if (!timeMap.has(ts)) {
