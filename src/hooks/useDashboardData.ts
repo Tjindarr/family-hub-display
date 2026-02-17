@@ -404,11 +404,20 @@ export function usePersonData(config: DashboardConfig) {
             } catch { /* ignore */ }
           }
 
-          // Location
+          // Location + zone icon
+          let zoneIcon: string | null = null;
           if (pe.locationEntity) {
             try {
               const state = await client.getState(pe.locationEntity);
               location = state.state || null;
+              // Try to fetch zone entity for the icon
+              if (location && location !== "not_home" && location !== "unknown" && location !== "unavailable") {
+                try {
+                  const zoneName = location.toLowerCase().replace(/\s+/g, "_");
+                  const zoneState = await client.getState(`zone.${zoneName}`);
+                  zoneIcon = zoneState.attributes?.icon || null;
+                } catch { /* zone not found, use default */ }
+              }
             } catch { /* ignore */ }
           }
 
@@ -438,7 +447,7 @@ export function usePersonData(config: DashboardConfig) {
             } catch { /* ignore */ }
           }
 
-          return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm, avatarSize: pe.avatarSize };
+          return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm, avatarSize: pe.avatarSize, zoneIcon };
         })
       );
       setPersons(results);
