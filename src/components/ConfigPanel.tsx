@@ -1294,16 +1294,32 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         setSensorGrids(u);
                       };
                       return (
-                      <div key={cIdx} className="space-y-1">
-                        <div className="flex gap-1.5 items-end">
+                      <div key={cIdx} className="space-y-1.5 rounded border border-border/30 bg-background/30 p-2">
+                        <div className="flex gap-2 items-end">
                           <span className="text-[10px] text-muted-foreground w-4 shrink-0">{cIdx + 1}</span>
                           <div className="flex-1">
-                            <EntityAutocomplete value={cell.entityId} onChange={(val) => updateCell({ entityId: val })} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                            <EntityAutocomplete value={cell.entityId} onChange={(val) => updateCell({ entityId: val })} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-8" />
                           </div>
-                          <Input value={cell.label} onChange={(e) => updateCell({ label: e.target.value })} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
-                          <Input value={cell.icon} onChange={(e) => updateCell({ icon: e.target.value })} placeholder="Icon" className="w-16 bg-muted border-border text-xs h-7" />
-                          <Input value={cell.unit} onChange={(e) => updateCell({ unit: e.target.value })} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
-                          <ColorPicker value={cell.color} onChange={(val) => updateCell({ color: val })} className="w-28" />
+                        </div>
+                        <div className="flex gap-2 items-end pl-5">
+                          <Input value={cell.label} onChange={(e) => updateCell({ label: e.target.value })} placeholder="Label" className="flex-1 bg-muted border-border text-xs h-8" />
+                          <Input value={cell.icon} onChange={(e) => updateCell({ icon: e.target.value })} placeholder="Icon" className="w-20 bg-muted border-border text-xs h-8" />
+                          <Input value={cell.unit} onChange={(e) => updateCell({ unit: e.target.value })} placeholder="Unit" className="w-16 bg-muted border-border text-xs h-8" />
+                          <ColorPicker value={cell.color} onChange={(val) => updateCell({ color: val })} className="w-36" />
+                        </div>
+                        <div className="flex gap-2 items-end pl-5">
+                          <div className="w-16">
+                            <Label className="text-[10px] text-muted-foreground">Icon px</Label>
+                            <Input type="number" min={8} max={64} value={cell.iconSize || ""} onChange={(e) => updateCell({ iconSize: Number(e.target.value) || undefined })} placeholder="16" className="bg-muted border-border text-xs h-7" />
+                          </div>
+                          <div className="w-16">
+                            <Label className="text-[10px] text-muted-foreground">Value px</Label>
+                            <Input type="number" min={8} max={48} value={cell.fontSize || ""} onChange={(e) => updateCell({ fontSize: Number(e.target.value) || undefined })} placeholder="14" className="bg-muted border-border text-xs h-7" />
+                          </div>
+                          <div className="w-16">
+                            <Label className="text-[10px] text-muted-foreground">Label px</Label>
+                            <Input type="number" min={8} max={48} value={cell.labelFontSize || ""} onChange={(e) => updateCell({ labelFontSize: Number(e.target.value) || undefined })} placeholder="10" className="bg-muted border-border text-xs h-7" />
+                          </div>
                         </div>
 
                         {/* Value Mapping */}
