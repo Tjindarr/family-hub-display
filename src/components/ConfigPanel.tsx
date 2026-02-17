@@ -1336,13 +1336,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                                 const maps = [...(cell.valueMaps || [])];
                                 maps[vmIdx] = { ...maps[vmIdx], from: e.target.value };
                                 updateCell({ valueMaps: maps });
-                              }} placeholder="From" className="w-16 bg-muted border-border text-xs h-6" />
+                              }} placeholder="From" className="w-24 bg-muted border-border text-xs h-7" />
                               <span className="text-[12px] text-muted-foreground">→</span>
                               <Input value={vm.to} onChange={(e) => {
                                 const maps = [...(cell.valueMaps || [])];
                                 maps[vmIdx] = { ...maps[vmIdx], to: e.target.value };
                                 updateCell({ valueMaps: maps });
-                              }} placeholder="To" className="w-16 bg-muted border-border text-xs h-6" />
+                              }} placeholder="To" className="w-24 bg-muted border-border text-xs h-7" />
                               <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => {
                                 updateCell({ valueMaps: (cell.valueMaps || []).filter((_, j) => j !== vmIdx) });
                               }}><Trash2 className="h-2.5 w-2.5" /></Button>
@@ -1377,12 +1377,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                                 const intervals = [...(cell.intervals || [])];
                                 intervals[ivIdx] = { ...intervals[ivIdx], min: Number(e.target.value) || 0 };
                                 updateCell({ intervals });
-                              }} type="number" placeholder="Min" className="w-14 bg-muted border-border text-xs h-6" />
+                              }} type="number" placeholder="Min" className="w-20 bg-muted border-border text-xs h-7" />
                               <Input value={iv.max} onChange={(e) => {
                                 const intervals = [...(cell.intervals || [])];
                                 intervals[ivIdx] = { ...intervals[ivIdx], max: Number(e.target.value) || 0 };
                                 updateCell({ intervals });
-                              }} type="number" placeholder="Max" className="w-14 bg-muted border-border text-xs h-6" />
+                              }} type="number" placeholder="Max" className="w-20 bg-muted border-border text-xs h-7" />
                               <Input value={iv.icon} onChange={(e) => {
                                 const intervals = [...(cell.intervals || [])];
                                 intervals[ivIdx] = { ...intervals[ivIdx], icon: e.target.value };
