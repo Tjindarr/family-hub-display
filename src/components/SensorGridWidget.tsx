@@ -86,22 +86,22 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
               {icon && (
                 <DynIcon
                   name={icon}
-                  className="h-4 w-4 shrink-0"
-                  style={{ color: color || undefined }}
+                  className="shrink-0"
+                  style={{ color: color || undefined, width: cell.iconSize || 16, height: cell.iconSize || 16 }}
                 />
               )}
-              <span className="text-muted-foreground truncate max-w-full text-center" style={{ fontSize: fs.label }}>
+              <span className="text-muted-foreground truncate max-w-full text-center" style={{ fontSize: cell.labelFontSize || fs.label }}>
                 {cell.label}
               </span>
               <div className="flex items-baseline gap-0.5">
                 <span
                   className="font-mono font-semibold"
-                  style={{ color: color || undefined, fontSize: fs.body }}
+                  style={{ color: color || undefined, fontSize: cell.fontSize || fs.body }}
                 >
                   {displayValue}
                 </span>
                 {cellData?.unit && (
-                  <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{cellData.unit}</span>
+                  <span className="text-muted-foreground" style={{ fontSize: cell.labelFontSize || fs.label }}>{cellData.unit}</span>
                 )}
               </div>
             </div>

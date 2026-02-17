@@ -128,6 +128,9 @@ export interface SensorGridCellConfig {
   icon: string; // lucide icon name (kebab-case)
   unit: string;
   color: string;
+  iconSize?: number; // icon size in px (default 16)
+  fontSize?: number; // value font size in px
+  labelFontSize?: number; // label font size in px
   useIntervals?: boolean; // enable conditional icon/color based on value
   intervals?: SensorGridCellInterval[]; // exactly 4 intervals
   valueMaps?: SensorGridValueMap[]; // value rewrite rules
