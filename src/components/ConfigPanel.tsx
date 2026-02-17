@@ -105,7 +105,7 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
         <span className="text-sm font-medium text-foreground truncate">{label}</span>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap pl-6">
-        <Label className="text-[10px] text-muted-foreground">Grp</Label>
+        <Label className="text-[12px] text-muted-foreground">Grp</Label>
         <Select value={widgetGroup} onValueChange={onWidgetGroupChange}>
           <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
             <SelectValue placeholder="—" />
@@ -116,7 +116,7 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
             ))}
           </SelectContent>
         </Select>
-        <Label className="text-[10px] text-muted-foreground">Row</Label>
+        <Label className="text-[12px] text-muted-foreground">Row</Label>
         <Select value={String(row)} onValueChange={(v) => onRowChange(Number(v))}>
           <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
             <SelectValue />
@@ -127,7 +127,7 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
             ))}
           </SelectContent>
         </Select>
-        <Label className="text-[10px] text-muted-foreground">Cols</Label>
+        <Label className="text-[12px] text-muted-foreground">Cols</Label>
         <Select value={String(colSpan)} onValueChange={(v) => onColSpanChange(Number(v))}>
           <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
             <SelectValue />
@@ -138,7 +138,7 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
             ))}
           </SelectContent>
         </Select>
-        <Label className="text-[10px] text-muted-foreground">Rows</Label>
+        <Label className="text-[12px] text-muted-foreground">Rows</Label>
         <Select value={String(rowSpan)} onValueChange={(v) => onRowSpanChange(Number(v))}>
           <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
             <SelectValue />
@@ -152,22 +152,22 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
       </div>
       {/* Per-widget font sizes */}
       <div className="flex items-center gap-1.5 flex-wrap pl-6">
-        <Label className="text-[10px] text-muted-foreground w-7">Font</Label>
+        <Label className="text-[12px] text-muted-foreground w-7">Font</Label>
         <div className="flex items-center gap-0.5">
-          <span className="text-[9px] text-muted-foreground">H</span>
-          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.heading ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, heading: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[10px] px-1" />
+          <span className="text-[11px] text-muted-foreground">H</span>
+          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.heading ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, heading: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[12px] px-1" />
         </div>
         <div className="flex items-center gap-0.5">
-          <span className="text-[9px] text-muted-foreground">V</span>
-          <Input type="number" min={6} max={80} placeholder="—" value={fontSizes.value ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, value: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[10px] px-1" />
+          <span className="text-[11px] text-muted-foreground">V</span>
+          <Input type="number" min={6} max={80} placeholder="—" value={fontSizes.value ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, value: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[12px] px-1" />
         </div>
         <div className="flex items-center gap-0.5">
-          <span className="text-[9px] text-muted-foreground">B</span>
-          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.body ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, body: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[10px] px-1" />
+          <span className="text-[11px] text-muted-foreground">B</span>
+          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.body ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, body: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[12px] px-1" />
         </div>
         <div className="flex items-center gap-0.5">
-          <span className="text-[9px] text-muted-foreground">L</span>
-          <Input type="number" min={6} max={40} placeholder="—" value={fontSizes.label ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, label: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[10px] px-1" />
+          <span className="text-[11px] text-muted-foreground">L</span>
+          <Input type="number" min={6} max={40} placeholder="—" value={fontSizes.label ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, label: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[12px] px-1" />
         </div>
       </div>
     </div>
@@ -505,7 +505,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   <Upload className="mr-1 h-3 w-3" /> Import
                 </Button>
               </div>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Export downloads your current config as JSON. Import loads a previously exported config file.
               </p>
             </section>
@@ -1092,7 +1092,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     <div className="flex items-center justify-between">
                       <Label className="text-xs text-muted-foreground">Top Info (up to 4 sensors)</Label>
                       {gs.topInfo.length < 4 && (
-                        <Button variant="ghost" size="sm" className="h-5 text-[10px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], topInfo: [...u[gsIdx].topInfo, { entityId: "", label: "", unit: "", color: "hsl(var(--foreground))" }] }; setGeneralSensors(u); }}>
+                        <Button variant="ghost" size="sm" className="h-5 text-[12px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], topInfo: [...u[gsIdx].topInfo, { entityId: "", label: "", unit: "", color: "hsl(var(--foreground))" }] }; setGeneralSensors(u); }}>
                           <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
                         </Button>
                       )}
@@ -1121,7 +1121,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs text-muted-foreground">Chart Series</Label>
-                        <Button variant="ghost" size="sm" className="h-5 text-[10px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartSeries: [...u[gsIdx].chartSeries, { entityId: "", label: "", color: "hsl(174, 72%, 50%)", chartType: "line" }] }; setGeneralSensors(u); }}>
+                        <Button variant="ghost" size="sm" className="h-5 text-[12px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartSeries: [...u[gsIdx].chartSeries, { entityId: "", label: "", color: "hsl(174, 72%, 50%)", chartType: "line" }] }; setGeneralSensors(u); }}>
                           <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
                         </Button>
                       </div>
@@ -1159,7 +1159,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     <div className="flex items-center justify-between">
                       <Label className="text-xs text-muted-foreground">Bottom Info (up to 4 sensors)</Label>
                       {gs.bottomInfo.length < 4 && (
-                        <Button variant="ghost" size="sm" className="h-5 text-[10px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], bottomInfo: [...u[gsIdx].bottomInfo, { entityId: "", label: "", unit: "", color: "hsl(var(--foreground))" }] }; setGeneralSensors(u); }}>
+                        <Button variant="ghost" size="sm" className="h-5 text-[12px] text-primary px-1" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], bottomInfo: [...u[gsIdx].bottomInfo, { entityId: "", label: "", unit: "", color: "hsl(var(--foreground))" }] }; setGeneralSensors(u); }}>
                           <Plus className="h-2.5 w-2.5 mr-0.5" /> Add
                         </Button>
                       )}
@@ -1296,28 +1296,28 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       return (
                       <div key={cIdx} className="space-y-1.5 rounded border border-border/30 bg-background/30 p-2">
                         <div className="flex gap-2 items-end">
-                          <span className="text-[10px] text-muted-foreground w-4 shrink-0">{cIdx + 1}</span>
+                          <span className="text-[12px] text-muted-foreground w-4 shrink-0">{cIdx + 1}</span>
                           <div className="flex-1">
                             <EntityAutocomplete value={cell.entityId} onChange={(val) => updateCell({ entityId: val })} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-8" />
                           </div>
                         </div>
                         <div className="flex gap-2 items-end pl-5">
                           <Input value={cell.label} onChange={(e) => updateCell({ label: e.target.value })} placeholder="Label" className="flex-1 bg-muted border-border text-xs h-8" />
-                          <Input value={cell.icon} onChange={(e) => updateCell({ icon: e.target.value })} placeholder="Icon" className="w-20 bg-muted border-border text-xs h-8" />
+                          <Input value={cell.icon} onChange={(e) => updateCell({ icon: e.target.value })} placeholder="Icon" className="w-28 bg-muted border-border text-xs h-8" />
                           <Input value={cell.unit} onChange={(e) => updateCell({ unit: e.target.value })} placeholder="Unit" className="w-16 bg-muted border-border text-xs h-8" />
                           <ColorPicker value={cell.color} onChange={(val) => updateCell({ color: val })} className="w-36" />
                         </div>
                         <div className="flex gap-2 items-end pl-5">
                           <div className="w-16">
-                            <Label className="text-[10px] text-muted-foreground">Icon px</Label>
+                            <Label className="text-[12px] text-muted-foreground">Icon px</Label>
                             <Input type="number" min={8} max={64} value={cell.iconSize || ""} onChange={(e) => updateCell({ iconSize: Number(e.target.value) || undefined })} placeholder="16" className="bg-muted border-border text-xs h-7" />
                           </div>
                           <div className="w-16">
-                            <Label className="text-[10px] text-muted-foreground">Value px</Label>
+                            <Label className="text-[12px] text-muted-foreground">Value px</Label>
                             <Input type="number" min={8} max={48} value={cell.fontSize || ""} onChange={(e) => updateCell({ fontSize: Number(e.target.value) || undefined })} placeholder="14" className="bg-muted border-border text-xs h-7" />
                           </div>
                           <div className="w-16">
-                            <Label className="text-[10px] text-muted-foreground">Label px</Label>
+                            <Label className="text-[12px] text-muted-foreground">Label px</Label>
                             <Input type="number" min={8} max={48} value={cell.labelFontSize || ""} onChange={(e) => updateCell({ labelFontSize: Number(e.target.value) || undefined })} placeholder="10" className="bg-muted border-border text-xs h-7" />
                           </div>
                         </div>
@@ -1325,8 +1325,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         {/* Value Mapping */}
                         <div className="pl-5 space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground">Value Mapping</span>
-                            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1 text-primary" onClick={() => {
+                            <span className="text-[12px] text-muted-foreground">Value Mapping</span>
+                            <Button variant="ghost" size="sm" className="h-5 text-[12px] px-1 text-primary" onClick={() => {
                               updateCell({ valueMaps: [...(cell.valueMaps || []), { from: "", to: "" }] });
                             }}>+ Add</Button>
                           </div>
@@ -1337,7 +1337,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                                 maps[vmIdx] = { ...maps[vmIdx], from: e.target.value };
                                 updateCell({ valueMaps: maps });
                               }} placeholder="From" className="w-16 bg-muted border-border text-xs h-6" />
-                              <span className="text-[10px] text-muted-foreground">→</span>
+                              <span className="text-[12px] text-muted-foreground">→</span>
                               <Input value={vm.to} onChange={(e) => {
                                 const maps = [...(cell.valueMaps || [])];
                                 maps[vmIdx] = { ...maps[vmIdx], to: e.target.value };
@@ -1368,11 +1368,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                               }}
                               className="h-3 w-3"
                             />
-                            <span className="text-[10px] text-muted-foreground">Conditional icon/color (4 intervals)</span>
+                            <span className="text-[12px] text-muted-foreground">Conditional icon/color (4 intervals)</span>
                           </div>
                           {cell.useIntervals && (cell.intervals || []).map((iv, ivIdx) => (
                             <div key={ivIdx} className="flex gap-1 items-center">
-                              <span className="text-[9px] text-muted-foreground w-3">{ivIdx + 1}</span>
+                              <span className="text-[11px] text-muted-foreground w-3">{ivIdx + 1}</span>
                               <Input value={iv.min} onChange={(e) => {
                                 const intervals = [...(cell.intervals || [])];
                                 intervals[ivIdx] = { ...intervals[ivIdx], min: Number(e.target.value) || 0 };
@@ -1387,7 +1387,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                                 const intervals = [...(cell.intervals || [])];
                                 intervals[ivIdx] = { ...intervals[ivIdx], icon: e.target.value };
                                 updateCell({ intervals });
-                              }} placeholder="Icon" className="w-16 bg-muted border-border text-xs h-6" />
+                              }} placeholder="Icon" className="w-24 bg-muted border-border text-xs h-6" />
                               <ColorPicker value={iv.color} onChange={(val) => {
                                 const intervals = [...(cell.intervals || [])];
                                 intervals[ivIdx] = { ...intervals[ivIdx], color: val };
