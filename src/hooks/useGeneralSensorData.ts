@@ -184,10 +184,13 @@ export function useGeneralSensorData(config: DashboardConfig) {
 
         if (sc.showGraph && sc.chartSeries.length > 0) {
           const now = new Date();
-          // For day grouping, fetch at least 7 days regardless of historyHours
           const grouping = sc.chartGrouping || "hour";
+          // For day grouping, fetch at least 7 days and snap to midnight so first day is complete
           const minHours = grouping === "day" ? Math.max(sc.historyHours, 168) : sc.historyHours;
           const start = new Date(now.getTime() - minHours * 3600000);
+          if (grouping === "day") {
+            start.setHours(0, 0, 0, 0);
+          }
 
           // Fetch history and current state in parallel for each series
           const [histories, currentStates] = await Promise.all([
