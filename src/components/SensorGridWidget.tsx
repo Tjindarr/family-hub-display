@@ -90,7 +90,7 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
                   style={{ color: color || undefined, width: cell.iconSize || 16, height: cell.iconSize || 16 }}
                 />
               )}
-              <span className="text-muted-foreground truncate max-w-full text-center" style={{ fontSize: cell.labelFontSize || fs.label }}>
+              <span className="text-muted-foreground max-w-full text-center leading-tight break-words" style={{ fontSize: cell.labelFontSize || fs.label }}>
                 {cell.label}
               </span>
               <div className="flex items-baseline gap-0.5">
