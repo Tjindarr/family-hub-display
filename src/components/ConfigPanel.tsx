@@ -1067,6 +1067,26 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       </div>
                    </div>
 
+                  {/* Icon Size & Font Sizes */}
+                  <div className="flex gap-2 flex-wrap">
+                    <div className="w-20">
+                      <Label className="text-xs text-muted-foreground">Icon Size</Label>
+                      <Input type="number" min={12} max={64} value={gs.iconSize || 20} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], iconSize: Number(e.target.value) }; setGeneralSensors(u); }} className="mt-1 bg-muted border-border text-xs h-8" />
+                    </div>
+                    <div className="w-20">
+                      <Label className="text-xs text-muted-foreground">Value px</Label>
+                      <Input type="number" min={8} max={48} value={gs.fontSize?.value || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, value: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="18" className="mt-1 bg-muted border-border text-xs h-8" />
+                    </div>
+                    <div className="w-20">
+                      <Label className="text-xs text-muted-foreground">Body px</Label>
+                      <Input type="number" min={8} max={48} value={gs.fontSize?.body || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, body: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
+                    </div>
+                    <div className="w-20">
+                      <Label className="text-xs text-muted-foreground">Label px</Label>
+                      <Input type="number" min={8} max={48} value={gs.fontSize?.label || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, label: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="10" className="mt-1 bg-muted border-border text-xs h-8" />
+                    </div>
+                  </div>
+
                   {/* Top Info */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -1078,16 +1098,20 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       )}
                     </div>
                     {gs.topInfo.map((ti, tiIdx) => (
-                      <div key={tiIdx} className="flex gap-1.5 items-end">
-                        <div className="flex-1">
-                          <EntityAutocomplete value={ti.entityId} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                      <div key={tiIdx} className="space-y-1.5 rounded border border-border/30 bg-background/30 p-2">
+                        <div className="flex gap-2 items-end">
+                          <div className="flex-1">
+                            <EntityAutocomplete value={ti.entityId} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-8" />
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], topInfo: u[gsIdx].topInfo.filter((_, j) => j !== tiIdx) }; setGeneralSensors(u); }}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <Input value={ti.label} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
-                        <Input value={ti.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
-                        <ColorPicker value={ti.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], color: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} className="w-28" />
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], topInfo: u[gsIdx].topInfo.filter((_, j) => j !== tiIdx) }; setGeneralSensors(u); }}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <div className="flex gap-2 items-end">
+                          <Input value={ti.label} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Label" className="flex-1 bg-muted border-border text-xs h-8" />
+                          <Input value={ti.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-20 bg-muted border-border text-xs h-8" />
+                          <ColorPicker value={ti.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], color: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} className="w-36" />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1102,25 +1126,29 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         </Button>
                       </div>
                       {gs.chartSeries.map((cs, csIdx) => (
-                        <div key={csIdx} className="flex gap-1.5 items-end">
-                          <div className="flex-1">
-                            <EntityAutocomplete value={cs.entityId} onChange={(val) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                        <div key={csIdx} className="space-y-1.5 rounded border border-border/30 bg-background/30 p-2">
+                          <div className="flex gap-2 items-end">
+                            <div className="flex-1">
+                              <EntityAutocomplete value={cs.entityId} onChange={(val) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-8" />
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartSeries: u[gsIdx].chartSeries.filter((_, j) => j !== csIdx) }; setGeneralSensors(u); }}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
-                          <Input value={cs.label} onChange={(e) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
-                          <Select value={cs.chartType} onValueChange={(v) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], chartType: v as SensorChartType }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }}>
-                            <SelectTrigger className="w-20 h-7 bg-muted border-border text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="line">Line</SelectItem>
-                              <SelectItem value="bar">Bar</SelectItem>
-                              <SelectItem value="area">Area</SelectItem>
-                              <SelectItem value="step">Step</SelectItem>
-                              <SelectItem value="scatter">Scatter</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <ColorPicker value={cs.color} onChange={(val) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], color: val }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} className="w-28" />
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], chartSeries: u[gsIdx].chartSeries.filter((_, j) => j !== csIdx) }; setGeneralSensors(u); }}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <div className="flex gap-2 items-end">
+                            <Input value={cs.label} onChange={(e) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} placeholder="Label" className="flex-1 bg-muted border-border text-xs h-8" />
+                            <Select value={cs.chartType} onValueChange={(v) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], chartType: v as SensorChartType }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }}>
+                              <SelectTrigger className="w-24 h-8 bg-muted border-border text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="line">Line</SelectItem>
+                                <SelectItem value="bar">Bar</SelectItem>
+                                <SelectItem value="area">Area</SelectItem>
+                                <SelectItem value="step">Step</SelectItem>
+                                <SelectItem value="scatter">Scatter</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <ColorPicker value={cs.color} onChange={(val) => { const u = [...generalSensors]; const series = [...u[gsIdx].chartSeries]; series[csIdx] = { ...series[csIdx], color: val }; u[gsIdx] = { ...u[gsIdx], chartSeries: series }; setGeneralSensors(u); }} className="w-36" />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1137,16 +1165,20 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       )}
                     </div>
                     {gs.bottomInfo.map((bi, biIdx) => (
-                      <div key={biIdx} className="flex gap-1.5 items-end">
-                        <div className="flex-1">
-                          <EntityAutocomplete value={bi.entityId} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-7" />
+                      <div key={biIdx} className="space-y-1.5 rounded border border-border/30 bg-background/30 p-2">
+                        <div className="flex gap-2 items-end">
+                          <div className="flex-1">
+                            <EntityAutocomplete value={bi.entityId} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], entityId: val }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} config={config} domainFilter="sensor" placeholder="sensor.x" className="bg-muted border-border text-xs h-8" />
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], bottomInfo: u[gsIdx].bottomInfo.filter((_, j) => j !== biIdx) }; setGeneralSensors(u); }}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <Input value={bi.label} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Label" className="w-16 bg-muted border-border text-xs h-7" />
-                        <Input value={bi.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-12 bg-muted border-border text-xs h-7" />
-                        <ColorPicker value={bi.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], color: val }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} className="w-28" />
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], bottomInfo: u[gsIdx].bottomInfo.filter((_, j) => j !== biIdx) }; setGeneralSensors(u); }}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <div className="flex gap-2 items-end">
+                          <Input value={bi.label} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], label: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Label" className="flex-1 bg-muted border-border text-xs h-8" />
+                          <Input value={bi.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-20 bg-muted border-border text-xs h-8" />
+                          <ColorPicker value={bi.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], color: val }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} className="w-36" />
+                        </div>
                       </div>
                     ))}
                   </div>

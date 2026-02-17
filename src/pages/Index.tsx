@@ -161,7 +161,10 @@ const Index = () => {
       const sensorConfig = (config.generalSensors || []).find((s) => s.id === sensorId);
       if (!sensorConfig) return null;
       const sensorData = generalSensorData[sensorId];
-      return <GeneralSensorWidget config={sensorConfig} data={sensorData} loading={generalSensorLoading} fontSizes={fs} />;
+      const sensorFs = sensorConfig.fontSize
+        ? resolveFontSizes(config.globalFontSizes, { ...config.widgetFontSizes?.[id], ...sensorConfig.fontSize })
+        : fs;
+      return <GeneralSensorWidget config={sensorConfig} data={sensorData} loading={generalSensorLoading} fontSizes={sensorFs} />;
     }
     if (id.startsWith("sensorgrid_")) {
       const gridId = id.replace("sensorgrid_", "");

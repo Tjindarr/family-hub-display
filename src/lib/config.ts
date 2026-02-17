@@ -99,6 +99,7 @@ export interface GeneralSensorConfig {
   label: string;
   showLabel: boolean;
   icon: string; // lucide icon name (kebab-case)
+  iconSize?: number; // icon size in px (default 20)
   showGraph: boolean;
   historyHours: number; // 1, 6, 24, 168 (7d)
   chartGrouping: ChartGrouping; // aggregate data by minute, hour or day
@@ -106,6 +107,7 @@ export interface GeneralSensorConfig {
   chartSeries: SensorChartSeries[]; // sensors to plot on the graph
   topInfo: SensorInfoItem[]; // up to 4 sensors displayed at the top
   bottomInfo: SensorInfoItem[]; // up to 4 sensors displayed at the bottom
+  fontSize?: WidgetFontSizes; // per-widget font size overrides
 }
 
 export interface SensorGridCellInterval {

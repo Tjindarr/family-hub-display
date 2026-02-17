@@ -62,6 +62,7 @@ function formatTickByGrouping(iso: string, grouping?: string): string {
 
 export default function GeneralSensorWidget({ config, data, loading, fontSizes }: GeneralSensorWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+  const iconPx = config.iconSize || 20;
   const { topValues, bottomValues, chartData, chartSeriesMeta } = data || { topValues: [], bottomValues: [], chartData: [], chartSeriesMeta: [] };
 
   // Compute stats per series
@@ -91,7 +92,7 @@ export default function GeneralSensorWidget({ config, data, loading, fontSizes }
       {/* Header: icon + label */}
       <div className="flex items-center gap-3 mb-2">
         {config.icon && (
-          <DynIcon name={config.icon} className="h-5 w-5 text-primary shrink-0" />
+          <DynIcon name={config.icon} style={{ width: iconPx, height: iconPx }} className="text-primary shrink-0" />
         )}
         {config.showLabel && config.label && (
           <span className="font-medium text-foreground" style={{ fontSize: fs.body }}>{config.label}</span>
