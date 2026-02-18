@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
+import IconPicker from "@/components/IconPicker";
 import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1038,8 +1039,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <Label className="text-xs text-muted-foreground">Icon (lucide name)</Label>
-                      <Input value={gs.icon} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], icon: e.target.value }; setGeneralSensors(u); }} placeholder="activity" className="mt-1 bg-muted border-border text-sm" />
+                      <Label className="text-xs text-muted-foreground">Icon (mdi name)</Label>
+                      <IconPicker value={gs.icon} onChange={(val) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], icon: val }; setGeneralSensors(u); }} placeholder="mdi:activity" className="mt-1 bg-muted border-border text-sm" />
                     </div>
                     <div className="w-24">
                       <Label className="text-xs text-muted-foreground">Graph</Label>
@@ -1323,7 +1324,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         </div>
                         <div className="flex gap-2 items-end pl-5">
                           <Input value={cell.label} onChange={(e) => updateCell({ label: e.target.value })} placeholder="Label" className="flex-1 bg-muted border-border text-xs h-8" />
-                          <Input value={cell.icon} onChange={(e) => updateCell({ icon: e.target.value })} placeholder="Icon" className="w-28 bg-muted border-border text-xs h-8" />
+                          <IconPicker value={cell.icon} onChange={(val) => updateCell({ icon: val })} placeholder="mdi:icon" className="w-28 bg-muted border-border text-xs h-8" />
                           <Input value={cell.unit} onChange={(e) => updateCell({ unit: e.target.value })} placeholder="Unit" className="w-16 bg-muted border-border text-xs h-8" />
                           <div className="flex flex-col gap-0.5">
                             <Label className="text-[10px] text-muted-foreground">Icon</Label>
@@ -1410,11 +1411,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                                 intervals[ivIdx] = { ...intervals[ivIdx], max: Number(e.target.value) || 0 };
                                 updateCell({ intervals });
                               }} type="number" placeholder="Max" className="w-20 bg-muted border-border text-xs h-7" />
-                              <Input value={iv.icon} onChange={(e) => {
+                              <IconPicker value={iv.icon} onChange={(val) => {
                                 const intervals = [...(cell.intervals || [])];
-                                intervals[ivIdx] = { ...intervals[ivIdx], icon: e.target.value };
+                                intervals[ivIdx] = { ...intervals[ivIdx], icon: val };
                                 updateCell({ intervals });
-                              }} placeholder="Icon" className="w-24 bg-muted border-border text-xs h-6" />
+                              }} placeholder="mdi:icon" className="w-24 bg-muted border-border text-xs h-6" />
                               <ColorPicker value={iv.color} onChange={(val) => {
                                 const intervals = [...(cell.intervals || [])];
                                 intervals[ivIdx] = { ...intervals[ivIdx], color: val };
