@@ -67,7 +67,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
   return (
     <div className="widget-card h-full flex flex-col overflow-hidden">
       {/* Current price with badge */}
-      <div className="mb-0 flex items-baseline gap-3 shrink-0">
+      <div className="mb-2 flex items-baseline gap-3 shrink-0">
         <span className="font-mono font-bold" style={{ color: getPriceColor(currentPrice), fontSize: fs.value }}>
           {currentPrice.toFixed(2)}
         </span>
@@ -159,7 +159,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
       )}
 
       {/* Stats row */}
-      <div className="mt-0 flex gap-6 shrink-0" style={{ fontSize: fs.label }}>
+      <div className="mt-auto shrink-0 flex gap-6" style={{ fontSize: fs.label, paddingBottom: '10px' }}>
         <div className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full" style={{ background: "hsl(210, 100%, 50%)" }} />
           <span className="text-muted-foreground">Idag</span>
