@@ -307,7 +307,12 @@ export function useElectricityPrices(config: DashboardConfig) {
   const fetchPrices = useCallback(async () => {
     if (!isConfigured(config)) {
       const mock = generateMockElectricityPrices();
-      setNordpool(mock);
+      const surcharge = config.electricitySurcharge ?? 0;
+      setNordpool({
+        today: mock.today.map((p) => ({ ...p, price: p.price + surcharge })),
+        tomorrow: mock.tomorrow.map((p) => ({ ...p, price: p.price + surcharge })),
+        currentPrice: mock.currentPrice + surcharge,
+      });
       setLoading(false);
       return;
     }
@@ -319,17 +324,19 @@ export function useElectricityPrices(config: DashboardConfig) {
       const rawTomorrow: NordpoolPricePoint[] = state.attributes?.raw_tomorrow || [];
       const currentPrice = parseFloat(state.state) || 0;
 
+      const surcharge = config.electricitySurcharge ?? 0;
+
       const today = rawToday.map((p) => ({
         time: new Date(p.start),
-        price: p.value,
+        price: p.value + surcharge,
       }));
 
       const tomorrow = rawTomorrow.map((p) => ({
         time: new Date(p.start),
-        price: p.value,
+        price: p.value + surcharge,
       }));
 
-      setNordpool({ today, tomorrow, currentPrice });
+      setNordpool({ today, tomorrow, currentPrice: currentPrice + surcharge });
     } catch (err) {
       console.error("Failed to fetch electricity prices:", err);
     } finally {
