@@ -8,7 +8,7 @@ A sleek, high-density Home Assistant dashboard designed for wall-mounted display
 
 - **Real-time data** from Home Assistant via REST API
 - **Drag-and-drop grid layout** with per-row column/height configuration
-- **Multiple themes** — Midnight Teal, Charcoal, Deep Ocean, Warm Ember, AMOLED Black
+- **Multiple themes** — Midnight Teal, Charcoal, Deep Ocean, Warm Ember, AMOLED Black, macOS Dark
 - **Kiosk mode** — auto-hides settings for dedicated displays
 - **Granular font sizing** — global + per-widget overrides for 4 text roles
 - **Server-side config persistence** — settings sync across all devices
@@ -82,7 +82,7 @@ Displays the current time, date, and outdoor temperature with a multi-day weathe
 
 ### 📅 Calendar
 
-Shows upcoming events from one or more Home Assistant calendar entities.
+Shows upcoming events from one or more Home Assistant calendar entities with rich display options.
 
 | Setting | Description |
 |---|---|
@@ -91,6 +91,11 @@ Shows upcoming events from one or more Home Assistant calendar entities.
 | `Color` | Text color for events from this entity (HSL) |
 | `Day Label Color` | Override color for day headers ("Today", "Tomorrow") |
 | `Time Color` | Override color for event timestamps |
+| `Show Event Body` | Toggle event description display |
+| `Show End Date` | Toggle end date/time display |
+| `Hide All-Day Text` | Hide the "All day" label for all-day events |
+| `Show Week Number` | Show the ISO week number in day headers |
+| `Font Sizes` | Independent font sizes for day, time, title, and body text |
 
 ---
 
@@ -107,6 +112,7 @@ Displays temperature (and optional humidity) readings with colored labels. Senso
 | `Group` | Group number — sensors with the same group render together |
 | `Show Chart` | Toggle 24-hour history chart behind the reading |
 | `Chart Type` | Line, Bar, Area, Step, or Scatter |
+| `Round Temperature` | Round temperature to nearest integer |
 
 ---
 
@@ -121,34 +127,9 @@ A 48-hour stepline chart showing Nordpool electricity prices with current price,
 
 ---
 
-### 🔋 Energy Usage
-
-Displays monthly cost, consumption, current power draw, and peak power.
-
-| Setting | Description |
-|---|---|
-| `Monthly Cost Entity` | Sensor for accumulated monthly cost |
-| `Monthly Consumption Entity` | Sensor for monthly net consumption |
-| `Current Power Entity` | Sensor for real-time power (W) |
-| `Max Power Entity` | Sensor for peak power |
-
----
-
-### 🚗 Car
-
-Combined widget showing charger status, fuel range, and EV battery level.
-
-| Setting | Description |
-|---|---|
-| `Charger Entity` | Charger status sensor |
-| `Fuel Range Entity` | Fuel driving range sensor |
-| `Battery Entity` | EV battery level sensor |
-
----
-
 ### 👤 Person Tracking
 
-Two-column card with a profile picture, battery level (with charging indicator), location, and distance from home.
+Two-column card with a profile picture, battery level (with charging indicator), location, and distance from home. Per-card font sizes for location, battery, and distance text.
 
 | Setting | Description |
 |---|---|
@@ -170,36 +151,47 @@ Displays upcoming meals by reading events from a Home Assistant calendar entity.
 |---|---|
 | `Calendar Entity` | A `calendar.*` entity containing meal events |
 | `Days` | Number of days to display (1–14, default: 5) |
+| `Skip Weekends` | Skip Saturday and Sunday when counting days forward |
 
 ---
 
 ### 📊 General Sensor Card
 
-A highly versatile widget with icon, label, top/bottom info rows (up to 4 sensors each), and a central historical chart.
+A highly versatile widget for building custom monitoring cards. Supports an icon, label, top/bottom info rows (up to 4 sensors each), and a central historical chart with multiple series.
 
 | Setting | Description |
 |---|---|
 | `Label` | Card title |
-| `Icon` | Lucide icon name (kebab-case, e.g. `thermometer`) |
+| `Icon` | Icon name (MDI format, e.g. `mdi:thermometer`) |
+| `Icon Size` | Icon size in pixels (default: 20) |
+| `Show Label` | Toggle label visibility |
 | `Show Graph` | Toggle the history chart |
 | `History Hours` | Data range: 1, 6, 24, or 168 hours |
 | `Chart Grouping` | Aggregate by minute, hour, or day |
-| `Chart Series` | Sensors to plot (entity, label, color, chart type) |
+| `Chart Aggregation` | How to combine values per bucket: average, max, min, sum, last, or delta |
+| `Chart Series` | Sensors to plot (entity, label, color, chart type: line/bar/area/step/scatter) |
 | `Top / Bottom Info` | Up to 4 sensors each (entity, label, unit, color) |
+| `Font Sizes` | Per-widget font size overrides (heading, value, body, label) |
+
+Top info values display as whole numbers. Chart tooltips display values with one decimal place. The bottom row includes automatic Avg/Min/Max statistics for the first chart series.
 
 ---
 
 ### 🔲 Sensor Grid
 
-A configurable grid (up to 6×6) of sensor cells, each showing an icon, label, value, and unit.
+A configurable grid (up to 6×6) of sensor cells, each showing an icon, label, value, and unit. Supports advanced conditional logic and dense layouts.
 
 | Setting | Description |
 |---|---|
 | `Rows / Columns` | Grid dimensions (1–6 each) |
 | `Cell Entity` | Sensor entity for each cell |
-| `Icon` | Lucide icon name |
+| `Icon` | Icon name |
 | `Unit` | Display unit |
-| `Color` | Default icon/value color |
+| `Color` | Default icon color |
+| `Value Color` | Separate color for value text (optional, falls back to icon color) |
+| `Icon Size` | Icon size in pixels (default: 16) |
+| `Font Size` | Value font size in pixels |
+| `Label Font Size` | Label font size in pixels |
 | `Intervals` | 4 numeric ranges with conditional icon + color |
 | `Value Maps` | String rewrite rules (from → to) |
 
@@ -237,7 +229,7 @@ A rotating photo slideshow with configurable display modes. Photos are stored se
 
 ## 📐 Layout System
 
-The dashboard uses a row-based grid system. Each widget is assigned to a **row** and configured with a **column span**.
+The dashboard uses a row-based grid system with 5px spacing between widgets and around the page edges. Each widget is assigned to a **row** and configured with a **column span**.
 
 ### Global Settings (Layout Tab)
 
@@ -264,7 +256,7 @@ Widgets can be **reordered via drag-and-drop** in the Layout tab. The last widge
 
 ## 🎨 Themes
 
-Five built-in themes optimized for always-on displays:
+Six built-in themes optimized for always-on displays:
 
 | Theme | Description |
 |---|---|
@@ -273,6 +265,7 @@ Five built-in themes optimized for always-on displays:
 | **Deep Ocean** | Deep blue palette |
 | **Warm Ember** | Dark with warm orange/amber accents |
 | **AMOLED Black** | Pure black background for OLED screens |
+| **macOS Dark** | Dark gray with blue accent, inspired by macOS dark mode |
 
 Select a theme in the **Layout** tab of Settings.
 
@@ -301,6 +294,23 @@ Append `?kiosk` to the URL to hide the settings gear icon — ideal for wall-mou
 ```
 http://localhost:3000/?kiosk
 ```
+
+Triple-click anywhere to exit kiosk mode.
+
+---
+
+## 🗂️ Settings Organization
+
+The configuration panel is organized into four tabs:
+
+| Tab | Contents |
+|---|---|
+| **Connection** | Home Assistant URL, token, refresh interval, external config backend |
+| **Widgets** | Collapsible sections for each widget type with all settings |
+| **Photos** | Photo gallery management (upload/delete) |
+| **Layout** | Grid columns, row heights, theme selection, font sizes, widget ordering |
+
+The panel is a fixed 66% width overlay with a sticky header and footer containing the global Save button.
 
 ---
 
@@ -340,6 +350,7 @@ The `/data` volume stores:
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
 - **UI Components**: shadcn/ui, Radix UI primitives
 - **Charts**: Recharts
+- **Icons**: Iconify (MDI icons)
 - **Drag & Drop**: dnd-kit
 - **Backend**: Express.js (lightweight API server)
 - **Deployment**: Docker with multi-stage build
