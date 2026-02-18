@@ -201,6 +201,45 @@
     --sidebar-border: 0 0% 12%;
     --sidebar-ring: 174 72% 50%;
   }
+
+  /* macOS Dark — dark gray with blue accent, inspired by macOS */
+  [data-theme="macos-dark"] {
+    --background: 220 6% 13%;
+    --foreground: 220 10% 90%;
+    --card: 220 6% 16%;
+    --card-foreground: 220 10% 90%;
+    --popover: 220 6% 16%;
+    --popover-foreground: 220 10% 90%;
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 6% 20%;
+    --secondary-foreground: 220 8% 78%;
+    --muted: 220 5% 18%;
+    --muted-foreground: 220 6% 50%;
+    --accent: 211 80% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 5% 22%;
+    --input: 220 5% 22%;
+    --ring: 211 100% 50%;
+    --chart-1: 211 100% 50%;
+    --chart-2: 32 95% 55%;
+    --chart-3: 258 60% 60%;
+    --chart-4: 340 70% 55%;
+    --chart-5: 120 50% 50%;
+    --glow-primary: 0 0 20px hsl(211 100% 50% / 0.2);
+    --glow-warm: 0 0 20px hsl(32 95% 55% / 0.3);
+    --glow-danger: 0 0 20px hsl(0 72% 55% / 0.3);
+    --sidebar-background: 220 6% 11%;
+    --sidebar-foreground: 220 8% 78%;
+    --sidebar-primary: 211 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 5% 18%;
+    --sidebar-accent-foreground: 220 8% 78%;
+    --sidebar-border: 220 5% 22%;
+    --sidebar-ring: 211 100% 50%;
+  }
 }
 
 @layer base {
