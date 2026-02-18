@@ -232,7 +232,7 @@ const Index = () => {
   }, [allWidgetIds, gridColumns, rowColumns, rowHeights, isMobile, config.widgetLayouts]);
 
   return (
-    <div className="min-h-screen bg-background p-2">
+    <div className="min-h-screen bg-background" style={{ padding: "5px" }}>
       {!isKiosk && (
         <>
           <ConfigPanel config={config} onSave={updateConfig} />
