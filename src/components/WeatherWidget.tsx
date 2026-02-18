@@ -109,7 +109,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
   return (
     <div className="widget-card h-full">
       {/* Current conditions - 3 columns */}
-      <div className="mb-4 flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-[2px]">
+      <div className="mb-1 flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 px-[2px] py-0">
         {/* Left: time + date */}
         <div>
           <div className="font-bold text-foreground" style={{ fontSize: Math.round(xlSize * 1.4) }}>
