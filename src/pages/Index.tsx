@@ -264,7 +264,7 @@ const Index = () => {
       )}
 
       {/* Grid */}
-      <div className="grid gap-2">
+      <div className="grid" style={{ gap: "5px" }}>
         {rows.map(({ rowNum, widgets, cols, heightPx }) => {
           // Group widgets by widgetGroup within each row
           const rendered: { id: string; span: number; rSpan: number; groupId: string }[] = [];
@@ -280,8 +280,9 @@ const Index = () => {
           return (
             <div
               key={rowNum}
-              className="grid gap-2"
+              className="grid"
               style={{
+                gap: "5px",
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
                 ...(!isMobile && heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : {}),
                 ...(!isMobile && heightPx ? { overflow: 'hidden' } : {}),
