@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { DashboardConfig, loadConfig, saveConfig, saveRemoteConfig, loadRemoteConfig, isConfigured } from "@/lib/config";
+import { DashboardConfig, loadConfig, saveConfig, saveRemoteConfig, loadRemoteConfig, isConfigured, type HAState } from "@/lib/config";
 import type { CalendarEntityConfig } from "@/lib/config";
 import {
   createHAClient,
@@ -385,6 +385,14 @@ export function usePersonData(config: DashboardConfig) {
 
     try {
       const client = createHAClient(config);
+
+      // Pre-fetch all zones once for icon matching by friendly_name
+      let zoneEntities: HAState[] = [];
+      try {
+        const allStates = await client.getStates();
+        zoneEntities = allStates.filter((s) => s.entity_id.startsWith("zone."));
+      } catch { /* ignore */ }
+
       const results = await Promise.all(
         config.personEntities.map(async (pe) => {
           let pictureUrl: string | null = null;
@@ -393,16 +401,7 @@ export function usePersonData(config: DashboardConfig) {
           let isCharging = false;
           let distanceKm: number | null = null;
 
-          // Picture from person entity
-          if (pe.entityPicture) {
-            try {
-              const state = await client.getState(pe.entityPicture);
-              const pic = state.attributes?.entity_picture;
-              if (pic) {
-                pictureUrl = pic.startsWith("http") ? pic : `${config.haUrl}${pic}`;
-              }
-            } catch { /* ignore */ }
-          }
+          // ... keep existing code (picture fetch lines 395-404)
 
           // Location + zone icon
           let zoneIcon: string | null = null;
@@ -410,13 +409,13 @@ export function usePersonData(config: DashboardConfig) {
             try {
               const state = await client.getState(pe.locationEntity);
               location = state.state || null;
-              // Try to fetch zone entity for the icon
               if (location && location !== "not_home" && location !== "unknown" && location !== "unavailable") {
-                try {
-                  const zoneName = location.toLowerCase().replace(/\s+/g, "_");
-                  const zoneState = await client.getState(`zone.${zoneName}`);
-                  zoneIcon = zoneState.attributes?.icon || null;
-                } catch { /* zone not found, use default */ }
+                const matchedZone = zoneEntities.find(
+                  (z) => (z.attributes?.friendly_name || "").toLowerCase() === location!.toLowerCase()
+                );
+                if (matchedZone) {
+                  zoneIcon = matchedZone.attributes?.icon || null;
+                }
               }
             } catch { /* ignore */ }
           }
