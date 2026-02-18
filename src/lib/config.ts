@@ -145,7 +145,7 @@ export interface SensorGridConfig {
   cells: SensorGridCellConfig[]; // row-major order, length = rows * columns
 }
 
-export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black";
+export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black" | "macos-dark";
 
 export const THEMES: { id: ThemeId; label: string }[] = [
   { id: "midnight-teal", label: "Midnight Teal" },
@@ -153,6 +153,7 @@ export const THEMES: { id: ThemeId; label: string }[] = [
   { id: "deep-ocean", label: "Deep Ocean" },
   { id: "warm-ember", label: "Warm Ember" },
   { id: "amoled-black", label: "AMOLED Black" },
+  { id: "macos-dark", label: "macOS Dark" },
 ];
 
 export interface DashboardConfig {
