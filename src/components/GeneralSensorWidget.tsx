@@ -97,7 +97,7 @@ export default function GeneralSensorWidget({ config, data, loading, fontSizes }
 
       {/* Chart */}
       {config.showGraph && chartData.length > 0 && chartSeriesMeta.length > 0 && (
-        <div className="flex-1 min-h-0 mt-auto" style={{ paddingBottom: "5px" }}>
+        <div className="flex-1 min-h-0 mt-auto">
           <ResponsiveContainer width="100%" height="100%" minHeight={120}>
             <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
               <defs>
