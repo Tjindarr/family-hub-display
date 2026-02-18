@@ -72,7 +72,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
   return (
     <div className="widget-card h-full flex flex-col overflow-hidden">
       {/* Current price with badge */}
-      <div className="mb-1 flex items-baseline gap-3 shrink-0">
+      <div className="mb-0 flex items-baseline gap-3 shrink-0">
         <span className="font-mono font-bold" style={{ color: getPriceColor(currentPrice), fontSize: fs.value }}>
           {currentPrice.toFixed(2)}
         </span>
@@ -87,7 +87,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
       ) : (
         <div className="flex-1 min-h-0 px-[2px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 2, right: 2, left: -10, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 0, right: 2, left: -10, bottom: -5 }}>
             <defs>
               <linearGradient id="todayGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(210, 100%, 50%)" stopOpacity={0.4} />
@@ -162,7 +162,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
       )}
 
       {/* Stats row */}
-      <div className="mt-1 flex gap-6 shrink-0" style={{ fontSize: fs.label }}>
+      <div className="mt-0 flex gap-6 shrink-0" style={{ fontSize: fs.label }}>
         <div className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full" style={{ background: "hsl(210, 100%, 50%)" }} />
           <span className="text-muted-foreground">Idag</span>
