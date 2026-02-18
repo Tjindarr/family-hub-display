@@ -401,7 +401,16 @@ export function usePersonData(config: DashboardConfig) {
           let isCharging = false;
           let distanceKm: number | null = null;
 
-          // ... keep existing code (picture fetch lines 395-404)
+          // Picture
+          if (pe.entityPicture) {
+            try {
+              const state = await client.getState(pe.entityPicture);
+              const pic = state.attributes?.entity_picture;
+              if (pic) {
+                pictureUrl = pic.startsWith("http") ? pic : `${config.haUrl}${pic}`;
+              }
+            } catch { /* ignore */ }
+          }
 
           // Location + zone icon
           let zoneIcon: string | null = null;
