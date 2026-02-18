@@ -82,7 +82,7 @@ export default function GeneralSensorWidget({ config, data, loading, fontSizes }
 
       {/* Top info values */}
       {topValues.length > 0 && (
-        <div className="flex items-baseline gap-4 mb-3 flex-wrap">
+        <div className="flex items-baseline gap-4 flex-wrap" style={{ marginTop: "-5px", marginBottom: "-5px" }}>
           {topValues.map((tv, i) => (
             <div key={i} className="flex items-baseline gap-1">
               <span className="font-mono font-bold" style={{ color: tv.color || undefined, fontSize: fs.value }}>

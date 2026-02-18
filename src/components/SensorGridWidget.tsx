@@ -56,7 +56,7 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
   const values = data?.values || [];
 
   return (
-    <div className="widget-card h-full flex flex-col">
+    <div className="widget-card h-full flex flex-col" style={{ paddingTop: "calc(var(--widget-padding, 12px) - 5px)", paddingBottom: "calc(var(--widget-padding, 12px) - 5px)" }}>
       <div
         className="flex-1 grid gap-2 min-h-0"
         style={{
@@ -71,7 +71,8 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
           return (
             <div
               key={i}
-              className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 p-2 min-w-0 text-center"
+              className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 min-w-0 text-center"
+              style={{ padding: "3px" }}
             >
               {icon && (
                 <Icon
