@@ -1,8 +1,5 @@
 import { Thermometer, Droplets } from "lucide-react";
-import {
-  ResponsiveContainer, ComposedChart, Line, Bar, Area, Scatter,
-  YAxis,
-} from "recharts";
+import { ResponsiveContainer, ComposedChart, Line, Bar, Area, Scatter, YAxis } from "recharts";
 import type { TemperatureSensorData } from "@/hooks/useDashboardData";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
@@ -29,19 +26,29 @@ function SensorChart({ sensor }: { sensor: TemperatureSensorData }) {
             </linearGradient>
           </defs>
           <YAxis domain={["dataMin - 1", "dataMax + 1"]} hide />
-          {chartType === "bar" && (
-            <Bar dataKey="value" fill={color} opacity={0.7} />
-          )}
+          {chartType === "bar" && <Bar dataKey="value" fill={color} opacity={0.7} />}
           {chartType === "area" && (
-            <Area type="monotone" dataKey="value" stroke={color} strokeWidth={1.5} fill={`url(#tempGrad_${sensor.entityId})`} dot={false} />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={1.5}
+              fill={`url(#tempGrad_${sensor.entityId})`}
+              dot={false}
+            />
           )}
           {chartType === "step" && (
-            <Area type="stepAfter" dataKey="value" stroke={color} strokeWidth={1.5} fill={`url(#tempGrad_${sensor.entityId})`} dot={false} />
+            <Area
+              type="stepAfter"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={1.5}
+              fill={`url(#tempGrad_${sensor.entityId})`}
+              dot={false}
+            />
           )}
-          {chartType === "scatter" && (
-            <Scatter dataKey="value" fill={color} />
-          )}
-          {(chartType === "line" || (!["bar", "area", "step", "scatter"].includes(chartType))) && (
+          {chartType === "scatter" && <Scatter dataKey="value" fill={color} />}
+          {(chartType === "line" || !["bar", "area", "step", "scatter"].includes(chartType)) && (
             <Line type="monotone" dataKey="value" stroke={color} strokeWidth={1.5} dot={false} />
           )}
         </ComposedChart>
@@ -62,7 +69,7 @@ export default function TemperatureWidget({ sensors, loading, fontSizes }: Tempe
   }
 
   return (
-    <div className="widget-card h-full flex flex-col gap-3">
+    <div className="widget-card h-full flex flex-col gap-1">
       {sensors.map((sensor, i) => (
         <div key={i} className="relative overflow-hidden rounded-lg">
           <SensorChart sensor={sensor} />
@@ -71,7 +78,10 @@ export default function TemperatureWidget({ sensors, loading, fontSizes }: Tempe
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: sensor.color }} />
-                <span className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: fs.heading }}>
+                <span
+                  className="font-semibold uppercase tracking-wider text-muted-foreground"
+                  style={{ fontSize: fs.heading }}
+                >
                   {sensor.label}
                 </span>
               </div>
