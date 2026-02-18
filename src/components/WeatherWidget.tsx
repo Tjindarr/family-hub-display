@@ -146,7 +146,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
       </div>
 
       {/* Forecast chart */}
-      <div className="rounded-lg border border-border/50 bg-muted/30 p-[2px]">
+      <div className="rounded-lg border border-border/50 bg-muted/30 px-[2px] py-0">
         {/* Day labels + icons */}
         <div className="flex justify-around mb-1">
           {chartData.map((d, i) => (
