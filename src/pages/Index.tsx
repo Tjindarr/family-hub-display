@@ -284,7 +284,7 @@ const Index = () => {
               style={{
                 gap: "5px",
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                ...(!isMobile && heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : {}),
+                ...(!isMobile && heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : !isMobile ? { minHeight: '120px' } : {}),
                 ...(!isMobile && heightPx ? { overflow: 'hidden' } : {}),
               }}
             >
