@@ -129,6 +129,7 @@ export default function GeneralSensorWidget({ config, data, loading, fontSizes }
                   color: "hsl(210, 20%, 92%)",
                   fontSize: fs.body,
                 }}
+                formatter={(value: number) => typeof value === "number" ? value.toFixed(1) : value}
                 labelFormatter={(v) => {
                   const d = new Date(String(v));
                   if (config.chartGrouping === "day") return d.toLocaleDateString("sv-SE");
