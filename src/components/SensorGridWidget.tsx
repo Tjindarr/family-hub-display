@@ -1,22 +1,10 @@
-import { lazy, Suspense, useMemo } from "react";
-import type { LucideProps } from "lucide-react";
-import dynamicIconImports from "lucide-react/dynamicIconImports";
+import { Icon } from "@iconify/react";
 import type { SensorGridConfig, SensorGridCellConfig } from "@/lib/config";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
-// Dynamic icon loader (shared pattern)
-const iconCache: Record<string, React.ComponentType<Omit<LucideProps, "ref">>> = {};
-
-function DynIcon({ name, ...props }: { name: string } & Omit<LucideProps, "ref">) {
-  const key = name as keyof typeof dynamicIconImports;
-  if (!dynamicIconImports[key]) return <span className="h-4 w-4" />;
-  if (!iconCache[name]) iconCache[name] = lazy(dynamicIconImports[key]);
-  const Icon = iconCache[name];
-  return (
-    <Suspense fallback={<span className="h-4 w-4" />}>
-      <Icon {...props} />
-    </Suspense>
-  );
+function toIconName(name: string): string {
+  if (name.includes(":")) return name;
+  return `mdi:${name}`;
 }
 
 export interface SensorGridLiveData {
@@ -86,8 +74,8 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
               className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 p-2 min-w-0 text-center"
             >
               {icon && (
-                <DynIcon
-                  name={icon}
+                <Icon
+                  icon={toIconName(icon)}
                   className="shrink-0"
                   style={{ color: iconColor || undefined, width: cell.iconSize || 16, height: cell.iconSize || 16 }}
                 />

@@ -1,34 +1,15 @@
-import { lazy, Suspense, useMemo } from "react";
+import { useMemo } from "react";
 import {
   ComposedChart, Line, Bar, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Scatter,
 } from "recharts";
-import type { LucideProps } from "lucide-react";
-import dynamicIconImports from "lucide-react/dynamicIconImports";
+import { Icon } from "@iconify/react";
 import type { GeneralSensorConfig, SensorChartType } from "@/lib/config";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
-// Dynamic icon loader
-interface DynIconProps extends Omit<LucideProps, "ref"> {
-  name: string;
-}
-
-const iconCache: Record<string, React.ComponentType<Omit<LucideProps, "ref">>> = {};
-
-function DynIcon({ name, ...props }: DynIconProps) {
-  const key = name as keyof typeof dynamicIconImports;
-  if (!dynamicIconImports[key]) {
-    return <span className="h-5 w-5" />;
-  }
-  if (!iconCache[name]) {
-    iconCache[name] = lazy(dynamicIconImports[key]);
-  }
-  const LucideIcon = iconCache[name];
-  return (
-    <Suspense fallback={<span className="h-5 w-5" />}>
-      <LucideIcon {...props} />
-    </Suspense>
-  );
+function toIconName(name: string): string {
+  if (name.includes(":")) return name;
+  return `mdi:${name}`;
 }
 
 export interface GeneralSensorLiveData {
@@ -92,7 +73,7 @@ export default function GeneralSensorWidget({ config, data, loading, fontSizes }
       {/* Header: icon + label */}
       <div className="flex items-center gap-3 mb-2">
         {config.icon && (
-          <DynIcon name={config.icon} style={{ width: iconPx, height: iconPx }} className="text-primary shrink-0" />
+          <Icon icon={toIconName(config.icon)} style={{ width: iconPx, height: iconPx }} className="text-primary shrink-0" />
         )}
         {config.showLabel && config.label && (
           <span className="font-medium text-foreground" style={{ fontSize: fs.body }}>{config.label}</span>
