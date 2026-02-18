@@ -86,7 +86,7 @@ export default function GeneralSensorWidget({ config, data, loading, fontSizes }
           {topValues.map((tv, i) => (
             <div key={i} className="flex items-baseline gap-1">
               <span className="font-mono font-bold" style={{ color: tv.color || undefined, fontSize: fs.value }}>
-                {tv.value}
+                {isNaN(Number(tv.value)) ? tv.value : Math.round(Number(tv.value))}
               </span>
               {tv.unit && <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{tv.unit}</span>}
               {tv.label && <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{tv.label}</span>}
