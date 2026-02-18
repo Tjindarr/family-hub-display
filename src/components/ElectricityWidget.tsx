@@ -159,7 +159,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
       )}
 
       {/* Stats row */}
-      <div className="mt-auto shrink-0 flex gap-6" style={{ fontSize: fs.label, paddingBottom: "10px" }}>
+      <div className="mt-auto shrink-0 flex gap-6" style={{ fontSize: fs.label * 1.5, paddingBottom: "10px" }}>
         <div className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full" style={{ background: "hsl(210, 100%, 50%)" }} />
           <span className="text-muted-foreground">Idag</span>
