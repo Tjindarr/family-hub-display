@@ -226,6 +226,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     config.weatherConfig || { entityId: "weather.home", forecastDays: 5, showPrecipitation: true, showSunrise: true, showSunset: true }
   );
   const [electricityEntity, setElectricityEntity] = useState(config.electricityPriceEntity);
+  const [electricitySurcharge, setElectricitySurcharge] = useState(config.electricitySurcharge ?? 0);
   const [widgetLayouts, setWidgetLayouts] = useState<Record<string, WidgetLayout>>(config.widgetLayouts || {});
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
   const [rowColumns, setRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
@@ -326,6 +327,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       calendarTimeColor,
       calendarDisplay,
       electricityPriceEntity: electricityEntity,
+      electricitySurcharge,
       widgetLayouts,
       widgetOrder: finalOrder,
       gridColumns,
@@ -886,6 +888,21 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   Uses raw_today & raw_tomorrow attributes for 48h view
+                </p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Surcharge (kr/kWh)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={electricitySurcharge}
+                  onChange={(e) => setElectricitySurcharge(parseFloat(e.target.value) || 0)}
+                  className="mt-1 bg-muted border-border text-sm"
+                  placeholder="0.00"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Added to all electricity prices (chart, current, avg, min, max)
                 </p>
               </div>
             </CollapsibleSection>

@@ -155,6 +155,7 @@ export interface DashboardConfig {
   temperatureEntities: TemperatureEntityConfig[];
   electricityPriceEntity: string;
   electricityForecastEntity: string;
+  electricitySurcharge: number; // kr/kWh surcharge added to all prices
   widgetLayouts: Record<string, WidgetLayout>;
   widgetOrder: string[]; // ordered widget IDs
   gridColumns: number; // number of grid columns (1-6)
@@ -255,6 +256,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   ],
   electricityPriceEntity: "sensor.nordpool_kwh_se3_sek_3_10_025",
   electricityForecastEntity: "",
+  electricitySurcharge: 0,
   widgetLayouts: {},
   widgetOrder: [],
   rowColumns: {},
