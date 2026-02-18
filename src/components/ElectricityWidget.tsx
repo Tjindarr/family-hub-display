@@ -85,9 +85,9 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
       {loading ? (
         <div className="flex-1 min-h-0 animate-pulse rounded-lg bg-muted" />
       ) : (
-        <div className="flex-1 min-h-0 px-[2px]">
+        <div className="flex-1 min-h-0 px-[2px] py-[5px]" style={{ marginTop: '-5px', marginBottom: '-5px' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 0, right: 2, left: -10, bottom: -5 }}>
+           <AreaChart data={chartData} margin={{ top: 0, right: 2, left: -10, bottom: -5 }}>
             <defs>
               <linearGradient id="todayGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(210, 100%, 50%)" stopOpacity={0.4} />
