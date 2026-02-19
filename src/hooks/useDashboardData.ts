@@ -130,7 +130,7 @@ export function useTemperatureData(config: DashboardConfig) {
           return {
             label: entity.label,
             color: entity.color,
-            temperature: parseFloat(tempState.state) || null,
+            temperature: isNaN(parseFloat(tempState.state)) ? null : parseFloat(tempState.state),
             humidity,
             entityId: entity.entityId,
             showChart: entity.showChart,
