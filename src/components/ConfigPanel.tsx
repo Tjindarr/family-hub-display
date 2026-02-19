@@ -235,7 +235,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
   const [blackout, setBlackout] = useState(config.blackout || { enabled: false, from: "23:00", to: "06:00" });
-  const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5, skipWeekends: false });
+  const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { source: "calendar", calendarEntity: "", skolmatenEntity: "", days: 5, skipWeekends: false });
   const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
   const [sensorGrids, setSensorGrids] = useState<SensorGridConfig[]>(config.sensorGrids || []);
   const [rssFeeds, setRssFeeds] = useState<RssNewsConfig[]>(config.rssFeeds || []);
@@ -878,16 +878,41 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
             {/* Food Menu */}
             <CollapsibleSection title="Food Menu">
               <div>
-                <Label className="text-xs text-muted-foreground">Calendar Entity</Label>
-                <EntityAutocomplete
-                  value={foodMenuConfig.calendarEntity}
-                  onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, calendarEntity: val }))}
-                  config={config}
-                  domainFilter="calendar"
-                  placeholder="calendar.food_menu"
-                  className="mt-1 bg-muted border-border text-sm"
-                />
+                <Label className="text-xs text-muted-foreground">Source</Label>
+                <select
+                  value={foodMenuConfig.source || "calendar"}
+                  onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, source: e.target.value as "calendar" | "skolmaten" }))}
+                  className="mt-1 w-full rounded-md bg-muted border border-border px-3 py-2 text-sm text-foreground"
+                >
+                  <option value="calendar">Calendar Entity</option>
+                  <option value="skolmaten">Skolmaten Sensor</option>
+                </select>
               </div>
+              {(foodMenuConfig.source || "calendar") === "calendar" ? (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Calendar Entity</Label>
+                  <EntityAutocomplete
+                    value={foodMenuConfig.calendarEntity}
+                    onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, calendarEntity: val }))}
+                    config={config}
+                    domainFilter="calendar"
+                    placeholder="calendar.food_menu"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Skolmaten Sensor Entity</Label>
+                  <EntityAutocomplete
+                    value={foodMenuConfig.skolmatenEntity || ""}
+                    onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, skolmatenEntity: val }))}
+                    config={config}
+                    domainFilter="sensor"
+                    placeholder="sensor.schoolname"
+                    className="mt-1 bg-muted border-border text-sm"
+                  />
+                </div>
+              )}
               <div>
                 <Label className="text-xs text-muted-foreground">Days to Show</Label>
                 <Input
