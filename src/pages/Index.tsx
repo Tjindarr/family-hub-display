@@ -176,7 +176,7 @@ const Index = () => {
       if (!person) return null;
       return <PersonWidget person={person} loading={personLoading} fontSizes={fs} personFontSizes={config.personCardFontSizes} />;
     }
-    if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} fontSizes={fs} />;
+    if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} fontSizes={fs} displayMode={config.foodMenuConfig?.displayMode} style={config.foodMenuConfig?.style} />;
     if (id.startsWith("general_")) {
       const sensorId = id.replace("general_", "");
       const sensorConfig = (config.generalSensors || []).find((s) => s.id === sensorId);
