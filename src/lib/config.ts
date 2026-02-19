@@ -51,6 +51,18 @@ export interface WeatherConfig {
 }
 
 export type FoodMenuSource = "calendar" | "skolmaten";
+export type FoodMenuDisplayMode = "compact" | "menu";
+
+export interface FoodMenuStyleConfig {
+  dayColor: string;       // color for day label (e.g. "Today")
+  dateColor: string;      // color for short date (e.g. "19/2")
+  mealColor: string;      // color for meal text
+  dayFontSize: number;    // px
+  dateFontSize: number;   // px
+  mealFontSize: number;   // px
+  dayFont: string;        // font family for day label
+  mealFont: string;       // font family for meal items
+}
 
 export interface FoodMenuConfig {
   source: FoodMenuSource; // data source: calendar entity or skolmaten sensor
@@ -58,6 +70,8 @@ export interface FoodMenuConfig {
   skolmatenEntity: string; // sensor entity for skolmaten integration
   days: number; // number of days to show (default 5)
   skipWeekends: boolean; // skip Saturday and Sunday when counting days forward
+  displayMode: FoodMenuDisplayMode; // compact (side-by-side) or menu (restaurant style)
+  style: FoodMenuStyleConfig; // styling options
 }
 
 export interface RssNewsConfig {
@@ -289,6 +303,17 @@ const DEFAULT_CONFIG: DashboardConfig = {
     skolmatenEntity: "",
     days: 5,
     skipWeekends: false,
+    displayMode: "compact",
+    style: {
+      dayColor: "",
+      dateColor: "",
+      mealColor: "",
+      dayFontSize: 0,
+      dateFontSize: 0,
+      mealFontSize: 0,
+      dayFont: "",
+      mealFont: "",
+    },
   },
   generalSensors: [],
   sensorGrids: [],
