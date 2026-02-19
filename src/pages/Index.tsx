@@ -99,7 +99,7 @@ const Index = () => {
   const [isBlackout, setIsBlackout] = useState(false);
   useEffect(() => {
     const blackout = config.blackout;
-    if (!blackout?.enabled) { setIsBlackout(false); return; }
+    if (!blackout?.enabled || !isKiosk) { setIsBlackout(false); return; }
     const check = () => {
       const now = new Date();
       const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -114,7 +114,7 @@ const Index = () => {
     check();
     const interval = setInterval(check, 30_000);
     return () => clearInterval(interval);
-  }, [config.blackout]);
+  }, [config.blackout, isKiosk]);
 
   const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);

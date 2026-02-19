@@ -469,7 +469,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   checked={blackout.enabled}
                   onCheckedChange={(checked) => setBlackout({ ...blackout, enabled: checked })}
                 />
-                <Label className="text-sm text-foreground">Enable scheduled blackout</Label>
+                <Label className="text-sm text-foreground">Enable scheduled blackout (kiosk mode only)</Label>
               </div>
               {blackout.enabled && (
                 <div className="grid grid-cols-2 gap-3">
