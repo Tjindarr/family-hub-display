@@ -64,7 +64,7 @@ export default function FoodMenuWidget({ days, loading, fontSizes, displayMode, 
               key={i}
               className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2 transition-colors hover:bg-muted/60"
             >
-              <div className="text-center mb-1.5 border-b border-border/30 pb-1.5">
+              <div className="flex items-center justify-center gap-2 mb-1.5 border-b border-border/30 pb-1.5">
                 <span
                   className="font-semibold uppercase tracking-wider text-primary/80"
                   style={{ fontSize: daySize, color: dayColor, fontFamily: dayFont }}
@@ -72,7 +72,7 @@ export default function FoodMenuWidget({ days, loading, fontSizes, displayMode, 
                   {getDayLabel(day.date)}
                 </span>
                 <span
-                  className="block text-muted-foreground"
+                  className="text-muted-foreground"
                   style={{ fontSize: dateSize, color: dateColor }}
                 >
                   {getShortDate(day.date)}
