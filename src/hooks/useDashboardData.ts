@@ -516,6 +516,54 @@ export function useFoodMenuData(config: DashboardConfig) {
       return;
     }
 
+    const source = fc?.source || "calendar";
+
+    if (source === "skolmaten") {
+      // Skolmaten integration: read meals from sensor attributes
+      if (!fc?.skolmatenEntity) {
+        setDays([]);
+        setLoading(false);
+        return;
+      }
+      try {
+        const client = createHAClient(config);
+        const state = await client.getState(fc.skolmatenEntity);
+        const calendar = state?.attributes?.calendar;
+        if (!calendar || typeof calendar !== "object") {
+          setDays([]);
+          setLoading(false);
+          return;
+        }
+        const today = new Date().toISOString().split("T")[0];
+        const skipWk = fc.skipWeekends ?? false;
+        const numDays = fc.days || 5;
+        const result: { date: string; meals: string[] }[] = [];
+        const sortedDates = Object.keys(calendar).sort();
+        for (const dateStr of sortedDates) {
+          if (dateStr < today) continue;
+          if (result.length >= numDays) break;
+          if (skipWk) {
+            const day = new Date(dateStr).getDay();
+            if (day === 0 || day === 6) continue;
+          }
+          const entries = calendar[dateStr];
+          const meals = Array.isArray(entries)
+            ? entries.map((e: any) => e.dish || e.summary || "").filter(Boolean)
+            : [];
+          if (meals.length > 0) {
+            result.push({ date: dateStr, meals });
+          }
+        }
+        setDays(result);
+      } catch (err) {
+        console.error("Failed to fetch skolmaten data:", err);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Calendar source
     if (!fc?.calendarEntity) {
       setDays([]);
       setLoading(false);
@@ -527,7 +575,6 @@ export function useFoodMenuData(config: DashboardConfig) {
       const now = new Date();
       const end = new Date(now.getTime() + (fc.days || 5) * 86400000);
       const raw = await client.getCalendarEvents(fc.calendarEntity, now.toISOString(), end.toISOString());
-      // Group all events by date
       const byDate = new Map<string, string[]>();
       for (const ev of raw) {
         const dt = ev.start.date || (ev.start.dateTime ? ev.start.dateTime.split("T")[0] : "");

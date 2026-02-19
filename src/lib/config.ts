@@ -50,8 +50,12 @@ export interface WeatherConfig {
   showSunset: boolean;
 }
 
+export type FoodMenuSource = "calendar" | "skolmaten";
+
 export interface FoodMenuConfig {
+  source: FoodMenuSource; // data source: calendar entity or skolmaten sensor
   calendarEntity: string; // calendar entity for food menu
+  skolmatenEntity: string; // sensor entity for skolmaten integration
   days: number; // number of days to show (default 5)
   skipWeekends: boolean; // skip Saturday and Sunday when counting days forward
 }
@@ -280,7 +284,9 @@ const DEFAULT_CONFIG: DashboardConfig = {
   },
   theme: "midnight-teal",
   foodMenuConfig: {
+    source: "calendar",
     calendarEntity: "",
+    skolmatenEntity: "",
     days: 5,
     skipWeekends: false,
   },
