@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import CalendarWidget from "@/components/CalendarWidget";
@@ -94,6 +94,27 @@ const Index = () => {
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
+
+  // Blackout schedule
+  const [isBlackout, setIsBlackout] = useState(false);
+  useEffect(() => {
+    const blackout = config.blackout;
+    if (!blackout?.enabled) { setIsBlackout(false); return; }
+    const check = () => {
+      const now = new Date();
+      const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const { from, to } = blackout;
+      if (from <= to) {
+        setIsBlackout(hhmm >= from && hhmm < to);
+      } else {
+        // wraps midnight, e.g. 23:00 -> 06:00
+        setIsBlackout(hhmm >= from || hhmm < to);
+      }
+    };
+    check();
+    const interval = setInterval(check, 30_000);
+    return () => clearInterval(interval);
+  }, [config.blackout]);
 
   const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
@@ -230,6 +251,10 @@ const Index = () => {
       return { rowNum, widgets: finalWidgets, cols: rowCols, heightPx: rowHeights[rowNum] };
     });
   }, [allWidgetIds, gridColumns, rowColumns, rowHeights, isMobile, config.widgetLayouts]);
+
+  if (isBlackout) {
+    return <div className="fixed inset-0 bg-black z-[9999]" onClick={() => setIsBlackout(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-background" style={{ padding: "5px" }}>

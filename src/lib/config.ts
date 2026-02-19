@@ -156,6 +156,11 @@ export interface DashboardConfig {
   electricityPriceEntity: string;
   electricityForecastEntity: string;
   electricitySurcharge: number; // kr/kWh surcharge added to all prices
+  blackout: {
+    enabled: boolean;
+    from: string; // "HH:mm"
+    to: string;   // "HH:mm"
+  };
   widgetLayouts: Record<string, WidgetLayout>;
   widgetOrder: string[]; // ordered widget IDs
   gridColumns: number; // number of grid columns (1-6)
@@ -257,6 +262,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   electricityPriceEntity: "sensor.nordpool_kwh_se3_sek_3_10_025",
   electricityForecastEntity: "",
   electricitySurcharge: 0,
+  blackout: { enabled: false, from: "23:00", to: "06:00" },
   widgetLayouts: {},
   widgetOrder: [],
   rowColumns: {},

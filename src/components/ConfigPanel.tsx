@@ -234,6 +234,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
+  const [blackout, setBlackout] = useState(config.blackout || { enabled: false, from: "23:00", to: "06:00" });
   const [foodMenuConfig, setFoodMenuConfig] = useState<FoodMenuConfig>(config.foodMenuConfig || { calendarEntity: "", days: 5, skipWeekends: false });
   const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
   const [sensorGrids, setSensorGrids] = useState<SensorGridConfig[]>(config.sensorGrids || []);
@@ -328,6 +329,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       calendarDisplay,
       electricityPriceEntity: electricityEntity,
       electricitySurcharge,
+      blackout,
       widgetLayouts,
       widgetOrder: finalOrder,
       gridColumns,
@@ -458,6 +460,39 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </button>
                 ))}
               </div>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Screen Blackout</h3>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={blackout.enabled}
+                  onCheckedChange={(checked) => setBlackout({ ...blackout, enabled: checked })}
+                />
+                <Label className="text-sm text-foreground">Enable scheduled blackout</Label>
+              </div>
+              {blackout.enabled && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">From</Label>
+                    <Input
+                      type="time"
+                      value={blackout.from}
+                      onChange={(e) => setBlackout({ ...blackout, from: e.target.value })}
+                      className="mt-1 bg-muted border-border text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">To</Label>
+                    <Input
+                      type="time"
+                      value={blackout.to}
+                      onChange={(e) => setBlackout({ ...blackout, to: e.target.value })}
+                      className="mt-1 bg-muted border-border text-sm"
+                    />
+                  </div>
+                </div>
+              )}
             </section>
 
             <section className="space-y-3">
