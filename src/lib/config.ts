@@ -178,6 +178,14 @@ export interface SensorGridValueMap {
   to: string;   // displayed value
 }
 
+export interface SensorGridVisibilityFilter {
+  enabled: boolean;
+  mode: "range" | "exact"; // numeric range or exact string match
+  rangeMin?: number;
+  rangeMax?: number;
+  exactValues?: string[]; // show when state matches any of these
+}
+
 export interface SensorGridCellConfig {
   entityId: string;
   label: string;
@@ -191,6 +199,7 @@ export interface SensorGridCellConfig {
   useIntervals?: boolean; // enable conditional icon/color based on value
   intervals?: SensorGridCellInterval[]; // exactly 4 intervals
   valueMaps?: SensorGridValueMap[]; // value rewrite rules
+  visibilityFilter?: SensorGridVisibilityFilter; // conditionally hide cell
 }
 
 export interface SensorGridConfig {

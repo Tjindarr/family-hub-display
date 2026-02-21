@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -1641,6 +1641,104 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                               }} className="w-28" />
                             </div>
                           ))}
+                        </div>
+
+                        {/* Visibility Filter */}
+                        <div className="pl-5 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={cell.visibilityFilter?.enabled || false}
+                              onCheckedChange={(checked) => {
+                                updateCell({
+                                  visibilityFilter: {
+                                    ...(cell.visibilityFilter || { enabled: false, mode: "exact", exactValues: [] }),
+                                    enabled: !!checked,
+                                  },
+                                });
+                              }}
+                              className="h-3 w-3"
+                            />
+                            <span className="text-[12px] text-muted-foreground">Only show when state matches</span>
+                          </div>
+                          {cell.visibilityFilter?.enabled && (
+                            <div className="space-y-1.5 pl-1">
+                              <div className="flex gap-2 items-center">
+                                <Label className="text-[11px] text-muted-foreground w-10">Mode</Label>
+                                <Select
+                                  value={cell.visibilityFilter.mode || "exact"}
+                                  onValueChange={(v) => updateCell({
+                                    visibilityFilter: { ...cell.visibilityFilter!, mode: v as "range" | "exact" },
+                                  })}
+                                >
+                                  <SelectTrigger className="w-32 bg-muted border-border text-xs h-7"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="exact">Exact values</SelectItem>
+                                    <SelectItem value="range">Number range</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              {cell.visibilityFilter.mode === "range" ? (
+                                <div className="flex gap-2 items-center">
+                                  <Label className="text-[11px] text-muted-foreground w-10">Min</Label>
+                                  <Input
+                                    type="number"
+                                    value={cell.visibilityFilter.rangeMin ?? ""}
+                                    onChange={(e) => updateCell({
+                                      visibilityFilter: { ...cell.visibilityFilter!, rangeMin: e.target.value === "" ? undefined : Number(e.target.value) },
+                                    })}
+                                    placeholder="−∞"
+                                    className="w-20 bg-muted border-border text-xs h-7"
+                                  />
+                                  <Label className="text-[11px] text-muted-foreground w-10">Max</Label>
+                                  <Input
+                                    type="number"
+                                    value={cell.visibilityFilter.rangeMax ?? ""}
+                                    onChange={(e) => updateCell({
+                                      visibilityFilter: { ...cell.visibilityFilter!, rangeMax: e.target.value === "" ? undefined : Number(e.target.value) },
+                                    })}
+                                    placeholder="∞"
+                                    className="w-20 bg-muted border-border text-xs h-7"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <Label className="text-[11px] text-muted-foreground">Show when value is any of:</Label>
+                                    <Button variant="ghost" size="sm" className="h-5 text-[11px] px-1 text-primary" onClick={() => {
+                                      updateCell({
+                                        visibilityFilter: {
+                                          ...cell.visibilityFilter!,
+                                          exactValues: [...(cell.visibilityFilter!.exactValues || []), ""],
+                                        },
+                                      });
+                                    }}>+ Add</Button>
+                                  </div>
+                                  {(cell.visibilityFilter.exactValues || []).map((val, evIdx) => (
+                                    <div key={evIdx} className="flex gap-1 items-center">
+                                      <Input
+                                        value={val}
+                                        onChange={(e) => {
+                                          const vals = [...(cell.visibilityFilter!.exactValues || [])];
+                                          vals[evIdx] = e.target.value;
+                                          updateCell({ visibilityFilter: { ...cell.visibilityFilter!, exactValues: vals } });
+                                        }}
+                                        placeholder="e.g. on, home, open"
+                                        className="w-48 bg-muted border-border text-xs h-7"
+                                      />
+                                      <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => {
+                                        updateCell({
+                                          visibilityFilter: {
+                                            ...cell.visibilityFilter!,
+                                            exactValues: (cell.visibilityFilter!.exactValues || []).filter((_, j) => j !== evIdx),
+                                          },
+                                        });
+                                      }}><Trash2 className="h-2.5 w-2.5" /></Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       );
