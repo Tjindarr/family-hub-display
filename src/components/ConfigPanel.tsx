@@ -117,39 +117,6 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
             ))}
           </SelectContent>
         </Select>
-        <Label className="text-[12px] text-muted-foreground">Row</Label>
-        <Select value={String(row)} onValueChange={(v) => onRowChange(Number(v))}>
-          <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Label className="text-[12px] text-muted-foreground">Cols</Label>
-        <Select value={String(colSpan)} onValueChange={(v) => onColSpanChange(Number(v))}>
-          <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: maxCols }, (_, i) => i + 1).map((n) => (
-              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Label className="text-[12px] text-muted-foreground">Rows</Label>
-        <Select value={String(rowSpan)} onValueChange={(v) => onRowSpanChange(Number(v))}>
-          <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => (
-              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
       {/* Per-widget font sizes */}
       <div className="flex items-center gap-1.5 flex-wrap pl-6">
@@ -1881,38 +1848,6 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 })()}
               </div>
 
-              {/* Per-row height overrides */}
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Height per Row (px)</Label>
-                {(() => {
-                  const usedRows = new Set<number>();
-                  widgetItems.forEach(({ id }) => {
-                    const defaultRow = id === "electricity" || id === "calendar" ? 2 : 1;
-                    usedRows.add(widgetLayouts[id]?.row || defaultRow);
-                  });
-                  const sortedRows = [...usedRows].sort((a, b) => a - b);
-                  return sortedRows.map((row) => (
-                    <div key={row} className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-14">Row {row}</span>
-                      <Input
-                        type="number" min={50} max={1000} step={10} placeholder="auto"
-                        value={rowHeights[row] ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setRowHeights((prev) => {
-                            const next = { ...prev };
-                            if (!val || val === "0") delete next[row];
-                            else next[row] = Number(val);
-                            return next;
-                          });
-                        }}
-                        className="w-28 h-7 bg-muted border-border text-xs"
-                      />
-                      <span className="text-xs text-muted-foreground">px</span>
-                    </div>
-                  ));
-                })()}
-              </div>
             </section>
 
             {/* Widget Order */}
