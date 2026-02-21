@@ -186,7 +186,7 @@ export function useTemperatureData(
     if (!onStateChange || !isConfigured(config)) return;
     const entityIds = collectTempEntityIds(config);
     const unsubscribe = onStateChange((entityId) => {
-      if (entityIds.has(entityId)) {
+      if (entityId === "__bulk_load__" || entityIds.has(entityId)) {
         updateCurrentValues();
       }
     });
@@ -363,7 +363,7 @@ export function useWeatherData(
     watchIds.add("sun.sun");
 
     const unsubscribe = onStateChange((entityId) => {
-      if (watchIds.has(entityId)) updateCurrentFromCache();
+      if (entityId === "__bulk_load__" || watchIds.has(entityId)) updateCurrentFromCache();
     });
     return unsubscribe;
   }, [onStateChange, config, updateCurrentFromCache]);
@@ -450,7 +450,7 @@ export function useElectricityPrices(
   useEffect(() => {
     if (!onStateChange || !isConfigured(config)) return;
     const unsubscribe = onStateChange((entityId) => {
-      if (entityId === config.electricityPriceEntity) updateFromCache();
+      if (entityId === "__bulk_load__" || entityId === config.electricityPriceEntity) updateFromCache();
     });
     return unsubscribe;
   }, [onStateChange, config, updateFromCache]);
@@ -582,7 +582,7 @@ export function usePersonData(
       if (pe.distanceEntity) entityIds.add(pe.distanceEntity);
     }
     const unsubscribe = onStateChange((entityId) => {
-      if (entityIds.has(entityId)) updateFromCache();
+      if (entityId === "__bulk_load__" || entityIds.has(entityId)) updateFromCache();
     });
     return unsubscribe;
   }, [onStateChange, config, updateFromCache]);

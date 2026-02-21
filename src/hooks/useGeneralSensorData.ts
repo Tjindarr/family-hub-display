@@ -238,7 +238,7 @@ export function useGeneralSensorData(
     }
     if (entityIds.size === 0) return;
     const unsubscribe = onStateChange((entityId) => {
-      if (entityIds.has(entityId)) updateInfoFromCache();
+      if (entityId === "__bulk_load__" || entityIds.has(entityId)) updateInfoFromCache();
     });
     return unsubscribe;
   }, [onStateChange, config, updateInfoFromCache]);
