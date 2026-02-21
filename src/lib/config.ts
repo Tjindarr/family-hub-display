@@ -82,6 +82,21 @@ export interface RssNewsConfig {
   maxItems: number; // max items to display (default 15)
 }
 
+export interface NotificationAlertRule {
+  id: string;
+  entityId: string;
+  label: string;
+  condition: "above" | "below" | "equals";
+  threshold: number;
+  icon: string; // lucide icon name
+  color: string; // alert color
+}
+
+export interface NotificationConfig {
+  showHANotifications: boolean; // show HA persistent_notification entities
+  alertRules: NotificationAlertRule[];
+}
+
 export type SensorChartType = "line" | "bar" | "area" | "step" | "scatter";
 export type ChartGrouping = "minute" | "hour" | "day";
 export type ChartAggregation = "average" | "max" | "min" | "sum" | "last" | "delta";
@@ -195,6 +210,7 @@ export interface DashboardConfig {
   generalSensors: GeneralSensorConfig[];
   sensorGrids: SensorGridConfig[];
   rssFeeds: RssNewsConfig[];
+  notificationConfig: NotificationConfig;
   globalFontSizes: GlobalFontSizes;
   widgetFontSizes: Record<string, WidgetFontSizes>;
   personCardFontSizes: PersonCardFontSizes;
@@ -321,6 +337,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   generalSensors: [],
   sensorGrids: [],
   rssFeeds: [],
+  notificationConfig: { showHANotifications: true, alertRules: [] },
   globalFontSizes: { heading: 12, value: 18, body: 14, label: 10 },
   widgetFontSizes: {},
   personCardFontSizes: {},
