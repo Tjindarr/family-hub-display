@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { DashboardConfig, isConfigured as checkConfigured } from "@/lib/config";
+import { DashboardConfig, isConfigured as checkConfigured, type HAState } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { NotificationAlertRule } from "@/lib/config";
 
@@ -13,7 +13,7 @@ export interface NotificationItem {
   timestamp: string;
 }
 
-export function useNotificationData(config: DashboardConfig) {
+export function useNotificationData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,37 +68,55 @@ export function useNotificationData(config: DashboardConfig) {
     }
 
     try {
-      const client = createHAClient(config);
       const items: NotificationItem[] = [];
 
-      // Fetch HA persistent notifications
+      // Fetch HA persistent notifications from cache
       if (nc.showHANotifications) {
         try {
-          const allStates = await client.getStates();
-          const notifStates = allStates.filter((s) =>
-            s.entity_id.startsWith("persistent_notification.")
-          );
-          for (const s of notifStates) {
-            items.push({
-              id: s.entity_id,
-              type: "ha",
-              title: s.attributes?.title || s.attributes?.friendly_name || "Notification",
-              message: s.attributes?.message || s.state,
-              icon: "bell",
-              color: "hsl(174, 72%, 50%)",
-              timestamp: s.last_updated || new Date().toISOString(),
-            });
+          if (statesMap && statesMap.size > 0) {
+            // Use cached states
+            for (const [entityId, s] of statesMap) {
+              if (entityId.startsWith("persistent_notification.")) {
+                items.push({
+                  id: s.entity_id,
+                  type: "ha",
+                  title: s.attributes?.title || s.attributes?.friendly_name || "Notification",
+                  message: s.attributes?.message || s.state,
+                  icon: "bell",
+                  color: "hsl(174, 72%, 50%)",
+                  timestamp: s.last_updated || new Date().toISOString(),
+                });
+              }
+            }
+          } else {
+            // Fallback to individual call
+            const client = createHAClient(config);
+            const allStates = await client.getStates();
+            const notifStates = allStates.filter((s) =>
+              s.entity_id.startsWith("persistent_notification.")
+            );
+            for (const s of notifStates) {
+              items.push({
+                id: s.entity_id,
+                type: "ha",
+                title: s.attributes?.title || s.attributes?.friendly_name || "Notification",
+                message: s.attributes?.message || s.state,
+                icon: "bell",
+                color: "hsl(174, 72%, 50%)",
+                timestamp: s.last_updated || new Date().toISOString(),
+              });
+            }
           }
         } catch {
           /* ignore */
         }
       }
 
-      // Check alert rules
+      // Check alert rules using cache
       if (nc.alertRules?.length) {
         for (const rule of nc.alertRules) {
           try {
-            const state = await client.getState(rule.entityId);
+            const state = statesMap?.get(rule.entityId) || await createHAClient(config).getState(rule.entityId);
             const value = parseFloat(state.state);
             if (isNaN(value)) continue;
 
@@ -130,7 +148,7 @@ export function useNotificationData(config: DashboardConfig) {
     } finally {
       setLoading(false);
     }
-  }, [config]);
+  }, [config, statesMap]);
 
   useEffect(() => {
     fetchData();

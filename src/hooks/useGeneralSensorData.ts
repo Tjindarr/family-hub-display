@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig, ChartGrouping, ChartAggregation } from "@/lib/config";
+import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig, ChartGrouping, ChartAggregation, type HAState } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
 
@@ -94,7 +94,8 @@ async function fetchHistoryChart(
   start: Date,
   now: Date,
   aggregation: ChartAggregation,
-  grouping: ChartGrouping
+  grouping: ChartGrouping,
+  statesMap?: Map<string, HAState>
 ): Promise<Record<string, number | string>[]> {
   const [histories, currentStates] = await Promise.all([
     Promise.all(
@@ -110,7 +111,8 @@ async function fetchHistoryChart(
     Promise.all(
       sc.chartSeries.map(async (cs) => {
         try {
-          return await client.getState(cs.entityId);
+          // Use cached state for current value
+          return statesMap?.get(cs.entityId) || await client.getState(cs.entityId);
         } catch {
           return null;
         }
@@ -165,7 +167,7 @@ async function fetchHistoryChart(
 }
 
 
-export function useGeneralSensorData(config: DashboardConfig) {
+export function useGeneralSensorData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
   const [dataMap, setDataMap] = useState<Record<string, GeneralSensorLiveData>>({});
   const [loading, setLoading] = useState(true);
 
@@ -224,24 +226,48 @@ export function useGeneralSensorData(config: DashboardConfig) {
       const result: Record<string, GeneralSensorLiveData> = {};
 
       for (const sc of sensors) {
-        const topValues = await Promise.all(
-          sc.topInfo.map(async (ti) => {
+        // Use cached states for top/bottom info values
+        const topValues = sc.topInfo.map((ti) => {
+          try {
+            const state = statesMap?.get(ti.entityId);
+            if (state) {
+              return { label: ti.label, value: state.state, unit: ti.unit || state.attributes?.unit_of_measurement || "", color: ti.color };
+            }
+          } catch { /* ignore */ }
+          return { label: ti.label, value: "—", unit: ti.unit, color: ti.color };
+        });
+
+        // For entries not in cache, fetch individually (fallback)
+        const topValuesResolved = await Promise.all(
+          sc.topInfo.map(async (ti, idx) => {
+            if (topValues[idx].value !== "—" || !ti.entityId) return topValues[idx];
             try {
               const state = await client.getState(ti.entityId);
               return { label: ti.label, value: state.state, unit: ti.unit || state.attributes?.unit_of_measurement || "", color: ti.color };
             } catch {
-              return { label: ti.label, value: "—", unit: ti.unit, color: ti.color };
+              return topValues[idx];
             }
           })
         );
 
-        const bottomValues = await Promise.all(
-          sc.bottomInfo.map(async (bi) => {
+        const bottomValues = sc.bottomInfo.map((bi) => {
+          try {
+            const state = statesMap?.get(bi.entityId);
+            if (state) {
+              return { label: bi.label, value: state.state, unit: bi.unit || state.attributes?.unit_of_measurement || "", color: bi.color };
+            }
+          } catch { /* ignore */ }
+          return { label: bi.label, value: "—", unit: bi.unit, color: bi.color };
+        });
+
+        const bottomValuesResolved = await Promise.all(
+          sc.bottomInfo.map(async (bi, idx) => {
+            if (bottomValues[idx].value !== "—" || !bi.entityId) return bottomValues[idx];
             try {
               const state = await client.getState(bi.entityId);
               return { label: bi.label, value: state.state, unit: bi.unit || state.attributes?.unit_of_measurement || "", color: bi.color };
             } catch {
-              return { label: bi.label, value: "—", unit: bi.unit, color: bi.color };
+              return bottomValues[idx];
             }
           })
         );
@@ -268,10 +294,10 @@ export function useGeneralSensorData(config: DashboardConfig) {
             start = new Date(now.getTime() - sc.historyHours * 3600000);
           }
 
-          chartData = await fetchHistoryChart(client, sc, start, now, aggregation, grouping);
+          chartData = await fetchHistoryChart(client, sc, start, now, aggregation, grouping, statesMap);
         }
 
-        result[sc.id] = { topValues, bottomValues, chartData, chartSeriesMeta };
+        result[sc.id] = { topValues: topValuesResolved, bottomValues: bottomValuesResolved, chartData, chartSeriesMeta };
       }
 
       setDataMap(result);
@@ -280,7 +306,7 @@ export function useGeneralSensorData(config: DashboardConfig) {
     } finally {
       setLoading(false);
     }
-  }, [config]);
+  }, [config, statesMap]);
 
   useEffect(() => {
     fetchData();
