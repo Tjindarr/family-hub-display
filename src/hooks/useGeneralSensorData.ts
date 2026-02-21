@@ -2,13 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig, ChartGrouping, ChartAggregation, type HAState } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
-import type { GetCachedState } from "@/hooks/useDashboardData";
+import type { GetCachedState, OnStateChange } from "@/hooks/useDashboardData";
 
 function getBucketKey(iso: string, grouping: ChartGrouping): string {
   const d = new Date(iso);
-  if (grouping === "day") {
-    return d.toLocaleDateString("sv-SE");
-  }
+  if (grouping === "day") return d.toLocaleDateString("sv-SE");
   if (grouping === "minute") {
     const date = d.toLocaleDateString("sv-SE");
     const time = d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -29,9 +27,7 @@ function aggregateByGrouping(
   const buckets = new Map<string, { values: Record<string, number[]>; first: Record<string, number>; last: Record<string, number> }>();
   for (const p of points) {
     const key = getBucketKey(String(p.time), grouping);
-    if (!buckets.has(key)) {
-      buckets.set(key, { values: {}, first: {}, last: {} });
-    }
+    if (!buckets.has(key)) buckets.set(key, { values: {}, first: {}, last: {} });
     const b = buckets.get(key)!;
     for (let i = 0; i < seriesCount; i++) {
       const k = `series_${i}`;
@@ -44,7 +40,6 @@ function aggregateByGrouping(
   }
   const entries = Array.from(buckets.entries());
   const result: Record<string, number | string>[] = [];
-
   for (let eIdx = 0; eIdx < entries.length; eIdx++) {
     const [time, b] = entries[eIdx];
     const point: Record<string, number | string> = { time };
@@ -52,43 +47,24 @@ function aggregateByGrouping(
       const k = `series_${i}`;
       const vals = b.values[k] || [0];
       switch (aggregation) {
-        case "max":
-          point[k] = Math.max(...vals);
-          break;
-        case "min":
-          point[k] = Math.min(...vals);
-          break;
-        case "sum":
-          point[k] = vals.reduce((a, v) => a + v, 0);
-          break;
-        case "last":
-          point[k] = b.last[k] ?? 0;
-          break;
+        case "max": point[k] = Math.max(...vals); break;
+        case "min": point[k] = Math.min(...vals); break;
+        case "sum": point[k] = vals.reduce((a, v) => a + v, 0); break;
+        case "last": point[k] = b.last[k] ?? 0; break;
         case "delta": {
           const currentLast = b.last[k] ?? 0;
-          if (eIdx > 0) {
-            const prevBucket = entries[eIdx - 1][1];
-            const prevLast = prevBucket.last[k] ?? 0;
-            point[k] = currentLast - prevLast;
-          } else {
-            point[k] = currentLast - (b.first[k] ?? 0);
-          }
+          point[k] = eIdx > 0 ? currentLast - (entries[eIdx - 1][1].last[k] ?? 0) : currentLast - (b.first[k] ?? 0);
           break;
         }
-        case "average":
-        default:
-          point[k] = vals.reduce((a, v) => a + v, 0) / vals.length;
-          break;
+        case "average": default:
+          point[k] = vals.reduce((a, v) => a + v, 0) / vals.length; break;
       }
     }
     result.push(point);
   }
-
-
   return result;
 }
 
-/** Fetch chart data using the regular history API */
 async function fetchHistoryChart(
   client: ReturnType<typeof createHAClient>,
   sc: GeneralSensorConfig,
@@ -99,52 +75,36 @@ async function fetchHistoryChart(
   getCachedState?: GetCachedState
 ): Promise<Record<string, number | string>[]> {
   const [histories, currentStates] = await Promise.all([
-    Promise.all(
-      sc.chartSeries.map(async (cs) => {
-        try {
-          const raw = await client.getHistory(cs.entityId, start.toISOString(), now.toISOString());
-          return raw?.[0] || [];
-        } catch {
-          return [];
-        }
-      })
-    ),
-    Promise.all(
-      sc.chartSeries.map(async (cs) => {
-        try {
-          // Use cached state for current value
-          return getCachedState?.(cs.entityId) || await client.getState(cs.entityId);
-        } catch {
-          return null;
-        }
-      })
-    ),
+    Promise.all(sc.chartSeries.map(async (cs) => {
+      try {
+        const raw = await client.getHistory(cs.entityId, start.toISOString(), now.toISOString());
+        return raw?.[0] || [];
+      } catch { return []; }
+    })),
+    Promise.all(sc.chartSeries.map(async (cs) => {
+      try {
+        return getCachedState?.(cs.entityId) || await client.getState(cs.entityId);
+      } catch { return null; }
+    })),
   ]);
 
   const timeMap = new Map<string, Record<string, number | string>>();
   for (let seriesIdx = 0; seriesIdx < histories.length; seriesIdx++) {
-    const h = histories[seriesIdx];
-    for (const entry of h) {
+    for (const entry of histories[seriesIdx]) {
       const ts = entry.last_updated || entry.last_changed;
       if (!ts) continue;
       const val = parseFloat(entry.state);
       if (isNaN(val)) continue;
-      const key = `series_${seriesIdx}`;
-      if (!timeMap.has(ts)) {
-        timeMap.set(ts, { time: ts });
-      }
-      timeMap.get(ts)![key] = val;
+      if (!timeMap.has(ts)) timeMap.set(ts, { time: ts });
+      timeMap.get(ts)![`series_${seriesIdx}`] = val;
     }
     const curState = currentStates[seriesIdx];
     if (curState) {
       const curVal = parseFloat(curState.state);
       if (!isNaN(curVal)) {
         const curTs = now.toISOString();
-        const key = `series_${seriesIdx}`;
-        if (!timeMap.has(curTs)) {
-          timeMap.set(curTs, { time: curTs });
-        }
-        timeMap.get(curTs)![key] = curVal;
+        if (!timeMap.has(curTs)) timeMap.set(curTs, { time: curTs });
+        timeMap.get(curTs)![`series_${seriesIdx}`] = curVal;
       }
     }
   }
@@ -156,65 +116,107 @@ async function fetchHistoryChart(
   for (const point of sorted) {
     for (let i = 0; i < histories.length; i++) {
       const k = `series_${i}`;
-      if (typeof point[k] === "number") {
-        lastKnown[k] = point[k] as number;
-      } else {
-        point[k] = lastKnown[k] ?? 0;
-      }
+      if (typeof point[k] === "number") lastKnown[k] = point[k] as number;
+      else point[k] = lastKnown[k] ?? 0;
     }
   }
-
   return aggregateByGrouping(sorted, grouping, histories.length, aggregation);
 }
 
-
-export function useGeneralSensorData(config: DashboardConfig, getCachedState?: GetCachedState) {
+export function useGeneralSensorData(
+  config: DashboardConfig,
+  getCachedState?: GetCachedState,
+  onStateChange?: OnStateChange
+) {
   const [dataMap, setDataMap] = useState<Record<string, GeneralSensorLiveData>>({});
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
+  // Update top/bottom info values from cache (no API calls)
+  const updateInfoFromCache = useCallback(() => {
     const sensors = config.generalSensors || [];
-    if (sensors.length === 0) {
-      setDataMap({});
-      setLoading(false);
-      return;
+    if (sensors.length === 0 || !checkConfigured(config) || !getCachedState) return;
+
+    setDataMap((prev) => {
+      const result: Record<string, GeneralSensorLiveData> = {};
+      for (const sc of sensors) {
+        const topValues = sc.topInfo.map((ti) => {
+          const state = getCachedState(ti.entityId);
+          if (state) return { label: ti.label, value: state.state, unit: ti.unit || state.attributes?.unit_of_measurement || "", color: ti.color };
+          return { label: ti.label, value: prev[sc.id]?.topValues?.find((v) => v.label === ti.label)?.value || "—", unit: ti.unit, color: ti.color };
+        });
+        const bottomValues = sc.bottomInfo.map((bi) => {
+          const state = getCachedState(bi.entityId);
+          if (state) return { label: bi.label, value: state.state, unit: bi.unit || state.attributes?.unit_of_measurement || "", color: bi.color };
+          return { label: bi.label, value: prev[sc.id]?.bottomValues?.find((v) => v.label === bi.label)?.value || "—", unit: bi.unit, color: bi.color };
+        });
+        const chartSeriesMeta = sc.chartSeries.map((cs, idx) => ({
+          dataKey: `series_${idx}`, label: cs.label, color: cs.color, chartType: cs.chartType,
+        }));
+        result[sc.id] = {
+          topValues,
+          bottomValues,
+          chartData: prev[sc.id]?.chartData || [],
+          chartSeriesMeta,
+        };
+      }
+      return result;
+    });
+    setLoading(false);
+  }, [config, getCachedState]);
+
+  // Fetch chart history data via REST
+  const fetchChartData = useCallback(async () => {
+    const sensors = config.generalSensors || [];
+    if (sensors.length === 0 || !checkConfigured(config)) return;
+
+    const client = createHAClient(config);
+    const chartUpdates: Record<string, Record<string, number | string>[]> = {};
+
+    for (const sc of sensors) {
+      if (!sc.showGraph || sc.chartSeries.length === 0) continue;
+      const now = new Date();
+      const grouping = sc.chartGrouping || "hour";
+      const aggregation = sc.chartAggregation || "average";
+      let start: Date;
+      if (grouping === "day") {
+        const totalDays = Math.max(Math.ceil(sc.historyHours / 24), 7);
+        const todayMidnight = new Date(now); todayMidnight.setHours(0, 0, 0, 0);
+        start = new Date(todayMidnight.getTime() - (totalDays - 1) * 24 * 3600000);
+      } else {
+        start = new Date(now.getTime() - sc.historyHours * 3600000);
+      }
+      chartUpdates[sc.id] = await fetchHistoryChart(client, sc, start, now, aggregation, grouping, getCachedState);
     }
 
-    const isDemo = !checkConfigured(config);
+    setDataMap((prev) => {
+      const result = { ...prev };
+      for (const [id, chartData] of Object.entries(chartUpdates)) {
+        if (result[id]) {
+          result[id] = { ...result[id], chartData };
+        }
+      }
+      return result;
+    });
+  }, [config, getCachedState]);
 
-    if (isDemo) {
+  const fetchData = useCallback(async () => {
+    const sensors = config.generalSensors || [];
+    if (sensors.length === 0) { setDataMap({}); setLoading(false); return; }
+
+    if (!checkConfigured(config)) {
       const mock: Record<string, GeneralSensorLiveData> = {};
       for (const sc of sensors) {
-        const topValues = sc.topInfo.map((ti) => ({
-          label: ti.label,
-          value: (Math.random() * 100).toFixed(1),
-          unit: ti.unit,
-          color: ti.color,
-        }));
-        const bottomValues = sc.bottomInfo.map((bi) => ({
-          label: bi.label,
-          value: (Math.random() * 50).toFixed(1),
-          unit: bi.unit,
-          color: bi.color,
-        }));
+        const topValues = sc.topInfo.map((ti) => ({ label: ti.label, value: (Math.random() * 100).toFixed(1), unit: ti.unit, color: ti.color }));
+        const bottomValues = sc.bottomInfo.map((bi) => ({ label: bi.label, value: (Math.random() * 50).toFixed(1), unit: bi.unit, color: bi.color }));
         const chartData: Record<string, number | string>[] = [];
         if (sc.showGraph && sc.chartSeries.length > 0) {
           for (let i = 0; i < 24; i++) {
-            const point: Record<string, number | string> = {
-              time: new Date(Date.now() - (23 - i) * 3600000).toISOString(),
-            };
-            sc.chartSeries.forEach((cs, idx) => {
-              point[`series_${idx}`] = 20 + Math.sin(i / 3 + idx) * 10 + Math.random() * 5;
-            });
+            const point: Record<string, number | string> = { time: new Date(Date.now() - (23 - i) * 3600000).toISOString() };
+            sc.chartSeries.forEach((cs, idx) => { point[`series_${idx}`] = 20 + Math.sin(i / 3 + idx) * 10 + Math.random() * 5; });
             chartData.push(point);
           }
         }
-        const chartSeriesMeta = sc.chartSeries.map((cs, idx) => ({
-          dataKey: `series_${idx}`,
-          label: cs.label,
-          color: cs.color,
-          chartType: cs.chartType,
-        }));
+        const chartSeriesMeta = sc.chartSeries.map((cs, idx) => ({ dataKey: `series_${idx}`, label: cs.label, color: cs.color, chartType: cs.chartType }));
         mock[sc.id] = { topValues, bottomValues, chartData, chartSeriesMeta };
       }
       setDataMap(mock);
@@ -222,98 +224,35 @@ export function useGeneralSensorData(config: DashboardConfig, getCachedState?: G
       return;
     }
 
-    try {
-      const client = createHAClient(config);
-      const result: Record<string, GeneralSensorLiveData> = {};
+    updateInfoFromCache();
+    await fetchChartData();
+  }, [config, updateInfoFromCache, fetchChartData]);
 
-      for (const sc of sensors) {
-        // Use cached states for top/bottom info values
-        const topValues = sc.topInfo.map((ti) => {
-          try {
-            const state = getCachedState?.(ti.entityId);
-            if (state) {
-              return { label: ti.label, value: state.state, unit: ti.unit || state.attributes?.unit_of_measurement || "", color: ti.color };
-            }
-          } catch { /* ignore */ }
-          return { label: ti.label, value: "—", unit: ti.unit, color: ti.color };
-        });
-
-        // For entries not in cache, fetch individually (fallback)
-        const topValuesResolved = await Promise.all(
-          sc.topInfo.map(async (ti, idx) => {
-            if (topValues[idx].value !== "—" || !ti.entityId) return topValues[idx];
-            try {
-              const state = await client.getState(ti.entityId);
-              return { label: ti.label, value: state.state, unit: ti.unit || state.attributes?.unit_of_measurement || "", color: ti.color };
-            } catch {
-              return topValues[idx];
-            }
-          })
-        );
-
-        const bottomValues = sc.bottomInfo.map((bi) => {
-          try {
-            const state = getCachedState?.(bi.entityId);
-            if (state) {
-              return { label: bi.label, value: state.state, unit: bi.unit || state.attributes?.unit_of_measurement || "", color: bi.color };
-            }
-          } catch { /* ignore */ }
-          return { label: bi.label, value: "—", unit: bi.unit, color: bi.color };
-        });
-
-        const bottomValuesResolved = await Promise.all(
-          sc.bottomInfo.map(async (bi, idx) => {
-            if (bottomValues[idx].value !== "—" || !bi.entityId) return bottomValues[idx];
-            try {
-              const state = await client.getState(bi.entityId);
-              return { label: bi.label, value: state.state, unit: bi.unit || state.attributes?.unit_of_measurement || "", color: bi.color };
-            } catch {
-              return bottomValues[idx];
-            }
-          })
-        );
-
-        let chartData: Record<string, number | string>[] = [];
-        const chartSeriesMeta = sc.chartSeries.map((cs, idx) => ({
-          dataKey: `series_${idx}`,
-          label: cs.label,
-          color: cs.color,
-          chartType: cs.chartType,
-        }));
-
-        if (sc.showGraph && sc.chartSeries.length > 0) {
-          const now = new Date();
-          const grouping = sc.chartGrouping || "hour";
-          const aggregation = sc.chartAggregation || "average";
-          let start: Date;
-          if (grouping === "day") {
-            const totalDays = Math.max(Math.ceil(sc.historyHours / 24), 7);
-            const todayMidnight = new Date(now);
-            todayMidnight.setHours(0, 0, 0, 0);
-            start = new Date(todayMidnight.getTime() - (totalDays - 1) * 24 * 3600000);
-          } else {
-            start = new Date(now.getTime() - sc.historyHours * 3600000);
-          }
-
-          chartData = await fetchHistoryChart(client, sc, start, now, aggregation, grouping, getCachedState);
-        }
-
-        result[sc.id] = { topValues: topValuesResolved, bottomValues: bottomValuesResolved, chartData, chartSeriesMeta };
-      }
-
-      setDataMap(result);
-    } catch (err) {
-      console.error("Failed to fetch general sensor data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [config]);
-
+  // WS listener for info values
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, config.refreshInterval * 1000);
+    if (!onStateChange || !checkConfigured(config)) return;
+    const entityIds = new Set<string>();
+    for (const sc of (config.generalSensors || [])) {
+      for (const ti of sc.topInfo) entityIds.add(ti.entityId);
+      for (const bi of sc.bottomInfo) entityIds.add(bi.entityId);
+    }
+    if (entityIds.size === 0) return;
+    const unsubscribe = onStateChange((entityId) => {
+      if (entityIds.has(entityId)) updateInfoFromCache();
+    });
+    return unsubscribe;
+  }, [onStateChange, config, updateInfoFromCache]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Chart data refresh every 5 min
+  useEffect(() => {
+    if (!checkConfigured(config)) return;
+    const hasCharts = (config.generalSensors || []).some((s) => s.showGraph && s.chartSeries.length > 0);
+    if (!hasCharts) return;
+    const interval = setInterval(fetchChartData, 300000);
     return () => clearInterval(interval);
-  }, [fetchData, config.refreshInterval]);
+  }, [fetchChartData, config]);
 
   return { dataMap, loading };
 }
