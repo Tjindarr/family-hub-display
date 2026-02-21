@@ -185,7 +185,10 @@ export interface DashboardConfig {
   widgetOrder: string[]; // ordered widget IDs
   gridColumns: number; // number of grid columns (1-6)
   rowColumns: Record<number, number>; // per-row column overrides (row number -> columns)
-  rowHeights: Record<number, number>; // per-row height in px (row number -> px)
+  rowHeights: Record<number, number>; // per-row height in px (row number -> px) — legacy, kept for migration
+  screenLock: boolean; // lock dashboard to viewport (no scrolling)
+  rowWeights: Record<number, number>; // per-row fr weight (row number -> fr value, default 1)
+  rowColumnRatios: Record<number, string>; // per-row column ratio string e.g. "1fr 2fr 1fr"
   configBackendUrl: string; // URL to a simple REST API for persisting config
   photoWidget: PhotoWidgetConfig;
   personEntities: PersonEntityConfig[];
@@ -288,6 +291,9 @@ const DEFAULT_CONFIG: DashboardConfig = {
   widgetOrder: [],
   rowColumns: {},
   rowHeights: {},
+  screenLock: false,
+  rowWeights: {},
+  rowColumnRatios: {},
   gridColumns: 4,
   configBackendUrl: "",
   photoWidget: { photos: [], intervalSeconds: 10, displayMode: "contain" },
