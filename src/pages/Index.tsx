@@ -88,7 +88,7 @@ const Index = () => {
   }), [config, effectiveSensorGrids]);
 
   // WebSocket connection for real-time state updates
-  const { getState: getCachedState, getAllStates, onStateChange, isConnected } = useHAWebSocket(config);
+  const { getState: getCachedState, getAllStates, onStateChange, isConnected, wsState } = useHAWebSocket(config);
 
   const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config, getCachedState, onStateChange);
   const { events, loading: calLoading } = useCalendarData(config);
@@ -306,7 +306,7 @@ const Index = () => {
               Home Dashboard
             </h1>
             <div className="flex items-center gap-3">
-              <ConnectionStatus isConfigured={isConfigured} />
+              <ConnectionStatus isConfigured={isConfigured} wsState={wsState} />
               <span className="text-xs text-muted-foreground">v1.0.0</span>
             </div>
           </div>
