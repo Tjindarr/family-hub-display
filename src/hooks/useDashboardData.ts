@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DashboardConfig, loadConfig, saveConfig, saveRemoteConfig, loadRemoteConfig, isConfigured, type HAState } from "@/lib/config";
 import type { CalendarEntityConfig } from "@/lib/config";
 import {
@@ -16,7 +16,6 @@ export function useDashboardConfig() {
   const [config, setConfig] = useState<DashboardConfig>(loadConfig);
   const [remoteLoaded, setRemoteLoaded] = useState(false);
 
-  // On mount, load remote config (built-in API or external backend)
   useEffect(() => {
     if (!remoteLoaded) {
       loadRemoteConfig().then((remote) => {
@@ -68,14 +67,93 @@ export interface NordpoolData {
 }
 
 export type GetCachedState = (entityId: string) => HAState | undefined;
+export type GetAllStates = () => HAState[];
+export type OnStateChange = (callback: (entityId: string, state: HAState) => void) => () => void;
 
-export function useTemperatureData(config: DashboardConfig, getCachedState?: GetCachedState) {
+/** Collect all entity IDs a hook cares about so we can filter WS events */
+function collectTempEntityIds(config: DashboardConfig): Set<string> {
+  const ids = new Set<string>();
+  for (const e of config.temperatureEntities) {
+    ids.add(e.entityId);
+    if (e.humidityEntityId) ids.add(e.humidityEntityId);
+  }
+  return ids;
+}
+
+// ── Temperature ─────────────────────────────────────────────────
+
+export function useTemperatureData(
+  config: DashboardConfig,
+  getCachedState?: GetCachedState,
+  onStateChange?: OnStateChange
+) {
   const [sensors, setSensors] = useState<TemperatureSensorData[]>([]);
   const [loading, setLoading] = useState(true);
+  const historyRef = useRef<Record<string, { time: string; value: number }[]>>({});
 
+  // Build current sensor values from cache (no API calls)
+  const updateCurrentValues = useCallback(() => {
+    if (!isConfigured(config) || !getCachedState) return;
+
+    setSensors((prev) => {
+      return config.temperatureEntities.map((entity, i) => {
+        const tempState = getCachedState(entity.entityId);
+        let humidity: number | null = null;
+        if (entity.humidityEntityId) {
+          const humState = getCachedState(entity.humidityEntityId);
+          if (humState) humidity = parseFloat(humState.state) || null;
+        }
+        return {
+          label: entity.label,
+          color: entity.color,
+          temperature: tempState ? (isNaN(parseFloat(tempState.state)) ? null : parseFloat(tempState.state)) : (prev[i]?.temperature ?? null),
+          humidity: humidity ?? prev[i]?.humidity ?? null,
+          entityId: entity.entityId,
+          showChart: entity.showChart,
+          chartType: entity.chartType,
+          roundTemperature: entity.roundTemperature,
+          history: historyRef.current[entity.entityId] || prev[i]?.history,
+        };
+      });
+    });
+    setLoading(false);
+  }, [config, getCachedState]);
+
+  // Fetch history data via REST (runs on longer interval)
+  const fetchHistory = useCallback(async () => {
+    if (!isConfigured(config)) return;
+
+    const client = createHAClient(config);
+    const now = new Date();
+    const historyStart = new Date(now.getTime() - 24 * 3600000);
+
+    for (const entity of config.temperatureEntities) {
+      if (!entity.showChart) continue;
+      try {
+        const raw = await client.getHistory(entity.entityId, historyStart.toISOString(), now.toISOString());
+        if (raw?.[0]) {
+          const numericPoints = raw[0].filter((s: any) => {
+            const v = parseFloat(s.state);
+            return !isNaN(v) && isFinite(v);
+          });
+          const step = Math.max(1, Math.floor(numericPoints.length / 60));
+          historyRef.current[entity.entityId] = numericPoints
+            .filter((_: any, i: number) => i % step === 0)
+            .map((s: any) => ({
+              time: s.last_updated,
+              value: parseFloat(s.state),
+            }));
+        }
+      } catch { /* ignore */ }
+    }
+
+    // Trigger re-render with updated history
+    updateCurrentValues();
+  }, [config, updateCurrentValues]);
+
+  // Full initial fetch (mock or real)
   const fetchData = useCallback(async () => {
     if (!isConfigured(config)) {
-      // Mock data
       setSensors(
         config.temperatureEntities.map((e) => ({
           label: e.label,
@@ -98,78 +176,47 @@ export function useTemperatureData(config: DashboardConfig, getCachedState?: Get
       return;
     }
 
-    try {
-      const client = createHAClient(config);
-      const now = new Date();
-      const historyStart = new Date(now.getTime() - 24 * 3600000);
-      const results = await Promise.all(
-        config.temperatureEntities.map(async (entity) => {
-          // Use cached state if available, fallback to individual call
-          const tempState = getCachedState?.(entity.entityId) || await client.getState(entity.entityId);
-          let humidity: number | null = null;
-          if (entity.humidityEntityId) {
-            try {
-              const humState = getCachedState?.(entity.humidityEntityId) || await client.getState(entity.humidityEntityId);
-              humidity = parseFloat(humState.state) || null;
-            } catch { /* ignore */ }
-          }
-          let history: { time: string; value: number }[] | undefined;
-          if (entity.showChart) {
-            try {
-              const raw = await client.getHistory(entity.entityId, historyStart.toISOString(), now.toISOString());
-              if (raw?.[0]) {
-                const points = raw[0];
-                // Filter out non-numeric states (unavailable, unknown, etc.) first
-                const numericPoints = points.filter((s: any) => {
-                  const v = parseFloat(s.state);
-                  return !isNaN(v) && isFinite(v);
-                });
-                const step = Math.max(1, Math.floor(numericPoints.length / 60));
-                history = numericPoints
-                  .filter((_: any, i: number) => i % step === 0)
-                  .map((s: any) => ({
-                    time: s.last_updated,
-                    value: parseFloat(s.state),
-                  }));
-              }
-            } catch { /* ignore */ }
-          }
-          return {
-            label: entity.label,
-            color: entity.color,
-            temperature: isNaN(parseFloat(tempState.state)) ? null : parseFloat(tempState.state),
-            humidity,
-            entityId: entity.entityId,
-            showChart: entity.showChart,
-            chartType: entity.chartType,
-            roundTemperature: entity.roundTemperature,
-            history,
-          };
-        })
-      );
-      setSensors(results);
-    } catch (err) {
-      console.error("Failed to fetch temperature data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [config]);
+    // Initial load: get values + history
+    updateCurrentValues();
+    await fetchHistory();
+  }, [config, updateCurrentValues, fetchHistory]);
 
+  // Subscribe to WS state changes for instant updates
+  useEffect(() => {
+    if (!onStateChange || !isConfigured(config)) return;
+    const entityIds = collectTempEntityIds(config);
+    const unsubscribe = onStateChange((entityId) => {
+      if (entityIds.has(entityId)) {
+        updateCurrentValues();
+      }
+    });
+    return unsubscribe;
+  }, [onStateChange, config, updateCurrentValues]);
+
+  // Initial fetch
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, config.refreshInterval * 1000);
+  }, [fetchData]);
+
+  // History refresh on longer interval (5 min)
+  useEffect(() => {
+    if (!isConfigured(config)) return;
+    const hasCharts = config.temperatureEntities.some((e) => e.showChart);
+    if (!hasCharts) return;
+    const interval = setInterval(fetchHistory, 300000); // 5 minutes
     return () => clearInterval(interval);
-  }, [fetchData, config.refreshInterval]);
+  }, [fetchHistory, config]);
 
   return { sensors, loading };
 }
+
+// ── Calendar (REST only — no WS equivalent) ─────────────────────
 
 export function useCalendarData(config: DashboardConfig) {
   const [events, setEvents] = useState<(HACalendarEvent & { _prefix?: string; _color?: string })[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = useCallback(async () => {
-    // Get calendar configs (migrate from legacy string[] if needed)
     const calConfigs: CalendarEntityConfig[] =
       config.calendarEntityConfigs && config.calendarEntityConfigs.length > 0
         ? config.calendarEntityConfigs
@@ -177,7 +224,6 @@ export function useCalendarData(config: DashboardConfig) {
 
     if (!isConfigured(config)) {
       const mock = generateMockCalendarEvents();
-      // Apply prefix/color from first config to mock events
       setEvents(mock.map((e) => ({ ...e, _prefix: calConfigs[0]?.prefix || "", _color: calConfigs[0]?.color || "" })));
       setLoading(false);
       return;
@@ -209,19 +255,87 @@ export function useCalendarData(config: DashboardConfig) {
 
   useEffect(() => {
     fetchEvents();
-    const interval = setInterval(fetchEvents, config.refreshInterval * 1000);
+    const interval = setInterval(fetchEvents, Math.max(config.refreshInterval, 60) * 1000);
     return () => clearInterval(interval);
   }, [fetchEvents, config.refreshInterval]);
 
   return { events, loading };
 }
 
-export function useWeatherData(config: DashboardConfig, getCachedState?: GetCachedState) {
+// ── Weather (current state via WS, forecast via REST) ───────────
+
+export function useWeatherData(
+  config: DashboardConfig,
+  getCachedState?: GetCachedState,
+  onStateChange?: OnStateChange
+) {
   const [weather, setWeather] = useState<WeatherData>({
     current: { temperature: 0, condition: "clear", humidity: 0, windSpeed: 0 },
     forecast: [],
   });
   const [loading, setLoading] = useState(true);
+  const forecastRef = useRef<any[]>([]);
+
+  const updateCurrentFromCache = useCallback(() => {
+    const wc = config.weatherConfig;
+    if (!wc?.entityId || !getCachedState || !isConfigured(config)) return;
+
+    const state = getCachedState(wc.entityId);
+    if (!state) return;
+    const attrs = state.attributes || {};
+
+    let sunriseStr: string | null = null;
+    let sunsetStr: string | null = null;
+    const sunState = getCachedState("sun.sun");
+    if (sunState) {
+      const sunAttrs = sunState.attributes || {};
+      if (sunAttrs.next_rising) sunriseStr = new Date(sunAttrs.next_rising).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      if (sunAttrs.next_setting) sunsetStr = new Date(sunAttrs.next_setting).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    const current = {
+      temperature: attrs.temperature ?? parseFloat(state.state) ?? 0,
+      condition: attrs.condition || state.state || "unknown",
+      humidity: attrs.humidity || 0,
+      windSpeed: attrs.wind_speed || 0,
+      dewPoint: attrs.dew_point,
+      cloudCoverage: attrs.cloud_coverage,
+      uvIndex: attrs.uv_index,
+      pressure: attrs.pressure,
+      windBearing: attrs.wind_bearing,
+      windGustSpeed: attrs.wind_gust_speed,
+    };
+
+    const forecast = (forecastRef.current.length > 0 ? forecastRef.current : (attrs.forecast || [])).slice(0, wc.forecastDays).map((f: any, idx: number) => ({
+      date: f.datetime || f.date || "",
+      tempHigh: f.temperature || f.tempHigh || 0,
+      tempLow: f.templow ?? f.temp_low ?? f.tempLow ?? 0,
+      condition: f.condition || "unknown",
+      precipitation: f.precipitation ?? f.precipitation_probability ?? null,
+      sunrise: idx === 0 ? (f.sunrise || sunriseStr) : (f.sunrise || null),
+      sunset: idx === 0 ? (f.sunset || sunsetStr) : (f.sunset || null),
+    }));
+
+    setWeather({ current, forecast });
+    setLoading(false);
+  }, [config, getCachedState]);
+
+  // Fetch forecast via REST service call
+  const fetchForecast = useCallback(async () => {
+    const wc = config.weatherConfig;
+    if (!wc?.entityId || !isConfigured(config)) return;
+
+    try {
+      const client = createHAClient(config);
+      const rawForecast = await client.getWeatherForecast(wc.entityId, "daily");
+      if (rawForecast && rawForecast.length > 0) {
+        forecastRef.current = rawForecast;
+      }
+      updateCurrentFromCache();
+    } catch {
+      // ignore
+    }
+  }, [config, updateCurrentFromCache]);
 
   const fetchWeather = useCallback(async () => {
     const wc = config.weatherConfig;
@@ -230,89 +344,71 @@ export function useWeatherData(config: DashboardConfig, getCachedState?: GetCach
       setLoading(false);
       return;
     }
-
     if (!isConfigured(config)) {
       setWeather(generateMockWeatherData(wc.forecastDays));
       setLoading(false);
       return;
     }
 
-    try {
-      const client = createHAClient(config);
-      // Use cached state for weather entity
-      const state = getCachedState?.(wc.entityId) || await client.getState(wc.entityId);
-      const attrs = state.attributes || {};
+    updateCurrentFromCache();
+    await fetchForecast();
+  }, [config, updateCurrentFromCache, fetchForecast]);
 
-      // Fetch sunrise/sunset from sun.sun entity (from cache)
-      let sunriseStr: string | null = null;
-      let sunsetStr: string | null = null;
-      try {
-        const sunState = getCachedState?.("sun.sun") || await client.getState("sun.sun");
-        const sunAttrs = sunState.attributes || {};
-        if (sunAttrs.next_rising) {
-          const d = new Date(sunAttrs.next_rising);
-          sunriseStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        }
-        if (sunAttrs.next_setting) {
-          const d = new Date(sunAttrs.next_setting);
-          sunsetStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        }
-      } catch { /* sun.sun not available */ }
-
-      const current = {
-        temperature: attrs.temperature ?? parseFloat(state.state) ?? 0,
-        condition: attrs.condition || state.state || "unknown",
-        humidity: attrs.humidity || 0,
-        windSpeed: attrs.wind_speed || 0,
-        dewPoint: attrs.dew_point,
-        cloudCoverage: attrs.cloud_coverage,
-        uvIndex: attrs.uv_index,
-        pressure: attrs.pressure,
-        windBearing: attrs.wind_bearing,
-        windGustSpeed: attrs.wind_gust_speed,
-      };
-
-      let rawForecast: any[] = [];
-      try {
-        rawForecast = await client.getWeatherForecast(wc.entityId, "daily");
-      } catch {
-        // ignore
-      }
-      if (!rawForecast || rawForecast.length === 0) {
-        rawForecast = attrs.forecast || [];
-      }
-
-      const forecast = rawForecast.slice(0, wc.forecastDays).map((f: any, idx: number) => ({
-        date: f.datetime || f.date || "",
-        tempHigh: f.temperature || f.tempHigh || 0,
-        tempLow: f.templow ?? f.temp_low ?? f.tempLow ?? 0,
-        condition: f.condition || "unknown",
-        precipitation: f.precipitation ?? f.precipitation_probability ?? null,
-        // Only attach sunrise/sunset to today's entry (first forecast day)
-        sunrise: idx === 0 ? (f.sunrise || sunriseStr) : (f.sunrise || null),
-        sunset: idx === 0 ? (f.sunset || sunsetStr) : (f.sunset || null),
-      }));
-
-      setWeather({ current, forecast });
-    } catch (err) {
-      console.error("Failed to fetch weather data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [config]);
-
+  // WS listener for weather/sun entity changes
   useEffect(() => {
-    fetchWeather();
-    const interval = setInterval(fetchWeather, config.refreshInterval * 1000);
+    if (!onStateChange || !isConfigured(config)) return;
+    const wc = config.weatherConfig;
+    const watchIds = new Set<string>();
+    if (wc?.entityId) watchIds.add(wc.entityId);
+    watchIds.add("sun.sun");
+
+    const unsubscribe = onStateChange((entityId) => {
+      if (watchIds.has(entityId)) updateCurrentFromCache();
+    });
+    return unsubscribe;
+  }, [onStateChange, config, updateCurrentFromCache]);
+
+  useEffect(() => { fetchWeather(); }, [fetchWeather]);
+
+  // Forecast refresh every 30 min
+  useEffect(() => {
+    if (!isConfigured(config) || !config.weatherConfig?.entityId) return;
+    const interval = setInterval(fetchForecast, 1800000);
     return () => clearInterval(interval);
-  }, [fetchWeather, config.refreshInterval]);
+  }, [fetchForecast, config]);
 
   return { weather, loading };
 }
 
-export function useElectricityPrices(config: DashboardConfig, getCachedState?: GetCachedState) {
+// ── Electricity (state via WS — attributes have price arrays) ───
+
+export function useElectricityPrices(
+  config: DashboardConfig,
+  getCachedState?: GetCachedState,
+  onStateChange?: OnStateChange
+) {
   const [nordpool, setNordpool] = useState<NordpoolData>({ today: [], tomorrow: [], currentPrice: 0 });
   const [loading, setLoading] = useState(true);
+
+  const updateFromCache = useCallback(() => {
+    if (!isConfigured(config) || !getCachedState) return;
+    const state = getCachedState(config.electricityPriceEntity);
+    if (!state) return;
+    processElectricityState(state);
+    setLoading(false);
+
+    function processElectricityState(state: HAState) {
+      const rawToday: NordpoolPricePoint[] = state.attributes?.raw_today || [];
+      const rawTomorrow: NordpoolPricePoint[] = state.attributes?.raw_tomorrow || [];
+      const currentPrice = parseFloat(state.state) || 0;
+      const surcharge = config.electricitySurcharge ?? 0;
+      setNordpool({
+        today: rawToday.map((p) => ({ time: new Date(p.start), price: p.value + surcharge })),
+        tomorrow: rawTomorrow.map((p) => ({ time: new Date(p.start), price: p.value + surcharge })),
+        currentPrice: currentPrice + surcharge,
+      });
+    }
+  }, [config, getCachedState]);
 
   const fetchPrices = useCallback(async () => {
     if (!isConfigured(config)) {
@@ -326,57 +422,127 @@ export function useElectricityPrices(config: DashboardConfig, getCachedState?: G
       setLoading(false);
       return;
     }
+    updateFromCache();
 
-    try {
-      // Use cached state — electricity entity has raw_today/raw_tomorrow in attributes
-      const state = getCachedState?.(config.electricityPriceEntity);
-      if (!state) {
-        // Fallback to individual call if not in cache
+    // Fallback if cache is empty
+    if (!getCachedState?.(config.electricityPriceEntity)) {
+      try {
         const client = createHAClient(config);
-        const fetched = await client.getState(config.electricityPriceEntity);
-        processElectricityState(fetched);
-      } else {
-        processElectricityState(state);
+        const state = await client.getState(config.electricityPriceEntity);
+        const surcharge = config.electricitySurcharge ?? 0;
+        const rawToday: NordpoolPricePoint[] = state.attributes?.raw_today || [];
+        const rawTomorrow: NordpoolPricePoint[] = state.attributes?.raw_tomorrow || [];
+        const currentPrice = parseFloat(state.state) || 0;
+        setNordpool({
+          today: rawToday.map((p) => ({ time: new Date(p.start), price: p.value + surcharge })),
+          tomorrow: rawTomorrow.map((p) => ({ time: new Date(p.start), price: p.value + surcharge })),
+          currentPrice: currentPrice + surcharge,
+        });
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch electricity prices:", err);
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to fetch electricity prices:", err);
-    } finally {
-      setLoading(false);
     }
+  }, [config, getCachedState, updateFromCache]);
 
-    function processElectricityState(state: HAState) {
-      const rawToday: NordpoolPricePoint[] = state.attributes?.raw_today || [];
-      const rawTomorrow: NordpoolPricePoint[] = state.attributes?.raw_tomorrow || [];
-      const currentPrice = parseFloat(state.state) || 0;
-      const surcharge = config.electricitySurcharge ?? 0;
-      const today = rawToday.map((p) => ({
-        time: new Date(p.start),
-        price: p.value + surcharge,
-      }));
-      const tomorrow = rawTomorrow.map((p) => ({
-        time: new Date(p.start),
-        price: p.value + surcharge,
-      }));
-      setNordpool({ today, tomorrow, currentPrice: currentPrice + surcharge });
-    }
-  }, [config]);
-
+  // WS listener
   useEffect(() => {
-    fetchPrices();
-    const interval = setInterval(fetchPrices, config.refreshInterval * 1000);
-    return () => clearInterval(interval);
-  }, [fetchPrices, config.refreshInterval]);
+    if (!onStateChange || !isConfigured(config)) return;
+    const unsubscribe = onStateChange((entityId) => {
+      if (entityId === config.electricityPriceEntity) updateFromCache();
+    });
+    return unsubscribe;
+  }, [onStateChange, config, updateFromCache]);
+
+  useEffect(() => { fetchPrices(); }, [fetchPrices]);
 
   return { nordpool, loading };
 }
 
-export function usePersonData(config: DashboardConfig, getCachedState?: GetCachedState) {
+// ── Person (all state via WS) ───────────────────────────────────
+
+export function usePersonData(
+  config: DashboardConfig,
+  getCachedState?: GetCachedState,
+  onStateChange?: OnStateChange,
+  getAllStates?: GetAllStates
+) {
   const [persons, setPersons] = useState<PersonData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const updateFromCache = useCallback(() => {
+    if (!isConfigured(config) || !getCachedState) return;
+    if (!config.personEntities || config.personEntities.length === 0) {
+      setPersons([]);
+      setLoading(false);
+      return;
+    }
+
+    // Get zone entities for icon matching
+    const zoneEntities = getAllStates
+      ? getAllStates().filter((s) => s.entity_id.startsWith("zone."))
+      : [];
+
+    const results = config.personEntities.map((pe) => {
+      let pictureUrl: string | null = null;
+      let location: string | null = null;
+      let batteryPercent: number | null = null;
+      let isCharging = false;
+      let distanceKm: number | null = null;
+      let zoneIcon: string | null = null;
+
+      if (pe.entityPicture) {
+        const state = getCachedState(pe.entityPicture);
+        if (state) {
+          const pic = state.attributes?.entity_picture;
+          if (pic) pictureUrl = pic.startsWith("http") ? pic : `${config.haUrl}${pic}`;
+        }
+      }
+
+      if (pe.locationEntity) {
+        const state = getCachedState(pe.locationEntity);
+        if (state) {
+          location = state.state || null;
+          if (location && location !== "not_home" && location !== "unknown" && location !== "unavailable") {
+            const matchedZone = zoneEntities.find(
+              (z) => (z.attributes?.friendly_name || "").toLowerCase() === location!.toLowerCase()
+            );
+            if (matchedZone) zoneIcon = matchedZone.attributes?.icon || null;
+          }
+        }
+      }
+
+      if (pe.batteryEntity) {
+        const state = getCachedState(pe.batteryEntity);
+        if (state) batteryPercent = parseFloat(state.state) || null;
+      }
+
+      if (pe.batteryChargingEntity) {
+        const state = getCachedState(pe.batteryChargingEntity);
+        if (state) {
+          const s = state.state.toLowerCase();
+          isCharging = s === "on" || s === "charging";
+        }
+      }
+
+      if (pe.distanceEntity) {
+        const state = getCachedState(pe.distanceEntity);
+        if (state) {
+          const parsed = parseFloat(state.state);
+          distanceKm = isNaN(parsed) ? null : parsed;
+        }
+      }
+
+      return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm, avatarSize: pe.avatarSize, zoneIcon };
+    });
+
+    setPersons(results);
+    setLoading(false);
+  }, [config, getCachedState, getAllStates]);
+
   const fetchData = useCallback(async () => {
     if (!isConfigured(config)) {
-      // Always show mock person in demo mode
       const mockPersons = config.personEntities && config.personEntities.length > 0
         ? config.personEntities.map((p) => ({
             name: p.name || "Person",
@@ -401,113 +567,32 @@ export function usePersonData(config: DashboardConfig, getCachedState?: GetCache
       return;
     }
 
-    if (!config.personEntities || config.personEntities.length === 0) {
-      setPersons([]);
-      setLoading(false);
-      return;
-    }
+    updateFromCache();
+  }, [config, updateFromCache]);
 
-    try {
-      // Use cached zone entities from getCachedState - collect all zone.* entities
-      let zoneEntities: HAState[] = [];
-      try {
-        const client = createHAClient(config);
-        // We need all zone entities - getCachedState only does single lookups
-        // so we still need getStates for filtering, but this is rare
-        const allStates = await client.getStates();
-        zoneEntities = allStates.filter((s) => s.entity_id.startsWith("zone."));
-      } catch { /* ignore */ }
-
-      const results = await Promise.all(
-        config.personEntities.map(async (pe) => {
-          let pictureUrl: string | null = null;
-          let location: string | null = null;
-          let batteryPercent: number | null = null;
-          let isCharging = false;
-          let distanceKm: number | null = null;
-
-          // Picture — use cache
-          if (pe.entityPicture) {
-            try {
-              const state = getCachedState?.(pe.entityPicture);
-              if (state) {
-                const pic = state.attributes?.entity_picture;
-                if (pic) {
-                  pictureUrl = pic.startsWith("http") ? pic : `${config.haUrl}${pic}`;
-                }
-              } else {
-                const client = createHAClient(config);
-                const fetched = await client.getState(pe.entityPicture);
-                const pic = fetched.attributes?.entity_picture;
-                if (pic) {
-                  pictureUrl = pic.startsWith("http") ? pic : `${config.haUrl}${pic}`;
-                }
-              }
-            } catch { /* ignore */ }
-          }
-
-          // Location + zone icon — use cache
-          let zoneIcon: string | null = null;
-          if (pe.locationEntity) {
-            try {
-              const state = getCachedState?.(pe.locationEntity) || await createHAClient(config).getState(pe.locationEntity);
-              location = state.state || null;
-              if (location && location !== "not_home" && location !== "unknown" && location !== "unavailable") {
-                const matchedZone = zoneEntities.find(
-                  (z) => (z.attributes?.friendly_name || "").toLowerCase() === location!.toLowerCase()
-                );
-                if (matchedZone) {
-                  zoneIcon = matchedZone.attributes?.icon || null;
-                }
-              }
-            } catch { /* ignore */ }
-          }
-
-          // Battery — use cache
-          if (pe.batteryEntity) {
-            try {
-              const state = getCachedState?.(pe.batteryEntity) || await createHAClient(config).getState(pe.batteryEntity);
-              batteryPercent = parseFloat(state.state) || null;
-            } catch { /* ignore */ }
-          }
-
-          // Charging — use cache
-          if (pe.batteryChargingEntity) {
-            try {
-              const state = getCachedState?.(pe.batteryChargingEntity) || await createHAClient(config).getState(pe.batteryChargingEntity);
-              const s = state.state.toLowerCase();
-              isCharging = s === "on" || s === "charging";
-            } catch { /* ignore */ }
-          }
-
-          // Distance — use cache
-          if (pe.distanceEntity) {
-            try {
-              const state = getCachedState?.(pe.distanceEntity) || await createHAClient(config).getState(pe.distanceEntity);
-              const parsed = parseFloat(state.state);
-              distanceKm = isNaN(parsed) ? null : parsed;
-            } catch { /* ignore */ }
-          }
-
-          return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm, avatarSize: pe.avatarSize, zoneIcon };
-        })
-      );
-      setPersons(results);
-    } catch (err) {
-      console.error("Failed to fetch person data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [config]);
-
+  // WS listener for person-related entities
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, config.refreshInterval * 1000);
-    return () => clearInterval(interval);
-  }, [fetchData, config.refreshInterval]);
+    if (!onStateChange || !isConfigured(config)) return;
+    const entityIds = new Set<string>();
+    for (const pe of (config.personEntities || [])) {
+      if (pe.entityPicture) entityIds.add(pe.entityPicture);
+      if (pe.locationEntity) entityIds.add(pe.locationEntity);
+      if (pe.batteryEntity) entityIds.add(pe.batteryEntity);
+      if (pe.batteryChargingEntity) entityIds.add(pe.batteryChargingEntity);
+      if (pe.distanceEntity) entityIds.add(pe.distanceEntity);
+    }
+    const unsubscribe = onStateChange((entityId) => {
+      if (entityIds.has(entityId)) updateFromCache();
+    });
+    return unsubscribe;
+  }, [onStateChange, config, updateFromCache]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   return { persons, loading };
 }
+
+// ── Food Menu (REST only) ───────────────────────────────────────
 
 export function useFoodMenuData(config: DashboardConfig) {
   const [days, setDays] = useState<{ date: string; meals: string[] }[]>([]);
@@ -546,21 +631,12 @@ export function useFoodMenuData(config: DashboardConfig) {
     const source = fc?.source || "calendar";
 
     if (source === "skolmaten") {
-      // Skolmaten integration: read meals from sensor attributes
-      if (!fc?.skolmatenEntity) {
-        setDays([]);
-        setLoading(false);
-        return;
-      }
+      if (!fc?.skolmatenEntity) { setDays([]); setLoading(false); return; }
       try {
         const client = createHAClient(config);
         const state = await client.getState(fc.skolmatenEntity);
         const calendar = state?.attributes?.calendar;
-        if (!calendar || typeof calendar !== "object") {
-          setDays([]);
-          setLoading(false);
-          return;
-        }
+        if (!calendar || typeof calendar !== "object") { setDays([]); setLoading(false); return; }
         const today = new Date().toISOString().split("T")[0];
         const skipWk = fc.skipWeekends ?? false;
         const numDays = fc.days || 5;
@@ -569,17 +645,10 @@ export function useFoodMenuData(config: DashboardConfig) {
         for (const dateStr of sortedDates) {
           if (dateStr < today) continue;
           if (result.length >= numDays) break;
-          if (skipWk) {
-            const day = new Date(dateStr).getDay();
-            if (day === 0 || day === 6) continue;
-          }
+          if (skipWk) { const day = new Date(dateStr).getDay(); if (day === 0 || day === 6) continue; }
           const entries = calendar[dateStr];
-          const meals = Array.isArray(entries)
-            ? entries.map((e: any) => e.dish || e.summary || "").filter(Boolean)
-            : [];
-          if (meals.length > 0) {
-            result.push({ date: dateStr, meals });
-          }
+          const meals = Array.isArray(entries) ? entries.map((e: any) => e.dish || e.summary || "").filter(Boolean) : [];
+          if (meals.length > 0) result.push({ date: dateStr, meals });
         }
         setDays(result);
       } catch (err) {
@@ -590,12 +659,7 @@ export function useFoodMenuData(config: DashboardConfig) {
       return;
     }
 
-    // Calendar source
-    if (!fc?.calendarEntity) {
-      setDays([]);
-      setLoading(false);
-      return;
-    }
+    if (!fc?.calendarEntity) { setDays([]); setLoading(false); return; }
 
     try {
       const client = createHAClient(config);
@@ -613,11 +677,7 @@ export function useFoodMenuData(config: DashboardConfig) {
       const skipWk = fc.skipWeekends ?? false;
       const sorted = [...byDate.entries()]
         .sort((a, b) => a[0].localeCompare(b[0]))
-        .filter(([date]) => {
-          if (!skipWk) return true;
-          const day = new Date(date).getDay();
-          return day !== 0 && day !== 6;
-        })
+        .filter(([date]) => { if (!skipWk) return true; const day = new Date(date).getDay(); return day !== 0 && day !== 6; })
         .map(([date, meals]) => ({ date, meals }));
       setDays(sorted);
     } catch (err) {
@@ -629,7 +689,7 @@ export function useFoodMenuData(config: DashboardConfig) {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, config.refreshInterval * 1000);
+    const interval = setInterval(fetchData, Math.max(config.refreshInterval, 60) * 1000);
     return () => clearInterval(interval);
   }, [fetchData, config.refreshInterval]);
 

@@ -31,7 +31,7 @@ import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
 import { useSensorGridData } from "@/hooks/useSensorGridData";
 import { useRssNews } from "@/hooks/useRssNews";
 import { useNotificationData } from "@/hooks/useNotificationData";
-import { useHAStatesCache } from "@/hooks/useHAStatesCache";
+import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
 
 function getTempGroupIds(entities: { group?: number }[]): string[] {
@@ -87,20 +87,20 @@ const Index = () => {
     sensorGrids: effectiveSensorGrids,
   }), [config, effectiveSensorGrids]);
 
-  // Centralized bulk states cache — one /api/states call per refresh cycle
-  const { getState: getCachedState } = useHAStatesCache(config);
+  // WebSocket connection for real-time state updates
+  const { getState: getCachedState, getAllStates, onStateChange, isConnected } = useHAWebSocket(config);
 
-  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config, getCachedState);
+  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config, getCachedState, onStateChange);
   const { events, loading: calLoading } = useCalendarData(config);
-  const { nordpool, loading: priceLoading } = useElectricityPrices(config, getCachedState);
-  const { persons, loading: personLoading } = usePersonData(config, getCachedState);
-  const { weather, loading: weatherLoading } = useWeatherData(config, getCachedState);
+  const { nordpool, loading: priceLoading } = useElectricityPrices(config, getCachedState, onStateChange);
+  const { persons, loading: personLoading } = usePersonData(config, getCachedState, onStateChange, getAllStates);
+  const { weather, loading: weatherLoading } = useWeatherData(config, getCachedState, onStateChange);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
-  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config, getCachedState);
-  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig, getCachedState);
+  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config, getCachedState, onStateChange);
+  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig, getCachedState, onStateChange);
   const rssFeeds = config.rssFeeds || [];
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
-  const { notifications, loading: notifLoading } = useNotificationData(config, getCachedState);
+  const { notifications, loading: notifLoading } = useNotificationData(config, getCachedState, onStateChange, getAllStates);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
