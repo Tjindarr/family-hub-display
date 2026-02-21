@@ -14,6 +14,7 @@ interface FoodMenuWidgetProps {
   fontSizes?: ResolvedFontSizes;
   displayMode?: FoodMenuDisplayMode;
   style?: FoodMenuStyleConfig;
+  showTitle?: boolean;
 }
 
 function getDayLabel(dateStr: string): string {
@@ -27,7 +28,7 @@ function getShortDate(dateStr: string): string {
   return format(parseISO(dateStr), "d/M");
 }
 
-export default function FoodMenuWidget({ days, loading, fontSizes, displayMode, style }: FoodMenuWidgetProps) {
+export default function FoodMenuWidget({ days, loading, fontSizes, displayMode, style, showTitle = true }: FoodMenuWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const mode = displayMode || "compact";
   const s = style || {} as Partial<FoodMenuStyleConfig>;
@@ -43,10 +44,12 @@ export default function FoodMenuWidget({ days, loading, fontSizes, displayMode, 
 
   return (
     <div className="widget-card h-full flex flex-col">
-      <div className="flex items-center gap-2 mb-3">
-        <UtensilsCrossed className="h-4 w-4 text-primary" />
-        <span className="font-medium uppercase tracking-wider text-primary/70" style={{ fontSize: fs.heading }}>Menu</span>
-      </div>
+      {showTitle && (
+        <div className="flex items-center gap-2 mb-3">
+          <UtensilsCrossed className="h-4 w-4 text-primary" />
+          <span className="font-medium uppercase tracking-wider text-primary/70" style={{ fontSize: fs.heading }}>Menu</span>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-2">
