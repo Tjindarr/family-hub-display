@@ -184,13 +184,47 @@ export default function DashboardEditOverlay({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
+  const getEffectiveColSpan = (id: string) => localLayouts[id]?.colSpan || getColSpan(id);
+  const getEffectiveRow = (id: string) => localLayouts[id]?.row || getRow(id);
+  const getEffectiveRowSpan = (id: string) => localLayouts[id]?.rowSpan || getRowSpan(id);
+  const getWidgetGroup = (id: string) => localLayouts[id]?.widgetGroup ?? config.widgetLayouts?.[id]?.widgetGroup ?? "";
+
+  // Build sortable items: use lead widget id for groups
+  const sortableItems = useMemo(() => {
+    const seenGroups = new Set<string>();
+    const items: string[] = [];
+    for (const id of localOrder) {
+      const groupId = getWidgetGroup(id);
+      if (groupId && seenGroups.has(groupId)) continue;
+      if (groupId) seenGroups.add(groupId);
+      items.push(id);
+    }
+    return items;
+  }, [localOrder, localLayouts]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
+      // Move groups together: find all ids belonging to active's group
       setLocalOrder((prev) => {
-        const oldIndex = prev.indexOf(active.id as string);
-        const newIndex = prev.indexOf(over.id as string);
-        return arrayMove(prev, oldIndex, newIndex);
+        const activeGroup = getWidgetGroup(active.id as string);
+        const overGroup = getWidgetGroup(over.id as string);
+
+        if (!activeGroup) {
+          // Simple single widget move
+          const oldIndex = prev.indexOf(active.id as string);
+          const newIndex = prev.indexOf(over.id as string);
+          return arrayMove(prev, oldIndex, newIndex);
+        }
+
+        // Move entire group
+        const groupIds = prev.filter((id) => getWidgetGroup(id) === activeGroup);
+        const without = prev.filter((id) => getWidgetGroup(id) !== activeGroup);
+        const overTarget = overGroup
+          ? without.indexOf(prev.find((id) => getWidgetGroup(id) === overGroup)!)
+          : without.indexOf(over.id as string);
+        const insertAt = overTarget >= 0 ? overTarget : without.length;
+        return [...without.slice(0, insertAt), ...groupIds, ...without.slice(insertAt)];
       });
     }
   };
@@ -201,10 +235,6 @@ export default function DashboardEditOverlay({
       return { ...prev, [id]: { ...current, ...partial } };
     });
   };
-
-  const getEffectiveColSpan = (id: string) => localLayouts[id]?.colSpan || getColSpan(id);
-  const getEffectiveRow = (id: string) => localLayouts[id]?.row || getRow(id);
-  const getEffectiveRowSpan = (id: string) => localLayouts[id]?.rowSpan || getRowSpan(id);
 
   const handleSave = () => {
     onSave({ widgetOrder: localOrder, widgetLayouts: localLayouts });
@@ -259,10 +289,37 @@ export default function DashboardEditOverlay({
 
       {/* Edit grid */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={localOrder} strategy={rectSortingStrategy}>
+        <SortableContext items={sortableItems} strategy={rectSortingStrategy}>
           <div className="grid mt-14" style={{ gap: "5px" }}>
             {rows.map(([rowNum, widgetIds]) => {
               const cols = isMobile ? 1 : (config.rowColumns?.[rowNum] || gridColumns);
+
+              // Build rendered items honoring groups
+              const rendered: { leadId: string; memberIds: string[]; span: number; rSpan: number }[] = [];
+              const seenGroups = new Set<string>();
+
+              for (const id of widgetIds) {
+                const groupId = getWidgetGroup(id);
+                if (groupId && seenGroups.has(groupId)) continue;
+                if (groupId) {
+                  seenGroups.add(groupId);
+                  const members = widgetIds.filter((wId) => getWidgetGroup(wId) === groupId);
+                  rendered.push({
+                    leadId: id,
+                    memberIds: members,
+                    span: getEffectiveColSpan(id),
+                    rSpan: getEffectiveRowSpan(id),
+                  });
+                } else {
+                  rendered.push({
+                    leadId: id,
+                    memberIds: [id],
+                    span: getEffectiveColSpan(id),
+                    rSpan: getEffectiveRowSpan(id),
+                  });
+                }
+              }
+
               return (
                 <div
                   key={rowNum}
@@ -273,29 +330,39 @@ export default function DashboardEditOverlay({
                     minHeight: "120px",
                   }}
                 >
-                  {widgetIds.map((id) => (
+                  {rendered.map(({ leadId, memberIds, span, rSpan }) => (
                     <SortableWidget
-                      key={id}
-                      id={id}
-                      colSpan={Math.min(getEffectiveColSpan(id), cols)}
+                      key={leadId}
+                      id={leadId}
+                      colSpan={Math.min(span, cols)}
                       rowNum={rowNum}
-                      rowSpan={getEffectiveRowSpan(id)}
+                      rowSpan={rSpan}
                       gridCols={cols}
                       onColSpanChange={(delta) =>
-                        updateLayout(id, {
-                          colSpan: Math.max(1, Math.min(cols, getEffectiveColSpan(id) + delta)),
+                        updateLayout(leadId, {
+                          colSpan: Math.max(1, Math.min(cols, getEffectiveColSpan(leadId) + delta)),
                         })
                       }
                       onRowChange={(delta) =>
-                        updateLayout(id, { row: Math.max(1, getEffectiveRow(id) + delta) })
+                        updateLayout(leadId, { row: Math.max(1, getEffectiveRow(leadId) + delta) })
                       }
                       onRowSpanChange={(delta) =>
-                        updateLayout(id, {
-                          rowSpan: Math.max(1, Math.min(6, getEffectiveRowSpan(id) + delta)),
+                        updateLayout(leadId, {
+                          rowSpan: Math.max(1, Math.min(6, getEffectiveRowSpan(leadId) + delta)),
                         })
                       }
                     >
-                      {renderWidget(id)}
+                      {memberIds.length > 1 ? (
+                        <div className="flex flex-col gap-2 h-full">
+                          {memberIds.map((mId) => (
+                            <div key={mId} className="flex-1 min-h-0">
+                              {renderWidget(mId)}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        renderWidget(leadId)
+                      )}
                     </SortableWidget>
                   ))}
                 </div>
