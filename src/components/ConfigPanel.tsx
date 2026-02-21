@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -188,7 +188,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -200,6 +200,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
+    ...(hasNotifications ? ["notifications"] : []),
   ];
 }
 
@@ -240,15 +241,20 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [generalSensors, setGeneralSensors] = useState<GeneralSensorConfig[]>(config.generalSensors || []);
   const [sensorGrids, setSensorGrids] = useState<SensorGridConfig[]>(config.sensorGrids || []);
   const [rssFeeds, setRssFeeds] = useState<RssNewsConfig[]>(config.rssFeeds || []);
+  const [notificationConfig, setNotificationConfig] = useState<NotificationConfig>(
+    config.notificationConfig || { showHANotifications: true, alertRules: [] }
+  );
   const [globalFontSizes, setGlobalFontSizes] = useState<GlobalFontSizes>(config.globalFontSizes || DEFAULT_FONT_SIZES);
   const [widgetFontSizes, setWidgetFontSizes] = useState<Record<string, WidgetFontSizes>>(config.widgetFontSizes || {});
   const [personCardFontSizes, setPersonCardFontSizes] = useState<PersonCardFontSizes>(config.personCardFontSizes || {});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const gsIds = (config.generalSensors || []).map((s) => s.id);
     const sgIds = (config.sensorGrids || []).map((s) => s.id);
     const rsIds = (config.rssFeeds || []).map((s) => s.id);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds);
+    const hn = (config.notificationConfig?.showHANotifications || (config.notificationConfig?.alertRules?.length > 0)) ?? false;
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -261,7 +267,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const widgetItems = useMemo(() => {
     const labelMap: Record<string, string> = {
       electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
-      food_menu: "Food Menu",
+      food_menu: "Food Menu", notifications: "Notifications",
     };
     const groupMap = new Map<number, string[]>();
     tempEntities.forEach((e, i) => {
@@ -278,7 +284,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const gsIds = generalSensors.map((s) => s.id);
     const sgIds = sensorGrids.map((s) => s.id);
     const rsIds = rssFeeds.map((s) => s.id);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -345,6 +351,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       generalSensors,
       sensorGrids,
       rssFeeds,
+      notificationConfig,
       globalFontSizes,
       widgetFontSizes,
       personCardFontSizes,
@@ -1659,6 +1666,96 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       value={feed.maxItems}
                       onChange={(e) => setRssFeeds(rssFeeds.map((f, i) => i === idx ? { ...f, maxItems: Number(e.target.value) || 15 } : f))}
                       className="mt-1 bg-muted border-border"
+                    />
+                  </div>
+                </div>
+              ))}
+            </CollapsibleSection>
+
+            {/* Notifications & Alerts */}
+            <CollapsibleSection
+              title="Notifications & Alerts"
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `alert_${Date.now()}`;
+                    setNotificationConfig((prev) => ({
+                      ...prev,
+                      alertRules: [...(prev.alertRules || []), { id, entityId: "", label: "", condition: "above" as const, threshold: 0, icon: "alert-triangle", color: "hsl(0, 72%, 55%)" }],
+                    }));
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Alert
+                </Button>
+              }
+            >
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={notificationConfig.showHANotifications}
+                  onCheckedChange={(v) => setNotificationConfig((prev) => ({ ...prev, showHANotifications: v }))}
+                />
+                <Label className="text-xs text-muted-foreground">Show HA Persistent Notifications</Label>
+              </div>
+
+              {(notificationConfig.alertRules || []).map((rule, idx) => (
+                <div key={rule.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+                  <Button variant="ghost" size="icon" className="absolute right-1 top-1 h-6 w-6" onClick={() => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.filter((_, i) => i !== idx) }))}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Label</Label>
+                    <Input
+                      value={rule.label}
+                      onChange={(e) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, label: e.target.value } : r) }))}
+                      placeholder="High temperature"
+                      className="mt-1 bg-muted border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Entity ID</Label>
+                    <EntityAutocomplete
+                      value={rule.entityId}
+                      onChange={(v) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, entityId: v } : r) }))}
+                      config={config}
+                      domainFilter="sensor"
+                      placeholder="sensor.temperature"
+                      className="mt-1 bg-muted border-border text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground">Condition</Label>
+                      <Select
+                        value={rule.condition}
+                        onValueChange={(v) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, condition: v as "above" | "below" | "equals" } : r) }))}
+                      >
+                        <SelectTrigger className="mt-1 bg-muted border-border">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="above">Above</SelectItem>
+                          <SelectItem value="below">Below</SelectItem>
+                          <SelectItem value="equals">Equals</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground">Threshold</Label>
+                      <Input
+                        type="number"
+                        value={rule.threshold}
+                        onChange={(e) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, threshold: Number(e.target.value) } : r) }))}
+                        className="mt-1 bg-muted border-border"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Alert Color</Label>
+                    <ColorPicker
+                      value={rule.color}
+                      onChange={(v) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, color: v } : r) }))}
                     />
                   </div>
                 </div>

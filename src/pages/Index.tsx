@@ -11,8 +11,10 @@ import FoodMenuWidget from "@/components/FoodMenuWidget";
 import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import SensorGridWidget from "@/components/SensorGridWidget";
 import RssNewsWidget from "@/components/RssNewsWidget";
+import NotificationWidget from "@/components/NotificationWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
+import DashboardEditOverlay from "@/components/DashboardEditOverlay";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ import {
 import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
 import { useSensorGridData } from "@/hooks/useSensorGridData";
 import { useRssNews } from "@/hooks/useRssNews";
+import { useNotificationData } from "@/hooks/useNotificationData";
 import { resolveFontSizes } from "@/lib/fontSizes";
 
 function getTempGroupIds(entities: { group?: number }[]): string[] {
@@ -43,7 +46,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications: boolean): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -55,6 +58,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
+    ...(hasNotifications ? ["notifications"] : []),
   ];
 }
 
@@ -92,6 +96,7 @@ const Index = () => {
   const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig);
   const rssFeeds = config.rssFeeds || [];
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
+  const { notifications, loading: notifLoading } = useNotificationData(config);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -134,9 +139,11 @@ const Index = () => {
   const getFontSizes = (widgetId: string) =>
     resolveFontSizes(config.globalFontSizes, config.widgetFontSizes?.[widgetId]);
 
+  const hasNotifications = (config.notificationConfig?.showHANotifications || (config.notificationConfig?.alertRules?.length > 0)) ?? false;
+
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -144,7 +151,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds]);
+  }, [config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications]);
 
   const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
 
@@ -199,6 +206,9 @@ const Index = () => {
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
       if (!rssCfg) return null;
       return <RssNewsWidget items={rssData[rssId] || []} loading={rssLoading} label={rssCfg.label} fontSizes={fs} />;
+    }
+    if (id === "notifications") {
+      return <NotificationWidget notifications={notifications} loading={notifLoading} fontSizes={fs} />;
     }
     return null;
   };
@@ -261,6 +271,17 @@ const Index = () => {
       {!isKiosk && (
         <>
           <ConfigPanel config={config} onSave={updateConfig} />
+          <DashboardEditOverlay
+            allWidgetIds={allWidgetIds}
+            config={config}
+            onSave={updateConfig}
+            renderWidget={renderWidget}
+            getColSpan={getColSpan}
+            getRow={getRow}
+            getRowSpan={getRowSpan}
+            gridColumns={gridColumns}
+            isMobile={isMobile}
+          />
           <Button
             variant="ghost"
             size="icon"
