@@ -106,9 +106,9 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
         <span className="text-sm font-medium text-foreground truncate">{label}</span>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap pl-6">
-        <Label className="text-[12px] text-muted-foreground">Grp</Label>
+        <Label className="text-[12px] text-muted-foreground">Group</Label>
         <Select value={widgetGroup} onValueChange={onWidgetGroupChange}>
-          <SelectTrigger className="w-14 h-7 bg-muted border-border text-xs">
+          <SelectTrigger className="w-28 h-7 bg-muted border-border text-xs">
             <SelectValue placeholder="—" />
           </SelectTrigger>
           <SelectContent>
@@ -119,23 +119,22 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
         </Select>
       </div>
       {/* Per-widget font sizes */}
-      <div className="flex items-center gap-1.5 flex-wrap pl-6">
-        <Label className="text-[12px] text-muted-foreground w-7">Font</Label>
-        <div className="flex items-center gap-0.5">
-          <span className="text-[11px] text-muted-foreground">H</span>
-          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.heading ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, heading: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[12px] px-1" />
+      <div className="grid grid-cols-2 gap-1.5 pl-6">
+        <div className="flex items-center gap-1">
+          <span className="text-[11px] text-muted-foreground w-14">Heading</span>
+          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.heading ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, heading: e.target.value ? Number(e.target.value) : undefined })} className="w-full h-6 bg-muted border-border text-[12px] px-1" />
         </div>
-        <div className="flex items-center gap-0.5">
-          <span className="text-[11px] text-muted-foreground">V</span>
-          <Input type="number" min={6} max={80} placeholder="—" value={fontSizes.value ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, value: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[12px] px-1" />
+        <div className="flex items-center gap-1">
+          <span className="text-[11px] text-muted-foreground w-14">Value</span>
+          <Input type="number" min={6} max={80} placeholder="—" value={fontSizes.value ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, value: e.target.value ? Number(e.target.value) : undefined })} className="w-full h-6 bg-muted border-border text-[12px] px-1" />
         </div>
-        <div className="flex items-center gap-0.5">
-          <span className="text-[11px] text-muted-foreground">B</span>
-          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.body ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, body: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[12px] px-1" />
+        <div className="flex items-center gap-1">
+          <span className="text-[11px] text-muted-foreground w-14">Body</span>
+          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.body ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, body: e.target.value ? Number(e.target.value) : undefined })} className="w-full h-6 bg-muted border-border text-[12px] px-1" />
         </div>
-        <div className="flex items-center gap-0.5">
-          <span className="text-[11px] text-muted-foreground">L</span>
-          <Input type="number" min={6} max={40} placeholder="—" value={fontSizes.label ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, label: e.target.value ? Number(e.target.value) : undefined })} className="w-12 h-6 bg-muted border-border text-[12px] px-1" />
+        <div className="flex items-center gap-1">
+          <span className="text-[11px] text-muted-foreground w-14">Label</span>
+          <Input type="number" min={6} max={40} placeholder="—" value={fontSizes.label ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, label: e.target.value ? Number(e.target.value) : undefined })} className="w-full h-6 bg-muted border-border text-[12px] px-1" />
         </div>
       </div>
     </div>
@@ -1832,7 +1831,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                           });
                         }}
                       >
-                        <SelectTrigger className="w-28 h-7 bg-muted border-border text-xs">
+                        <SelectTrigger className="flex-1 h-7 bg-muted border-border text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
