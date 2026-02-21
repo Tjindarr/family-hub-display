@@ -1,4 +1,4 @@
-import { format, isToday, isTomorrow, parseISO, getISOWeek } from "date-fns";
+import { format, isToday, isTomorrow, parseISO, getISOWeek, getWeek } from "date-fns";
 import { Clock } from "lucide-react";
 import type { HACalendarEvent, CalendarDisplayConfig } from "@/lib/config";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
@@ -15,6 +15,7 @@ interface CalendarWidgetProps {
   dayColor?: string;
   timeColor?: string;
   display?: CalendarDisplayConfig;
+  timeFormat?: "24h" | "12h";
 }
 
 function getEventTime(event: HACalendarEvent): Date {
@@ -22,18 +23,19 @@ function getEventTime(event: HACalendarEvent): Date {
   return parseISO(dt);
 }
 
-function formatEventTime(event: HACalendarEvent, display?: CalendarDisplayConfig): string {
+function formatEventTime(event: HACalendarEvent, display?: CalendarDisplayConfig, timeFormat?: "24h" | "12h"): string {
   const isAllDay = event.start.date && !event.start.dateTime;
   if (isAllDay) return display?.hideAllDayText ? "" : "All day";
 
+  const timeFmt = timeFormat === "12h" ? "hh:mm a" : "HH:mm";
   const start = getEventTime(event);
-  let time = format(start, "HH:mm");
+  let time = format(start, timeFmt);
 
   if (display?.showEndDate) {
     const endDt = event.end.dateTime || event.end.date || "";
     if (endDt) {
       const end = parseISO(endDt);
-      time += ` – ${format(end, "HH:mm")}`;
+      time += ` – ${format(end, timeFmt)}`;
     }
   }
 
@@ -47,17 +49,21 @@ function getDayLabel(event: HACalendarEvent): string {
   return format(date, "EEEE, yyyy-MM-dd");
 }
 
-function getWeekNumber(event: HACalendarEvent): number {
-  return getISOWeek(getEventTime(event));
+function getWeekNumber(event: HACalendarEvent, firstDayOfWeek: 0 | 1 | 6 = 1): number {
+  const date = getEventTime(event);
+  if (firstDayOfWeek === 1) return getISOWeek(date);
+  return getWeek(date, { weekStartsOn: firstDayOfWeek });
 }
 
-export default function CalendarWidget({ events, loading, fontSizes, dayColor, timeColor, display }: CalendarWidgetProps) {
+export default function CalendarWidget({ events, loading, fontSizes, dayColor, timeColor, display, timeFormat }: CalendarWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
 
   const fDay = display?.fontSizeDay || fs.heading;
   const fTime = display?.fontSizeTime || fs.label;
   const fTitle = display?.fontSizeTitle || fs.body;
   const fBody = display?.fontSizeBody || 12;
+
+  const firstDayOfWeek = display?.firstDayOfWeek ?? 1;
 
   // Group by day
   const grouped = events.reduce<Record<string, EnrichedCalendarEvent[]>>((acc, event) => {
@@ -66,6 +72,33 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
     acc[label].push(event);
     return acc;
   }, {});
+
+  // Determine which day groups should show a week number:
+  // Only "Today" and the first day of a new week (compared to the previous group)
+  const dayEntries = Object.entries(grouped);
+  const showWeekForDay = new Set<string>();
+  if (display?.showWeekNumber && dayEntries.length > 0) {
+    // Always show on Today
+    if (dayEntries[0][0] === "Today") {
+      showWeekForDay.add("Today");
+    }
+    // Show when week number changes from the previous group
+    let prevWeek = dayEntries[0][1].length > 0 ? getWeekNumber(dayEntries[0][1][0], firstDayOfWeek) : -1;
+    // If first entry is Today, mark it
+    if (dayEntries[0][0] === "Today") {
+      showWeekForDay.add("Today");
+    }
+    for (let i = 1; i < dayEntries.length; i++) {
+      const [day, dayEvents] = dayEntries[i];
+      if (dayEvents.length > 0) {
+        const wk = getWeekNumber(dayEvents[0], firstDayOfWeek);
+        if (wk !== prevWeek) {
+          showWeekForDay.add(day);
+        }
+        prevWeek = wk;
+      }
+    }
+  }
 
   return (
     <div className="widget-card h-full flex flex-col">
@@ -80,21 +113,21 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
         <p style={{ fontSize: fTitle }} className="text-muted-foreground">No upcoming events</p>
       ) : (
         <div className="space-y-4 flex-1 overflow-y-auto pr-1">
-          {Object.entries(grouped).map(([day, dayEvents]) => (
+          {dayEntries.map(([day, dayEvents]) => (
             <div key={day}>
               <div className="mb-2 flex items-center justify-between">
                 <p className="font-medium uppercase tracking-wider text-primary/70" style={{ fontSize: fDay, color: dayColor || undefined }}>
                   {day}
                 </p>
-                {display?.showWeekNumber && dayEvents.length > 0 && (
+                {showWeekForDay.has(day) && dayEvents.length > 0 && (
                   <span className="text-muted-foreground font-mono" style={{ fontSize: fTime }}>
-                    W{getWeekNumber(dayEvents[0])}
+                    W{getWeekNumber(dayEvents[0], firstDayOfWeek)}
                   </span>
                 )}
               </div>
               <div className="space-y-2">
                 {dayEvents.map((event, i) => {
-                  const timeStr = formatEventTime(event, display);
+                  const timeStr = formatEventTime(event, display, timeFormat);
                   return (
                     <div
                       key={i}

@@ -159,7 +159,7 @@ const Index = () => {
     const fs = getFontSizes(id);
 
     if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} fontSizes={fs} />;
-    if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} fontSizes={fs} dayColor={config.calendarDayColor} timeColor={config.calendarTimeColor} display={config.calendarDisplay} />;
+    if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} fontSizes={fs} dayColor={config.calendarDayColor} timeColor={config.calendarTimeColor} display={config.calendarDisplay} timeFormat={config.globalFormat?.timeFormat} />;
     if (id === "weather") return (
       <WeatherWidget
         weather={weather}

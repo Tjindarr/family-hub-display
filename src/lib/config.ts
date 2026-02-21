@@ -37,10 +37,19 @@ export interface CalendarDisplayConfig {
   showEndDate: boolean;
   hideAllDayText: boolean;
   showWeekNumber: boolean;
+  firstDayOfWeek: 0 | 1 | 6; // 0=Sunday, 1=Monday, 6=Saturday
   fontSizeDay: number;    // px
   fontSizeTime: number;   // px
   fontSizeTitle: number;  // px
   fontSizeBody: number;   // px
+}
+
+export type DateFormatStyle = "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy";
+export type TimeFormatStyle = "24h" | "12h";
+
+export interface GlobalFormatConfig {
+  dateFormat: DateFormatStyle;
+  timeFormat: TimeFormatStyle;
 }
 
 export interface WeatherConfig {
@@ -214,6 +223,7 @@ export interface DashboardConfig {
   globalFontSizes: GlobalFontSizes;
   widgetFontSizes: Record<string, WidgetFontSizes>;
   personCardFontSizes: PersonCardFontSizes;
+  globalFormat: GlobalFormatConfig;
 }
 
 export interface TemperatureEntityConfig {
@@ -286,6 +296,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
     showEndDate: false,
     hideAllDayText: false,
     showWeekNumber: false,
+    firstDayOfWeek: 1,
     fontSizeDay: 12,
     fontSizeTime: 10,
     fontSizeTitle: 14,
@@ -341,6 +352,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   globalFontSizes: { heading: 12, value: 18, body: 14, label: 10 },
   widgetFontSizes: {},
   personCardFontSizes: {},
+  globalFormat: { dateFormat: "yyyy-MM-dd", timeFormat: "24h" },
 };
 
 export function loadConfig(): DashboardConfig {
