@@ -93,7 +93,7 @@ export function useSensorGridData(
     }
     if (entityIds.size === 0) return;
     const unsubscribe = onStateChange((entityId) => {
-      if (entityIds.has(entityId)) updateFromCache();
+      if (entityId === "__bulk_load__" || entityIds.has(entityId)) updateFromCache();
     });
     return unsubscribe;
   }, [onStateChange, config, updateFromCache]);

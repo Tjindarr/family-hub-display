@@ -126,7 +126,7 @@ export function useNotificationData(
     }
 
     const unsubscribe = onStateChange((entityId) => {
-      if (entityId.startsWith("persistent_notification.") || alertEntityIds.has(entityId)) {
+      if (entityId === "__bulk_load__" || entityId.startsWith("persistent_notification.") || alertEntityIds.has(entityId)) {
         updateFromCache();
       }
     });

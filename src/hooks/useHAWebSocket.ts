@@ -156,6 +156,12 @@ export function useHAWebSocket(config: DashboardConfig) {
           }
           statesMapRef.current = map;
           console.log(`[HA WS] Loaded ${map.size} states`);
+          // Notify listeners with a bulk-load signal so hooks refresh
+          for (const listener of listenersRef.current) {
+            try {
+              listener("__bulk_load__", {} as HAState);
+            } catch { /* ignore */ }
+          }
         }
         break;
 
