@@ -119,14 +119,18 @@ export function useTemperatureData(config: DashboardConfig, getCachedState?: Get
               const raw = await client.getHistory(entity.entityId, historyStart.toISOString(), now.toISOString());
               if (raw?.[0]) {
                 const points = raw[0];
-                const step = Math.max(1, Math.floor(points.length / 60));
-                history = points
-                  .filter((_, i) => i % step === 0)
+                // Filter out non-numeric states (unavailable, unknown, etc.) first
+                const numericPoints = points.filter((s: any) => {
+                  const v = parseFloat(s.state);
+                  return !isNaN(v) && isFinite(v);
+                });
+                const step = Math.max(1, Math.floor(numericPoints.length / 60));
+                history = numericPoints
+                  .filter((_: any, i: number) => i % step === 0)
                   .map((s: any) => ({
                     time: s.last_updated,
-                    value: parseFloat(s.state) || 0,
-                  }))
-                  .filter((p) => !isNaN(p.value));
+                    value: parseFloat(s.state),
+                  }));
               }
             } catch { /* ignore */ }
           }
