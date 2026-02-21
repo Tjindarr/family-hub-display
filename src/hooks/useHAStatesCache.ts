@@ -8,13 +8,11 @@ import { createHAClient } from "@/lib/ha-api";
  * don't need to call /api/states/{entity_id} separately.
  */
 export function useHAStatesCache(config: DashboardConfig) {
-  const [statesMap, setStatesMap] = useState<Map<string, HAState>>(new Map());
   const [loading, setLoading] = useState(true);
   const statesMapRef = useRef<Map<string, HAState>>(new Map());
 
   const fetchStates = useCallback(async () => {
     if (!isConfigured(config)) {
-      setStatesMap(new Map());
       statesMapRef.current = new Map();
       setLoading(false);
       return;
@@ -27,7 +25,6 @@ export function useHAStatesCache(config: DashboardConfig) {
       for (const state of allStates) {
         map.set(state.entity_id, state);
       }
-      setStatesMap(map);
       statesMapRef.current = map;
     } catch (err) {
       console.error("Failed to fetch bulk states:", err);
@@ -47,5 +44,5 @@ export function useHAStatesCache(config: DashboardConfig) {
     return statesMapRef.current.get(entityId);
   }, []);
 
-  return { statesMap, getState, loading };
+  return { getState, loading };
 }

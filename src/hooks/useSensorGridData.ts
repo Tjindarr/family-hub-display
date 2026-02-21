@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { DashboardConfig, isConfigured as checkConfigured, type HAState } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { SensorGridLiveData } from "@/components/SensorGridWidget";
+import type { GetCachedState } from "@/hooks/useDashboardData";
 
-export function useSensorGridData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
+export function useSensorGridData(config: DashboardConfig, getCachedState?: GetCachedState) {
   const [dataMap, setDataMap] = useState<Record<string, SensorGridLiveData>>({});
   const [loading, setLoading] = useState(true);
 
@@ -41,7 +42,7 @@ export function useSensorGridData(config: DashboardConfig, statesMap?: Map<strin
             if (!cell.entityId) return { value: "", unit: cell.unit };
             try {
               // Use cached state if available
-              const state = statesMap?.get(cell.entityId);
+              const state = getCachedState?.(cell.entityId);
               if (state) {
                 return {
                   value: state.state,
@@ -69,7 +70,7 @@ export function useSensorGridData(config: DashboardConfig, statesMap?: Map<strin
     } finally {
       setLoading(false);
     }
-  }, [config, statesMap]);
+  }, [config]);
 
   useEffect(() => {
     fetchData();

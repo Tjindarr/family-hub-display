@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig, ChartGrouping, ChartAggregation, type HAState } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
+import type { GetCachedState } from "@/hooks/useDashboardData";
 
 function getBucketKey(iso: string, grouping: ChartGrouping): string {
   const d = new Date(iso);
@@ -95,7 +96,7 @@ async function fetchHistoryChart(
   now: Date,
   aggregation: ChartAggregation,
   grouping: ChartGrouping,
-  statesMap?: Map<string, HAState>
+  getCachedState?: GetCachedState
 ): Promise<Record<string, number | string>[]> {
   const [histories, currentStates] = await Promise.all([
     Promise.all(
@@ -112,7 +113,7 @@ async function fetchHistoryChart(
       sc.chartSeries.map(async (cs) => {
         try {
           // Use cached state for current value
-          return statesMap?.get(cs.entityId) || await client.getState(cs.entityId);
+          return getCachedState?.(cs.entityId) || await client.getState(cs.entityId);
         } catch {
           return null;
         }
@@ -167,7 +168,7 @@ async function fetchHistoryChart(
 }
 
 
-export function useGeneralSensorData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
+export function useGeneralSensorData(config: DashboardConfig, getCachedState?: GetCachedState) {
   const [dataMap, setDataMap] = useState<Record<string, GeneralSensorLiveData>>({});
   const [loading, setLoading] = useState(true);
 
@@ -229,7 +230,7 @@ export function useGeneralSensorData(config: DashboardConfig, statesMap?: Map<st
         // Use cached states for top/bottom info values
         const topValues = sc.topInfo.map((ti) => {
           try {
-            const state = statesMap?.get(ti.entityId);
+            const state = getCachedState?.(ti.entityId);
             if (state) {
               return { label: ti.label, value: state.state, unit: ti.unit || state.attributes?.unit_of_measurement || "", color: ti.color };
             }
@@ -252,7 +253,7 @@ export function useGeneralSensorData(config: DashboardConfig, statesMap?: Map<st
 
         const bottomValues = sc.bottomInfo.map((bi) => {
           try {
-            const state = statesMap?.get(bi.entityId);
+            const state = getCachedState?.(bi.entityId);
             if (state) {
               return { label: bi.label, value: state.state, unit: bi.unit || state.attributes?.unit_of_measurement || "", color: bi.color };
             }
@@ -294,7 +295,7 @@ export function useGeneralSensorData(config: DashboardConfig, statesMap?: Map<st
             start = new Date(now.getTime() - sc.historyHours * 3600000);
           }
 
-          chartData = await fetchHistoryChart(client, sc, start, now, aggregation, grouping, statesMap);
+          chartData = await fetchHistoryChart(client, sc, start, now, aggregation, grouping, getCachedState);
         }
 
         result[sc.id] = { topValues: topValuesResolved, bottomValues: bottomValuesResolved, chartData, chartSeriesMeta };
@@ -306,7 +307,7 @@ export function useGeneralSensorData(config: DashboardConfig, statesMap?: Map<st
     } finally {
       setLoading(false);
     }
-  }, [config, statesMap]);
+  }, [config]);
 
   useEffect(() => {
     fetchData();
