@@ -231,9 +231,6 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
   const [rowColumns, setRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
   const [rowHeights, setRowHeights] = useState<Record<number, number>>(config.rowHeights || {});
-  const [screenLock, setScreenLock] = useState(config.screenLock || false);
-  const [rowWeights, setRowWeights] = useState<Record<number, number>>(config.rowWeights || {});
-  const [rowColumnRatios, setRowColumnRatios] = useState<Record<number, string>>(config.rowColumnRatios || {});
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
@@ -339,9 +336,6 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       gridColumns,
       rowColumns,
       rowHeights,
-      screenLock,
-      rowWeights,
-      rowColumnRatios,
       configBackendUrl: "",
       photoWidget: photoConfig,
       personEntities,
@@ -1735,16 +1729,6 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
             <section className="space-y-3">
               <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Grid</h3>
-
-              {/* Screen lock toggle */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Screen Lock</Label>
-                  <p className="text-[11px] text-muted-foreground/70">Lock dashboard to viewport — no scrolling. Rows fill screen proportionally.</p>
-                </div>
-                <Switch checked={screenLock} onCheckedChange={setScreenLock} />
-              </div>
-
               <div>
                 <Label className="text-xs text-muted-foreground">Grid Columns</Label>
                 <Select value={String(gridColumns)} onValueChange={(v) => setGridColumns(Number(v))}>
@@ -1800,10 +1784,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                 })()}
               </div>
 
-              {/* Per-row column ratios */}
+              {/* Per-row height overrides */}
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Column Ratios per Row</Label>
-                <p className="text-[11px] text-muted-foreground/70">e.g. "1fr 2fr 1fr" — leave empty for equal columns</p>
+                <Label className="text-xs text-muted-foreground">Height per Row (px)</Label>
                 {(() => {
                   const usedRows = new Set<number>();
                   widgetItems.forEach(({ id }) => {
@@ -1815,94 +1798,24 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     <div key={row} className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground w-14">Row {row}</span>
                       <Input
-                        type="text" placeholder={`repeat(${rowColumns[row] || gridColumns}, 1fr)`}
-                        value={rowColumnRatios[row] ?? ""}
+                        type="number" min={50} max={1000} step={10} placeholder="auto"
+                        value={rowHeights[row] ?? ""}
                         onChange={(e) => {
-                          const val = e.target.value.trim();
-                          setRowColumnRatios((prev) => {
+                          const val = e.target.value;
+                          setRowHeights((prev) => {
                             const next = { ...prev };
-                            if (!val) delete next[row];
-                            else next[row] = val;
+                            if (!val || val === "0") delete next[row];
+                            else next[row] = Number(val);
                             return next;
                           });
                         }}
-                        className="flex-1 h-7 bg-muted border-border text-xs"
+                        className="w-28 h-7 bg-muted border-border text-xs"
                       />
+                      <span className="text-xs text-muted-foreground">px</span>
                     </div>
                   ));
                 })()}
               </div>
-
-              {/* Per-row weight (fr) — only shown in screen lock mode */}
-              {screenLock && (
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Row Weight (fr)</Label>
-                  <p className="text-[11px] text-muted-foreground/70">Controls row height proportionally. Default: 1</p>
-                  {(() => {
-                    const usedRows = new Set<number>();
-                    widgetItems.forEach(({ id }) => {
-                      const defaultRow = id === "electricity" || id === "calendar" ? 2 : 1;
-                      usedRows.add(widgetLayouts[id]?.row || defaultRow);
-                    });
-                    const sortedRows = [...usedRows].sort((a, b) => a - b);
-                    return sortedRows.map((row) => (
-                      <div key={row} className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground w-14">Row {row}</span>
-                        <Input
-                          type="number" min={1} max={20} step={1} placeholder="1"
-                          value={rowWeights[row] ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setRowWeights((prev) => {
-                              const next = { ...prev };
-                              if (!val || val === "1" || val === "0") delete next[row];
-                              else next[row] = Number(val);
-                              return next;
-                            });
-                          }}
-                          className="w-20 h-7 bg-muted border-border text-xs"
-                        />
-                        <span className="text-xs text-muted-foreground">fr</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              )}
-
-              {/* Legacy per-row height — only shown when NOT in screen lock mode */}
-              {!screenLock && (
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Height per Row (px)</Label>
-                  {(() => {
-                    const usedRows = new Set<number>();
-                    widgetItems.forEach(({ id }) => {
-                      const defaultRow = id === "electricity" || id === "calendar" ? 2 : 1;
-                      usedRows.add(widgetLayouts[id]?.row || defaultRow);
-                    });
-                    const sortedRows = [...usedRows].sort((a, b) => a - b);
-                    return sortedRows.map((row) => (
-                      <div key={row} className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground w-14">Row {row}</span>
-                        <Input
-                          type="number" min={50} max={1000} step={10} placeholder="auto"
-                          value={rowHeights[row] ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setRowHeights((prev) => {
-                              const next = { ...prev };
-                              if (!val || val === "0") delete next[row];
-                              else next[row] = Number(val);
-                              return next;
-                            });
-                          }}
-                          className="w-28 h-7 bg-muted border-border text-xs"
-                        />
-                        <span className="text-xs text-muted-foreground">px</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              )}
             </section>
 
             {/* Widget Order */}

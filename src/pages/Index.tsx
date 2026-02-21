@@ -129,9 +129,6 @@ const Index = () => {
   const gridColumns = isMobile ? 1 : (config.gridColumns || 4);
   const rowColumns = config.rowColumns || {};
   const rowHeights = config.rowHeights || {};
-  const screenLock = !isMobile && (config.screenLock || false);
-  const rowWeights = config.rowWeights || {};
-  const rowColumnRatios = config.rowColumnRatios || {};
 
   // Font size resolver
   const getFontSizes = (widgetId: string) =>
@@ -251,22 +248,16 @@ const Index = () => {
           span: finalWidgets[finalWidgets.length - 1].span + remaining,
         };
       }
-      return { rowNum, widgets: finalWidgets, cols: rowCols, heightPx: rowHeights[rowNum], weight: rowWeights[rowNum] || 1, columnRatio: rowColumnRatios[rowNum] };
+      return { rowNum, widgets: finalWidgets, cols: rowCols, heightPx: rowHeights[rowNum] };
     });
-  }, [allWidgetIds, gridColumns, rowColumns, rowHeights, rowWeights, rowColumnRatios, isMobile, config.widgetLayouts]);
+  }, [allWidgetIds, gridColumns, rowColumns, rowHeights, isMobile, config.widgetLayouts]);
 
   if (isBlackout) {
     return <div className="fixed inset-0 bg-black z-[9999]" onClick={() => setIsBlackout(false)} />;
   }
 
   return (
-    <div
-      className={screenLock ? "bg-background" : "min-h-screen bg-background"}
-      style={screenLock
-        ? { height: '100vh', width: '100vw', overflow: 'hidden', padding: '5px', display: 'flex', flexDirection: 'column' }
-        : { padding: "5px" }
-      }
-    >
+    <div className="min-h-screen bg-background" style={{ padding: "5px" }}>
       {!isKiosk && (
         <>
           <ConfigPanel config={config} onSave={updateConfig} />
@@ -298,29 +289,18 @@ const Index = () => {
       )}
 
       {/* Grid */}
-      <div
-        className={screenLock ? "flex-1 min-h-0 grid" : "grid"}
-        style={screenLock
-          ? { gap: "5px", gridTemplateRows: rows.map(r => `${r.weight}fr`).join(' ') }
-          : { gap: "5px" }
-        }
-      >
-        {rows.map(({ rowNum, widgets, cols, heightPx, weight, columnRatio }) => {
+      <div className="grid" style={{ gap: "5px" }}>
+        {rows.map(({ rowNum, widgets, cols, heightPx }) => {
           // Group widgets by widgetGroup within each row
           const rendered: { id: string; span: number; rSpan: number; groupId: string }[] = [];
           const seenGroups = new Set<string>();
 
           for (const w of widgets) {
             const groupId = getWidgetGroup(w.id);
-            if (groupId && seenGroups.has(groupId)) continue;
+            if (groupId && seenGroups.has(groupId)) continue; // already rendered as part of group
             if (groupId) seenGroups.add(groupId);
             rendered.push({ id: w.id, span: w.span, rSpan: w.rowSpan, groupId });
           }
-
-          // Determine column template: use ratio string if provided, else equal columns
-          const colTemplate = (!isMobile && columnRatio)
-            ? columnRatio
-            : `repeat(${cols}, minmax(0, 1fr))`;
 
           return (
             <div
@@ -328,15 +308,17 @@ const Index = () => {
               className="grid"
               style={{
                 gap: "5px",
-                gridTemplateColumns: colTemplate,
-                overflow: screenLock ? 'hidden' : undefined,
-                ...(!screenLock && !isMobile && heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px`, overflow: 'hidden' } : {}),
-                ...(!screenLock && !isMobile && !heightPx ? { minHeight: '120px' } : {}),
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                ...(!isMobile && heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : !isMobile ? { minHeight: '120px' } : {}),
+                ...(!isMobile && heightPx ? { overflow: 'hidden' } : {}),
               }}
             >
               {rendered.map(({ id, span, rSpan, groupId }) => {
                 const mobileSpan = isMobile ? 1 : span;
                 const mobileRowSpan = isMobile ? 1 : rSpan;
+                const widgetHeight = heightPx && mobileRowSpan > 1
+                  ? `${heightPx * mobileRowSpan}px`
+                  : undefined;
 
                 // If this widget is the lead of a group, stack all group members
                 if (groupId) {
@@ -350,6 +332,10 @@ const Index = () => {
                       style={{
                         gridColumn: `span ${mobileSpan}`,
                         gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
+                        height: widgetHeight,
+                        minHeight: !heightPx
+                          ? (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined)
+                          : undefined,
                       }}
                     >
                       {groupWidgets.map(({ id: wId, node }) => (
@@ -365,13 +351,13 @@ const Index = () => {
                 return (
                   <div
                     key={id}
-                    className={screenLock ? "overflow-hidden" : ""}
                     style={{
                       gridColumn: `span ${mobileSpan}`,
                       gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
-                      ...(!screenLock && !heightPx ? {
-                        minHeight: id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined),
-                      } : {}),
+                      height: widgetHeight,
+                      minHeight: !heightPx
+                        ? (id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined))
+                        : undefined,
                     }}
                   >
                     {widget}
