@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import type { SensorGridConfig, SensorGridCellConfig } from "@/lib/config";
+import type { SensorGridConfig, SensorGridCellConfig, SensorGridVisibilityFilter } from "@/lib/config";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 function toIconName(name: string): string {
@@ -46,6 +46,21 @@ function resolveCell(cell: SensorGridCellConfig, rawValue: string | undefined) {
   return { displayValue, icon, iconColor, valueColor };
 }
 
+function isCellVisible(filter: SensorGridVisibilityFilter | undefined, rawValue: string | undefined): boolean {
+  if (!filter?.enabled || rawValue == null) return true;
+  if (filter.mode === "range") {
+    const num = parseFloat(rawValue);
+    if (isNaN(num)) return false;
+    const min = filter.rangeMin ?? -Infinity;
+    const max = filter.rangeMax ?? Infinity;
+    return num >= min && num <= max;
+  }
+  // exact match
+  const vals = filter.exactValues || [];
+  if (vals.length === 0) return true;
+  return vals.some((v) => v === rawValue);
+}
+
 export default function SensorGridWidget({ config, data, loading, fontSizes }: SensorGridWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
 
@@ -67,6 +82,7 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
         {config.cells.map((cell, i) => {
           if (!cell.entityId) return <div key={i} />;
           const cellData = values[i];
+          if (!isCellVisible(cell.visibilityFilter, cellData?.value)) return <div key={i} />;
           const { displayValue, icon, iconColor, valueColor } = resolveCell(cell, cellData?.value);
           return (
             <div
