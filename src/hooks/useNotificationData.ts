@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DashboardConfig, isConfigured as checkConfigured, type HAState } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { NotificationAlertRule } from "@/lib/config";
+import type { GetCachedState } from "@/hooks/useDashboardData";
 
 export interface NotificationItem {
   id: string;
@@ -13,7 +14,7 @@ export interface NotificationItem {
   timestamp: string;
 }
 
-export function useNotificationData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
+export function useNotificationData(config: DashboardConfig, getCachedState?: GetCachedState) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,42 +71,24 @@ export function useNotificationData(config: DashboardConfig, statesMap?: Map<str
     try {
       const items: NotificationItem[] = [];
 
-      // Fetch HA persistent notifications from cache
+      // Fetch HA persistent notifications — need to iterate all states, so use getStates()
       if (nc.showHANotifications) {
         try {
-          if (statesMap && statesMap.size > 0) {
-            // Use cached states
-            for (const [entityId, s] of statesMap) {
-              if (entityId.startsWith("persistent_notification.")) {
-                items.push({
-                  id: s.entity_id,
-                  type: "ha",
-                  title: s.attributes?.title || s.attributes?.friendly_name || "Notification",
-                  message: s.attributes?.message || s.state,
-                  icon: "bell",
-                  color: "hsl(174, 72%, 50%)",
-                  timestamp: s.last_updated || new Date().toISOString(),
-                });
-              }
-            }
-          } else {
-            // Fallback to individual call
-            const client = createHAClient(config);
-            const allStates = await client.getStates();
-            const notifStates = allStates.filter((s) =>
-              s.entity_id.startsWith("persistent_notification.")
-            );
-            for (const s of notifStates) {
-              items.push({
-                id: s.entity_id,
-                type: "ha",
-                title: s.attributes?.title || s.attributes?.friendly_name || "Notification",
-                message: s.attributes?.message || s.state,
-                icon: "bell",
-                color: "hsl(174, 72%, 50%)",
-                timestamp: s.last_updated || new Date().toISOString(),
-              });
-            }
+          const client = createHAClient(config);
+          const allStates = await client.getStates();
+          const notifStates = allStates.filter((s) =>
+            s.entity_id.startsWith("persistent_notification.")
+          );
+          for (const s of notifStates) {
+            items.push({
+              id: s.entity_id,
+              type: "ha",
+              title: s.attributes?.title || s.attributes?.friendly_name || "Notification",
+              message: s.attributes?.message || s.state,
+              icon: "bell",
+              color: "hsl(174, 72%, 50%)",
+              timestamp: s.last_updated || new Date().toISOString(),
+            });
           }
         } catch {
           /* ignore */
@@ -116,7 +99,7 @@ export function useNotificationData(config: DashboardConfig, statesMap?: Map<str
       if (nc.alertRules?.length) {
         for (const rule of nc.alertRules) {
           try {
-            const state = statesMap?.get(rule.entityId) || await createHAClient(config).getState(rule.entityId);
+            const state = getCachedState?.(rule.entityId) || await createHAClient(config).getState(rule.entityId);
             const value = parseFloat(state.state);
             if (isNaN(value)) continue;
 
@@ -148,7 +131,7 @@ export function useNotificationData(config: DashboardConfig, statesMap?: Map<str
     } finally {
       setLoading(false);
     }
-  }, [config, statesMap]);
+  }, [config]);
 
   useEffect(() => {
     fetchData();

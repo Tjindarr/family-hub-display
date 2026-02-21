@@ -67,7 +67,9 @@ export interface NordpoolData {
   currentPrice: number;
 }
 
-export function useTemperatureData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
+export type GetCachedState = (entityId: string) => HAState | undefined;
+
+export function useTemperatureData(config: DashboardConfig, getCachedState?: GetCachedState) {
   const [sensors, setSensors] = useState<TemperatureSensorData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -103,11 +105,11 @@ export function useTemperatureData(config: DashboardConfig, statesMap?: Map<stri
       const results = await Promise.all(
         config.temperatureEntities.map(async (entity) => {
           // Use cached state if available, fallback to individual call
-          const tempState = statesMap?.get(entity.entityId) || await client.getState(entity.entityId);
+          const tempState = getCachedState?.(entity.entityId) || await client.getState(entity.entityId);
           let humidity: number | null = null;
           if (entity.humidityEntityId) {
             try {
-              const humState = statesMap?.get(entity.humidityEntityId) || await client.getState(entity.humidityEntityId);
+              const humState = getCachedState?.(entity.humidityEntityId) || await client.getState(entity.humidityEntityId);
               humidity = parseFloat(humState.state) || null;
             } catch { /* ignore */ }
           }
@@ -147,7 +149,7 @@ export function useTemperatureData(config: DashboardConfig, statesMap?: Map<stri
     } finally {
       setLoading(false);
     }
-  }, [config, statesMap]);
+  }, [config]);
 
   useEffect(() => {
     fetchData();
@@ -210,7 +212,7 @@ export function useCalendarData(config: DashboardConfig) {
   return { events, loading };
 }
 
-export function useWeatherData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
+export function useWeatherData(config: DashboardConfig, getCachedState?: GetCachedState) {
   const [weather, setWeather] = useState<WeatherData>({
     current: { temperature: 0, condition: "clear", humidity: 0, windSpeed: 0 },
     forecast: [],
@@ -234,14 +236,14 @@ export function useWeatherData(config: DashboardConfig, statesMap?: Map<string, 
     try {
       const client = createHAClient(config);
       // Use cached state for weather entity
-      const state = statesMap?.get(wc.entityId) || await client.getState(wc.entityId);
+      const state = getCachedState?.(wc.entityId) || await client.getState(wc.entityId);
       const attrs = state.attributes || {};
 
       // Fetch sunrise/sunset from sun.sun entity (from cache)
       let sunriseStr: string | null = null;
       let sunsetStr: string | null = null;
       try {
-        const sunState = statesMap?.get("sun.sun") || await client.getState("sun.sun");
+        const sunState = getCachedState?.("sun.sun") || await client.getState("sun.sun");
         const sunAttrs = sunState.attributes || {};
         if (sunAttrs.next_rising) {
           const d = new Date(sunAttrs.next_rising);
@@ -293,7 +295,7 @@ export function useWeatherData(config: DashboardConfig, statesMap?: Map<string, 
     } finally {
       setLoading(false);
     }
-  }, [config, statesMap]);
+  }, [config]);
 
   useEffect(() => {
     fetchWeather();
@@ -304,7 +306,7 @@ export function useWeatherData(config: DashboardConfig, statesMap?: Map<string, 
   return { weather, loading };
 }
 
-export function useElectricityPrices(config: DashboardConfig, statesMap?: Map<string, HAState>) {
+export function useElectricityPrices(config: DashboardConfig, getCachedState?: GetCachedState) {
   const [nordpool, setNordpool] = useState<NordpoolData>({ today: [], tomorrow: [], currentPrice: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -323,7 +325,7 @@ export function useElectricityPrices(config: DashboardConfig, statesMap?: Map<st
 
     try {
       // Use cached state — electricity entity has raw_today/raw_tomorrow in attributes
-      const state = statesMap?.get(config.electricityPriceEntity);
+      const state = getCachedState?.(config.electricityPriceEntity);
       if (!state) {
         // Fallback to individual call if not in cache
         const client = createHAClient(config);
@@ -353,7 +355,7 @@ export function useElectricityPrices(config: DashboardConfig, statesMap?: Map<st
       }));
       setNordpool({ today, tomorrow, currentPrice: currentPrice + surcharge });
     }
-  }, [config, statesMap]);
+  }, [config]);
 
   useEffect(() => {
     fetchPrices();
@@ -364,7 +366,7 @@ export function useElectricityPrices(config: DashboardConfig, statesMap?: Map<st
   return { nordpool, loading };
 }
 
-export function usePersonData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
+export function usePersonData(config: DashboardConfig, getCachedState?: GetCachedState) {
   const [persons, setPersons] = useState<PersonData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -402,17 +404,15 @@ export function usePersonData(config: DashboardConfig, statesMap?: Map<string, H
     }
 
     try {
-      // Use cached zone entities from statesMap instead of a separate getStates() call
+      // Use cached zone entities from getCachedState - collect all zone.* entities
       let zoneEntities: HAState[] = [];
-      if (statesMap && statesMap.size > 0) {
-        zoneEntities = Array.from(statesMap.values()).filter((s) => s.entity_id.startsWith("zone."));
-      } else {
-        try {
-          const client = createHAClient(config);
-          const allStates = await client.getStates();
-          zoneEntities = allStates.filter((s) => s.entity_id.startsWith("zone."));
-        } catch { /* ignore */ }
-      }
+      try {
+        const client = createHAClient(config);
+        // We need all zone entities - getCachedState only does single lookups
+        // so we still need getStates for filtering, but this is rare
+        const allStates = await client.getStates();
+        zoneEntities = allStates.filter((s) => s.entity_id.startsWith("zone."));
+      } catch { /* ignore */ }
 
       const results = await Promise.all(
         config.personEntities.map(async (pe) => {
@@ -425,7 +425,7 @@ export function usePersonData(config: DashboardConfig, statesMap?: Map<string, H
           // Picture — use cache
           if (pe.entityPicture) {
             try {
-              const state = statesMap?.get(pe.entityPicture);
+              const state = getCachedState?.(pe.entityPicture);
               if (state) {
                 const pic = state.attributes?.entity_picture;
                 if (pic) {
@@ -446,7 +446,7 @@ export function usePersonData(config: DashboardConfig, statesMap?: Map<string, H
           let zoneIcon: string | null = null;
           if (pe.locationEntity) {
             try {
-              const state = statesMap?.get(pe.locationEntity) || await createHAClient(config).getState(pe.locationEntity);
+              const state = getCachedState?.(pe.locationEntity) || await createHAClient(config).getState(pe.locationEntity);
               location = state.state || null;
               if (location && location !== "not_home" && location !== "unknown" && location !== "unavailable") {
                 const matchedZone = zoneEntities.find(
@@ -462,7 +462,7 @@ export function usePersonData(config: DashboardConfig, statesMap?: Map<string, H
           // Battery — use cache
           if (pe.batteryEntity) {
             try {
-              const state = statesMap?.get(pe.batteryEntity) || await createHAClient(config).getState(pe.batteryEntity);
+              const state = getCachedState?.(pe.batteryEntity) || await createHAClient(config).getState(pe.batteryEntity);
               batteryPercent = parseFloat(state.state) || null;
             } catch { /* ignore */ }
           }
@@ -470,7 +470,7 @@ export function usePersonData(config: DashboardConfig, statesMap?: Map<string, H
           // Charging — use cache
           if (pe.batteryChargingEntity) {
             try {
-              const state = statesMap?.get(pe.batteryChargingEntity) || await createHAClient(config).getState(pe.batteryChargingEntity);
+              const state = getCachedState?.(pe.batteryChargingEntity) || await createHAClient(config).getState(pe.batteryChargingEntity);
               const s = state.state.toLowerCase();
               isCharging = s === "on" || s === "charging";
             } catch { /* ignore */ }
@@ -479,7 +479,7 @@ export function usePersonData(config: DashboardConfig, statesMap?: Map<string, H
           // Distance — use cache
           if (pe.distanceEntity) {
             try {
-              const state = statesMap?.get(pe.distanceEntity) || await createHAClient(config).getState(pe.distanceEntity);
+              const state = getCachedState?.(pe.distanceEntity) || await createHAClient(config).getState(pe.distanceEntity);
               const parsed = parseFloat(state.state);
               distanceKm = isNaN(parsed) ? null : parsed;
             } catch { /* ignore */ }
@@ -494,7 +494,7 @@ export function usePersonData(config: DashboardConfig, statesMap?: Map<string, H
     } finally {
       setLoading(false);
     }
-  }, [config, statesMap]);
+  }, [config]);
 
   useEffect(() => {
     fetchData();

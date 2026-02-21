@@ -88,19 +88,19 @@ const Index = () => {
   }), [config, effectiveSensorGrids]);
 
   // Centralized bulk states cache — one /api/states call per refresh cycle
-  const { statesMap } = useHAStatesCache(config);
+  const { getState: getCachedState } = useHAStatesCache(config);
 
-  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config, statesMap);
+  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config, getCachedState);
   const { events, loading: calLoading } = useCalendarData(config);
-  const { nordpool, loading: priceLoading } = useElectricityPrices(config, statesMap);
-  const { persons, loading: personLoading } = usePersonData(config, statesMap);
-  const { weather, loading: weatherLoading } = useWeatherData(config, statesMap);
+  const { nordpool, loading: priceLoading } = useElectricityPrices(config, getCachedState);
+  const { persons, loading: personLoading } = usePersonData(config, getCachedState);
+  const { weather, loading: weatherLoading } = useWeatherData(config, getCachedState);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
-  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config, statesMap);
-  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig, statesMap);
+  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config, getCachedState);
+  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig, getCachedState);
   const rssFeeds = config.rssFeeds || [];
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
-  const { notifications, loading: notifLoading } = useNotificationData(config, statesMap);
+  const { notifications, loading: notifLoading } = useNotificationData(config, getCachedState);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
