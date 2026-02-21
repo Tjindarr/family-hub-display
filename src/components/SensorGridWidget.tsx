@@ -27,7 +27,14 @@ function resolveCell(cell: SensorGridCellConfig, rawValue: string | undefined) {
   // Apply value mapping
   if (cell.valueMaps?.length && rawValue != null) {
     const match = cell.valueMaps.find((m) => m.from === rawValue);
-    if (match) displayValue = match.to;
+    if (match) {
+      displayValue = match.to;
+      if (match.icon) icon = match.icon;
+      if (match.color) {
+        iconColor = match.color;
+        valueColor = match.color;
+      }
+    }
   }
 
   // Apply interval-based icon/color

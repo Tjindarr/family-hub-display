@@ -81,6 +81,7 @@ export interface FoodMenuConfig {
   days: number; // number of days to show (default 5)
   skipWeekends: boolean; // skip Saturday and Sunday when counting days forward
   displayMode: FoodMenuDisplayMode; // compact (side-by-side) or menu (restaurant style)
+  showTitle?: boolean; // show "MENU" title with icon (default true)
   style: FoodMenuStyleConfig; // styling options
 }
 
@@ -176,6 +177,8 @@ export interface SensorGridCellInterval {
 export interface SensorGridValueMap {
   from: string; // raw value from sensor
   to: string;   // displayed value
+  icon?: string; // override icon for this value
+  color?: string; // override icon+value color for this value
 }
 
 export interface SensorGridVisibilityFilter {
