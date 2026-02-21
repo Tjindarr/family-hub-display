@@ -203,6 +203,11 @@ export interface SensorGridCellConfig {
   intervals?: SensorGridCellInterval[]; // exactly 4 intervals
   valueMaps?: SensorGridValueMap[]; // value rewrite rules
   visibilityFilter?: SensorGridVisibilityFilter; // conditionally hide cell
+  colSpan?: number; // how many columns this cell spans (default 1)
+  rowSpan?: number; // how many rows this cell spans (default 1)
+  order?: number; // CSS order for custom positioning
+  showChart?: boolean; // show background chart like temperature widget
+  chartType?: SensorChartType; // chart type for background chart (default "line")
 }
 
 export interface SensorGridConfig {

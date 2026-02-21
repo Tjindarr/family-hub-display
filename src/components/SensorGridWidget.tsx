@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react";
-import type { SensorGridConfig, SensorGridCellConfig, SensorGridVisibilityFilter } from "@/lib/config";
+import { ResponsiveContainer, ComposedChart, Line, Bar, Area, Scatter, YAxis } from "recharts";
+import type { SensorGridConfig, SensorGridCellConfig, SensorGridVisibilityFilter, SensorChartType } from "@/lib/config";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 function toIconName(name: string): string {
@@ -8,7 +9,7 @@ function toIconName(name: string): string {
 }
 
 export interface SensorGridLiveData {
-  values: { value: string; unit: string }[];
+  values: { value: string; unit: string; history?: { time: string; value: number }[] }[];
 }
 
 interface SensorGridWidgetProps {
@@ -62,10 +63,36 @@ function isCellVisible(filter: SensorGridVisibilityFilter | undefined, rawValue:
     const max = filter.rangeMax ?? Infinity;
     return num >= min && num <= max;
   }
-  // exact match
   const vals = filter.exactValues || [];
   if (vals.length === 0) return true;
   return vals.some((v) => v === rawValue);
+}
+
+function CellChart({ history, color, chartType }: { history: { time: string; value: number }[]; color: string; chartType: SensorChartType }) {
+  if (!history || history.length === 0) return null;
+  const gradId = `sgGrad_${color.replace(/[^a-zA-Z0-9]/g, "_")}_${Math.random().toString(36).slice(2, 6)}`;
+  return (
+    <div className="absolute inset-0 opacity-20 pointer-events-none">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={history} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.6} />
+              <stop offset="95%" stopColor={color} stopOpacity={0.05} />
+            </linearGradient>
+          </defs>
+          <YAxis domain={["dataMin - 1", "dataMax + 1"]} hide />
+          {chartType === "bar" && <Bar dataKey="value" fill={color} opacity={0.7} />}
+          {chartType === "area" && <Area type="monotone" dataKey="value" stroke={color} strokeWidth={1.5} fill={`url(#${gradId})`} dot={false} />}
+          {chartType === "step" && <Area type="stepAfter" dataKey="value" stroke={color} strokeWidth={1.5} fill={`url(#${gradId})`} dot={false} />}
+          {chartType === "scatter" && <Scatter dataKey="value" fill={color} />}
+          {(chartType === "line" || !["bar", "area", "step", "scatter"].includes(chartType)) && (
+            <Line type="monotone" dataKey="value" stroke={color} strokeWidth={1.5} dot={false} />
+          )}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
 }
 
 export default function SensorGridWidget({ config, data, loading, fontSizes }: SensorGridWidgetProps) {
@@ -87,27 +114,35 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
         }}
       >
         {config.cells.map((cell, i) => {
-          if (!cell.entityId) return <div key={i} />;
+          if (!cell.entityId) return <div key={i} style={{ order: cell.order ?? i }} />;
           const cellData = values[i];
-          if (!isCellVisible(cell.visibilityFilter, cellData?.value)) return <div key={i} />;
+          if (!isCellVisible(cell.visibilityFilter, cellData?.value)) return <div key={i} style={{ order: cell.order ?? i }} />;
           const { displayValue, icon, iconColor, valueColor } = resolveCell(cell, cellData?.value);
           return (
             <div
               key={i}
-              className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 min-w-0 text-center"
-              style={{ padding: "3px" }}
+              className="relative flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 min-w-0 text-center overflow-hidden"
+              style={{
+                padding: "3px",
+                gridColumn: cell.colSpan && cell.colSpan > 1 ? `span ${cell.colSpan}` : undefined,
+                gridRow: cell.rowSpan && cell.rowSpan > 1 ? `span ${cell.rowSpan}` : undefined,
+                order: cell.order ?? i,
+              }}
             >
+              {cell.showChart && cellData?.history && (
+                <CellChart history={cellData.history} color={iconColor || "hsl(var(--primary))"} chartType={cell.chartType || "line"} />
+              )}
               {icon && (
                 <Icon
                   icon={toIconName(icon)}
-                  className="shrink-0"
+                  className="shrink-0 relative z-10"
                   style={{ color: iconColor || undefined, width: cell.iconSize || 16, height: cell.iconSize || 16 }}
                 />
               )}
-              <span className="text-muted-foreground max-w-full text-center leading-tight break-words" style={{ fontSize: cell.labelFontSize || fs.label }}>
+              <span className="text-muted-foreground max-w-full text-center leading-tight break-words relative z-10" style={{ fontSize: cell.labelFontSize || fs.label }}>
                 {cell.label}
               </span>
-              <div className="flex items-baseline justify-center gap-0.5">
+              <div className="flex items-baseline justify-center gap-0.5 relative z-10">
                 <span
                   className="font-mono font-semibold text-center"
                   style={{ color: valueColor || undefined, fontSize: cell.fontSize || fs.body }}
