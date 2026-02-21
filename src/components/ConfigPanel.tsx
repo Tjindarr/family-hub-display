@@ -711,6 +711,22 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                         className="mt-1 bg-muted border-border text-sm"
                       />
                     </div>
+                    <div className="w-24">
+                      <Label className="text-xs text-muted-foreground">Days ahead</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={90}
+                        value={cal.forecastDays || ""}
+                        onChange={(e) => {
+                          const updated = [...calendarEntityConfigs];
+                          updated[i] = { ...updated[i], forecastDays: Number(e.target.value) || undefined };
+                          setCalendarEntityConfigs(updated);
+                        }}
+                        placeholder="global"
+                        className="mt-1 bg-muted border-border text-sm"
+                      />
+                    </div>
                     <div className="w-48">
                       <Label className="text-xs text-muted-foreground">Text Color</Label>
                       <div className="mt-1 flex items-center gap-2">
@@ -739,6 +755,19 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
+
+              {/* Global forecast days */}
+              <div>
+                <Label className="text-xs text-muted-foreground">Default days ahead (all calendars)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={90}
+                  value={config.calendarForecastDays || 7}
+                  onChange={(e) => onSave({ calendarForecastDays: Number(e.target.value) || 7 })}
+                  className="mt-1 bg-muted border-border text-sm w-24"
+                />
+              </div>
 
               {/* General calendar colors */}
               <div className="flex gap-2">
