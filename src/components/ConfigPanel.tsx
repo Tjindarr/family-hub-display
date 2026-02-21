@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -186,6 +186,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [calendarDisplay, setCalendarDisplay] = useState<CalendarDisplayConfig>(
     config.calendarDisplay || {
       showEventBody: false, showEndDate: false, hideAllDayText: false, showWeekNumber: false,
+      firstDayOfWeek: 1,
       fontSizeDay: 12, fontSizeTime: 10, fontSizeTitle: 14, fontSizeBody: 12,
     }
   );
@@ -213,6 +214,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [globalFontSizes, setGlobalFontSizes] = useState<GlobalFontSizes>(config.globalFontSizes || DEFAULT_FONT_SIZES);
   const [widgetFontSizes, setWidgetFontSizes] = useState<Record<string, WidgetFontSizes>>(config.widgetFontSizes || {});
   const [personCardFontSizes, setPersonCardFontSizes] = useState<PersonCardFontSizes>(config.personCardFontSizes || {});
+  const [globalFormat, setGlobalFormat] = useState<GlobalFormatConfig>(config.globalFormat || { dateFormat: "yyyy-MM-dd", timeFormat: "24h" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
@@ -321,6 +323,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       globalFontSizes,
       widgetFontSizes,
       personCardFontSizes,
+      globalFormat,
     });
     setOpen(false);
   };
@@ -522,6 +525,45 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
               <p className="text-[12px] text-muted-foreground">
                 Export downloads your current config as JSON. Import loads a previously exported config file.
               </p>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Date & Time Format</h3>
+              <p className="text-[12px] text-muted-foreground">These settings affect formatting across all widgets.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Date format</Label>
+                  <Select
+                    value={globalFormat.dateFormat}
+                    onValueChange={(v) => setGlobalFormat({ ...globalFormat, dateFormat: v as DateFormatStyle })}
+                  >
+                    <SelectTrigger className="mt-1 bg-muted border-border text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yyyy-MM-dd">2025-02-21 (ISO)</SelectItem>
+                      <SelectItem value="dd/MM/yyyy">21/02/2025</SelectItem>
+                      <SelectItem value="MM/dd/yyyy">02/21/2025</SelectItem>
+                      <SelectItem value="dd.MM.yyyy">21.02.2025</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Time format</Label>
+                  <Select
+                    value={globalFormat.timeFormat}
+                    onValueChange={(v) => setGlobalFormat({ ...globalFormat, timeFormat: v as TimeFormatStyle })}
+                  >
+                    <SelectTrigger className="mt-1 bg-muted border-border text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24h">24-hour (14:30)</SelectItem>
+                      <SelectItem value="12h">12-hour (2:30 PM)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </section>
 
           </TabsContent>
@@ -812,6 +854,23 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                     />
                     Show week number
                   </label>
+                </div>
+
+                <div className="mt-3">
+                  <Label className="text-xs text-muted-foreground">First day of week</Label>
+                  <Select
+                    value={String(calendarDisplay.firstDayOfWeek ?? 1)}
+                    onValueChange={(v) => setCalendarDisplay({ ...calendarDisplay, firstDayOfWeek: Number(v) as 0 | 1 | 6 })}
+                  >
+                    <SelectTrigger className="mt-1 bg-muted border-border text-sm w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Monday</SelectItem>
+                      <SelectItem value="0">Sunday</SelectItem>
+                      <SelectItem value="6">Saturday</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Font Sizes (px)</h4>
