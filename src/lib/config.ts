@@ -106,6 +106,32 @@ export interface NotificationConfig {
   alertRules: NotificationAlertRule[];
 }
 
+// ── Vehicle widget ──
+
+export interface VehicleEntityMapping {
+  entityId: string;
+  label: string;
+  icon: string; // mdi icon name (e.g. "mdi:car-battery")
+  unit: string; // display unit
+  color: string; // HSL color
+}
+
+export type VehicleSectionType = "battery" | "fuel" | "location" | "climate" | "doors" | "tires" | "custom";
+
+export interface VehicleSection {
+  id: string;
+  type: VehicleSectionType;
+  label: string;
+  entities: VehicleEntityMapping[];
+}
+
+export interface VehicleConfig {
+  id: string;
+  name: string; // "My Tesla", "Family Volvo", etc.
+  icon: string; // mdi icon e.g. "mdi:car-electric"
+  sections: VehicleSection[];
+}
+
 export type SensorChartType = "line" | "bar" | "area" | "step" | "scatter";
 export type ChartGrouping = "minute" | "hour" | "day";
 export type ChartAggregation = "average" | "max" | "min" | "sum" | "last" | "delta";
@@ -220,6 +246,7 @@ export interface DashboardConfig {
   sensorGrids: SensorGridConfig[];
   rssFeeds: RssNewsConfig[];
   notificationConfig: NotificationConfig;
+  vehicles: VehicleConfig[];
   globalFontSizes: GlobalFontSizes;
   widgetFontSizes: Record<string, WidgetFontSizes>;
   personCardFontSizes: PersonCardFontSizes;
@@ -349,6 +376,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   sensorGrids: [],
   rssFeeds: [],
   notificationConfig: { showHANotifications: true, alertRules: [] },
+  vehicles: [],
   globalFontSizes: { heading: 12, value: 18, body: 14, label: 10 },
   widgetFontSizes: {},
   personCardFontSizes: {},

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -154,7 +154,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = []): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -167,6 +167,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
+    ...vehicleIds.map((id) => `vehicle_${id}`),
   ];
 }
 
@@ -211,6 +212,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [notificationConfig, setNotificationConfig] = useState<NotificationConfig>(
     config.notificationConfig || { showHANotifications: true, alertRules: [] }
   );
+  const [vehicles, setVehicles] = useState<VehicleConfig[]>(config.vehicles || []);
   const [globalFontSizes, setGlobalFontSizes] = useState<GlobalFontSizes>(config.globalFontSizes || DEFAULT_FONT_SIZES);
   const [widgetFontSizes, setWidgetFontSizes] = useState<Record<string, WidgetFontSizes>>(config.widgetFontSizes || {});
   const [personCardFontSizes, setPersonCardFontSizes] = useState<PersonCardFontSizes>(config.personCardFontSizes || {});
@@ -221,8 +223,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const gsIds = (config.generalSensors || []).map((s) => s.id);
     const sgIds = (config.sensorGrids || []).map((s) => s.id);
     const rsIds = (config.rssFeeds || []).map((s) => s.id);
+    const vcIds = (config.vehicles || []).map((v) => v.id);
     const hn = (config.notificationConfig?.showHANotifications || (config.notificationConfig?.alertRules?.length > 0)) ?? false;
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -248,11 +251,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     generalSensors.forEach((gs) => { labelMap[`general_${gs.id}`] = gs.label || `Sensor ${gs.id}`; });
     sensorGrids.forEach((sg) => { labelMap[`sensorgrid_${sg.id}`] = sg.label || `Grid ${sg.id}`; });
     rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
+    vehicles.forEach((vc) => { labelMap[`vehicle_${vc.id}`] = vc.name || `Vehicle ${vc.id}`; });
 
     const gsIds = generalSensors.map((s) => s.id);
     const sgIds = sensorGrids.map((s) => s.id);
     const rsIds = rssFeeds.map((s) => s.id);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif);
+    const vcIds = vehicles.map((v) => v.id);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -263,7 +268,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       label: labelMap[id] || id,
       defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("rss_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, rssFeeds]);
+  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, rssFeeds, vehicles]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -320,6 +325,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       sensorGrids,
       rssFeeds,
       notificationConfig,
+      vehicles,
       globalFontSizes,
       widgetFontSizes,
       personCardFontSizes,
@@ -1783,6 +1789,106 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                       onChange={(v) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, color: v } : r) }))}
                     />
                   </div>
+                </div>
+              ))}
+            </CollapsibleSection>
+
+            {/* Vehicles */}
+            <CollapsibleSection
+              title="Vehicles"
+              actions={
+                <Button variant="ghost" size="sm" onClick={() => {
+                  const id = `vehicle_${Date.now()}`;
+                  setVehicles((prev) => [...prev, {
+                    id,
+                    name: "My Vehicle",
+                    icon: "mdi:car",
+                    sections: [
+                      { id: `${id}_battery`, type: "battery" as const, label: "Battery", entities: [] },
+                    ],
+                  }]);
+                }} className="text-primary">
+                  <Plus className="mr-1 h-3 w-3" /> Add
+                </Button>
+              }
+            >
+              {vehicles.map((vc, vcIdx) => (
+                <div key={vc.id} className="space-y-3 border border-border/50 rounded-lg p-3 relative">
+                  <Button variant="ghost" size="icon" className="absolute right-1 top-1 h-6 w-6" onClick={() => setVehicles((prev) => prev.filter((_, i) => i !== vcIdx))}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Name</Label>
+                      <Input value={vc.name} onChange={(e) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, name: e.target.value } : v))} className="mt-1 bg-muted border-border" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Icon (mdi:*)</Label>
+                      <Input value={vc.icon} onChange={(e) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, icon: e.target.value } : v))} placeholder="mdi:car-electric" className="mt-1 bg-muted border-border" />
+                    </div>
+                  </div>
+
+                  {/* Sections */}
+                  {vc.sections.map((section, sIdx) => (
+                    <div key={section.id} className="space-y-2 border border-border/30 rounded p-2 relative">
+                      <Button variant="ghost" size="icon" className="absolute right-0.5 top-0.5 h-5 w-5" onClick={() => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, sections: v.sections.filter((_, si) => si !== sIdx) } : v))}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Section Label</Label>
+                          <Input value={section.label} onChange={(e) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, sections: v.sections.map((s, si) => si === sIdx ? { ...s, label: e.target.value } : s) } : v))} className="mt-1 bg-muted border-border text-xs" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Type</Label>
+                          <Select value={section.type} onValueChange={(val) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, sections: v.sections.map((s, si) => si === sIdx ? { ...s, type: val as any } : s) } : v))}>
+                            <SelectTrigger className="mt-1 bg-muted border-border text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="battery">Battery</SelectItem>
+                              <SelectItem value="fuel">Fuel</SelectItem>
+                              <SelectItem value="location">Location</SelectItem>
+                              <SelectItem value="climate">Climate</SelectItem>
+                              <SelectItem value="doors">Doors / Locks</SelectItem>
+                              <SelectItem value="tires">Tires</SelectItem>
+                              <SelectItem value="custom">Custom</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Entities in section */}
+                      {section.entities.map((ent, eIdx) => (
+                        <div key={eIdx} className="grid grid-cols-[1fr_1fr_80px_60px_auto] gap-1 items-end">
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Entity</Label>
+                            <EntityAutocomplete value={ent.entityId} onChange={(v) => setVehicles((prev) => prev.map((vc2, i) => i === vcIdx ? { ...vc2, sections: vc2.sections.map((s, si) => si === sIdx ? { ...s, entities: s.entities.map((e2, ei) => ei === eIdx ? { ...e2, entityId: v } : e2) } : s) } : vc2))} config={config} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Label</Label>
+                            <Input value={ent.label} onChange={(e) => setVehicles((prev) => prev.map((vc2, i) => i === vcIdx ? { ...vc2, sections: vc2.sections.map((s, si) => si === sIdx ? { ...s, entities: s.entities.map((e2, ei) => ei === eIdx ? { ...e2, label: e.target.value } : e2) } : s) } : vc2))} className="bg-muted border-border text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Icon</Label>
+                            <Input value={ent.icon} onChange={(e) => setVehicles((prev) => prev.map((vc2, i) => i === vcIdx ? { ...vc2, sections: vc2.sections.map((s, si) => si === sIdx ? { ...s, entities: s.entities.map((e2, ei) => ei === eIdx ? { ...e2, icon: e.target.value } : e2) } : s) } : vc2))} placeholder="mdi:battery" className="bg-muted border-border text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Unit</Label>
+                            <Input value={ent.unit} onChange={(e) => setVehicles((prev) => prev.map((vc2, i) => i === vcIdx ? { ...vc2, sections: vc2.sections.map((s, si) => si === sIdx ? { ...s, entities: s.entities.map((e2, ei) => ei === eIdx ? { ...e2, unit: e.target.value } : e2) } : s) } : vc2))} className="bg-muted border-border text-xs" />
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setVehicles((prev) => prev.map((vc2, i) => i === vcIdx ? { ...vc2, sections: vc2.sections.map((s, si) => si === sIdx ? { ...s, entities: s.entities.filter((_, ei) => ei !== eIdx) } : s) } : vc2))}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => setVehicles((prev) => prev.map((vc2, i) => i === vcIdx ? { ...vc2, sections: vc2.sections.map((s, si) => si === sIdx ? { ...s, entities: [...s.entities, { entityId: "", label: "", icon: "mdi:information", unit: "", color: "hsl(174, 72%, 50%)" }] } : s) } : vc2))}>
+                        <Plus className="mr-1 h-3 w-3" /> Add Entity
+                      </Button>
+                    </div>
+                  ))}
+
+                  <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, sections: [...v.sections, { id: `${v.id}_s${Date.now()}`, type: "custom" as const, label: "Section", entities: [] }] } : v))}>
+                    <Plus className="mr-1 h-3 w-3" /> Add Section
+                  </Button>
                 </div>
               ))}
             </CollapsibleSection>
