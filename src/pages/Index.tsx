@@ -31,6 +31,7 @@ import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
 import { useSensorGridData } from "@/hooks/useSensorGridData";
 import { useRssNews } from "@/hooks/useRssNews";
 import { useNotificationData } from "@/hooks/useNotificationData";
+import { useHAStatesCache } from "@/hooks/useHAStatesCache";
 import { resolveFontSizes } from "@/lib/fontSizes";
 
 function getTempGroupIds(entities: { group?: number }[]): string[] {
@@ -86,17 +87,20 @@ const Index = () => {
     sensorGrids: effectiveSensorGrids,
   }), [config, effectiveSensorGrids]);
 
-  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config);
+  // Centralized bulk states cache — one /api/states call per refresh cycle
+  const { statesMap } = useHAStatesCache(config);
+
+  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config, statesMap);
   const { events, loading: calLoading } = useCalendarData(config);
-  const { nordpool, loading: priceLoading } = useElectricityPrices(config);
-  const { persons, loading: personLoading } = usePersonData(config);
-  const { weather, loading: weatherLoading } = useWeatherData(config);
+  const { nordpool, loading: priceLoading } = useElectricityPrices(config, statesMap);
+  const { persons, loading: personLoading } = usePersonData(config, statesMap);
+  const { weather, loading: weatherLoading } = useWeatherData(config, statesMap);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
-  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config);
-  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig);
+  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config, statesMap);
+  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig, statesMap);
   const rssFeeds = config.rssFeeds || [];
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
-  const { notifications, loading: notifLoading } = useNotificationData(config);
+  const { notifications, loading: notifLoading } = useNotificationData(config, statesMap);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 

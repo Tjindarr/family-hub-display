@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { DashboardConfig, isConfigured as checkConfigured } from "@/lib/config";
+import { DashboardConfig, isConfigured as checkConfigured, type HAState } from "@/lib/config";
 import { createHAClient } from "@/lib/ha-api";
 import type { SensorGridLiveData } from "@/components/SensorGridWidget";
 
-export function useSensorGridData(config: DashboardConfig) {
+export function useSensorGridData(config: DashboardConfig, statesMap?: Map<string, HAState>) {
   const [dataMap, setDataMap] = useState<Record<string, SensorGridLiveData>>({});
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,6 @@ export function useSensorGridData(config: DashboardConfig) {
     }
 
     try {
-      const client = createHAClient(config);
       const result: Record<string, SensorGridLiveData> = {};
 
       for (const grid of grids) {
@@ -41,10 +40,20 @@ export function useSensorGridData(config: DashboardConfig) {
           grid.cells.map(async (cell) => {
             if (!cell.entityId) return { value: "", unit: cell.unit };
             try {
-              const state = await client.getState(cell.entityId);
+              // Use cached state if available
+              const state = statesMap?.get(cell.entityId);
+              if (state) {
+                return {
+                  value: state.state,
+                  unit: cell.unit || state.attributes?.unit_of_measurement || "",
+                };
+              }
+              // Fallback to individual call
+              const client = createHAClient(config);
+              const fetched = await client.getState(cell.entityId);
               return {
-                value: state.state,
-                unit: cell.unit || state.attributes?.unit_of_measurement || "",
+                value: fetched.state,
+                unit: cell.unit || fetched.attributes?.unit_of_measurement || "",
               };
             } catch {
               return { value: "—", unit: cell.unit };
@@ -60,7 +69,7 @@ export function useSensorGridData(config: DashboardConfig) {
     } finally {
       setLoading(false);
     }
-  }, [config]);
+  }, [config, statesMap]);
 
   useEffect(() => {
     fetchData();
