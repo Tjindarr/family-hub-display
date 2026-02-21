@@ -179,9 +179,11 @@ export function useCalendarData(config: DashboardConfig) {
     try {
       const client = createHAClient(config);
       const now = new Date();
-      const end = new Date(now.getTime() + 7 * 86400000);
+      const globalDays = config.calendarForecastDays || 7;
       const allEvents: (HACalendarEvent & { _prefix?: string; _color?: string })[] = [];
       for (const cal of calConfigs) {
+        const days = cal.forecastDays || globalDays;
+        const end = new Date(now.getTime() + days * 86400000);
         const ev = await client.getCalendarEvents(cal.entityId, now.toISOString(), end.toISOString());
         allEvents.push(...ev.map((e) => ({ ...e, _prefix: cal.prefix, _color: cal.color })));
       }

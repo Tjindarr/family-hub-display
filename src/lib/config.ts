@@ -29,6 +29,7 @@ export interface CalendarEntityConfig {
   entityId: string;
   prefix: string; // prefix appended to event summaries
   color: string; // HSL color for event text
+  forecastDays?: number; // per-calendar override for days to show
 }
 
 export interface CalendarDisplayConfig {
@@ -169,6 +170,7 @@ export interface DashboardConfig {
   calendarEntityConfigs: CalendarEntityConfig[];
   calendarDayColor: string; // color for day labels (e.g. "Today", "Tomorrow")
   calendarTimeColor: string; // color for time labels (e.g. "14:00")
+  calendarForecastDays: number; // global default days to show (default 7)
   calendarDisplay: CalendarDisplayConfig;
   temperatureEntities: TemperatureEntityConfig[];
   electricityPriceEntity: string;
@@ -262,6 +264,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   ],
   calendarDayColor: "",
   calendarTimeColor: "",
+  calendarForecastDays: 7,
   calendarDisplay: {
     showEventBody: false,
     showEndDate: false,
