@@ -12,6 +12,7 @@ import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import SensorGridWidget from "@/components/SensorGridWidget";
 import RssNewsWidget from "@/components/RssNewsWidget";
 import NotificationWidget from "@/components/NotificationWidget";
+import VehicleWidget from "@/components/VehicleWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import DashboardEditOverlay from "@/components/DashboardEditOverlay";
@@ -31,6 +32,7 @@ import { useGeneralSensorData } from "@/hooks/useGeneralSensorData";
 import { useSensorGridData } from "@/hooks/useSensorGridData";
 import { useRssNews } from "@/hooks/useRssNews";
 import { useNotificationData } from "@/hooks/useNotificationData";
+import { useVehicleData } from "@/hooks/useVehicleData";
 import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
 
@@ -47,7 +49,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications: boolean): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications: boolean, vehicleIds: string[]): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -60,6 +62,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
+    ...vehicleIds.map((id) => `vehicle_${id}`),
   ];
 }
 
@@ -101,6 +104,7 @@ const Index = () => {
   const rssFeeds = config.rssFeeds || [];
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
   const { notifications, loading: notifLoading } = useNotificationData(config, getCachedState, onStateChange, getAllStates);
+  const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(config, getCachedState, onStateChange);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -128,6 +132,7 @@ const Index = () => {
   const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
   const rssIds = rssFeeds.map((f) => f.id);
+  const vehicleIds = (config.vehicles || []).map((v) => v.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   // Apply theme
@@ -147,7 +152,7 @@ const Index = () => {
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, vehicleIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -213,6 +218,12 @@ const Index = () => {
     }
     if (id === "notifications") {
       return <NotificationWidget notifications={notifications} loading={notifLoading} fontSizes={fs} />;
+    }
+    if (id.startsWith("vehicle_")) {
+      const vehicleId = id.replace("vehicle_", "");
+      const vData = vehicleDataMap[vehicleId];
+      if (!vData) return null;
+      return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} />;
     }
     return null;
   };
