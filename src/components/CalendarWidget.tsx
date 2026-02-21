@@ -78,16 +78,10 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
   const dayEntries = Object.entries(grouped);
   const showWeekForDay = new Set<string>();
   if (display?.showWeekNumber && dayEntries.length > 0) {
-    // Always show on Today
-    if (dayEntries[0][0] === "Today") {
-      showWeekForDay.add("Today");
-    }
+    // Always show on the first day group (whether it's Today or not)
+    showWeekForDay.add(dayEntries[0][0]);
     // Show when week number changes from the previous group
     let prevWeek = dayEntries[0][1].length > 0 ? getWeekNumber(dayEntries[0][1][0], firstDayOfWeek) : -1;
-    // If first entry is Today, mark it
-    if (dayEntries[0][0] === "Today") {
-      showWeekForDay.add("Today");
-    }
     for (let i = 1; i < dayEntries.length; i++) {
       const [day, dayEvents] = dayEntries[i];
       if (dayEvents.length > 0) {
@@ -120,7 +114,7 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
                   {day}
                 </p>
                 {showWeekForDay.has(day) && dayEvents.length > 0 && (
-                  <span className="text-muted-foreground font-mono" style={{ fontSize: fTime }}>
+                  <span className="rounded bg-primary/15 px-1.5 py-0.5 text-primary font-semibold font-mono" style={{ fontSize: Math.max(fDay, fTime) }}>
                     W{getWeekNumber(dayEvents[0], firstDayOfWeek)}
                   </span>
                 )}
