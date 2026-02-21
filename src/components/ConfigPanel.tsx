@@ -1561,7 +1561,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                             <ColorPicker value={cell.valueColor || cell.color} onChange={(val) => updateCell({ valueColor: val })} className="w-36" />
                           </div>
                         </div>
-                        <div className="flex gap-2 items-end pl-5">
+                        <div className="flex gap-2 items-end pl-5 flex-wrap">
                           <div className="w-16">
                             <Label className="text-[12px] text-muted-foreground">Icon px</Label>
                             <Input type="number" min={8} max={64} value={cell.iconSize || ""} onChange={(e) => updateCell({ iconSize: Number(e.target.value) || undefined })} placeholder="16" className="bg-muted border-border text-xs h-7" />
@@ -1574,6 +1574,38 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                             <Label className="text-[12px] text-muted-foreground">Label px</Label>
                             <Input type="number" min={8} max={48} value={cell.labelFontSize || ""} onChange={(e) => updateCell({ labelFontSize: Number(e.target.value) || undefined })} placeholder="10" className="bg-muted border-border text-xs h-7" />
                           </div>
+                          <div className="w-16">
+                            <Label className="text-[12px] text-muted-foreground">Col span</Label>
+                            <Input type="number" min={1} max={6} value={cell.colSpan || ""} onChange={(e) => updateCell({ colSpan: Number(e.target.value) || undefined })} placeholder="1" className="bg-muted border-border text-xs h-7" />
+                          </div>
+                          <div className="w-16">
+                            <Label className="text-[12px] text-muted-foreground">Row span</Label>
+                            <Input type="number" min={1} max={6} value={cell.rowSpan || ""} onChange={(e) => updateCell({ rowSpan: Number(e.target.value) || undefined })} placeholder="1" className="bg-muted border-border text-xs h-7" />
+                          </div>
+                          <div className="w-16">
+                            <Label className="text-[12px] text-muted-foreground">Order</Label>
+                            <Input type="number" min={0} max={99} value={cell.order ?? ""} onChange={(e) => updateCell({ order: e.target.value === "" ? undefined : Number(e.target.value) })} placeholder={String(cIdx)} className="bg-muted border-border text-xs h-7" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 items-center pl-5">
+                          <Checkbox
+                            checked={cell.showChart || false}
+                            onCheckedChange={(checked) => updateCell({ showChart: !!checked })}
+                            className="h-3 w-3"
+                          />
+                          <span className="text-[12px] text-muted-foreground">Background chart (24h)</span>
+                          {cell.showChart && (
+                            <Select value={cell.chartType || "line"} onValueChange={(v) => updateCell({ chartType: v as any })}>
+                              <SelectTrigger className="w-24 bg-muted border-border text-xs h-6"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="line">Line</SelectItem>
+                                <SelectItem value="area">Area</SelectItem>
+                                <SelectItem value="bar">Bar</SelectItem>
+                                <SelectItem value="step">Step</SelectItem>
+                                <SelectItem value="scatter">Scatter</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
 
                         {/* Value Mapping */}
