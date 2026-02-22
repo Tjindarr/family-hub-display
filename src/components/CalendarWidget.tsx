@@ -109,7 +109,7 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
       ) : events.length === 0 ? (
         <p style={{ fontSize: fTitle }} className="text-muted-foreground">No upcoming events</p>
       ) : (
-        <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+        <div className="flex-1 overflow-y-auto pr-1" style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
           {dayEntries.map(([day, dayEvents]) => (
             <div key={day}>
               <div className="mb-2 flex items-center justify-between">
