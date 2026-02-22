@@ -239,7 +239,7 @@ const Index = () => {
     const fs = getFontSizes(id);
     const ws = config.widgetStyles || {};
 
-    if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} fontSizes={fs} widgetStyle={ws.electricity} />;
+    if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} electricityStyle={config.electricityStyle} />;
     if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} fontSizes={fs} dayColor={config.calendarDayColor} timeColor={config.calendarTimeColor} display={config.calendarDisplay} timeFormat={config.globalFormat?.timeFormat} widgetStyle={ws.calendar} />;
     if (id === "weather") return (
       <WeatherWidget

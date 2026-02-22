@@ -1289,11 +1289,41 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   Added to all electricity prices (chart, current, avg, min, max)
                 </p>
               </div>
-              <WidgetStyleControls
-                style={getStyle("electricity")}
-                onChange={(s) => setStyle("electricity", s)}
-                fields={["labelColor", "valueColor"]}
-              />
+              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Text Sizes & Colors</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Current Price Size</Label>
+                  <Input type="number" min={8} max={80} value={config.electricityStyle?.priceTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, priceTextSize: Number(e.target.value) || undefined } })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Current Price Color</Label>
+                  <ColorPicker value={config.electricityStyle?.priceTextColor || ""} onChange={(val) => onSave({ electricityStyle: { ...config.electricityStyle, priceTextColor: val || undefined } })} className="w-full" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Unit Text Size</Label>
+                  <Input type="number" min={6} max={48} value={config.electricityStyle?.unitTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, unitTextSize: Number(e.target.value) || undefined } })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Unit Text Color</Label>
+                  <ColorPicker value={config.electricityStyle?.unitTextColor || ""} onChange={(val) => onSave({ electricityStyle: { ...config.electricityStyle, unitTextColor: val || undefined } })} className="w-full" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Stats Row Size</Label>
+                  <Input type="number" min={6} max={32} value={config.electricityStyle?.statsTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, statsTextSize: Number(e.target.value) || undefined } })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Stats Row Color</Label>
+                  <ColorPicker value={config.electricityStyle?.statsTextColor || ""} onChange={(val) => onSave({ electricityStyle: { ...config.electricityStyle, statsTextColor: val || undefined } })} className="w-full" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Chart Axis Size</Label>
+                  <Input type="number" min={6} max={24} value={config.electricityStyle?.axisTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, axisTextSize: Number(e.target.value) || undefined } })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Chart Axis Color</Label>
+                  <ColorPicker value={config.electricityStyle?.axisTextColor || ""} onChange={(val) => onSave({ electricityStyle: { ...config.electricityStyle, axisTextColor: val || undefined } })} className="w-full" />
+                </div>
+              </div>
             </CollapsibleSection>
 
             {/* Person Cards */}

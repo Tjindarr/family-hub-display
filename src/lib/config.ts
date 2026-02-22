@@ -278,6 +278,16 @@ export interface DashboardConfig {
   electricityPriceEntity: string;
   electricityForecastEntity: string;
   electricitySurcharge: number; // kr/kWh surcharge added to all prices
+  electricityStyle?: {
+    priceTextSize?: number;
+    priceTextColor?: string;
+    unitTextSize?: number;
+    unitTextColor?: string;
+    statsTextSize?: number;
+    statsTextColor?: string;
+    axisTextSize?: number;
+    axisTextColor?: string;
+  };
   blackout: {
     enabled: boolean;
     from: string; // "HH:mm"
