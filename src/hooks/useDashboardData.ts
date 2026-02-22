@@ -52,6 +52,11 @@ export interface TemperatureSensorData {
   chartType?: string;
   roundTemperature?: boolean;
   history?: { time: string; value: number }[];
+  iconSize?: number;
+  iconColor?: string;
+  secondaryIconColor?: string;
+  labelColor?: string;
+  valueColor?: string;
 }
 
 export interface TemperatureSeries {
@@ -113,6 +118,11 @@ export function useTemperatureData(
           chartType: entity.chartType,
           roundTemperature: entity.roundTemperature,
           history: historyRef.current[entity.entityId] || prev[i]?.history,
+          iconSize: entity.iconSize,
+          iconColor: entity.iconColor,
+          secondaryIconColor: entity.secondaryIconColor,
+          labelColor: entity.labelColor,
+          valueColor: entity.valueColor,
         };
       });
     });

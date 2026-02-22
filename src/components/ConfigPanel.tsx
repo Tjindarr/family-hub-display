@@ -721,14 +721,30 @@ function WidgetStyleControls({ style, onChange, fields }: {
                       </Select>
                     )}
                   </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Icon Size (px)</Label>
+                      <Input type="number" min={8} max={64} value={entity.iconSize || ""} onChange={(e) => updateTempEntity(i, { iconSize: Number(e.target.value) || undefined })} placeholder="16" className="bg-muted border-border text-xs h-7" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Icon Color</Label>
+                      <ColorPicker value={entity.iconColor || ""} onChange={(val) => updateTempEntity(i, { iconColor: val || undefined })} className="w-full" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Humidity Icon Color</Label>
+                      <ColorPicker value={entity.secondaryIconColor || ""} onChange={(val) => updateTempEntity(i, { secondaryIconColor: val || undefined })} className="w-full" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Label Color</Label>
+                      <ColorPicker value={entity.labelColor || ""} onChange={(val) => updateTempEntity(i, { labelColor: val || undefined })} className="w-full" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Value Color</Label>
+                      <ColorPicker value={entity.valueColor || ""} onChange={(val) => updateTempEntity(i, { valueColor: val || undefined })} className="w-full" />
+                    </div>
+                  </div>
                 </div>
               ))}
-              {/* Temperature Styling - shared across all temp groups */}
-              <WidgetStyleControls
-                style={getStyle("temperature")}
-                onChange={(s) => setStyle("temperature", s)}
-                fields={["iconSize", "iconColor", "secondaryIconColor", "labelColor", "valueColor"]}
-              />
             </CollapsibleSection>
 
             {/* Calendar */}
