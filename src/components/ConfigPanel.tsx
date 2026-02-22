@@ -186,7 +186,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [calendarTimeColor, setCalendarTimeColor] = useState(config.calendarTimeColor || "");
   const [calendarDisplay, setCalendarDisplay] = useState<CalendarDisplayConfig>(
     config.calendarDisplay || {
-      showEventBody: false, showEndDate: false, hideAllDayText: false, showWeekNumber: false,
+      showEventBody: false, showEndDate: false, hideAllDayText: false, hideClockIcon: false, showWeekNumber: false,
       firstDayOfWeek: 1,
       fontSizeDay: 12, fontSizeTime: 10, fontSizeTitle: 14, fontSizeBody: 12,
     }
