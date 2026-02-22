@@ -291,6 +291,11 @@ export interface TemperatureEntityConfig {
   showChart?: boolean; // show a background chart with 24h history
   chartType?: SensorChartType; // chart type for the background chart
   roundTemperature?: boolean; // round temperature to nearest integer
+  iconSize?: number;
+  iconColor?: string;
+  secondaryIconColor?: string;
+  labelColor?: string;
+  valueColor?: string;
 }
 
 export interface PersonCardFontSizes {

@@ -257,7 +257,7 @@ const Index = () => {
       const groupNum = parseInt(id.split("_")[2], 10);
       const groupSensors = tempSensors.filter((_, i) => (config.temperatureEntities[i]?.group ?? i) === groupNum);
       if (groupSensors.length === 0) return null;
-      return <TemperatureWidget sensors={groupSensors} loading={tempLoading} fontSizes={fs} widgetStyle={ws.temperature} />;
+      return <TemperatureWidget sensors={groupSensors} loading={tempLoading} fontSizes={fs} />;
     }
     if (id.startsWith("person_")) {
       const idx = parseInt(id.split("_")[1], 10);
