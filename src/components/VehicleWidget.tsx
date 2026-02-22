@@ -1,13 +1,13 @@
 import { Icon } from "@iconify/react";
 import type { VehicleLiveData, VehicleEntityData } from "@/hooks/useVehicleData";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
-import type { WidgetStyleConfig } from "@/lib/config";
+import type { VehicleConfig } from "@/lib/config";
 
 interface VehicleWidgetProps {
   data: VehicleLiveData;
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
-  widgetStyle?: WidgetStyleConfig;
+  vehicleConfig?: VehicleConfig;
 }
 
 /** Render a progress-style bar for battery/fuel percentage values */
@@ -43,7 +43,7 @@ function formatDoorValue(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function EntityRow({ entity, sectionType, fs, ws }: { entity: VehicleEntityData; sectionType: string; fs: ResolvedFontSizes; ws: WidgetStyleConfig }) {
+function EntityRow({ entity, sectionType, fs, ws }: { entity: VehicleEntityData; sectionType: string; fs: ResolvedFontSizes; ws: { iconSize?: number; iconColor?: string; labelColor?: string; valueColor?: string } }) {
   const isBatteryFuel = sectionType === "battery" || sectionType === "fuel";
   const isDoorLock = sectionType === "doors";
   const showBar = isBatteryFuel && entity.numericValue !== null;
@@ -87,9 +87,10 @@ function EntityRow({ entity, sectionType, fs, ws }: { entity: VehicleEntityData;
   );
 }
 
-export default function VehicleWidget({ data, loading, fontSizes, widgetStyle }: VehicleWidgetProps) {
+export default function VehicleWidget({ data, loading, fontSizes, vehicleConfig }: VehicleWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
-  const ws = widgetStyle || {};
+  const vc = vehicleConfig || {} as Partial<VehicleConfig>;
+  const ws = { iconSize: vc.iconSize, iconColor: vc.iconColor, labelColor: vc.labelColor, valueColor: vc.valueColor, headingColor: vc.headingColor };
 
   if (loading) {
     return (

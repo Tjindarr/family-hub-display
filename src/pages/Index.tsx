@@ -295,7 +295,8 @@ const Index = () => {
       const vehicleId = id.replace("vehicle_", "");
       const vData = vehicleDataMap[vehicleId];
       if (!vData) return null;
-      return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} widgetStyle={ws.vehicle} />;
+      const vConfig = config.vehicles?.find(v => v.id === vehicleId);
+      return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} vehicleConfig={vConfig} />;
     }
     return null;
   };
