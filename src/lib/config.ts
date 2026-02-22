@@ -1,3 +1,13 @@
+export interface WidgetStyleConfig {
+  iconSize?: number;
+  iconColor?: string;
+  secondaryIconColor?: string;
+  textColor?: string;
+  labelColor?: string;
+  valueColor?: string;
+  headingColor?: string;
+}
+
 export interface WidgetFontSizes {
   heading?: number; // section headers (px)
   value?: number;   // main data values (px)
@@ -267,6 +277,7 @@ export interface DashboardConfig {
   vehicles: VehicleConfig[];
   globalFontSizes: GlobalFontSizes;
   widgetFontSizes: Record<string, WidgetFontSizes>;
+  widgetStyles: Record<string, WidgetStyleConfig>;
   personCardFontSizes: PersonCardFontSizes;
   globalFormat: GlobalFormatConfig;
 }
@@ -398,6 +409,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   vehicles: [],
   globalFontSizes: { heading: 12, value: 18, body: 14, label: 10 },
   widgetFontSizes: {},
+  widgetStyles: {},
   personCardFontSizes: {},
   globalFormat: { dateFormat: "yyyy-MM-dd", timeFormat: "24h" },
 };

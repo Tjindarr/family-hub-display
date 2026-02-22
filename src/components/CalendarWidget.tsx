@@ -1,6 +1,6 @@
 import { format, isToday, isTomorrow, parseISO, getISOWeek, getWeek } from "date-fns";
 import { Clock } from "lucide-react";
-import type { HACalendarEvent, CalendarDisplayConfig } from "@/lib/config";
+import type { HACalendarEvent, CalendarDisplayConfig, WidgetStyleConfig } from "@/lib/config";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
 
 interface EnrichedCalendarEvent extends HACalendarEvent {
@@ -16,6 +16,7 @@ interface CalendarWidgetProps {
   timeColor?: string;
   display?: CalendarDisplayConfig;
   timeFormat?: "24h" | "12h";
+  widgetStyle?: WidgetStyleConfig;
 }
 
 function getEventTime(event: HACalendarEvent): Date {
@@ -55,8 +56,10 @@ function getWeekNumber(event: HACalendarEvent, firstDayOfWeek: 0 | 1 | 6 = 1): n
   return getWeek(date, { weekStartsOn: firstDayOfWeek });
 }
 
-export default function CalendarWidget({ events, loading, fontSizes, dayColor, timeColor, display, timeFormat }: CalendarWidgetProps) {
+export default function CalendarWidget({ events, loading, fontSizes, dayColor, timeColor, display, timeFormat, widgetStyle }: CalendarWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+  const ws = widgetStyle || {};
+  const clockIconPx = ws.iconSize || 12;
 
   const fDay = display?.fontSizeDay || fs.heading;
   const fTime = display?.fontSizeTime || fs.label;
@@ -110,8 +113,8 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
           {dayEntries.map(([day, dayEvents]) => (
             <div key={day}>
               <div className="mb-2 flex items-center justify-between">
-                <p className="font-medium uppercase tracking-wider text-primary/70" style={{ fontSize: fDay, color: dayColor || undefined }}>
-                  {day}
+                <p className="font-medium uppercase tracking-wider" style={{ fontSize: fDay, color: ws.headingColor || dayColor || "hsl(var(--primary) / 0.7)" }}>
+                   {day}
                 </p>
                 {showWeekForDay.has(day) && dayEvents.length > 0 && (
                   <span className="rounded bg-primary/15 px-1.5 py-0.5 text-primary font-semibold font-mono" style={{ fontSize: Math.max(fDay, fTime) }}>
@@ -129,8 +132,8 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
                     >
                       {timeStr && (
                         <div className="flex items-center gap-1.5 pt-0.5">
-                          {!display?.hideClockIcon && <Clock className="h-3 w-3 text-muted-foreground" />}
-                          <span className="font-mono text-muted-foreground whitespace-nowrap" style={{ fontSize: fTime, color: timeColor || undefined }}>
+                          {!display?.hideClockIcon && <Clock style={{ width: clockIconPx, height: clockIconPx, color: ws.iconColor || "hsl(var(--muted-foreground))" }} />}
+                          <span className="font-mono whitespace-nowrap" style={{ fontSize: fTime, color: ws.labelColor || timeColor || "hsl(var(--muted-foreground))" }}>
                             {timeStr}
                           </span>
                         </div>
@@ -138,7 +141,7 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
                       <div className="flex flex-col min-w-0">
                         <span
                           className="font-medium"
-                          style={{ color: event._color || undefined, fontSize: fTitle }}
+                          style={{ color: ws.valueColor || event._color || undefined, fontSize: fTitle }}
                         >
                           {event._prefix ? `${event._prefix} ` : ""}
                           {event.summary}

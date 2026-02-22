@@ -237,9 +237,10 @@ const Index = () => {
 
   const renderWidget = (id: string) => {
     const fs = getFontSizes(id);
+    const ws = config.widgetStyles || {};
 
-    if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} fontSizes={fs} />;
-    if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} fontSizes={fs} dayColor={config.calendarDayColor} timeColor={config.calendarTimeColor} display={config.calendarDisplay} timeFormat={config.globalFormat?.timeFormat} />;
+    if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} fontSizes={fs} widgetStyle={ws.electricity} />;
+    if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} fontSizes={fs} dayColor={config.calendarDayColor} timeColor={config.calendarTimeColor} display={config.calendarDisplay} timeFormat={config.globalFormat?.timeFormat} widgetStyle={ws.calendar} />;
     if (id === "weather") return (
       <WeatherWidget
         weather={weather}
@@ -248,6 +249,7 @@ const Index = () => {
         showSunrise={config.weatherConfig?.showSunrise ?? true}
         showSunset={config.weatherConfig?.showSunset ?? true}
         fontSizes={fs}
+        widgetStyle={ws.weather}
       />
     );
     if (id === "photos") return <PhotoWidget config={config.photoWidget} isDemo={isDemo} />;
@@ -255,13 +257,13 @@ const Index = () => {
       const groupNum = parseInt(id.split("_")[2], 10);
       const groupSensors = tempSensors.filter((_, i) => (config.temperatureEntities[i]?.group ?? i) === groupNum);
       if (groupSensors.length === 0) return null;
-      return <TemperatureWidget sensors={groupSensors} loading={tempLoading} fontSizes={fs} />;
+      return <TemperatureWidget sensors={groupSensors} loading={tempLoading} fontSizes={fs} widgetStyle={ws.temperature} />;
     }
     if (id.startsWith("person_")) {
       const idx = parseInt(id.split("_")[1], 10);
       const person = persons[idx];
       if (!person) return null;
-      return <PersonWidget person={person} loading={personLoading} fontSizes={fs} personFontSizes={config.personCardFontSizes} />;
+      return <PersonWidget person={person} loading={personLoading} fontSizes={fs} personFontSizes={config.personCardFontSizes} widgetStyle={ws.person} />;
     }
     if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} fontSizes={fs} displayMode={config.foodMenuConfig?.displayMode} style={config.foodMenuConfig?.style} showTitle={config.foodMenuConfig?.showTitle !== false} />;
     if (id.startsWith("general_")) {
@@ -285,16 +287,16 @@ const Index = () => {
       const rssId = id.replace("rss_", "");
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
       if (!rssCfg) return null;
-      return <RssNewsWidget items={rssData[rssId] || []} loading={rssLoading} label={rssCfg.label} fontSizes={fs} />;
+      return <RssNewsWidget items={rssData[rssId] || []} loading={rssLoading} label={rssCfg.label} fontSizes={fs} widgetStyle={ws.rss} />;
     }
     if (id === "notifications") {
-      return <NotificationWidget notifications={notifications} loading={notifLoading} fontSizes={fs} />;
+      return <NotificationWidget notifications={notifications} loading={notifLoading} fontSizes={fs} widgetStyle={ws.notifications} />;
     }
     if (id.startsWith("vehicle_")) {
       const vehicleId = id.replace("vehicle_", "");
       const vData = vehicleDataMap[vehicleId];
       if (!vData) return null;
-      return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} />;
+      return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} widgetStyle={ws.vehicle} />;
     }
     return null;
   };
