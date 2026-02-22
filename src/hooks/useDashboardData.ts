@@ -229,28 +229,29 @@ export function useCalendarData(config: DashboardConfig) {
       return;
     }
 
-    try {
-      const client = createHAClient(config);
-      const now = new Date();
-      const globalDays = config.calendarForecastDays || 7;
-      const allEvents: (HACalendarEvent & { _prefix?: string; _color?: string })[] = [];
-      for (const cal of calConfigs) {
+    const client = createHAClient(config);
+    const now = new Date();
+    const globalDays = config.calendarForecastDays || 7;
+    const allEvents: (HACalendarEvent & { _prefix?: string; _color?: string })[] = [];
+    for (const cal of calConfigs) {
+      try {
         const days = cal.forecastDays || globalDays;
         const end = new Date(now.getTime() + days * 86400000);
-        const ev = await client.getCalendarEvents(cal.entityId, now.toISOString(), end.toISOString());
+        const startStr = now.toISOString().replace(/\.\d{3}Z$/, "+00:00");
+        const endStr = end.toISOString().replace(/\.\d{3}Z$/, "+00:00");
+        const ev = await client.getCalendarEvents(cal.entityId, startStr, endStr);
         allEvents.push(...ev.map((e) => ({ ...e, _prefix: cal.prefix, _color: cal.color })));
+      } catch (err) {
+        console.warn(`Failed to fetch calendar '${cal.entityId}':`, err);
       }
-      allEvents.sort((a, b) => {
-        const aTime = a.start.dateTime || a.start.date || "";
-        const bTime = b.start.dateTime || b.start.date || "";
-        return aTime.localeCompare(bTime);
-      });
-      setEvents(allEvents);
-    } catch (err) {
-      console.error("Failed to fetch calendar events:", err);
-    } finally {
-      setLoading(false);
     }
+    allEvents.sort((a, b) => {
+      const aTime = a.start.dateTime || a.start.date || "";
+      const bTime = b.start.dateTime || b.start.date || "";
+      return aTime.localeCompare(bTime);
+    });
+    setEvents(allEvents);
+    setLoading(false);
   }, [config]);
 
   useEffect(() => {
@@ -665,7 +666,9 @@ export function useFoodMenuData(config: DashboardConfig) {
       const client = createHAClient(config);
       const now = new Date();
       const end = new Date(now.getTime() + (fc.days || 5) * 86400000);
-      const raw = await client.getCalendarEvents(fc.calendarEntity, now.toISOString(), end.toISOString());
+      const startStr = now.toISOString().replace(/\.\d{3}Z$/, "+00:00");
+      const endStr = end.toISOString().replace(/\.\d{3}Z$/, "+00:00");
+      const raw = await client.getCalendarEvents(fc.calendarEntity, startStr, endStr);
       const byDate = new Map<string, string[]>();
       for (const ev of raw) {
         const dt = ev.start.date || (ev.start.dateTime ? ev.start.dateTime.split("T")[0] : "");
