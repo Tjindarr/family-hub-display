@@ -2244,13 +2244,32 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, sections: [...v.sections, { id: `${v.id}_s${Date.now()}`, type: "custom" as const, label: "Section", entities: [] }] } : v))}>
                     <Plus className="mr-1 h-3 w-3" /> Add Section
                   </Button>
+
+                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-2">Styling</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
+                      <Input type="number" min={8} max={64} value={vc.iconSize || ""} onChange={(e) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, iconSize: Number(e.target.value) || undefined } : v))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Icon Color</Label>
+                      <ColorPicker value={vc.iconColor || ""} onChange={(val) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, iconColor: val || undefined } : v))} className="w-full" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Label Color</Label>
+                      <ColorPicker value={vc.labelColor || ""} onChange={(val) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, labelColor: val || undefined } : v))} className="w-full" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Value Color</Label>
+                      <ColorPicker value={vc.valueColor || ""} onChange={(val) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, valueColor: val || undefined } : v))} className="w-full" />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-[10px] text-muted-foreground">Heading Color</Label>
+                      <ColorPicker value={vc.headingColor || ""} onChange={(val) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, headingColor: val || undefined } : v))} className="w-full" />
+                    </div>
+                  </div>
                 </div>
               ))}
-              <WidgetStyleControls
-                style={getStyle("vehicle")}
-                onChange={(s) => setStyle("vehicle", s)}
-                fields={["iconSize", "iconColor", "labelColor", "valueColor"]}
-              />
             </CollapsibleSection>
 
           </TabsContent>

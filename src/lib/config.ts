@@ -161,6 +161,11 @@ export interface VehicleConfig {
   name: string; // "My Tesla", "Family Volvo", etc.
   icon: string; // mdi icon e.g. "mdi:car-electric"
   sections: VehicleSection[];
+  iconSize?: number;
+  iconColor?: string;
+  labelColor?: string;
+  valueColor?: string;
+  headingColor?: string;
 }
 
 export type SensorChartType = "line" | "bar" | "area" | "step" | "scatter";
