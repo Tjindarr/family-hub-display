@@ -13,6 +13,25 @@ export function useRssNews(configs: RssNewsConfig[], refreshInterval: number) {
       return;
     }
 
+    // Demo mode: generate mock RSS items for demo feeds
+    const demoConfigs = configs.filter((c) => c.feedUrl.includes("demo.example.com"));
+    if (demoConfigs.length > 0 && demoConfigs.length === configs.length) {
+      const mockItems: RssNewsItem[] = [
+        { title: "Smart Home Trends 2026", link: "#", pubDate: new Date().toISOString(), description: "The latest trends in home automation and IoT devices.", imageUrl: "" },
+        { title: "New Weather Station Released", link: "#", pubDate: new Date(Date.now() - 3600000).toISOString(), description: "A new affordable weather station with Home Assistant integration.", imageUrl: "" },
+        { title: "Energy Prices Drop This Week", link: "#", pubDate: new Date(Date.now() - 7200000).toISOString(), description: "Electricity spot prices expected to decrease significantly.", imageUrl: "" },
+        { title: "Home Assistant 2025.3 Released", link: "#", pubDate: new Date(Date.now() - 14400000).toISOString(), description: "Major update with new dashboard features and integrations.", imageUrl: "" },
+        { title: "Solar Panel Efficiency Record", link: "#", pubDate: new Date(Date.now() - 28800000).toISOString(), description: "Researchers achieve record-breaking solar panel efficiency.", imageUrl: "" },
+      ];
+      const result: Record<string, RssNewsItem[]> = {};
+      for (const cfg of configs) {
+        result[cfg.id] = mockItems.slice(0, cfg.maxItems || 5);
+      }
+      setDataMap(result);
+      setLoading(false);
+      return;
+    }
+
     const results: Record<string, RssNewsItem[]> = {};
 
     await Promise.all(
