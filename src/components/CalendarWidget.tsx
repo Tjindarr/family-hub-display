@@ -129,7 +129,7 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
                     >
                       {timeStr && (
                         <div className="flex items-center gap-1.5 pt-0.5">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          {!display?.hideClockIcon && <Clock className="h-3 w-3 text-muted-foreground" />}
                           <span className="font-mono text-muted-foreground whitespace-nowrap" style={{ fontSize: fTime, color: timeColor || undefined }}>
                             {timeStr}
                           </span>

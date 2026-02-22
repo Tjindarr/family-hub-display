@@ -36,6 +36,7 @@ export interface CalendarDisplayConfig {
   showEventBody: boolean;
   showEndDate: boolean;
   hideAllDayText: boolean;
+  hideClockIcon: boolean;
   showWeekNumber: boolean;
   firstDayOfWeek: 0 | 1 | 6; // 0=Sunday, 1=Monday, 6=Saturday
   fontSizeDay: number;    // px
@@ -339,6 +340,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
     showEventBody: false,
     showEndDate: false,
     hideAllDayText: false,
+    hideClockIcon: false,
     showWeekNumber: false,
     firstDayOfWeek: 1,
     fontSizeDay: 12,
