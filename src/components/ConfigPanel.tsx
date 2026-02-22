@@ -382,8 +382,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
   fields: (keyof WidgetStyleConfig)[];
 }) {
   return (
-    <div className="border-t border-border pt-2 mt-2 space-y-2">
-      <span className="text-xs text-muted-foreground font-semibold">Styling</span>
+    <div className="space-y-2 mt-3">
       <div className="grid grid-cols-2 gap-2">
         {fields.map((field) => {
           if (field === "iconSize") {
@@ -725,13 +724,11 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 </div>
               ))}
               {/* Temperature Styling - shared across all temp groups */}
-              <div className="pl-4 border-l-2 border-border/30">
-                <WidgetStyleControls
-                  style={getStyle("temperature")}
-                  onChange={(s) => setStyle("temperature", s)}
-                  fields={["iconSize", "iconColor", "secondaryIconColor", "labelColor", "valueColor"]}
-                />
-              </div>
+              <WidgetStyleControls
+                style={getStyle("temperature")}
+                onChange={(s) => setStyle("temperature", s)}
+                fields={["iconSize", "iconColor", "secondaryIconColor", "labelColor", "valueColor"]}
+              />
             </CollapsibleSection>
 
             {/* Calendar */}
