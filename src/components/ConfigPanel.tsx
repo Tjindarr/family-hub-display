@@ -724,16 +724,15 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   </div>
                 </div>
               ))}
+              {/* Temperature Styling - shared across all temp groups */}
+              <div className="pl-4 border-l-2 border-border/30">
+                <WidgetStyleControls
+                  style={getStyle("temperature")}
+                  onChange={(s) => setStyle("temperature", s)}
+                  fields={["iconSize", "iconColor", "secondaryIconColor", "labelColor", "valueColor"]}
+                />
+              </div>
             </CollapsibleSection>
-
-            {/* Temperature Styling - shared across all temp groups */}
-            <div className="pl-4 border-l-2 border-border/30">
-              <WidgetStyleControls
-                style={getStyle("temperature")}
-                onChange={(s) => setStyle("temperature", s)}
-                fields={["iconSize", "iconColor", "secondaryIconColor", "labelColor", "valueColor"]}
-              />
-            </div>
 
             {/* Calendar */}
             <CollapsibleSection
