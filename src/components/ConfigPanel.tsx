@@ -935,15 +935,15 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   </Select>
                 </div>
 
-                <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Font Sizes (px)</h4>
+                <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Font Sizes & Colors</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {([
-                    ["fontSizeDay", "Day label"],
-                    ["fontSizeTime", "Time"],
-                    ["fontSizeTitle", "Event title"],
-                    ["fontSizeBody", "Event body"],
-                  ] as const).map(([key, label]) => (
-                    <div key={key}>
+                    ["fontSizeDay", "Day Label Text Size", "headingColor", "Day Label Color"],
+                    ["fontSizeTime", "Time Text Size", "labelColor", "Time Color"],
+                    ["fontSizeTitle", "Event Title Text Size", "valueColor", "Event Title Color"],
+                    ["fontSizeBody", "Event Body Text Size", null, null],
+                  ] as const).map(([key, label, colorKey, colorLabel]) => (
+                    <div key={key} className="space-y-1">
                       <Label className="text-xs text-muted-foreground">{label}</Label>
                       <Input
                         type="number"
@@ -951,17 +951,33 @@ function WidgetStyleControls({ style, onChange, fields }: {
                         max={48}
                         value={calendarDisplay[key]}
                         onChange={(e) => setCalendarDisplay({ ...calendarDisplay, [key]: Number(e.target.value) || 12 })}
-                        className="mt-1 bg-muted border-border text-sm"
+                        className="bg-muted border-border text-sm"
                       />
+                      {colorKey && (
+                        <>
+                          <Label className="text-[10px] text-muted-foreground">{colorLabel}</Label>
+                          <ColorPicker
+                            value={(getStyle("calendar")[colorKey as keyof WidgetStyleConfig] as string) || ""}
+                            onChange={(val) => setStyle("calendar", { ...getStyle("calendar"), [colorKey]: val || undefined })}
+                            className="w-full"
+                          />
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Icon Size (px)</Label>
+                    <Input type="number" min={8} max={64} value={getStyle("calendar").iconSize || ""} onChange={(e) => setStyle("calendar", { ...getStyle("calendar"), iconSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Icon Color</Label>
+                    <ColorPicker value={getStyle("calendar").iconColor || ""} onChange={(val) => setStyle("calendar", { ...getStyle("calendar"), iconColor: val || undefined })} className="w-full" />
+                  </div>
+                </div>
               </div>
-              <WidgetStyleControls
-                style={getStyle("calendar")}
-                onChange={(s) => setStyle("calendar", s)}
-                fields={["iconSize", "iconColor", "labelColor", "valueColor", "headingColor"]}
-              />
             </CollapsibleSection>
 
             {/* Weather */}
