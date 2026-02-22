@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, CloudFog, CloudSun, CloudMoon, Sunrise, Sunset, Droplets, Wind } from "lucide-react";
 import { Area, YAxis, ResponsiveContainer, ComposedChart, Bar, Tooltip } from "recharts";
-import type { ResolvedFontSizes } from "@/lib/fontSizes";
-import type { WidgetStyleConfig } from "@/lib/config";
+import type { WeatherConfig } from "@/lib/config";
 
 export interface WeatherForecastDay {
   date: string;
@@ -37,8 +36,7 @@ interface WeatherWidgetProps {
   showPrecipitation: boolean;
   showSunrise: boolean;
   showSunset: boolean;
-  fontSizes?: ResolvedFontSizes;
-  widgetStyle?: WidgetStyleConfig;
+  weatherConfig?: WeatherConfig;
 }
 
 function getWeatherIcon(condition: string, size = 20) {
@@ -68,9 +66,8 @@ function isToday(dateStr: string) {
   return d.toDateString() === now.toDateString();
 }
 
-export default function WeatherWidget({ weather, loading, showPrecipitation, showSunrise, showSunset, fontSizes, widgetStyle }: WeatherWidgetProps) {
-  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
-  const ws = widgetStyle || {};
+export default function WeatherWidget({ weather, loading, showPrecipitation, showSunrise, showSunset, weatherConfig }: WeatherWidgetProps) {
+  const wc = weatherConfig || {} as Partial<WeatherConfig>;
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -106,10 +103,21 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
   const maxTemp = Math.max(...allTemps) + 3;
   const maxPrecip = Math.max(...chartData.map((d) => d.precipitation), 1);
 
-  // Scale large text proportionally from value size
-  const xlSize = Math.round(fs.value * 1.67);
-  const forecastIconSize = ws.iconSize || 32;
-  const sunIconPx = ws.iconSize ? Math.round(ws.iconSize * 0.5) : 16;
+  // Defaults
+  const clockSize = wc.clockTextSize || 50;
+  const clockColor = wc.clockTextColor || "hsl(var(--foreground))";
+  const tempIconSz = wc.tempIconSize || 40;
+  const tempTxtSz = wc.tempTextSize || 30;
+  const tempColor = wc.tempTextColor || "hsl(var(--foreground))";
+  const sunIconSz = wc.sunIconSize || 16;
+  const sunTxtSz = wc.sunTextSize || 14;
+  const sunTxtColor = wc.sunTextColor || "hsl(var(--foreground))";
+  const sunIcColor = wc.sunIconColor || undefined;
+  const chartDaySz = wc.chartDayTextSize || 10;
+  const chartDayColor = wc.chartDayTextColor || "hsl(var(--muted-foreground))";
+  const chartIcSz = wc.chartIconSize || 32;
+
+  const secondsSize = Math.round(clockSize * 0.5);
 
   return (
     <div className="widget-card h-full">
@@ -117,17 +125,22 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
       <div className="mb-1 flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 px-[2px] py-0">
         {/* Left: time + date */}
         <div>
-          <div className="font-bold" style={{ fontSize: Math.round(xlSize * 1.4), color: ws.valueColor || "hsl(var(--foreground))" }}>
+          <div className="font-bold" style={{ fontSize: clockSize, color: clockColor }}>
             {format(now, "HH:mm")}
-            <span style={{ fontSize: Math.round(fs.value * 1.2), color: ws.labelColor || "hsl(var(--muted-foreground))" }}>:{format(now, "ss")}</span>
+            <span style={{ fontSize: secondsSize, color: "hsl(var(--muted-foreground))" }}>:{format(now, "ss")}</span>
           </div>
+          {wc.showDate && (
+            <div style={{ fontSize: wc.dateTextSize || 14, color: wc.dateTextColor || "hsl(var(--muted-foreground))" }}>
+              {format(now, "EEEE, d MMMM")}
+            </div>
+          )}
         </div>
 
         {/* Center: icon + temp */}
         <div className="flex items-center gap-3">
-          {getWeatherIcon(weather.current.condition, ws.iconSize || 40)}
+          {getWeatherIcon(weather.current.condition, tempIconSz)}
           <div>
-            <div className="font-bold" style={{ fontSize: xlSize, color: ws.valueColor || "hsl(var(--foreground))" }}>{Math.round(weather.current.temperature)}°</div>
+            <div className="font-bold" style={{ fontSize: tempTxtSz, color: tempColor }}>{Math.round(weather.current.temperature)}°</div>
           </div>
         </div>
 
@@ -136,14 +149,14 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
           <div className="flex flex-col gap-1.5">
             {showSunrise && todayForecast.sunrise && (
               <div className="flex items-center gap-2">
-                <Sunrise style={{ width: sunIconPx, height: sunIconPx, color: ws.iconColor || "hsl(50, 90%, 55%)" }} />
-                <span className="font-medium" style={{ fontSize: fs.body, color: ws.headingColor || "hsl(var(--foreground))" }}>{todayForecast.sunrise}</span>
+                <Sunrise style={{ width: sunIconSz, height: sunIconSz, color: sunIcColor || "hsl(50, 90%, 55%)" }} />
+                <span className="font-medium" style={{ fontSize: sunTxtSz, color: sunTxtColor }}>{todayForecast.sunrise}</span>
               </div>
             )}
             {showSunset && todayForecast.sunset && (
               <div className="flex items-center gap-2">
-                <Sunset style={{ width: sunIconPx, height: sunIconPx, color: ws.secondaryIconColor || "hsl(25, 85%, 55%)" }} />
-                <span className="font-medium" style={{ fontSize: fs.body, color: ws.headingColor || "hsl(var(--foreground))" }}>{todayForecast.sunset}</span>
+                <Sunset style={{ width: sunIconSz, height: sunIconSz, color: sunIcColor || "hsl(25, 85%, 55%)" }} />
+                <span className="font-medium" style={{ fontSize: sunTxtSz, color: sunTxtColor }}>{todayForecast.sunset}</span>
               </div>
             )}
           </div>
@@ -156,8 +169,8 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
         <div className="flex justify-around mb-1">
           {chartData.map((d, i) => (
             <div key={i} className="flex flex-col items-center gap-0.5">
-              <span className="font-medium" style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>{d.name}</span>
-              {getWeatherIcon(d.condition, forecastIconSize)}
+              <span className="font-medium" style={{ fontSize: chartDaySz, color: chartDayColor }}>{d.name}</span>
+              {getWeatherIcon(d.condition, chartIcSz)}
             </div>
           ))}
         </div>
@@ -183,7 +196,7 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
                 backgroundColor: "hsl(var(--card))",
                 border: "1px solid hsl(var(--border))",
                 borderRadius: "8px",
-                fontSize: fs.body,
+                fontSize: 12,
                 color: "hsl(var(--foreground))",
               }}
               formatter={(value: number, name: string) => {
@@ -200,10 +213,10 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
         <div className="flex justify-around mt-0.5">
           {chartData.map((d, i) => (
             <div key={i} className="flex flex-col items-center">
-              <span className="font-semibold" style={{ fontSize: fs.heading, color: ws.headingColor || "hsl(var(--foreground))" }}>{d.high}°</span>
-              <span style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>{d.low}°</span>
+              <span className="font-semibold" style={{ fontSize: chartDaySz + 2, color: "hsl(var(--foreground))" }}>{d.high}°</span>
+              <span style={{ fontSize: chartDaySz, color: chartDayColor }}>{d.low}°</span>
               {showPrecipitation && d.precipitation > 0 && (
-                <span className="text-blue-400" style={{ fontSize: Math.max(fs.label - 1, 8) }}>{d.precipitation} mm</span>
+                <span className="text-blue-400" style={{ fontSize: Math.max(chartDaySz - 1, 8) }}>{d.precipitation} mm</span>
               )}
             </div>
           ))}
