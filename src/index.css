@@ -261,6 +261,12 @@
   }
 }
 
+@layer utilities {
+  .gap-1 {
+    gap: 0px;
+  }
+}
+
 @layer components {
   .glow-primary {
     box-shadow: var(--glow-primary);
