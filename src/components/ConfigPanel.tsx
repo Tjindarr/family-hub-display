@@ -855,6 +855,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <Checkbox
+                      checked={calendarDisplay.hideClockIcon}
+                      onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, hideClockIcon: !!v })}
+                    />
+                    Hide clock icon
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
                       checked={calendarDisplay.showWeekNumber}
                       onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, showWeekNumber: !!v })}
                     />
