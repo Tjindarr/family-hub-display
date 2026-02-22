@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -216,6 +216,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [globalFontSizes, setGlobalFontSizes] = useState<GlobalFontSizes>(config.globalFontSizes || DEFAULT_FONT_SIZES);
   const [widgetFontSizes, setWidgetFontSizes] = useState<Record<string, WidgetFontSizes>>(config.widgetFontSizes || {});
   const [personCardFontSizes, setPersonCardFontSizes] = useState<PersonCardFontSizes>(config.personCardFontSizes || {});
+  const [widgetStyles, setWidgetStyles] = useState<Record<string, WidgetStyleConfig>>(config.widgetStyles || {});
+  const getStyle = (id: string): WidgetStyleConfig => widgetStyles[id] || {};
+  const setStyle = (id: string, s: WidgetStyleConfig) => setWidgetStyles(prev => ({ ...prev, [id]: s }));
   const [globalFormat, setGlobalFormat] = useState<GlobalFormatConfig>(config.globalFormat || { dateFormat: "yyyy-MM-dd", timeFormat: "24h" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
@@ -328,6 +331,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       vehicles,
       globalFontSizes,
       widgetFontSizes,
+      widgetStyles,
       personCardFontSizes,
       globalFormat,
     });
@@ -360,7 +364,47 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
         <Settings className="h-5 w-5" />
       </Button>
     );
-  }
+}
+
+const STYLE_FIELD_LABELS: Record<keyof WidgetStyleConfig, string> = {
+  iconSize: "Icon Size (px)",
+  iconColor: "Icon Color",
+  secondaryIconColor: "2nd Icon Color",
+  textColor: "Text Color",
+  labelColor: "Label Color",
+  valueColor: "Value Color",
+  headingColor: "Heading Color",
+};
+
+function WidgetStyleControls({ style, onChange, fields }: {
+  style: WidgetStyleConfig;
+  onChange: (s: WidgetStyleConfig) => void;
+  fields: (keyof WidgetStyleConfig)[];
+}) {
+  return (
+    <div className="border-t border-border pt-2 mt-2 space-y-2">
+      <span className="text-xs text-muted-foreground font-semibold">Styling</span>
+      <div className="grid grid-cols-2 gap-2">
+        {fields.map((field) => {
+          if (field === "iconSize") {
+            return (
+              <div key={field}>
+                <Label className="text-[10px] text-muted-foreground">{STYLE_FIELD_LABELS[field]}</Label>
+                <Input type="number" min={8} max={64} value={style.iconSize || ""} onChange={(e) => onChange({ ...style, iconSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+              </div>
+            );
+          }
+          return (
+            <div key={field}>
+              <Label className="text-[10px] text-muted-foreground">{STYLE_FIELD_LABELS[field]}</Label>
+              <ColorPicker value={(style[field] as string) || ""} onChange={(val) => onChange({ ...style, [field]: val || undefined })} className="w-full" />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 
 
@@ -682,6 +726,15 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
               ))}
             </CollapsibleSection>
 
+            {/* Temperature Styling - shared across all temp groups */}
+            <div className="pl-4 border-l-2 border-border/30">
+              <WidgetStyleControls
+                style={getStyle("temperature")}
+                onChange={(s) => setStyle("temperature", s)}
+                fields={["iconSize", "iconColor", "secondaryIconColor", "labelColor", "valueColor"]}
+              />
+            </div>
+
             {/* Calendar */}
             <CollapsibleSection
               title="Calendar"
@@ -908,6 +961,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   ))}
                 </div>
               </div>
+              <WidgetStyleControls
+                style={getStyle("calendar")}
+                onChange={(s) => setStyle("calendar", s)}
+                fields={["iconSize", "iconColor", "labelColor", "valueColor", "headingColor"]}
+              />
             </CollapsibleSection>
 
             {/* Weather */}
@@ -948,6 +1006,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   Show Sunset
                 </label>
               </div>
+              <WidgetStyleControls
+                style={getStyle("weather")}
+                onChange={(s) => setStyle("weather", s)}
+                fields={["iconSize", "iconColor", "labelColor", "valueColor", "headingColor"]}
+              />
             </CollapsibleSection>
 
             {/* Food Menu */}
@@ -1121,6 +1184,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   Added to all electricity prices (chart, current, avg, min, max)
                 </p>
               </div>
+              <WidgetStyleControls
+                style={getStyle("electricity")}
+                onChange={(s) => setStyle("electricity", s)}
+                fields={["labelColor", "valueColor"]}
+              />
             </CollapsibleSection>
 
             {/* Person Cards */}
@@ -1224,6 +1292,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
+              <WidgetStyleControls
+                style={getStyle("person")}
+                onChange={(s) => setStyle("person", s)}
+                fields={["iconSize", "iconColor", "labelColor", "valueColor"]}
+              />
             </CollapsibleSection>
 
             {/* General Sensors */}
@@ -1858,6 +1931,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
+              <WidgetStyleControls
+                style={getStyle("rss")}
+                onChange={(s) => setStyle("rss", s)}
+                fields={["labelColor", "valueColor", "headingColor"]}
+              />
             </CollapsibleSection>
 
             {/* Notifications & Alerts */}
@@ -1948,6 +2026,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </div>
                 </div>
               ))}
+              <WidgetStyleControls
+                style={getStyle("notifications")}
+                onChange={(s) => setStyle("notifications", s)}
+                fields={["iconSize", "iconColor", "labelColor", "valueColor", "headingColor"]}
+              />
             </CollapsibleSection>
 
             {/* Vehicles */}
@@ -2048,6 +2131,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
                   </Button>
                 </div>
               ))}
+              <WidgetStyleControls
+                style={getStyle("vehicle")}
+                onChange={(s) => setStyle("vehicle", s)}
+                fields={["iconSize", "iconColor", "labelColor", "valueColor"]}
+              />
             </CollapsibleSection>
 
           </TabsContent>

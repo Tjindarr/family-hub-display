@@ -1,7 +1,7 @@
 import { Navigation } from "lucide-react";
 import { Icon } from "@iconify/react";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
-import type { PersonCardFontSizes } from "@/lib/config";
+import type { PersonCardFontSizes, WidgetStyleConfig } from "@/lib/config";
 
 export interface PersonData {
   name: string;
@@ -19,6 +19,7 @@ interface PersonWidgetProps {
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
   personFontSizes?: PersonCardFontSizes;
+  widgetStyle?: WidgetStyleConfig;
 }
 
 function getBatteryColor(percent: number): string {
@@ -76,9 +77,11 @@ function getZoneIconName(zoneIcon?: string | null): string {
   return `mdi:${zoneIcon}`;
 }
 
-export default function PersonWidget({ person, loading, fontSizes, personFontSizes }: PersonWidgetProps) {
+export default function PersonWidget({ person, loading, fontSizes, personFontSizes, widgetStyle }: PersonWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const pfs = personFontSizes || {};
+  const ws = widgetStyle || {};
+  const iconPx = ws.iconSize || 20;
 
   if (loading) {
     return (
@@ -112,8 +115,8 @@ export default function PersonWidget({ person, loading, fontSizes, personFontSiz
       {/* Attributes */}
       <div className="flex flex-col justify-center gap-1.5 sm:gap-2 min-w-0">
         <div className="flex items-center gap-2">
-          <Icon icon={getZoneIconName(person.zoneIcon)} className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-primary" />
-          <span className="text-foreground truncate" style={{ fontSize: pfs.locationSize || fs.body }}>{formatLocation(person.location) ?? "—"}</span>
+          <Icon icon={getZoneIconName(person.zoneIcon)} className="shrink-0" style={{ width: iconPx, height: iconPx, color: ws.iconColor || "hsl(var(--primary))" }} />
+          <span className="truncate" style={{ fontSize: pfs.locationSize || fs.body, color: ws.valueColor || "hsl(var(--foreground))" }}>{formatLocation(person.location) ?? "—"}</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -130,13 +133,13 @@ export default function PersonWidget({ person, loading, fontSizes, personFontSiz
               </div>
             </>
           ) : (
-            <span className="text-muted-foreground" style={{ fontSize: fs.body }}>—</span>
+            <span style={{ fontSize: fs.body, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>—</span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          <Navigation className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-accent" />
-          <span className="text-foreground" style={{ fontSize: pfs.distanceSize || fs.body }}>
+          <Navigation className="shrink-0" style={{ width: iconPx, height: iconPx, color: ws.secondaryIconColor || "hsl(var(--accent))" }} />
+          <span style={{ fontSize: pfs.distanceSize || fs.body, color: ws.labelColor || "hsl(var(--foreground))" }}>
             {person.distanceKm !== null ? `${person.distanceKm.toFixed(1)} km` : "—"}
           </span>
         </div>

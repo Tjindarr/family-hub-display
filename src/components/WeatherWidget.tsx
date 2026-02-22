@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, CloudFog, CloudSun, CloudMoon, Sunrise, Sunset, Droplets, Wind } from "lucide-react";
 import { Area, YAxis, ResponsiveContainer, ComposedChart, Bar, Tooltip } from "recharts";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
+import type { WidgetStyleConfig } from "@/lib/config";
 
 export interface WeatherForecastDay {
   date: string;
@@ -37,6 +38,7 @@ interface WeatherWidgetProps {
   showSunrise: boolean;
   showSunset: boolean;
   fontSizes?: ResolvedFontSizes;
+  widgetStyle?: WidgetStyleConfig;
 }
 
 function getWeatherIcon(condition: string, size = 20) {
@@ -66,8 +68,9 @@ function isToday(dateStr: string) {
   return d.toDateString() === now.toDateString();
 }
 
-export default function WeatherWidget({ weather, loading, showPrecipitation, showSunrise, showSunset, fontSizes }: WeatherWidgetProps) {
+export default function WeatherWidget({ weather, loading, showPrecipitation, showSunrise, showSunset, fontSizes, widgetStyle }: WeatherWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+  const ws = widgetStyle || {};
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -105,6 +108,8 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
 
   // Scale large text proportionally from value size
   const xlSize = Math.round(fs.value * 1.67);
+  const forecastIconSize = ws.iconSize || 32;
+  const sunIconPx = ws.iconSize ? Math.round(ws.iconSize * 0.5) : 16;
 
   return (
     <div className="widget-card h-full">
@@ -112,17 +117,17 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
       <div className="mb-1 flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 px-[2px] py-0">
         {/* Left: time + date */}
         <div>
-          <div className="font-bold text-foreground" style={{ fontSize: Math.round(xlSize * 1.4) }}>
+          <div className="font-bold" style={{ fontSize: Math.round(xlSize * 1.4), color: ws.valueColor || "hsl(var(--foreground))" }}>
             {format(now, "HH:mm")}
-            <span className="text-muted-foreground" style={{ fontSize: Math.round(fs.value * 1.2) }}>:{format(now, "ss")}</span>
+            <span style={{ fontSize: Math.round(fs.value * 1.2), color: ws.labelColor || "hsl(var(--muted-foreground))" }}>:{format(now, "ss")}</span>
           </div>
         </div>
 
         {/* Center: icon + temp */}
         <div className="flex items-center gap-3">
-          {getWeatherIcon(weather.current.condition, 40)}
+          {getWeatherIcon(weather.current.condition, ws.iconSize || 40)}
           <div>
-            <div className="font-bold text-foreground" style={{ fontSize: xlSize }}>{Math.round(weather.current.temperature)}°</div>
+            <div className="font-bold" style={{ fontSize: xlSize, color: ws.valueColor || "hsl(var(--foreground))" }}>{Math.round(weather.current.temperature)}°</div>
           </div>
         </div>
 
@@ -131,14 +136,14 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
           <div className="flex flex-col gap-1.5">
             {showSunrise && todayForecast.sunrise && (
               <div className="flex items-center gap-2">
-                <Sunrise className="h-4 w-4 text-yellow-500" />
-                <span className="font-medium text-foreground" style={{ fontSize: fs.body }}>{todayForecast.sunrise}</span>
+                <Sunrise style={{ width: sunIconPx, height: sunIconPx, color: ws.iconColor || "hsl(50, 90%, 55%)" }} />
+                <span className="font-medium" style={{ fontSize: fs.body, color: ws.headingColor || "hsl(var(--foreground))" }}>{todayForecast.sunrise}</span>
               </div>
             )}
             {showSunset && todayForecast.sunset && (
               <div className="flex items-center gap-2">
-                <Sunset className="h-4 w-4 text-orange-400" />
-                <span className="font-medium text-foreground" style={{ fontSize: fs.body }}>{todayForecast.sunset}</span>
+                <Sunset style={{ width: sunIconPx, height: sunIconPx, color: ws.secondaryIconColor || "hsl(25, 85%, 55%)" }} />
+                <span className="font-medium" style={{ fontSize: fs.body, color: ws.headingColor || "hsl(var(--foreground))" }}>{todayForecast.sunset}</span>
               </div>
             )}
           </div>
@@ -151,8 +156,8 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
         <div className="flex justify-around mb-1">
           {chartData.map((d, i) => (
             <div key={i} className="flex flex-col items-center gap-0.5">
-              <span className="font-medium text-muted-foreground" style={{ fontSize: fs.label }}>{d.name}</span>
-              {getWeatherIcon(d.condition, 32)}
+              <span className="font-medium" style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>{d.name}</span>
+              {getWeatherIcon(d.condition, forecastIconSize)}
             </div>
           ))}
         </div>
@@ -195,8 +200,8 @@ export default function WeatherWidget({ weather, loading, showPrecipitation, sho
         <div className="flex justify-around mt-0.5">
           {chartData.map((d, i) => (
             <div key={i} className="flex flex-col items-center">
-              <span className="font-semibold text-foreground" style={{ fontSize: fs.heading }}>{d.high}°</span>
-              <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{d.low}°</span>
+              <span className="font-semibold" style={{ fontSize: fs.heading, color: ws.headingColor || "hsl(var(--foreground))" }}>{d.high}°</span>
+              <span style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>{d.low}°</span>
               {showPrecipitation && d.precipitation > 0 && (
                 <span className="text-blue-400" style={{ fontSize: Math.max(fs.label - 1, 8) }}>{d.precipitation} mm</span>
               )}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Newspaper, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
+import type { WidgetStyleConfig } from "@/lib/config";
 
 export interface RssNewsItem {
   title: string;
@@ -17,6 +18,7 @@ interface RssNewsWidgetProps {
   label?: string;
   cycleIntervalSeconds?: number;
   fontSizes?: ResolvedFontSizes;
+  widgetStyle?: WidgetStyleConfig;
 }
 
 function formatTime(dateStr: string): string {
@@ -36,8 +38,9 @@ function formatTime(dateStr: string): string {
   }
 }
 
-export default function RssNewsWidget({ items, loading, label, cycleIntervalSeconds = 8, fontSizes }: RssNewsWidgetProps) {
+export default function RssNewsWidget({ items, loading, label, cycleIntervalSeconds = 8, fontSizes, widgetStyle }: RssNewsWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+  const ws = widgetStyle || {};
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -87,21 +90,21 @@ export default function RssNewsWidget({ items, loading, label, cycleIntervalSeco
         {/* Left: text content */}
         <div className="flex-1 flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground font-medium uppercase tracking-wider truncate" style={{ fontSize: fs.label }}>
+            <span className="font-medium uppercase tracking-wider truncate" style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>
               {label || "Nyheter"}
             </span>
-            <span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: fs.label }}>
+            <span className="whitespace-nowrap" style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>
               · {formatTime(item.pubDate)}
             </span>
             <ExternalLink className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto" />
           </div>
 
-          <h3 className="font-semibold text-foreground leading-snug line-clamp-2" style={{ fontSize: fs.body }}>
+          <h3 className="font-semibold leading-snug line-clamp-2" style={{ fontSize: fs.body, color: ws.valueColor || "hsl(var(--foreground))" }}>
             {item.title}
           </h3>
 
           {item.description && (
-            <p className="text-muted-foreground leading-relaxed line-clamp-5 flex-1" style={{ fontSize: fs.heading }}>
+            <p className="leading-relaxed line-clamp-5 flex-1" style={{ fontSize: fs.heading, color: ws.headingColor || "hsl(var(--muted-foreground))" }}>
               {item.description}
             </p>
           )}

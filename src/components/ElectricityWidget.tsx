@@ -1,11 +1,13 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import type { NordpoolData } from "@/hooks/useDashboardData";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
+import type { WidgetStyleConfig } from "@/lib/config";
 
 interface ElectricityWidgetProps {
   nordpool: NordpoolData;
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
+  widgetStyle?: WidgetStyleConfig;
 }
 
 function getPriceColor(price: number): string {
@@ -24,8 +26,9 @@ function formatHour(date: Date): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-export default function ElectricityWidget({ nordpool, loading, fontSizes }: ElectricityWidgetProps) {
+export default function ElectricityWidget({ nordpool, loading, fontSizes, widgetStyle }: ElectricityWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+  const ws = widgetStyle || {};
   const { today, tomorrow, currentPrice } = nordpool;
 
   // Merge into chart data
@@ -68,10 +71,10 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
     <div className="widget-card h-full flex flex-col overflow-hidden">
       {/* Current price with badge */}
       <div className="mb-4 flex items-baseline gap-3 shrink-0">
-        <span className="font-mono font-bold" style={{ color: getPriceColor(currentPrice), fontSize: fs.value }}>
+        <span className="font-mono font-bold" style={{ color: ws.valueColor || getPriceColor(currentPrice), fontSize: fs.value }}>
           {currentPrice.toFixed(2)}
         </span>
-        <span className="text-muted-foreground" style={{ fontSize: fs.label }}>
+        <span style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>
           kr/kWh
         </span>
         <span className={getPriceBadgeClass(currentPrice)} style={{ fontSize: fs.label }}>

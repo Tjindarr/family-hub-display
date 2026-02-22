@@ -1,11 +1,13 @@
 import { Icon } from "@iconify/react";
 import type { VehicleLiveData, VehicleEntityData } from "@/hooks/useVehicleData";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
+import type { WidgetStyleConfig } from "@/lib/config";
 
 interface VehicleWidgetProps {
   data: VehicleLiveData;
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
+  widgetStyle?: WidgetStyleConfig;
 }
 
 /** Render a progress-style bar for battery/fuel percentage values */
@@ -41,10 +43,11 @@ function formatDoorValue(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function EntityRow({ entity, sectionType, fs }: { entity: VehicleEntityData; sectionType: string; fs: ResolvedFontSizes }) {
+function EntityRow({ entity, sectionType, fs, ws }: { entity: VehicleEntityData; sectionType: string; fs: ResolvedFontSizes; ws: WidgetStyleConfig }) {
   const isBatteryFuel = sectionType === "battery" || sectionType === "fuel";
   const isDoorLock = sectionType === "doors";
   const showBar = isBatteryFuel && entity.numericValue !== null;
+  const iconPx = ws.iconSize || 16;
 
   return (
     <div className="space-y-0.5">
@@ -53,9 +56,9 @@ function EntityRow({ entity, sectionType, fs }: { entity: VehicleEntityData; sec
           <Icon
             icon={entity.icon.includes(":") ? entity.icon : `mdi:${entity.icon}`}
             className="shrink-0"
-            style={{ color: isDoorLock ? getDoorLockColor(entity.value) : entity.color, fontSize: 16 }}
+            style={{ color: isDoorLock ? getDoorLockColor(entity.value) : (ws.iconColor || entity.color), fontSize: iconPx }}
           />
-          <span className="text-muted-foreground truncate" style={{ fontSize: fs.label }}>
+          <span className="truncate" style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>
             {entity.label}
           </span>
         </div>
@@ -63,12 +66,12 @@ function EntityRow({ entity, sectionType, fs }: { entity: VehicleEntityData; sec
           className="font-medium whitespace-nowrap"
           style={{
             fontSize: fs.body,
-            color: isDoorLock ? getDoorLockColor(entity.value) : "hsl(var(--foreground))",
+            color: isDoorLock ? getDoorLockColor(entity.value) : (ws.valueColor || "hsl(var(--foreground))"),
           }}
         >
           {isDoorLock ? formatDoorValue(entity.value) : entity.value}
           {!isDoorLock && entity.unit && (
-            <span className="text-muted-foreground ml-0.5" style={{ fontSize: fs.label }}>
+            <span className="ml-0.5" style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>
               {entity.unit}
             </span>
           )}
@@ -84,8 +87,9 @@ function EntityRow({ entity, sectionType, fs }: { entity: VehicleEntityData; sec
   );
 }
 
-export default function VehicleWidget({ data, loading, fontSizes }: VehicleWidgetProps) {
+export default function VehicleWidget({ data, loading, fontSizes, widgetStyle }: VehicleWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+  const ws = widgetStyle || {};
 
   if (loading) {
     return (
@@ -101,10 +105,10 @@ export default function VehicleWidget({ data, loading, fontSizes }: VehicleWidge
       <div className="flex items-center gap-2">
         <Icon
           icon={data.icon.includes(":") ? data.icon : `mdi:${data.icon}`}
-          className="text-primary shrink-0"
-          style={{ fontSize: fs.value }}
+          className="shrink-0"
+          style={{ fontSize: ws.iconSize || fs.value, color: ws.iconColor || "hsl(var(--primary))" }}
         />
-        <span className="font-semibold text-foreground truncate" style={{ fontSize: fs.heading }}>
+        <span className="font-semibold truncate" style={{ fontSize: fs.heading, color: ws.headingColor || "hsl(var(--foreground))" }}>
           {data.name.toUpperCase()}
         </span>
       </div>
@@ -118,8 +122,8 @@ export default function VehicleWidget({ data, loading, fontSizes }: VehicleWidge
         {data.sections.map((section) => (
           <div key={section.id} className="space-y-1.5">
             <span
-              className="text-muted-foreground uppercase tracking-wider block"
-              style={{ fontSize: Math.max(fs.label - 1, 8) }}
+              className="uppercase tracking-wider block"
+              style={{ fontSize: Math.max(fs.label - 1, 8), color: ws.labelColor || "hsl(var(--muted-foreground))" }}
             >
               {section.label}
             </span>
@@ -130,6 +134,7 @@ export default function VehicleWidget({ data, loading, fontSizes }: VehicleWidge
                   entity={entity}
                   sectionType={section.type}
                   fs={fs}
+                  ws={ws}
                 />
               ))}
             </div>

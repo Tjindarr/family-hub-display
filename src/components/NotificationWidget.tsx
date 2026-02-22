@@ -1,6 +1,6 @@
 import { Bell, AlertTriangle, BatteryLow, Info } from "lucide-react";
 import type { NotificationItem } from "@/hooks/useNotificationData";
-import type { WidgetFontSizes } from "@/lib/config";
+import type { WidgetFontSizes, WidgetStyleConfig } from "@/lib/config";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
   bell: Bell,
@@ -13,9 +13,13 @@ interface NotificationWidgetProps {
   notifications: NotificationItem[];
   loading: boolean;
   fontSizes?: WidgetFontSizes;
+  widgetStyle?: WidgetStyleConfig;
 }
 
-export default function NotificationWidget({ notifications, loading, fontSizes }: NotificationWidgetProps) {
+export default function NotificationWidget({ notifications, loading, fontSizes, widgetStyle }: NotificationWidgetProps) {
+  const ws = widgetStyle || {};
+  const iconPx = ws.iconSize || 14;
+
   if (loading) {
     return (
       <div className="widget-card h-full flex items-center justify-center">
@@ -36,10 +40,10 @@ export default function NotificationWidget({ notifications, loading, fontSizes }
   return (
     <div className="widget-card h-full overflow-auto p-3">
       <div className="flex items-center gap-2 mb-2">
-        <Bell className="h-4 w-4 text-primary" />
+        <Bell style={{ width: iconPx + 2, height: iconPx + 2, color: ws.iconColor || "hsl(var(--primary))" }} />
         <span
-          className="font-semibold text-foreground uppercase tracking-wider"
-          style={{ fontSize: fontSizes?.heading || 12 }}
+          className="font-semibold uppercase tracking-wider"
+          style={{ fontSize: fontSizes?.heading || 12, color: ws.headingColor || "hsl(var(--foreground))" }}
         >
           Notifications
         </span>
@@ -60,24 +64,23 @@ export default function NotificationWidget({ notifications, loading, fontSizes }
                 style={{ backgroundColor: `${n.color}20` }}
               >
                 <IconComp
-                  className="h-3.5 w-3.5"
-                  style={{ color: n.color }}
+                  style={{ width: iconPx, height: iconPx, color: ws.iconColor || n.color }}
                 />
               </div>
               <div className="flex-1 min-w-0">
                 <div
-                  className="font-medium text-foreground truncate"
-                  style={{ fontSize: fontSizes?.body || 13 }}
+                  className="font-medium truncate"
+                  style={{ fontSize: fontSizes?.body || 13, color: ws.valueColor || "hsl(var(--foreground))" }}
                 >
                   {n.title}
                 </div>
                 <div
-                  className="text-muted-foreground mt-0.5 line-clamp-2"
-                  style={{ fontSize: fontSizes?.label || 11 }}
+                  className="mt-0.5 line-clamp-2"
+                  style={{ fontSize: fontSizes?.label || 11, color: ws.labelColor || "hsl(var(--muted-foreground))" }}
                 >
                   {n.message}
                 </div>
-                <div className="text-muted-foreground/50 mt-1" style={{ fontSize: 9 }}>
+                <div style={{ fontSize: 9, color: ws.labelColor || "hsl(var(--muted-foreground) / 0.5)" }} className="mt-1">
                   {formatTime(n.timestamp)}
                 </div>
               </div>

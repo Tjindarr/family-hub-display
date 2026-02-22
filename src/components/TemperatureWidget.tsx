@@ -2,11 +2,13 @@ import { Thermometer, Droplets } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Line, Bar, Area, Scatter, YAxis } from "recharts";
 import type { TemperatureSensorData } from "@/hooks/useDashboardData";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
+import type { WidgetStyleConfig } from "@/lib/config";
 
 interface TemperatureWidgetProps {
   sensors: TemperatureSensorData[];
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
+  widgetStyle?: WidgetStyleConfig;
 }
 
 function SensorChart({ sensor }: { sensor: TemperatureSensorData }) {
@@ -57,8 +59,10 @@ function SensorChart({ sensor }: { sensor: TemperatureSensorData }) {
   );
 }
 
-export default function TemperatureWidget({ sensors, loading, fontSizes }: TemperatureWidgetProps) {
+export default function TemperatureWidget({ sensors, loading, fontSizes, widgetStyle }: TemperatureWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
+  const ws = widgetStyle || {};
+  const iconPx = ws.iconSize || 16;
 
   if (loading) {
     return (
@@ -80,14 +84,14 @@ export default function TemperatureWidget({ sensors, loading, fontSizes }: Tempe
                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: sensor.color }} />
                 <span
                   className="font-semibold uppercase tracking-wider text-muted-foreground"
-                  style={{ fontSize: fs.heading }}
+                  style={{ fontSize: fs.heading, color: ws.labelColor || undefined }}
                 >
                   {sensor.label}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <Thermometer className="h-4 w-4" style={{ color: sensor.color }} />
-                <span className="font-mono font-semibold text-foreground" style={{ fontSize: fs.value }}>
+                <Thermometer style={{ color: ws.iconColor || sensor.color, width: iconPx, height: iconPx }} />
+                <span className="font-mono font-semibold text-foreground" style={{ fontSize: fs.value, color: ws.valueColor || undefined }}>
                   {sensor.temperature !== null
                     ? `${sensor.roundTemperature ? Math.round(sensor.temperature) : sensor.temperature.toFixed(1)}°`
                     : "—"}
@@ -96,8 +100,8 @@ export default function TemperatureWidget({ sensors, loading, fontSizes }: Tempe
             </div>
             {sensor.humidity !== null && (
               <div className="flex items-center gap-1.5">
-                <Droplets className="h-4 w-4 text-blue-400" />
-                <span className="font-mono text-muted-foreground" style={{ fontSize: fs.body }}>
+                <Droplets style={{ color: ws.secondaryIconColor || "hsl(210, 80%, 65%)", width: iconPx, height: iconPx }} />
+                <span className="font-mono text-muted-foreground" style={{ fontSize: fs.body, color: ws.labelColor || undefined }}>
                   {sensor.humidity.toFixed(0)}%
                 </span>
               </div>
