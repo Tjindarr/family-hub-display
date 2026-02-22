@@ -12,6 +12,9 @@ export interface NotificationItem {
   icon: string;
   color: string;
   timestamp: string;
+  iconSize?: number;
+  labelColor?: string;
+  valueColor?: string;
 }
 
 export function useNotificationData(
@@ -69,6 +72,9 @@ export function useNotificationData(
             icon: rule.icon || "alert-triangle",
             color: rule.color || "hsl(0, 72%, 55%)",
             timestamp: state.last_updated || new Date().toISOString(),
+            iconSize: rule.iconSize,
+            labelColor: rule.labelColor,
+            valueColor: rule.valueColor,
           });
         }
       }

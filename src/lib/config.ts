@@ -127,6 +127,9 @@ export interface NotificationAlertRule {
   threshold: number;
   icon: string; // lucide icon name
   color: string; // alert color
+  iconSize?: number;
+  labelColor?: string;
+  valueColor?: string;
 }
 
 export interface NotificationConfig {

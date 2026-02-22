@@ -289,7 +289,7 @@ const Index = () => {
       return <RssNewsWidget items={rssData[rssId] || []} loading={rssLoading} label={rssCfg.label} fontSizes={fs} widgetStyle={ws.rss} />;
     }
     if (id === "notifications") {
-      return <NotificationWidget notifications={notifications} loading={notifLoading} fontSizes={fs} widgetStyle={ws.notifications} />;
+      return <NotificationWidget notifications={notifications} loading={notifLoading} />;
     }
     if (id.startsWith("vehicle_")) {
       const vehicleId = id.replace("vehicle_", "");
