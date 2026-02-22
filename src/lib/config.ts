@@ -330,6 +330,9 @@ export interface TemperatureEntityConfig {
   secondaryIconColor?: string;
   labelColor?: string;
   valueColor?: string;
+  labelTextSize?: number;
+  valueTextSize?: number;
+  humidityTextSize?: number;
 }
 
 export interface PersonCardFontSizes {

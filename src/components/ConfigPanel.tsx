@@ -742,6 +742,18 @@ function WidgetStyleControls({ style, onChange, fields }: {
                       <Label className="text-[10px] text-muted-foreground">Value Color</Label>
                       <ColorPicker value={entity.valueColor || ""} onChange={(val) => updateTempEntity(i, { valueColor: val || undefined })} className="w-full" />
                     </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Label Text Size</Label>
+                      <Input type="number" min={6} max={48} value={entity.labelTextSize || ""} onChange={(e) => updateTempEntity(i, { labelTextSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Temp Text Size</Label>
+                      <Input type="number" min={8} max={80} value={entity.valueTextSize || ""} onChange={(e) => updateTempEntity(i, { valueTextSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Humidity Text Size</Label>
+                      <Input type="number" min={6} max={48} value={entity.humidityTextSize || ""} onChange={(e) => updateTempEntity(i, { humidityTextSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    </div>
                   </div>
                 </div>
               ))}

@@ -82,14 +82,14 @@ export default function TemperatureWidget({ sensors, loading, fontSizes }: Tempe
                   <div className="h-2 w-2 rounded-full" style={{ backgroundColor: sensor.color }} />
                   <span
                     className="font-semibold uppercase tracking-wider text-muted-foreground"
-                    style={{ fontSize: fs.heading, color: sensor.labelColor || undefined }}
+                    style={{ fontSize: sensor.labelTextSize || fs.heading, color: sensor.labelColor || undefined }}
                   >
                     {sensor.label}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <Thermometer style={{ color: sensor.iconColor || sensor.color, width: iconPx, height: iconPx }} />
-                  <span className="font-mono font-semibold text-foreground" style={{ fontSize: fs.value, color: sensor.valueColor || undefined }}>
+                  <span className="font-mono font-semibold text-foreground" style={{ fontSize: sensor.valueTextSize || fs.value, color: sensor.valueColor || undefined }}>
                     {sensor.temperature !== null
                       ? `${sensor.roundTemperature ? Math.round(sensor.temperature) : sensor.temperature.toFixed(1)}°`
                       : "—"}
@@ -99,7 +99,7 @@ export default function TemperatureWidget({ sensors, loading, fontSizes }: Tempe
               {sensor.humidity !== null && (
                 <div className="flex items-center gap-1.5">
                   <Droplets style={{ color: sensor.secondaryIconColor || "hsl(210, 80%, 65%)", width: iconPx, height: iconPx }} />
-                  <span className="font-mono text-muted-foreground" style={{ fontSize: fs.body, color: sensor.labelColor || undefined }}>
+                  <span className="font-mono text-muted-foreground" style={{ fontSize: sensor.humidityTextSize || fs.body, color: sensor.labelColor || undefined }}>
                     {sensor.humidity.toFixed(0)}%
                   </span>
                 </div>
