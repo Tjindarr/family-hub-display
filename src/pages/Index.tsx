@@ -248,8 +248,7 @@ const Index = () => {
         showPrecipitation={config.weatherConfig?.showPrecipitation ?? true}
         showSunrise={config.weatherConfig?.showSunrise ?? true}
         showSunset={config.weatherConfig?.showSunset ?? true}
-        fontSizes={fs}
-        widgetStyle={ws.weather}
+        weatherConfig={config.weatherConfig}
       />
     );
     if (id === "photos") return <PhotoWidget config={config.photoWidget} isDemo={isDemo} />;

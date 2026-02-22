@@ -1034,11 +1034,88 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   Show Sunset
                 </label>
               </div>
-              <WidgetStyleControls
-                style={getStyle("weather")}
-                onChange={(s) => setStyle("weather", s)}
-                fields={["iconSize", "iconColor", "labelColor", "valueColor", "headingColor"]}
-              />
+
+              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Clock</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Text Size</Label>
+                  <Input type="number" min={8} max={80} value={weatherConfig.clockTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, clockTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Text Color</Label>
+                  <ColorPicker value={weatherConfig.clockTextColor || ""} onChange={(val) => setWeatherConfig((prev) => ({ ...prev, clockTextColor: val || undefined }))} className="w-full" />
+                </div>
+              </div>
+
+              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Current Temperature</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
+                  <Input type="number" min={8} max={80} value={weatherConfig.tempIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, tempIconSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Text Size</Label>
+                  <Input type="number" min={8} max={80} value={weatherConfig.tempTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, tempTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-[10px] text-muted-foreground">Text Color</Label>
+                  <ColorPicker value={weatherConfig.tempTextColor || ""} onChange={(val) => setWeatherConfig((prev) => ({ ...prev, tempTextColor: val || undefined }))} className="w-full" />
+                </div>
+              </div>
+
+              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Sunrise / Sunset</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
+                  <Input type="number" min={8} max={64} value={weatherConfig.sunIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, sunIconSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Text Size</Label>
+                  <Input type="number" min={8} max={48} value={weatherConfig.sunTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, sunTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Text Color</Label>
+                  <ColorPicker value={weatherConfig.sunTextColor || ""} onChange={(val) => setWeatherConfig((prev) => ({ ...prev, sunTextColor: val || undefined }))} className="w-full" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Icon Color</Label>
+                  <ColorPicker value={weatherConfig.sunIconColor || ""} onChange={(val) => setWeatherConfig((prev) => ({ ...prev, sunIconColor: val || undefined }))} className="w-full" />
+                </div>
+              </div>
+
+              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Forecast Chart</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Day Text Size</Label>
+                  <Input type="number" min={6} max={32} value={weatherConfig.chartDayTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, chartDayTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
+                  <Input type="number" min={8} max={64} value={weatherConfig.chartIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, chartIconSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-[10px] text-muted-foreground">Day Text Color</Label>
+                  <ColorPicker value={weatherConfig.chartDayTextColor || ""} onChange={(val) => setWeatherConfig((prev) => ({ ...prev, chartDayTextColor: val || undefined }))} className="w-full" />
+                </div>
+              </div>
+
+              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Date Display</h4>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input type="checkbox" checked={weatherConfig.showDate || false} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, showDate: e.target.checked }))} className="rounded border-border" />
+                Show Date
+              </label>
+              {weatherConfig.showDate && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Text Size</Label>
+                    <Input type="number" min={6} max={48} value={weatherConfig.dateTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, dateTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Text Color</Label>
+                    <ColorPicker value={weatherConfig.dateTextColor || ""} onChange={(val) => setWeatherConfig((prev) => ({ ...prev, dateTextColor: val || undefined }))} className="w-full" />
+                  </div>
+                </div>
+              )}
             </CollapsibleSection>
 
             {/* Food Menu */}

@@ -69,6 +69,22 @@ export interface WeatherConfig {
   showPrecipitation: boolean;
   showSunrise: boolean;
   showSunset: boolean;
+  // Granular styling
+  clockTextSize?: number;
+  clockTextColor?: string;
+  tempIconSize?: number;
+  tempTextSize?: number;
+  tempTextColor?: string;
+  sunIconSize?: number;
+  sunTextSize?: number;
+  sunTextColor?: string;
+  sunIconColor?: string;
+  chartDayTextSize?: number;
+  chartDayTextColor?: string;
+  chartIconSize?: number;
+  showDate?: boolean;
+  dateTextSize?: number;
+  dateTextColor?: string;
 }
 
 export type FoodMenuSource = "calendar" | "skolmaten";
