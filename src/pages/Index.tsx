@@ -85,10 +85,81 @@ const Index = () => {
     return config.sensorGrids || [];
   }, [isDemo, config.sensorGrids]);
 
+  // Inject demo RSS feed
+  const effectiveRssFeeds = useMemo(() => {
+    if (isDemo && (config.rssFeeds || []).length === 0) {
+      return [{ id: "demo_rss", label: "News", feedUrl: "https://demo.example.com/rss", maxItems: 5 }];
+    }
+    return config.rssFeeds || [];
+  }, [isDemo, config.rssFeeds]);
+
+  // Inject demo vehicle
+  const effectiveVehicles = useMemo(() => {
+    if (isDemo && (config.vehicles || []).length === 0) {
+      return [{
+        id: "demo_vehicle",
+        name: "Tesla Model 3",
+        icon: "mdi:car-electric",
+        sections: [
+          { id: "bat", type: "battery" as const, label: "Battery", entities: [
+            { entityId: "sensor.demo_bat", label: "Battery", icon: "mdi:battery-charging-70", unit: "%", color: "hsl(120, 50%, 50%)" },
+            { entityId: "sensor.demo_range", label: "Range", icon: "mdi:map-marker-distance", unit: "km", color: "hsl(210, 80%, 55%)" },
+          ]},
+          { id: "climate", type: "climate" as const, label: "Climate", entities: [
+            { entityId: "sensor.demo_temp", label: "Interior", icon: "mdi:thermometer", unit: "°C", color: "hsl(32, 95%, 55%)" },
+          ]},
+          { id: "doors", type: "doors" as const, label: "Doors", entities: [
+            { entityId: "sensor.demo_lock", label: "Lock", icon: "mdi:car-door-lock", unit: "", color: "hsl(174, 72%, 50%)" },
+          ]},
+        ],
+      }];
+    }
+    return config.vehicles || [];
+  }, [isDemo, config.vehicles]);
+
+  // Inject demo general sensor
+  const effectiveGeneralSensors = useMemo(() => {
+    if (isDemo && (config.generalSensors || []).length === 0) {
+      return [{
+        id: "demo_power",
+        label: "Power Usage",
+        showLabel: true,
+        icon: "zap",
+        showGraph: true,
+        historyHours: 24,
+        chartGrouping: "hour" as const,
+        chartSeries: [
+          { entityId: "sensor.demo_power", label: "Power", color: "hsl(45, 90%, 55%)", chartType: "area" as const },
+        ],
+        topInfo: [
+          { entityId: "sensor.demo_power_now", label: "Now", unit: "W", color: "hsl(45, 90%, 55%)" },
+          { entityId: "sensor.demo_power_today", label: "Today", unit: "kWh", color: "hsl(174, 72%, 50%)" },
+        ],
+        bottomInfo: [
+          { entityId: "sensor.demo_power_avg", label: "Avg", unit: "W", color: "hsl(215, 12%, 55%)" },
+          { entityId: "sensor.demo_power_peak", label: "Peak", unit: "W", color: "hsl(0, 72%, 55%)" },
+        ],
+      }];
+    }
+    return config.generalSensors || [];
+  }, [isDemo, config.generalSensors]);
+
+  // Inject demo notification config
+  const effectiveNotificationConfig = useMemo(() => {
+    if (isDemo && !config.notificationConfig) {
+      return { showHANotifications: true, alertRules: [] };
+    }
+    return config.notificationConfig;
+  }, [isDemo, config.notificationConfig]);
+
   const effectiveConfig = useMemo(() => ({
     ...config,
     sensorGrids: effectiveSensorGrids,
-  }), [config, effectiveSensorGrids]);
+    rssFeeds: effectiveRssFeeds,
+    vehicles: effectiveVehicles,
+    generalSensors: effectiveGeneralSensors,
+    notificationConfig: effectiveNotificationConfig,
+  }), [config, effectiveSensorGrids, effectiveRssFeeds, effectiveVehicles, effectiveGeneralSensors, effectiveNotificationConfig]);
 
   // WebSocket connection for real-time state updates
   const { getState: getCachedState, getAllStates, onStateChange, isConnected, wsState } = useHAWebSocket(config);
@@ -99,12 +170,12 @@ const Index = () => {
   const { persons, loading: personLoading } = usePersonData(config, getCachedState, onStateChange, getAllStates);
   const { weather, loading: weatherLoading } = useWeatherData(config, getCachedState, onStateChange);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
-  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(config, getCachedState, onStateChange);
+  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(effectiveConfig, getCachedState, onStateChange);
   const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig, getCachedState, onStateChange);
-  const rssFeeds = config.rssFeeds || [];
+  const rssFeeds = effectiveRssFeeds;
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
-  const { notifications, loading: notifLoading } = useNotificationData(config, getCachedState, onStateChange, getAllStates);
-  const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(config, getCachedState, onStateChange);
+  const { notifications, loading: notifLoading } = useNotificationData(effectiveConfig, getCachedState, onStateChange, getAllStates);
+  const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(effectiveConfig, getCachedState, onStateChange);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -129,10 +200,10 @@ const Index = () => {
     return () => clearInterval(interval);
   }, [config.blackout, isKiosk]);
 
-  const generalSensorIds = (config.generalSensors || []).map((s) => s.id);
+  const generalSensorIds = effectiveGeneralSensors.map((s) => s.id);
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
   const rssIds = rssFeeds.map((f) => f.id);
-  const vehicleIds = (config.vehicles || []).map((v) => v.id);
+  const vehicleIds = effectiveVehicles.map((v) => v.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   // Apply theme
@@ -148,7 +219,7 @@ const Index = () => {
   const getFontSizes = (widgetId: string) =>
     resolveFontSizes(config.globalFontSizes, config.widgetFontSizes?.[widgetId]);
 
-  const hasNotifications = (config.notificationConfig?.showHANotifications || (config.notificationConfig?.alertRules?.length > 0)) ?? false;
+  const hasNotifications = isDemo || (effectiveNotificationConfig?.showHANotifications || (effectiveNotificationConfig?.alertRules?.length > 0)) || false;
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
@@ -179,7 +250,7 @@ const Index = () => {
         fontSizes={fs}
       />
     );
-    if (id === "photos") return <PhotoWidget config={config.photoWidget} />;
+    if (id === "photos") return <PhotoWidget config={config.photoWidget} isDemo={isDemo} />;
     if (id.startsWith("temp_group_")) {
       const groupNum = parseInt(id.split("_")[2], 10);
       const groupSensors = tempSensors.filter((_, i) => (config.temperatureEntities[i]?.group ?? i) === groupNum);
@@ -195,7 +266,7 @@ const Index = () => {
     if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} fontSizes={fs} displayMode={config.foodMenuConfig?.displayMode} style={config.foodMenuConfig?.style} showTitle={config.foodMenuConfig?.showTitle !== false} />;
     if (id.startsWith("general_")) {
       const sensorId = id.replace("general_", "");
-      const sensorConfig = (config.generalSensors || []).find((s) => s.id === sensorId);
+      const sensorConfig = effectiveGeneralSensors.find((s) => s.id === sensorId);
       if (!sensorConfig) return null;
       const sensorData = generalSensorData[sensorId];
       const sensorFs = sensorConfig.fontSize

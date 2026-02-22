@@ -9,11 +9,19 @@ interface ServerPhoto {
   thumbUrl: string;
 }
 
+const DEMO_PHOTOS: ServerPhoto[] = [
+  { filename: "demo1.jpg", url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&h=600&fit=crop", thumbUrl: "" },
+  { filename: "demo2.jpg", url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop", thumbUrl: "" },
+  { filename: "demo3.jpg", url: "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800&h=600&fit=crop", thumbUrl: "" },
+  { filename: "demo4.jpg", url: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=600&fit=crop", thumbUrl: "" },
+];
+
 interface PhotoWidgetProps {
   config: PhotoWidgetConfig;
+  isDemo?: boolean;
 }
 
-export default function PhotoWidget({ config }: PhotoWidgetProps) {
+export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
   const { intervalSeconds, displayMode = "contain" } = config;
   const [photos, setPhotos] = useState<ServerPhoto[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -22,22 +30,31 @@ export default function PhotoWidget({ config }: PhotoWidgetProps) {
 
   // Fetch photos from server
   useEffect(() => {
+    if (isDemo) {
+      setPhotos(DEMO_PHOTOS);
+      return;
+    }
     const fetchPhotos = async () => {
       try {
         const res = await fetch("/api/photos");
         if (res.ok) {
           const data = await res.json();
-          setPhotos(data);
+          if (data.length > 0) {
+            setPhotos(data);
+          } else if (isDemo) {
+            setPhotos(DEMO_PHOTOS);
+          }
         }
       } catch (e) {
         console.error("Failed to fetch photos:", e);
+        if (isDemo) setPhotos(DEMO_PHOTOS);
       }
     };
     fetchPhotos();
     // Re-fetch periodically to pick up new uploads
     const interval = setInterval(fetchPhotos, 60_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isDemo]);
 
   const advance = useCallback(() => {
     if (photos.length <= 1) return;
