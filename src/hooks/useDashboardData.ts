@@ -57,6 +57,9 @@ export interface TemperatureSensorData {
   secondaryIconColor?: string;
   labelColor?: string;
   valueColor?: string;
+  labelTextSize?: number;
+  valueTextSize?: number;
+  humidityTextSize?: number;
 }
 
 export interface TemperatureSeries {
@@ -123,6 +126,9 @@ export function useTemperatureData(
           secondaryIconColor: entity.secondaryIconColor,
           labelColor: entity.labelColor,
           valueColor: entity.valueColor,
+          labelTextSize: entity.labelTextSize,
+          valueTextSize: entity.valueTextSize,
+          humidityTextSize: entity.humidityTextSize,
         };
       });
     });
