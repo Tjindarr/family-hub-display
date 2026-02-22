@@ -82,7 +82,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes }: Elec
       {loading ? (
         <div className="flex-1 min-h-0 animate-pulse rounded-lg bg-muted" />
       ) : (
-        <div className="min-h-0 px-[2px]" style={{ flex: "0.9 1 0%", marginTop: "-5px", marginBottom: "-5px" }}>
+        <div className="px-[2px]" style={{ flex: "0.9 1 0%", minHeight: "120px", marginTop: "-5px", marginBottom: "-5px" }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 0, right: 2, left: -10, bottom: -5 }}>
               <defs>
