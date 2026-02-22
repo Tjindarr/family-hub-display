@@ -408,7 +408,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
             <TabsTrigger value="connection" className="flex-1 text-xs">Connection</TabsTrigger>
             <TabsTrigger value="widgets" className="flex-1 text-xs">Widgets</TabsTrigger>
             <TabsTrigger value="photos" className="flex-1 text-xs">Photos</TabsTrigger>
-            <TabsTrigger value="layout" className="flex-1 text-xs">Layout</TabsTrigger>
+            
           </TabsList>
 
           {/* ===== CONNECTION TAB ===== */}
@@ -2329,102 +2329,6 @@ function WidgetStyleControls({ style, onChange, fields }: {
 
           </TabsContent>
 
-          {/* ===== LAYOUT TAB ===== */}
-          <TabsContent value="layout" className="space-y-6 mt-0">
-
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Grid</h3>
-              <div>
-                <Label className="text-xs text-muted-foreground">Grid Columns</Label>
-                <Select value={String(gridColumns)} onValueChange={(v) => setGridColumns(Number(v))}>
-                  <SelectTrigger className="mt-1 bg-muted border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6].map((n) => (
-                      <SelectItem key={n} value={String(n)}>{n} column{n > 1 ? "s" : ""}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Per-row column overrides */}
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Columns per Row (override)</Label>
-                {(() => {
-                  const usedRows = new Set<number>();
-                  widgetItems.forEach(({ id }) => {
-                    const defaultRow = id === "electricity" || id === "calendar" ? 2 : 1;
-                    usedRows.add(widgetLayouts[id]?.row || defaultRow);
-                  });
-                  const sortedRows = [...usedRows].sort((a, b) => a - b);
-                  return sortedRows.map((row) => (
-                    <div key={row} className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-14">Row {row}</span>
-                      <Select
-                        value={String(rowColumns[row] || gridColumns)}
-                        onValueChange={(v) => {
-                          const val = Number(v);
-                          setRowColumns((prev) => {
-                            const next = { ...prev };
-                            if (val === gridColumns) delete next[row];
-                            else next[row] = val;
-                            return next;
-                          });
-                        }}
-                      >
-                        <SelectTrigger className="flex-1 h-7 bg-muted border-border text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6].map((n) => (
-                            <SelectItem key={n} value={String(n)}>
-                              {n} col{n > 1 ? "s" : ""}{n === gridColumns ? " (default)" : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ));
-                })()}
-              </div>
-
-            </section>
-
-            {/* Widget Order */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Widget Order & Group</h3>
-              <p className="text-xs text-muted-foreground">
-                Drag to reorder widgets. Assign groups to stack widgets together.
-              </p>
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={widgetItems.map((w) => w.id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-2">
-                    {widgetItems.map(({ id, label, defaultSpan }) => {
-                      const defaultRow = id === "electricity" || id === "calendar" ? 2 : 1;
-                      return (
-                        <SortableWidgetItem
-                          key={id}
-                          id={id}
-                          label={label}
-                          colSpan={getColSpan(id, defaultSpan)}
-                          row={getRow(id, defaultRow)}
-                          rowSpan={getRowSpan(id, 1)}
-                          widgetGroup={widgetLayouts[id]?.widgetGroup || ""}
-                          maxCols={gridColumns}
-                          onColSpanChange={(span) => updateLayout(id, { colSpan: span })}
-                          onRowChange={(row) => updateLayout(id, { row })}
-                          onRowSpanChange={(rowSpan) => updateLayout(id, { rowSpan })}
-                          onWidgetGroupChange={(group) => updateLayout(id, { widgetGroup: group === "none" ? "" : group })}
-                        />
-                      );
-                    })}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            </section>
-
-          </TabsContent>
         </Tabs>
         </div>
 
