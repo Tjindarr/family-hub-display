@@ -2129,13 +2129,23 @@ function WidgetStyleControls({ style, onChange, fields }: {
                       onChange={(v) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, color: v } : r) }))}
                     />
                   </div>
+                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-2">Styling</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
+                      <Input type="number" min={8} max={64} value={rule.iconSize || ""} onChange={(e) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, iconSize: Number(e.target.value) || undefined } : r) }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Title Color</Label>
+                      <ColorPicker value={rule.valueColor || ""} onChange={(v) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, valueColor: v || undefined } : r) }))} className="w-full" />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-[10px] text-muted-foreground">Message Color</Label>
+                      <ColorPicker value={rule.labelColor || ""} onChange={(v) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, labelColor: v || undefined } : r) }))} className="w-full" />
+                    </div>
+                  </div>
                 </div>
               ))}
-              <WidgetStyleControls
-                style={getStyle("notifications")}
-                onChange={(s) => setStyle("notifications", s)}
-                fields={["iconSize", "iconColor", "labelColor", "valueColor", "headingColor"]}
-              />
             </CollapsibleSection>
 
             {/* Vehicles */}
