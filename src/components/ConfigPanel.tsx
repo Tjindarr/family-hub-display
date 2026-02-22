@@ -71,17 +71,15 @@ interface SortableWidgetItemProps {
   rowSpan: number;
   widgetGroup: string;
   maxCols: number;
-  fontSizes: WidgetFontSizes;
   onColSpanChange: (span: number) => void;
   onRowChange: (row: number) => void;
   onRowSpanChange: (span: number) => void;
   onWidgetGroupChange: (group: string) => void;
-  onFontSizeChange: (sizes: WidgetFontSizes) => void;
 }
 
 const WIDGET_GROUPS = ["", "A", "B", "C", "D", "E", "F", "G", "H"];
 
-function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, maxCols, fontSizes, onColSpanChange, onRowChange, onRowSpanChange, onWidgetGroupChange, onFontSizeChange }: SortableWidgetItemProps) {
+function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, maxCols, onColSpanChange, onRowChange, onRowSpanChange, onWidgetGroupChange }: SortableWidgetItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
@@ -117,25 +115,6 @@ function SortableWidgetItem({ id, label, colSpan, row, rowSpan, widgetGroup, max
             ))}
           </SelectContent>
         </Select>
-      </div>
-      {/* Per-widget font sizes */}
-      <div className="grid grid-cols-2 gap-1.5 pl-6">
-        <div className="flex items-center gap-1">
-          <span className="text-[11px] text-muted-foreground w-14">Heading</span>
-          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.heading ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, heading: e.target.value ? Number(e.target.value) : undefined })} className="w-full h-6 bg-muted border-border text-[12px] px-1" />
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-[11px] text-muted-foreground w-14">Value</span>
-          <Input type="number" min={6} max={80} placeholder="—" value={fontSizes.value ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, value: e.target.value ? Number(e.target.value) : undefined })} className="w-full h-6 bg-muted border-border text-[12px] px-1" />
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-[11px] text-muted-foreground w-14">Body</span>
-          <Input type="number" min={6} max={60} placeholder="—" value={fontSizes.body ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, body: e.target.value ? Number(e.target.value) : undefined })} className="w-full h-6 bg-muted border-border text-[12px] px-1" />
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-[11px] text-muted-foreground w-14">Label</span>
-          <Input type="number" min={6} max={40} placeholder="—" value={fontSizes.label ?? ""} onChange={(e) => onFontSizeChange({ ...fontSizes, label: e.target.value ? Number(e.target.value) : undefined })} className="w-full h-6 bg-muted border-border text-[12px] px-1" />
-        </div>
       </div>
     </div>
   );
@@ -2352,29 +2331,6 @@ function WidgetStyleControls({ style, onChange, fields }: {
 
           {/* ===== LAYOUT TAB ===== */}
           <TabsContent value="layout" className="space-y-6 mt-0">
-            {/* Global Font Sizes */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Text Sizes (px)</h3>
-              <p className="text-xs text-muted-foreground">Global defaults. Per-widget overrides below.</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Heading</Label>
-                  <Input type="number" min={6} max={60} value={globalFontSizes.heading} onChange={(e) => setGlobalFontSizes((p) => ({ ...p, heading: Number(e.target.value) || 12 }))} className="mt-1 bg-muted border-border" />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Value</Label>
-                  <Input type="number" min={6} max={80} value={globalFontSizes.value} onChange={(e) => setGlobalFontSizes((p) => ({ ...p, value: Number(e.target.value) || 18 }))} className="mt-1 bg-muted border-border" />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Body</Label>
-                  <Input type="number" min={6} max={60} value={globalFontSizes.body} onChange={(e) => setGlobalFontSizes((p) => ({ ...p, body: Number(e.target.value) || 14 }))} className="mt-1 bg-muted border-border" />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Label</Label>
-                  <Input type="number" min={6} max={40} value={globalFontSizes.label} onChange={(e) => setGlobalFontSizes((p) => ({ ...p, label: Number(e.target.value) || 10 }))} className="mt-1 bg-muted border-border" />
-                </div>
-              </div>
-            </section>
 
             <section className="space-y-3">
               <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Grid</h3>
@@ -2437,9 +2393,9 @@ function WidgetStyleControls({ style, onChange, fields }: {
 
             {/* Widget Order */}
             <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Widget Order & Sizing</h3>
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Widget Order & Group</h3>
               <p className="text-xs text-muted-foreground">
-                Drag to reorder widgets. Set column span per widget.
+                Drag to reorder widgets. Assign groups to stack widgets together.
               </p>
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={widgetItems.map((w) => w.id)} strategy={verticalListSortingStrategy}>
@@ -2456,12 +2412,10 @@ function WidgetStyleControls({ style, onChange, fields }: {
                           rowSpan={getRowSpan(id, 1)}
                           widgetGroup={widgetLayouts[id]?.widgetGroup || ""}
                           maxCols={gridColumns}
-                          fontSizes={widgetFontSizes[id] || {}}
                           onColSpanChange={(span) => updateLayout(id, { colSpan: span })}
                           onRowChange={(row) => updateLayout(id, { row })}
                           onRowSpanChange={(rowSpan) => updateLayout(id, { rowSpan })}
                           onWidgetGroupChange={(group) => updateLayout(id, { widgetGroup: group === "none" ? "" : group })}
-                          onFontSizeChange={(sizes) => setWidgetFontSizes((prev) => ({ ...prev, [id]: sizes }))}
                         />
                       );
                     })}
