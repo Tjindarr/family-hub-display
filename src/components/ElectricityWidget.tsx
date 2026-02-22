@@ -1,13 +1,11 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import type { NordpoolData } from "@/hooks/useDashboardData";
-import type { ResolvedFontSizes } from "@/lib/fontSizes";
-import type { WidgetStyleConfig } from "@/lib/config";
+import type { DashboardConfig } from "@/lib/config";
 
 interface ElectricityWidgetProps {
   nordpool: NordpoolData;
   loading: boolean;
-  fontSizes?: ResolvedFontSizes;
-  widgetStyle?: WidgetStyleConfig;
+  electricityStyle?: DashboardConfig["electricityStyle"];
 }
 
 function getPriceColor(price: number): string {
@@ -26,9 +24,16 @@ function formatHour(date: Date): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-export default function ElectricityWidget({ nordpool, loading, fontSizes, widgetStyle }: ElectricityWidgetProps) {
-  const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
-  const ws = widgetStyle || {};
+export default function ElectricityWidget({ nordpool, loading, electricityStyle }: ElectricityWidgetProps) {
+  const es = electricityStyle || {};
+  const priceSz = es.priceTextSize || 18;
+  const priceColor = es.priceTextColor;
+  const unitSz = es.unitTextSize || 10;
+  const unitColor = es.unitTextColor || "hsl(var(--muted-foreground))";
+  const statsSz = es.statsTextSize || 13;
+  const statsColor = es.statsTextColor;
+  const axisSz = es.axisTextSize || 10;
+  const axisColor = es.axisTextColor || "hsl(215, 12%, 55%)";
   const { today, tomorrow, currentPrice } = nordpool;
 
   // Merge into chart data
@@ -71,13 +76,13 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes, widget
     <div className="widget-card h-full flex flex-col overflow-hidden">
       {/* Current price with badge */}
       <div className="mb-4 flex items-baseline gap-3 shrink-0">
-        <span className="font-mono font-bold" style={{ color: ws.valueColor || getPriceColor(currentPrice), fontSize: fs.value }}>
+        <span className="font-mono font-bold" style={{ color: priceColor || getPriceColor(currentPrice), fontSize: priceSz }}>
           {currentPrice.toFixed(2)}
         </span>
-        <span style={{ fontSize: fs.label, color: ws.labelColor || "hsl(var(--muted-foreground))" }}>
+        <span style={{ fontSize: unitSz, color: unitColor }}>
           kr/kWh
         </span>
-        <span className={getPriceBadgeClass(currentPrice)} style={{ fontSize: fs.label }}>
+        <span className={getPriceBadgeClass(currentPrice)} style={{ fontSize: unitSz }}>
           {currentPrice < 0.5 ? "Low" : currentPrice < 1.0 ? "Medium" : "High"}
         </span>
       </div>
@@ -105,11 +110,11 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes, widget
                 domain={["dataMin", "dataMax"]}
                 ticks={ticks}
                 tickFormatter={(val) => formatHour(new Date(val))}
-                tick={{ fill: "hsl(215, 12%, 55%)", fontSize: fs.label }}
+                tick={{ fill: axisColor, fontSize: axisSz }}
                 axisLine={{ stroke: "hsl(220, 14%, 20%)" }}
               />
               <YAxis
-                tick={{ fill: "hsl(215, 12%, 55%)", fontSize: fs.label }}
+                tick={{ fill: axisColor, fontSize: axisSz }}
                 axisLine={{ stroke: "hsl(220, 14%, 20%)" }}
                 domain={[0, "auto"]}
                 tickFormatter={(v) => v.toFixed(1)}
@@ -124,7 +129,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes, widget
                   border: "1px solid hsl(220, 14%, 20%)",
                   borderRadius: "8px",
                   color: "hsl(210, 20%, 92%)",
-                  fontSize: fs.body,
+                  fontSize: axisSz + 2,
                 }}
                 formatter={(value: number, name: string) => [
                   `${value.toFixed(3)} kr/kWh`,
@@ -162,7 +167,7 @@ export default function ElectricityWidget({ nordpool, loading, fontSizes, widget
       )}
 
       {/* Stats row */}
-      <div className="mt-auto shrink-0 flex gap-6" style={{ fontSize: fs.label * 1.3, paddingBottom: "10px" }}>
+      <div className="mt-auto shrink-0 flex gap-6" style={{ fontSize: statsSz, paddingBottom: "10px", color: statsColor || undefined }}>
         <div className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full" style={{ background: "hsl(210, 100%, 50%)" }} />
           <span className="text-muted-foreground">Idag</span>
