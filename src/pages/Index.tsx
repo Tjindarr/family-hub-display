@@ -367,27 +367,29 @@ const Index = () => {
     <div className="min-h-screen bg-background" style={{ padding: "5px" }}>
       {!isKiosk && (
         <>
-          <ConfigPanel config={config} onSave={updateConfig} />
-          <DashboardEditOverlay
-            allWidgetIds={allWidgetIds}
-            config={config}
-            onSave={updateConfig}
-            renderWidget={renderWidget}
-            getColSpan={getColSpan}
-            getRow={getRow}
-            getRowSpan={getRowSpan}
-            gridColumns={gridColumns}
-            isMobile={isMobile}
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={enterKiosk}
-            className="fixed right-14 top-4 z-50 text-muted-foreground hover:text-foreground"
-            title="Enter kiosk mode"
-          >
-            <Monitor className="h-5 w-5" />
-          </Button>
+          <div className="fixed right-4 top-4 z-50 flex items-center gap-1">
+            <DashboardEditOverlay
+              allWidgetIds={allWidgetIds}
+              config={config}
+              onSave={updateConfig}
+              renderWidget={renderWidget}
+              getColSpan={getColSpan}
+              getRow={getRow}
+              getRowSpan={getRowSpan}
+              gridColumns={gridColumns}
+              isMobile={isMobile}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={enterKiosk}
+              className="text-muted-foreground hover:text-foreground"
+              title="Enter kiosk mode"
+            >
+              <Monitor className="h-5 w-5" />
+            </Button>
+            <ConfigPanel config={config} onSave={updateConfig} />
+          </div>
         </>
       )}
 
