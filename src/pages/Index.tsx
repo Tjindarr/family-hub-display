@@ -155,6 +155,23 @@ const Index = () => {
     return config.notificationConfig;
   }, [isDemo, config.notificationConfig]);
 
+  // Inject demo pollen config
+  const effectivePollenConfig = useMemo(() => {
+    if (isDemo && (config.pollenConfig?.sensors?.length ?? 0) === 0) {
+      return {
+        sensors: [
+          { entityId: "sensor.demo_birch", label: "Björk", icon: "mdi:tree", color: "hsl(80, 50%, 50%)" },
+          { entityId: "sensor.demo_grass", label: "Gräs", icon: "mdi:grass", color: "hsl(120, 40%, 45%)" },
+          { entityId: "sensor.demo_mugwort", label: "Gråbo", icon: "mdi:flower", color: "hsl(35, 80%, 50%)" },
+        ],
+        forecastDays: 4,
+        showLabel: true,
+        showForecast: true,
+      };
+    }
+    return config.pollenConfig;
+  }, [isDemo, config.pollenConfig]);
+
   const effectiveConfig = useMemo(() => ({
     ...config,
     sensorGrids: effectiveSensorGrids,
@@ -162,7 +179,8 @@ const Index = () => {
     vehicles: effectiveVehicles,
     generalSensors: effectiveGeneralSensors,
     notificationConfig: effectiveNotificationConfig,
-  }), [config, effectiveSensorGrids, effectiveRssFeeds, effectiveVehicles, effectiveGeneralSensors, effectiveNotificationConfig]);
+    pollenConfig: effectivePollenConfig,
+  }), [config, effectiveSensorGrids, effectiveRssFeeds, effectiveVehicles, effectiveGeneralSensors, effectiveNotificationConfig, effectivePollenConfig]);
 
   // WebSocket connection for real-time state updates
   const { getState: getCachedState, getAllStates, onStateChange, isConnected, wsState } = useHAWebSocket(config);
@@ -179,7 +197,30 @@ const Index = () => {
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
   const { notifications, loading: notifLoading } = useNotificationData(effectiveConfig, getCachedState, onStateChange, getAllStates);
   const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(effectiveConfig, getCachedState, onStateChange);
-  const { pollenData, loading: pollenLoading } = usePollenData(config.pollenConfig, getCachedState, onStateChange);
+  const { pollenData: rawPollenData, loading: pollenLoading } = usePollenData(effectivePollenConfig, getCachedState, onStateChange);
+
+  // Provide mock pollen data in demo mode
+  const pollenData = useMemo(() => {
+    if (isDemo && rawPollenData.sensors.length === 0 && (effectivePollenConfig?.sensors?.length ?? 0) > 0) {
+      const mockLevels = [1, 3, 5];
+      return {
+        sensors: effectivePollenConfig!.sensors.map((s, idx) => ({
+          entityId: s.entityId,
+          label: s.label,
+          icon: s.icon,
+          color: s.color,
+          state: ["Låga halter", "Måttliga halter", "Höga halter"][idx % 3],
+          numericState: mockLevels[idx % 3],
+          forecast: [0, 1, 2, 3].map((i) => ({
+            date: "",
+            level: String((idx + i) % 5),
+            numericLevel: (idx + i) % 5,
+          })),
+        })),
+      };
+    }
+    return rawPollenData;
+  }, [isDemo, rawPollenData, effectivePollenConfig]);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -225,7 +266,7 @@ const Index = () => {
     resolveFontSizes(config.globalFontSizes, config.widgetFontSizes?.[widgetId]);
 
   const hasNotifications = isDemo || (effectiveNotificationConfig?.showHANotifications || (effectiveNotificationConfig?.alertRules?.length > 0)) || false;
-  const hasPollen = (config.pollenConfig?.sensors?.length ?? 0) > 0;
+  const hasPollen = (effectivePollenConfig?.sensors?.length ?? 0) > 0;
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
@@ -305,7 +346,7 @@ const Index = () => {
       return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} vehicleConfig={vConfig} />;
     }
     if (id === "pollen") {
-      return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={config.pollenConfig} />;
+      return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={effectivePollenConfig} />;
     }
     return null;
   };
