@@ -462,9 +462,22 @@ export default function DashboardEditOverlay({
                           rowSpan: Math.max(1, Math.min(6, getEffectiveRowSpan(leadId) + delta)),
                         })
                       }
-                      onWidgetGroupChange={(group) =>
-                        updateLayout(leadId, { widgetGroup: group })
-                      }
+                      onWidgetGroupChange={(group) => {
+                        // When joining a group, move widget to the same row as the group lead
+                        if (group) {
+                          const leadOfGroup = localOrder.find(
+                            (wId) => wId !== leadId && getWidgetGroup(wId) === group
+                          );
+                          if (leadOfGroup) {
+                            const leadRow = getEffectiveRow(leadOfGroup);
+                            updateLayout(leadId, { widgetGroup: group, row: leadRow });
+                          } else {
+                            updateLayout(leadId, { widgetGroup: group });
+                          }
+                        } else {
+                          updateLayout(leadId, { widgetGroup: group });
+                        }
+                      }}
                     >
                       {memberIds.length > 1 ? (
                         <div className="flex flex-col gap-2 h-full">
