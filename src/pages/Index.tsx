@@ -13,6 +13,7 @@ import SensorGridWidget from "@/components/SensorGridWidget";
 import RssNewsWidget from "@/components/RssNewsWidget";
 import NotificationWidget from "@/components/NotificationWidget";
 import VehicleWidget from "@/components/VehicleWidget";
+import PollenWidget from "@/components/PollenWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import DashboardEditOverlay from "@/components/DashboardEditOverlay";
@@ -33,6 +34,7 @@ import { useSensorGridData } from "@/hooks/useSensorGridData";
 import { useRssNews } from "@/hooks/useRssNews";
 import { useNotificationData } from "@/hooks/useNotificationData";
 import { useVehicleData } from "@/hooks/useVehicleData";
+import { usePollenData } from "@/hooks/usePollenData";
 import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
 
@@ -49,7 +51,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications: boolean, vehicleIds: string[]): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications: boolean, vehicleIds: string[], hasPollen: boolean): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -63,6 +65,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
+    ...(hasPollen ? ["pollen"] : []),
   ];
 }
 
@@ -176,6 +179,7 @@ const Index = () => {
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
   const { notifications, loading: notifLoading } = useNotificationData(effectiveConfig, getCachedState, onStateChange, getAllStates);
   const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(effectiveConfig, getCachedState, onStateChange);
+  const { pollenData, loading: pollenLoading } = usePollenData(config.pollenConfig, getCachedState, onStateChange);
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
@@ -220,10 +224,11 @@ const Index = () => {
     resolveFontSizes(config.globalFontSizes, config.widgetFontSizes?.[widgetId]);
 
   const hasNotifications = isDemo || (effectiveNotificationConfig?.showHANotifications || (effectiveNotificationConfig?.alertRules?.length > 0)) || false;
+  const hasPollen = (config.pollenConfig?.sensors?.length ?? 0) > 0;
 
   // Resolve ordered widget IDs
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, vehicleIds);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, vehicleIds, hasPollen);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -231,7 +236,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications]);
+  }, [config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, hasPollen]);
 
   const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
 
@@ -297,6 +302,9 @@ const Index = () => {
       if (!vData) return null;
       const vConfig = config.vehicles?.find(v => v.id === vehicleId);
       return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} vehicleConfig={vConfig} />;
+    }
+    if (id === "pollen") {
+      return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={config.pollenConfig} />;
     }
     return null;
   };

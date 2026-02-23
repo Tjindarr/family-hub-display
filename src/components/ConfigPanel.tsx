@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -133,7 +133,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = []): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -147,6 +147,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
+    ...(hasPollen ? ["pollen"] : []),
   ];
 }
 
@@ -192,6 +193,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     config.notificationConfig || { showHANotifications: true, alertRules: [] }
   );
   const [vehicles, setVehicles] = useState<VehicleConfig[]>(config.vehicles || []);
+  const [pollenConfig, setPollenConfig] = useState<PollenConfig>(config.pollenConfig || { sensors: [], forecastDays: 4, showLabel: true, showForecast: true });
   const [globalFontSizes, setGlobalFontSizes] = useState<GlobalFontSizes>(config.globalFontSizes || DEFAULT_FONT_SIZES);
   const [widgetFontSizes, setWidgetFontSizes] = useState<Record<string, WidgetFontSizes>>(config.widgetFontSizes || {});
   const [personCardFontSizes, setPersonCardFontSizes] = useState<PersonCardFontSizes>(config.personCardFontSizes || {});
@@ -207,7 +209,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const rsIds = (config.rssFeeds || []).map((s) => s.id);
     const vcIds = (config.vehicles || []).map((v) => v.id);
     const hn = (config.notificationConfig?.showHANotifications || (config.notificationConfig?.alertRules?.length > 0)) ?? false;
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -220,7 +222,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const widgetItems = useMemo(() => {
     const labelMap: Record<string, string> = {
       electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
-      food_menu: "Food Menu", notifications: "Notifications",
+      food_menu: "Food Menu", notifications: "Notifications", pollen: "Pollen Forecast",
     };
     const groupMap = new Map<number, string[]>();
     tempEntities.forEach((e, i) => {
@@ -239,7 +241,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const sgIds = sensorGrids.map((s) => s.id);
     const rsIds = rssFeeds.map((s) => s.id);
     const vcIds = vehicles.map((v) => v.id);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -250,7 +252,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       label: labelMap[id] || id,
       defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("rss_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, rssFeeds, vehicles]);
+  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, rssFeeds, vehicles, pollenConfig]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -308,6 +310,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       rssFeeds,
       notificationConfig,
       vehicles,
+      pollenConfig,
       globalFontSizes,
       widgetFontSizes,
       widgetStyles,
@@ -2173,7 +2176,99 @@ function WidgetStyleControls({ style, onChange, fields }: {
               ))}
             </CollapsibleSection>
 
-            {/* Vehicles */}
+            {/* Pollen Forecast */}
+            <CollapsibleSection
+              title="Pollen Forecast"
+              actions={
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setPollenConfig((prev) => ({
+                    ...prev,
+                    sensors: [...prev.sensors, { entityId: "", label: "", icon: "mdi:flower", color: "hsl(80, 50%, 50%)" }],
+                  }));
+                }}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Sensor
+                </Button>
+              }
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Forecast Days</Label>
+                  <Input
+                    type="number" min={0} max={7}
+                    value={pollenConfig.forecastDays}
+                    onChange={(e) => setPollenConfig((prev) => ({ ...prev, forecastDays: Number(e.target.value) || 4 }))}
+                    placeholder="4 (default)"
+                    className="mt-1 bg-muted border-border"
+                  />
+                </div>
+                <div className="flex flex-col gap-1 justify-end">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={pollenConfig.showLabel !== false} onCheckedChange={(v) => setPollenConfig((prev) => ({ ...prev, showLabel: v }))} />
+                    <Label className="text-xs text-muted-foreground">Show heading</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={pollenConfig.showForecast !== false} onCheckedChange={(v) => setPollenConfig((prev) => ({ ...prev, showForecast: v }))} />
+                    <Label className="text-xs text-muted-foreground">Show forecast dots</Label>
+                  </div>
+                </div>
+              </div>
+
+              <CollapsibleSection title="Styling">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Icon Size (px)</Label>
+                    <Input type="number" min={8} max={48} value={pollenConfig.iconSize || ""} onChange={(e) => setPollenConfig((prev) => ({ ...prev, iconSize: Number(e.target.value) || undefined }))} placeholder="18 (default)" className="bg-muted border-border text-xs h-7" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Label Font Size (px)</Label>
+                    <Input type="number" min={8} max={32} value={pollenConfig.labelFontSize || ""} onChange={(e) => setPollenConfig((prev) => ({ ...prev, labelFontSize: Number(e.target.value) || undefined }))} placeholder="13 (default)" className="bg-muted border-border text-xs h-7" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Value Font Size (px)</Label>
+                    <Input type="number" min={8} max={32} value={pollenConfig.valueFontSize || ""} onChange={(e) => setPollenConfig((prev) => ({ ...prev, valueFontSize: Number(e.target.value) || undefined }))} placeholder="12 (default)" className="bg-muted border-border text-xs h-7" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Heading Color</Label>
+                    <ColorPicker value={pollenConfig.headingColor || ""} onChange={(val) => setPollenConfig((prev) => ({ ...prev, headingColor: val || undefined }))} className="w-full" />
+                  </div>
+                </div>
+              </CollapsibleSection>
+
+              {pollenConfig.sensors.map((sensor, sIdx) => (
+                <div key={sIdx} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+                  <Button variant="ghost" size="icon" className="absolute right-1 top-1 h-6 w-6" onClick={() => setPollenConfig((prev) => ({ ...prev, sensors: prev.sensors.filter((_, i) => i !== sIdx) }))}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2">
+                      <Label className="text-xs text-muted-foreground">Entity ID</Label>
+                      <EntityAutocomplete
+                        value={sensor.entityId}
+                        onChange={(val) => setPollenConfig((prev) => ({ ...prev, sensors: prev.sensors.map((s, i) => i === sIdx ? { ...s, entityId: val } : s) }))}
+                        config={config}
+                        domainFilter="sensor"
+                        placeholder="sensor.pollenprognos_bjork"
+                        className="bg-muted border-border text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Label</Label>
+                      <Input value={sensor.label} onChange={(e) => setPollenConfig((prev) => ({ ...prev, sensors: prev.sensors.map((s, i) => i === sIdx ? { ...s, label: e.target.value } : s) }))} placeholder="e.g. Björk" className="mt-1 bg-muted border-border" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Icon (mdi:*)</Label>
+                      <IconPicker value={sensor.icon} onChange={(val) => setPollenConfig((prev) => ({ ...prev, sensors: prev.sensors.map((s, i) => i === sIdx ? { ...s, icon: val } : s) }))} />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Color</Label>
+                      <ColorPicker value={sensor.color} onChange={(val) => setPollenConfig((prev) => ({ ...prev, sensors: prev.sensors.map((s, i) => i === sIdx ? { ...s, color: val } : s) }))} className="w-full" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CollapsibleSection>
+
+
             <CollapsibleSection
               title="Vehicles"
               actions={
