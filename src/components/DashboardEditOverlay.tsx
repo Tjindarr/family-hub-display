@@ -483,8 +483,8 @@ export default function DashboardEditOverlay({
                         <div className="flex flex-col gap-1 h-full">
                           {memberIds.map((mId) => (
                             <div key={mId} className="flex-1 min-h-0 relative">
-                              {/* Per-member ungroup button */}
-                              <div className="absolute bottom-1 right-1 z-30 flex items-center gap-0.5 bg-card/90 backdrop-blur-sm rounded px-1 py-0.5 border border-border/50">
+                              {/* Per-member group selector - outside pointer-events-none */}
+                              <div className="absolute bottom-1 right-1 z-[60] flex items-center gap-0.5 bg-card rounded px-1 py-0.5 border border-border/50 pointer-events-auto">
                                 <span className="text-[8px] text-muted-foreground truncate max-w-[60px]">{mId}</span>
                                 <Select
                                   value={getWidgetGroup(mId) || "none"}
@@ -493,17 +493,19 @@ export default function DashboardEditOverlay({
                                     updateLayout(mId, { widgetGroup: newGroup });
                                   }}
                                 >
-                                  <SelectTrigger className="h-4 w-10 bg-muted border-border text-[9px] px-0.5 py-0">
+                                  <SelectTrigger className="h-5 w-12 bg-muted border-border text-[9px] px-1 py-0 pointer-events-auto">
                                     <SelectValue />
                                   </SelectTrigger>
-                                  <SelectContent>
+                                  <SelectContent className="z-[100] bg-popover border border-border shadow-lg">
                                     {WIDGET_GROUPS.map((g) => (
                                       <SelectItem key={g || "none"} value={g || "none"} className="text-xs">{g || "—"}</SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
                               </div>
-                              {renderWidget(mId)}
+                              <div className="pointer-events-none select-none h-full">
+                                {renderWidget(mId)}
+                              </div>
                             </div>
                           ))}
                         </div>
