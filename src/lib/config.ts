@@ -156,6 +156,24 @@ export interface VehicleSection {
   entities: VehicleEntityMapping[];
 }
 
+export interface PollenSensorConfig {
+  entityId: string;
+  label: string;
+  icon: string; // mdi icon name e.g. "mdi:tree"
+  color: string; // HSL color
+}
+
+export interface PollenConfig {
+  sensors: PollenSensorConfig[];
+  forecastDays: number; // number of forecast days to display (default 4)
+  showLabel: boolean; // show "Pollen" heading (default true)
+  showForecast: boolean; // show forecast dots (default true)
+  iconSize?: number; // px (default 18)
+  labelFontSize?: number; // px (default 13)
+  valueFontSize?: number; // px (default 12)
+  headingColor?: string;
+}
+
 export interface VehicleConfig {
   id: string;
   name: string; // "My Tesla", "Family Volvo", etc.
@@ -309,6 +327,7 @@ export interface DashboardConfig {
   rssFeeds: RssNewsConfig[];
   notificationConfig: NotificationConfig;
   vehicles: VehicleConfig[];
+  pollenConfig: PollenConfig;
   globalFontSizes: GlobalFontSizes;
   widgetFontSizes: Record<string, WidgetFontSizes>;
   widgetStyles: Record<string, WidgetStyleConfig>;
@@ -449,6 +468,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   rssFeeds: [],
   notificationConfig: { showHANotifications: true, alertRules: [] },
   vehicles: [],
+  pollenConfig: { sensors: [], forecastDays: 4, showLabel: true, showForecast: true },
   globalFontSizes: { heading: 12, value: 18, body: 14, label: 10 },
   widgetFontSizes: {},
   widgetStyles: {},
