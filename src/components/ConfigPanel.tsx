@@ -2228,6 +2228,10 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     <Input type="number" min={8} max={32} value={pollenConfig.valueFontSize || ""} onChange={(e) => setPollenConfig((prev) => ({ ...prev, valueFontSize: Number(e.target.value) || undefined }))} placeholder="12 (default)" className="bg-muted border-border text-xs h-7" />
                   </div>
                   <div>
+                    <Label className="text-[10px] text-muted-foreground">Heading Font Size (px)</Label>
+                    <Input type="number" min={8} max={32} value={pollenConfig.headingFontSize || ""} onChange={(e) => setPollenConfig((prev) => ({ ...prev, headingFontSize: Number(e.target.value) || undefined }))} placeholder="10 (default)" className="bg-muted border-border text-xs h-7" />
+                  </div>
+                  <div>
                     <Label className="text-[10px] text-muted-foreground">Heading Color</Label>
                     <ColorPicker value={pollenConfig.headingColor || ""} onChange={(val) => setPollenConfig((prev) => ({ ...prev, headingColor: val || undefined }))} className="w-full" />
                   </div>

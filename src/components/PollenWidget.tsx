@@ -128,8 +128,8 @@ export default function PollenWidget({ data, loading, pollenConfig }: PollenWidg
         <div className="flex items-center gap-1.5 mb-0.5">
           <Flower2 className="h-3.5 w-3.5 text-primary shrink-0" />
           <span
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: pollenConfig?.headingColor || "hsl(var(--primary))" }}
+            className="font-semibold uppercase tracking-wider"
+            style={{ fontSize: pollenConfig?.headingFontSize || 10, color: pollenConfig?.headingColor || "hsl(var(--primary))" }}
           >
             Pollen
           </span>
