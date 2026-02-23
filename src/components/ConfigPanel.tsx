@@ -406,9 +406,9 @@ function WidgetStyleControls({ style, onChange, fields }: {
         <Tabs defaultValue="connection" className="w-full">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="connection" className="flex-1 text-xs">Connection</TabsTrigger>
+            <TabsTrigger value="general" className="flex-1 text-xs">General</TabsTrigger>
             <TabsTrigger value="widgets" className="flex-1 text-xs">Widgets</TabsTrigger>
             <TabsTrigger value="photos" className="flex-1 text-xs">Photos</TabsTrigger>
-            
           </TabsList>
 
           {/* ===== CONNECTION TAB ===== */}
@@ -447,7 +447,10 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 />
               </div>
             </section>
+          </TabsContent>
 
+          {/* ===== GENERAL TAB ===== */}
+          <TabsContent value="general" className="space-y-6 mt-0">
             <section className="space-y-3">
               <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Theme</h3>
               <div className="grid grid-cols-2 gap-2">
@@ -464,6 +467,45 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     {t.label}
                   </button>
                 ))}
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Date & Time Format</h3>
+              <p className="text-[12px] text-muted-foreground">These settings affect formatting across all widgets.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Date format</Label>
+                  <Select
+                    value={globalFormat.dateFormat}
+                    onValueChange={(v) => setGlobalFormat({ ...globalFormat, dateFormat: v as DateFormatStyle })}
+                  >
+                    <SelectTrigger className="mt-1 bg-muted border-border text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yyyy-MM-dd">2025-02-21 (ISO)</SelectItem>
+                      <SelectItem value="dd/MM/yyyy">21/02/2025</SelectItem>
+                      <SelectItem value="MM/dd/yyyy">02/21/2025</SelectItem>
+                      <SelectItem value="dd.MM.yyyy">21.02.2025</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Time format</Label>
+                  <Select
+                    value={globalFormat.timeFormat}
+                    onValueChange={(v) => setGlobalFormat({ ...globalFormat, timeFormat: v as TimeFormatStyle })}
+                  >
+                    <SelectTrigger className="mt-1 bg-muted border-border text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24h">24-hour (14:30)</SelectItem>
+                      <SelectItem value="12h">12-hour (2:30 PM)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </section>
 
@@ -554,46 +596,6 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 Export downloads your current config as JSON. Import loads a previously exported config file.
               </p>
             </section>
-
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Date & Time Format</h3>
-              <p className="text-[12px] text-muted-foreground">These settings affect formatting across all widgets.</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Date format</Label>
-                  <Select
-                    value={globalFormat.dateFormat}
-                    onValueChange={(v) => setGlobalFormat({ ...globalFormat, dateFormat: v as DateFormatStyle })}
-                  >
-                    <SelectTrigger className="mt-1 bg-muted border-border text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="yyyy-MM-dd">2025-02-21 (ISO)</SelectItem>
-                      <SelectItem value="dd/MM/yyyy">21/02/2025</SelectItem>
-                      <SelectItem value="MM/dd/yyyy">02/21/2025</SelectItem>
-                      <SelectItem value="dd.MM.yyyy">21.02.2025</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Time format</Label>
-                  <Select
-                    value={globalFormat.timeFormat}
-                    onValueChange={(v) => setGlobalFormat({ ...globalFormat, timeFormat: v as TimeFormatStyle })}
-                  >
-                    <SelectTrigger className="mt-1 bg-muted border-border text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="24h">24-hour (14:30)</SelectItem>
-                      <SelectItem value="12h">12-hour (2:30 PM)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </section>
-
           </TabsContent>
 
           {/* ===== WIDGETS TAB ===== */}
@@ -1337,24 +1339,6 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 </Button>
               }
             >
-              {/* Person Card Font Sizes */}
-              <div className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
-                <span className="text-xs text-muted-foreground font-medium">Text Sizes (all person cards)</span>
-                <div className="flex gap-2 flex-wrap">
-                  <div className="w-24">
-                    <Label className="text-xs text-muted-foreground">Location px</Label>
-                    <Input type="number" min={8} max={48} value={personCardFontSizes.locationSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, locationSize: Number(e.target.value) || undefined }))} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
-                  </div>
-                  <div className="w-24">
-                    <Label className="text-xs text-muted-foreground">Battery px</Label>
-                    <Input type="number" min={8} max={48} value={personCardFontSizes.batterySize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, batterySize: Number(e.target.value) || undefined }))} placeholder="12" className="mt-1 bg-muted border-border text-xs h-8" />
-                  </div>
-                  <div className="w-24">
-                    <Label className="text-xs text-muted-foreground">Distance px</Label>
-                    <Input type="number" min={8} max={48} value={personCardFontSizes.distanceSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, distanceSize: Number(e.target.value) || undefined }))} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
-                  </div>
-                </div>
-              </div>
               {personEntities.map((person, i) => (
                 <div key={i} className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
                   <div className="flex items-center justify-between">
@@ -1418,6 +1402,25 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   </div>
                 </div>
               ))}
+              {/* Styling */}
+              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-3">Styling</h4>
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
+                <span className="text-xs text-muted-foreground font-medium">Text Sizes (all person cards)</span>
+                <div className="flex gap-2 flex-wrap">
+                  <div className="w-24">
+                    <Label className="text-xs text-muted-foreground">Location px</Label>
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.locationSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, locationSize: Number(e.target.value) || undefined }))} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
+                  </div>
+                  <div className="w-24">
+                    <Label className="text-xs text-muted-foreground">Battery px</Label>
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.batterySize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, batterySize: Number(e.target.value) || undefined }))} placeholder="12" className="mt-1 bg-muted border-border text-xs h-8" />
+                  </div>
+                  <div className="w-24">
+                    <Label className="text-xs text-muted-foreground">Distance px</Label>
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.distanceSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, distanceSize: Number(e.target.value) || undefined }))} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
+                  </div>
+                </div>
+              </div>
               <WidgetStyleControls
                 style={getStyle("person")}
                 onChange={(s) => setStyle("person", s)}
