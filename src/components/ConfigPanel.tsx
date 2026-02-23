@@ -180,6 +180,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [gridColumns, setGridColumns] = useState(config.gridColumns || 4);
   const [rowColumns, setRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
   const [rowHeights, setRowHeights] = useState<Record<number, number>>(config.rowHeights || {});
+  const [lockWidgetHeights, setLockWidgetHeights] = useState(config.lockWidgetHeights ?? false);
   const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
@@ -299,6 +300,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       gridColumns,
       rowColumns,
       rowHeights,
+      lockWidgetHeights,
       configBackendUrl: "",
       photoWidget: photoConfig,
       personEntities,
@@ -511,6 +513,20 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   </Select>
                 </div>
               </div>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Widget Overflow</h3>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={lockWidgetHeights}
+                  onCheckedChange={setLockWidgetHeights}
+                />
+                <Label className="text-sm text-foreground">Lock widget heights (clip content to grid cell)</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                When enabled, widgets won't expand beyond their row height. Content that doesn't fit will be scrollable inside the widget.
+              </p>
             </section>
 
             <section className="space-y-3">

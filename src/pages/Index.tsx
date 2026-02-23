@@ -218,6 +218,7 @@ const Index = () => {
   const gridColumns = isMobile ? 1 : (config.gridColumns || 4);
   const rowColumns = config.rowColumns || {};
   const rowHeights = config.rowHeights || {};
+  const lockHeights = config.lockWidgetHeights ?? false;
 
   // Font size resolver
   const getFontSizes = (widgetId: string) =>
@@ -427,7 +428,7 @@ const Index = () => {
                 gap: "5px",
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
                 ...(!isMobile && heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : !isMobile ? { minHeight: '120px' } : {}),
-                ...(!isMobile && heightPx ? { overflow: 'hidden' } : {}),
+                ...(!isMobile && (heightPx || lockHeights) ? { overflow: 'hidden' } : {}),
               }}
             >
               {rendered.map(({ id, span, rSpan, groupId }) => {
@@ -445,7 +446,7 @@ const Index = () => {
                   return (
                     <div
                       key={id}
-                      className="widget-card h-full flex flex-col gap-2 overflow-hidden"
+                      className={`widget-card h-full flex flex-col gap-2 overflow-hidden`}
                       style={{
                         gridColumn: `span ${mobileSpan}`,
                         gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
@@ -475,6 +476,7 @@ const Index = () => {
                       minHeight: !heightPx
                         ? (id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined))
                         : undefined,
+                      ...(lockHeights ? { overflow: 'hidden' } : {}),
                     }}
                   >
                     {widget}
