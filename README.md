@@ -1,18 +1,6 @@
 # 🏠 HomeDash
 
-A sleek, high-density Home Assistant dashboard designed for wall-mounted displays. Built with React, Vite, and Tailwind CSS, HomeDash connects to your Home Assistant instance via its REST API to display real-time sensor data, calendars, weather, and more — all in a fully customizable grid layout.
-
----
-
-## ✨ Features
-
-- **Real-time data** from Home Assistant via REST API
-- **Drag-and-drop grid layout** with per-row column/height configuration
-- **Multiple themes** — Midnight Teal, Charcoal, Deep Ocean, Warm Ember, AMOLED Black, macOS Dark
-- **Kiosk mode** — auto-hides settings for dedicated displays
-- **Granular font sizing** — global + per-widget overrides for 4 text roles
-- **Server-side config persistence** — settings sync across all devices
-- **Docker-ready** — single container deployment with persistent storage
+A high-density Home Assistant dashboard for wall-mounted displays. Built with React, Vite, and Tailwind CSS.
 
 ---
 
@@ -21,242 +9,125 @@ A sleek, high-density Home Assistant dashboard designed for wall-mounted display
 ### Docker (Recommended)
 
 ```bash
-# Clone the repository
 git clone <YOUR_GIT_URL>
 cd homedash
-
-# Build and run with Docker Compose
 docker compose up -d
 ```
 
-The dashboard will be available at `http://localhost:3000`.
-
-Configuration and photos are persisted in a Docker volume (`config-data` → `/data`).
+Dashboard available at `http://localhost:3000`. Config and photos persist in a Docker volume (`config-data` → `/data`).
 
 ### Manual / Development
 
 Requires **Node.js 18+**.
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server (frontend only)
-npm run dev
-
-# Build for production
-npm run build
-
-# Run production server (serves frontend + API)
-node server.js
+npm run dev          # development server (frontend only)
+npm run build        # production build
+node server.js       # production server (frontend + API)
 ```
 
 ---
 
 ## ⚙️ Initial Setup
 
-1. Open the dashboard in your browser
-2. Click the **⚙️ gear icon** (top-right) to open Settings
-3. Go to the **Connection** tab
-4. Enter your **Home Assistant URL** (e.g. `http://192.168.1.100:8123`)
-5. Enter a **Long-Lived Access Token** (create one in HA → Profile → Security → Long-Lived Access Tokens)
-6. Set the **Refresh Interval** (seconds between data updates, default: 30)
-7. Click **Save**
+1. Open the dashboard and click the **⚙️ gear icon** (top-right)
+2. Go to the **Connection** tab
+3. Enter your **Home Assistant URL** (e.g. `http://192.168.1.100:8123`)
+4. Enter a **Long-Lived Access Token** (HA → Profile → Security → Long-Lived Access Tokens)
+5. Set **Refresh Interval** (seconds between REST data fetches, default: 30)
+6. Click **Save**
+
+> **CORS**: Direct browser communication with the HA REST API requires adding your dashboard origin to `cors_allowed_origins` in HA's `configuration.yaml`.
 
 ---
 
-## 🧩 Widgets
+## 🔌 Technical Architecture
 
-### 🕐 Clock & Weather
+### Communication with Home Assistant
 
-Displays the current time, date, and outdoor temperature with a multi-day weather forecast chart.
+HomeDash uses a **hybrid WebSocket + REST** approach:
 
-| Setting | Description |
-|---|---|
-| `Weather Entity` | A `weather.*` entity from Home Assistant |
-| `Forecast Days` | Number of days to show in the forecast (1–7) |
-| `Show Precipitation` | Toggle precipitation bars on the chart |
-| `Show Sunrise / Sunset` | Toggle sun time display |
+#### WebSocket (real-time state)
 
----
+- Connects via `ws://` or `wss://` to `/api/websocket`
+- Authenticates with the long-lived access token
+- Fetches all entity states on connect via `get_states`
+- Subscribes to `state_changed` events for instant updates
+- Sends keepalive pings every 30 seconds
+- Auto-reconnects with exponential backoff (up to 30s delay)
+- A `__bulk_load__` signal is emitted after initial state fetch to trigger all data hooks to refresh
 
-### 📅 Calendar
+#### REST API (history, calendars, weather)
 
-Shows upcoming events from one or more Home Assistant calendar entities with rich display options.
+Used for data that WebSocket doesn't provide:
 
-| Setting | Description |
-|---|---|
-| `Calendar Entities` | List of `calendar.*` entities |
-| `Prefix` | Text prepended to event names (per entity) |
-| `Color` | Text color for events from this entity (HSL) |
-| `Day Label Color` | Override color for day headers ("Today", "Tomorrow") |
-| `Time Color` | Override color for event timestamps |
-| `Show Event Body` | Toggle event description display |
-| `Show End Date` | Toggle end date/time display |
-| `Hide All-Day Text` | Hide the "All day" label for all-day events |
-| `Show Week Number` | Show the ISO week number in day headers |
-| `Font Sizes` | Independent font sizes for day, time, title, and body text |
+| Endpoint | Purpose | Refresh Interval |
+|---|---|---|
+| `GET /api/history/period/{start}` | Sensor history (charts) | Every 5 minutes |
+| `GET /api/calendars/{entity}?start=&end=` | Calendar events | Config interval |
+| `POST /api/services/weather/get_forecasts` | Weather forecast | Every 30 minutes |
 
----
+All REST requests use `Authorization: Bearer <token>` headers. Calendar date parameters omit milliseconds for HA 2026.2+ compatibility.
 
-### 🌡️ Temperature Sensors
+#### Connection Status
 
-Displays temperature (and optional humidity) readings with colored labels. Sensors can be grouped into a single widget using **Group IDs**.
+A dynamic status indicator in the header reflects the WebSocket state: **connecting**, **connected**, or **disconnected**.
 
-| Setting | Description |
-|---|---|
-| `Entity ID` | A `sensor.*` temperature entity |
-| `Humidity Entity` | Optional `sensor.*` humidity entity |
-| `Label` | Display name |
-| `Color` | Sensor color (HSL) |
-| `Group` | Group number — sensors with the same group render together |
-| `Show Chart` | Toggle 24-hour history chart behind the reading |
-| `Chart Type` | Line, Bar, Area, Step, or Scatter |
-| `Round Temperature` | Round temperature to nearest integer |
+### Server-Side API (Express)
 
----
+The built-in Express server (port 80 in Docker) provides:
 
-### ⚡ Electricity Prices
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/config` | GET | Load dashboard configuration |
+| `/api/config` | PUT | Save dashboard configuration (JSON body) |
+| `/api/photos` | GET | List uploaded photos |
+| `/api/photos/upload` | POST | Upload photos (JSON with base64 `files` array) |
+| `/api/photos/file/:name` | GET | Serve full-size photo |
+| `/api/photos/thumb/:name` | GET | Serve thumbnail |
+| `/api/photos/:name` | DELETE | Delete a photo |
+| `/api/rss?url=` | GET | RSS feed proxy (avoids CORS) |
 
-A 48-hour stepline chart showing Nordpool electricity prices with current price, daily min/max, and a Low/Medium/High status badge.
+### Configuration Persistence
 
-| Setting | Description |
-|---|---|
-| `Price Entity` | A Nordpool `sensor.*` entity |
-| `Forecast Entity` | Optional forecast entity for tomorrow's prices |
-
----
-
-### 👤 Person Tracking
-
-Two-column card with a profile picture, battery level (with charging indicator), location, and distance from home. Per-card font sizes for location, battery, and distance text.
-
-| Setting | Description |
-|---|---|
-| `Name` | Display name |
-| `Entity Picture` | URL to avatar image |
-| `Location Entity` | `device_tracker.*` or `person.*` entity |
-| `Battery Entity` | Battery level sensor |
-| `Battery Charging Entity` | Binary sensor or string state for charging |
-| `Distance Entity` | Distance from home sensor |
-| `Avatar Size` | Avatar diameter in pixels (default: 80) |
-
----
-
-### 🍽️ Food Menu
-
-Displays upcoming meals by reading events from a Home Assistant calendar entity.
-
-| Setting | Description |
-|---|---|
-| `Calendar Entity` | A `calendar.*` entity containing meal events |
-| `Days` | Number of days to display (1–14, default: 5) |
-| `Skip Weekends` | Skip Saturday and Sunday when counting days forward |
-
----
-
-### 📊 General Sensor Card
-
-A highly versatile widget for building custom monitoring cards. Supports an icon, label, top/bottom info rows (up to 4 sensors each), and a central historical chart with multiple series.
-
-| Setting | Description |
-|---|---|
-| `Label` | Card title |
-| `Icon` | Icon name (MDI format, e.g. `mdi:thermometer`) |
-| `Icon Size` | Icon size in pixels (default: 20) |
-| `Show Label` | Toggle label visibility |
-| `Show Graph` | Toggle the history chart |
-| `History Hours` | Data range: 1, 6, 24, or 168 hours |
-| `Chart Grouping` | Aggregate by minute, hour, or day |
-| `Chart Aggregation` | How to combine values per bucket: average, max, min, sum, last, or delta |
-| `Chart Series` | Sensors to plot (entity, label, color, chart type: line/bar/area/step/scatter) |
-| `Top / Bottom Info` | Up to 4 sensors each (entity, label, unit, color) |
-| `Font Sizes` | Per-widget font size overrides (heading, value, body, label) |
-
-Top info values display as whole numbers. Chart tooltips display values with one decimal place. The bottom row includes automatic Avg/Min/Max statistics for the first chart series.
-
----
-
-### 🔲 Sensor Grid
-
-A configurable grid (up to 6×6) of sensor cells, each showing an icon, label, value, and unit. Supports advanced conditional logic and dense layouts.
-
-| Setting | Description |
-|---|---|
-| `Rows / Columns` | Grid dimensions (1–6 each) |
-| `Cell Entity` | Sensor entity for each cell |
-| `Icon` | Icon name |
-| `Unit` | Display unit |
-| `Color` | Default icon color |
-| `Value Color` | Separate color for value text (optional, falls back to icon color) |
-| `Icon Size` | Icon size in pixels (default: 16) |
-| `Font Size` | Value font size in pixels |
-| `Label Font Size` | Label font size in pixels |
-| `Intervals` | 4 numeric ranges with conditional icon + color |
-| `Value Maps` | String rewrite rules (from → to) |
-
----
-
-### 📰 RSS News
-
-A single-item carousel cycling through headlines from an RSS feed.
-
-| Setting | Description |
-|---|---|
-| `Label` | Feed name |
-| `Feed URL` | URL to the RSS/Atom feed |
-| `Max Items` | Maximum headlines to display (default: 15) |
-
-> RSS feeds are fetched via a server-side proxy (`/api/rss`) to avoid CORS issues.
-
----
-
-### 🖼️ Photo Gallery
-
-A rotating photo slideshow with configurable display modes. Photos are stored server-side in `/data/photos/`.
-
-| Setting | Description |
-|---|---|
-| `Interval` | Seconds between photo transitions |
-| `Display Mode` | `contain` (fit), `cover` (fill + crop), or `blur-fill` (fit + blurred background) |
-
-**Managing photos:**
-1. Open Settings → **Photos** tab
-2. Click **Upload Photos** to add images
-3. Hover over a thumbnail and click 🗑️ to delete
+1. **Server-side** (primary): Stored as `/data/config.json` via the Express API
+2. **localStorage** (fallback): Used when server API is unavailable
+3. **External backend** (optional): Custom REST endpoint configurable in Connection settings
 
 ---
 
 ## 📐 Layout System
 
-The dashboard uses a row-based grid system with 5px spacing between widgets and around the page edges. Each widget is assigned to a **row** and configured with a **column span**.
+Layout is managed through the interactive **Edit Layout** mode (click the edit icon in the header).
 
-### Global Settings (Layout Tab)
+### Grid Structure
 
-| Setting | Description |
-|---|---|
-| `Grid Columns` | Default number of columns per row (1–6) |
-| `Row Heights` | Per-row height in pixels |
-| `Row Columns` | Per-row column count override |
+- Row-based grid with 5px spacing between widgets and page edges
+- Each widget has a **row assignment**, **column span**, and **row span**
+- The last widget in each row auto-stretches to fill remaining space
+- Rows without a defined height default to 120px minimum
 
-### Per-Widget Layout
+### Edit Layout Mode
 
-| Setting | Description |
-|---|---|
-| `Row` | Which row the widget appears in (1-based) |
-| `Column Span` | How many columns the widget occupies |
-| `Row Span` | How many rows the widget spans vertically |
-| `Widget Group` | Group ID — widgets with the same group stack inside one card |
+Provides drag-and-drop reordering plus explicit controls for:
+- Column and row spans per widget
+- Row assignments
+- Global grid column count (1–6)
+- Per-row column overrides
+- Widget grouping (group ID A–H)
 
-### Widget Order
+### Widget Grouping
 
-Widgets can be **reordered via drag-and-drop** in the Layout tab. The last widget in each row automatically stretches to fill remaining space.
+Widgets with the same group ID (A–H) stack vertically inside a shared card. The first widget in the group defines the card's grid dimensions. In Edit Layout mode, groups move as a single unit.
 
 ---
 
-## 🎨 Themes
+## 🎨 General Settings
 
-Six built-in themes optimized for always-on displays:
+### Themes
+
+Six themes optimized for always-on displays:
 
 | Theme | Description |
 |---|---|
@@ -264,68 +135,284 @@ Six built-in themes optimized for always-on displays:
 | **Charcoal** | Neutral dark grey tones |
 | **Deep Ocean** | Deep blue palette |
 | **Warm Ember** | Dark with warm orange/amber accents |
-| **AMOLED Black** | Pure black background for OLED screens |
-| **macOS Dark** | Dark gray with blue accent, inspired by macOS dark mode |
+| **AMOLED Black** | Pure black for OLED screens |
+| **macOS Dark** | Dark gray with blue accent |
 
-Select a theme in the **Layout** tab of Settings.
+### Global Font Sizes
 
----
-
-## 🔤 Font Customization
-
-Four text roles can be sized independently (in pixels):
+Four text roles sized independently (px):
 
 | Role | Default | Usage |
 |---|---|---|
-| **Heading** | 12px | Section headers, widget titles |
-| **Value** | 18px | Primary data values |
-| **Body** | 14px | Readable text, descriptions |
-| **Label** | 10px | Small labels, units, timestamps |
+| Heading | 12 | Section headers, widget titles |
+| Value | 18 | Primary data values |
+| Body | 14 | Readable text, descriptions |
+| Label | 10 | Small labels, units, timestamps |
 
-- **Global sizes** are set in the Layout tab
-- **Per-widget overrides** are available in each widget's settings section
+Per-widget font size overrides are available in each widget's settings.
+
+### Date & Time Format
+
+- **Date format**: `yyyy-MM-dd`, `dd/MM/yyyy`, `MM/dd/yyyy`, `dd.MM.yyyy`
+- **Time format**: `24h` or `12h`
+
+### Screen Blackout
+
+Turns the screen black during a configurable time window (e.g. 23:00–06:00). Only active in kiosk mode.
+
+### Kiosk Mode
+
+Append `?kiosk` to the URL to hide settings UI. Triple-click anywhere to exit. Can also be entered via the monitor icon in the header.
 
 ---
 
-## 🖥️ Kiosk Mode
+## 🧩 Widgets
 
-Append `?kiosk` to the URL to hide the settings gear icon — ideal for wall-mounted tablets:
+### 🕐 Clock & Weather
 
-```
-http://localhost:3000/?kiosk
-```
+Displays current time, date, outdoor temperature, and a multi-day forecast chart.
 
-Triple-click anywhere to exit kiosk mode.
-
----
-
-## 🗂️ Settings Organization
-
-The configuration panel is organized into four tabs:
-
-| Tab | Contents |
+| Setting | Description |
 |---|---|
-| **Connection** | Home Assistant URL, token, refresh interval, external config backend |
-| **Widgets** | Collapsible sections for each widget type with all settings |
-| **Photos** | Photo gallery management (upload/delete) |
-| **Layout** | Grid columns, row heights, theme selection, font sizes, widget ordering |
+| Weather Entity | `weather.*` entity from HA |
+| Forecast Days | Number of days to forecast (1–7) |
+| Show Precipitation | Toggle precipitation bars on chart |
+| Show Sunrise | Toggle sunrise time display |
+| Show Sunset | Toggle sunset time display |
+| Show Date | Toggle date display |
 
-The panel is a fixed 66% width overlay with a sticky header and footer containing the global Save button.
-
----
-
-## 🗂️ Configuration Persistence
-
-Configuration is saved in two ways:
-
-1. **Server-side** (primary): Stored as `/data/config.json` via the built-in Express API
-2. **localStorage** (fallback): Used when the server API is unavailable
-
-An optional **external config backend URL** can be set in the Connection tab to sync config with a custom REST endpoint.
+**Styling options**: Clock text size/color, temperature text size/color, sun icon size/color/text size/color, date text size/color, chart day text size/color, chart icon size.
 
 ---
 
-## 🐳 Docker Details
+### 📅 Calendar
+
+Shows upcoming events from one or more HA calendar entities.
+
+**Per-entity settings:**
+
+| Setting | Description |
+|---|---|
+| Entity ID | `calendar.*` entity |
+| Prefix | Text prepended to event names |
+| Color | Event text color (HSL) |
+| Forecast Days | Per-entity override for days to show |
+
+**Display settings:**
+
+| Setting | Description |
+|---|---|
+| Global Forecast Days | Default days to show (default: 7) |
+| Day Label Color | Override color for day headers |
+| Time Color | Override color for timestamps |
+| Show Event Body | Toggle event description |
+| Show End Date | Toggle end date/time |
+| Hide All-Day Text | Hide "All day" label |
+| Hide Clock Icon | Hide clock icon on timed events |
+| Show Week Number | Show ISO week number in day headers |
+| First Day of Week | Sunday (0), Monday (1), or Saturday (6) |
+
+**Font sizes**: Day, Time, Title, Body (independent px values).
+
+---
+
+### 🌡️ Temperature Sensors
+
+Displays temperature and optional humidity with colored labels. Sensors with the same **Group** number render together in one widget.
+
+| Setting | Description |
+|---|---|
+| Entity ID | `sensor.*` temperature entity |
+| Humidity Entity | Optional humidity sensor |
+| Label | Display name |
+| Color | Sensor color (HSL) |
+| Group | Group number (same = grouped together) |
+| Show Chart | Toggle 24h history chart |
+| Chart Type | Line, Bar, Area, Step, or Scatter |
+| Round Temperature | Round to nearest integer |
+
+**Styling**: Icon size, icon color, secondary icon color, label color, value color, label text size, value text size, humidity text size.
+
+---
+
+### ⚡ Electricity Prices
+
+48-hour stepline chart showing Nordpool electricity prices with current price, daily min/max, and Low/Medium/High badge.
+
+| Setting | Description |
+|---|---|
+| Price Entity | Nordpool `sensor.*` entity |
+| Forecast Entity | Optional forecast entity for tomorrow |
+| Surcharge | kr/kWh added to all prices |
+
+**Styling**: Price text size/color, unit text size/color, stats text size/color, axis text size/color.
+
+---
+
+### 👤 Person Tracking
+
+Two-column card with avatar, battery level (with charging indicator), location, and distance from home.
+
+| Setting | Description |
+|---|---|
+| Name | Display name |
+| Entity Picture | URL to avatar image |
+| Location Entity | `device_tracker.*` or `person.*` entity |
+| Battery Entity | Battery level sensor |
+| Battery Charging Entity | Binary sensor for charging state |
+| Distance Entity | Distance from home sensor |
+| Avatar Size | Avatar diameter in px (default: 80) |
+
+**Font sizes**: Location, Battery, Distance (independent px values).
+
+---
+
+### 🍽️ Food Menu
+
+Displays upcoming meals from a calendar entity or Skolmaten sensor.
+
+| Setting | Description |
+|---|---|
+| Source | `calendar` or `skolmaten` |
+| Calendar Entity | Calendar entity for meal events |
+| Skolmaten Entity | Sensor entity for Skolmaten integration |
+| Days | Days to display (1–14, default: 5) |
+| Skip Weekends | Skip Saturday/Sunday |
+| Display Mode | `compact` (side-by-side) or `menu` (restaurant style) |
+| Show Title | Show "MENU" title with icon |
+
+**Styling**: Day color, date color, meal color, day/date/meal font sizes, day/meal font families.
+
+---
+
+### 📊 General Sensor Card
+
+Versatile widget with icon, label, top/bottom info rows (up to 4 sensors each), and a historical chart with multiple series.
+
+| Setting | Description |
+|---|---|
+| Label | Card title |
+| Show Label | Toggle label visibility |
+| Icon | Icon name (MDI format, e.g. `mdi:thermometer`) |
+| Icon Size | Icon size in px (default: 20) |
+| Show Graph | Toggle history chart |
+| History Hours | Data range: 1, 6, 24, or 168 hours |
+| Chart Grouping | Aggregate by minute, hour, or day |
+| Chart Aggregation | Combine method: average, max, min, sum, last, delta |
+
+**Chart series** (multiple): Entity, label, color, chart type (line/bar/area/step/scatter).
+
+**Top/Bottom info** (up to 4 each): Entity, label, unit, color.
+
+**Per-widget font sizes**: Heading, value, body, label.
+
+---
+
+### 🔲 Sensor Grid
+
+Configurable grid (up to 6×6) of sensor cells with icons, labels, values, and conditional formatting.
+
+**Grid settings:**
+
+| Setting | Description |
+|---|---|
+| Rows / Columns | Grid dimensions (1–6 each) |
+
+**Per-cell settings:**
+
+| Setting | Description |
+|---|---|
+| Entity ID | Sensor entity |
+| Label | Cell label |
+| Icon | Icon name |
+| Unit | Display unit |
+| Color | Default icon color |
+| Value Color | Separate value text color (falls back to icon color) |
+| Icon Size | Icon size in px (default: 16) |
+| Font Size | Value font size in px |
+| Label Font Size | Label font size in px |
+| Col Span / Row Span | Cell spanning (default: 1) |
+| Order | CSS order for custom positioning |
+| Show Chart | Background history chart |
+| Chart Type | Chart type for background (default: line) |
+| Use Intervals | Enable conditional icon/color by value |
+| Intervals | 4 numeric ranges with conditional icon + color |
+| Value Maps | String rewrite rules (from → to, with optional icon/color) |
+| Visibility Filter | Conditionally hide cell (range or exact match) |
+
+---
+
+### 🚗 Vehicle
+
+Customizable vehicle monitoring card with sections for battery, fuel, location, climate, doors, tires, or custom data.
+
+| Setting | Description |
+|---|---|
+| Name | Vehicle name (e.g. "My Tesla") |
+| Icon | MDI icon (e.g. `mdi:car-electric`) |
+
+**Per-section**: Type (battery/fuel/location/climate/doors/tires/custom), label, and entity list.
+
+**Per-entity**: Entity ID, label, icon, unit, color.
+
+**Styling**: Icon size, icon color, label color, value color, heading color.
+
+Battery/fuel sections show percentage progress bars. Door sections use green/red coloring for locked/unlocked states.
+
+---
+
+### 📰 RSS News
+
+Single-item carousel cycling through headlines from an RSS feed.
+
+| Setting | Description |
+|---|---|
+| Label | Feed name |
+| Feed URL | URL to RSS/Atom feed |
+| Max Items | Maximum headlines (default: 15) |
+
+> Feeds are fetched via server-side proxy (`/api/rss`) to avoid CORS issues.
+
+---
+
+### 🔔 Notifications
+
+Displays Home Assistant persistent notifications and custom sensor-based alert rules.
+
+| Setting | Description |
+|---|---|
+| Show HA Notifications | Toggle persistent_notification display |
+
+**Alert rules** (multiple):
+
+| Setting | Description |
+|---|---|
+| Entity ID | Sensor to monitor |
+| Label | Alert label |
+| Condition | `above`, `below`, or `equals` |
+| Threshold | Numeric threshold value |
+| Icon | Icon name |
+| Color | Alert color |
+| Icon Size | Icon size in px |
+| Label Color | Label text color |
+| Value Color | Value text color |
+
+---
+
+### 🖼️ Photo Gallery
+
+Rotating photo slideshow with configurable display modes. Photos stored server-side in `/data/photos/`.
+
+| Setting | Description |
+|---|---|
+| Interval | Seconds between transitions |
+| Display Mode | `contain` (fit), `cover` (fill + crop), `blur-fill` (fit + blurred bg) |
+
+Manage photos in Settings → **Photos** tab (upload/delete).
+
+---
+
+## 🐳 Docker
 
 ```yaml
 services:
@@ -339,21 +426,19 @@ services:
     restart: unless-stopped
 ```
 
-The `/data` volume stores:
-- `config.json` — dashboard configuration
-- `photos/` — uploaded photo gallery images
+The `/data` volume stores `config.json` and `photos/`.
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
-- **UI Components**: shadcn/ui, Radix UI primitives
+- **UI**: shadcn/ui, Radix UI
 - **Charts**: Recharts
-- **Icons**: Iconify (MDI icons)
+- **Icons**: Iconify (MDI)
 - **Drag & Drop**: dnd-kit
-- **Backend**: Express.js (lightweight API server)
-- **Deployment**: Docker with multi-stage build
+- **Backend**: Express.js
+- **Deployment**: Docker (multi-stage build)
 
 ---
 
