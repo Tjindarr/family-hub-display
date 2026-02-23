@@ -314,9 +314,9 @@ export default function DashboardEditOverlay({
   }
 
   return (
-    <>
+    <div className="fixed inset-0 z-40 bg-background overflow-auto" style={{ padding: "5px" }}>
       {/* Floating toolbar */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+      <div className="sticky top-0 left-0 right-0 z-50 flex flex-col items-center gap-2 pb-2 pt-1">
         <div className="flex items-center gap-2 bg-card/95 backdrop-blur-sm border border-primary/30 rounded-lg px-4 py-2 shadow-lg">
           <Pencil className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-foreground">Edit Mode</span>
@@ -400,7 +400,7 @@ export default function DashboardEditOverlay({
       {/* Edit grid */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sortableItems} strategy={rectSortingStrategy}>
-          <div className="grid mt-14" style={{ gap: "5px" }}>
+          <div className="grid" style={{ gap: "5px" }}>
             {rows.map(([rowNum, widgetIds]) => {
               const cols = isMobile ? 1 : (localRowColumns[rowNum] || effectiveGridCols);
 
@@ -483,7 +483,7 @@ export default function DashboardEditOverlay({
                         <div className="flex flex-col gap-1 h-full">
                           {memberIds.map((mId) => (
                             <div key={mId} className="flex-1 min-h-0 relative">
-                              {/* Per-member group selector - outside pointer-events-none */}
+                              {/* Per-member group selector */}
                               <div className="absolute bottom-1 right-1 z-[60] flex items-center gap-0.5 bg-card rounded px-1 py-0.5 border border-border/50 pointer-events-auto">
                                 <span className="text-[8px] text-muted-foreground truncate max-w-[60px]">{mId}</span>
                                 <Select
@@ -520,6 +520,6 @@ export default function DashboardEditOverlay({
           </div>
         </SortableContext>
       </DndContext>
-    </>
+    </div>
   );
 }
