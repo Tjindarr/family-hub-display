@@ -59,6 +59,8 @@ function PollenSensorRow({ sensor, showForecast, iconSize, labelSize, valueSize 
   labelSize: number;
   valueSize: number;
 }) {
+  const effectiveLabelSize = sensor.labelFontSize || labelSize;
+  const effectiveValueSize = sensor.valueFontSize || valueSize;
   const iconName = sensor.icon.startsWith("mdi:") ? sensor.icon : `mdi:${sensor.icon}`;
 
   return (
@@ -72,7 +74,7 @@ function PollenSensorRow({ sensor, showForecast, iconSize, labelSize, valueSize 
       />
       <span
         className="font-medium truncate min-w-0"
-        style={{ fontSize: labelSize, color: "hsl(var(--foreground))" }}
+        style={{ fontSize: effectiveLabelSize, color: "hsl(var(--foreground))" }}
       >
         {sensor.label}
       </span>
@@ -81,7 +83,7 @@ function PollenSensorRow({ sensor, showForecast, iconSize, labelSize, valueSize 
         <span
           className="text-right whitespace-nowrap"
           style={{
-            fontSize: valueSize,
+            fontSize: effectiveValueSize,
             color: getLevelColor(sensor.numericState),
           }}
         >
