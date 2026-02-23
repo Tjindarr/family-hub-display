@@ -201,7 +201,7 @@ const Index = () => {
 
   // Provide mock pollen data in demo mode
   const pollenData = useMemo(() => {
-    if (isDemo && rawPollenData.sensors.length === 0 && (effectivePollenConfig?.sensors?.length ?? 0) > 0) {
+    if (isDemo && (effectivePollenConfig?.sensors?.length ?? 0) > 0 && rawPollenData.sensors.every(s => s.state === "unknown" || s.numericState < 0)) {
       const mockLevels = [1, 3, 5];
       return {
         sensors: effectivePollenConfig!.sensors.map((s, idx) => ({
@@ -256,9 +256,39 @@ const Index = () => {
     document.documentElement.setAttribute("data-theme", config.theme || "midnight-teal");
   }, [config.theme]);
 
+  // Demo layout defaults
+  const demoLayout = useMemo(() => {
+    if (!isDemo || (config.widgetOrder && config.widgetOrder.length > 0)) return null;
+    return {
+      widgetOrder: [
+        "weather", "temp_group_0", "person_0",
+        "electricity", "calendar",
+        "photos", "food_menu", "notifications", "pollen",
+        "general_demo_power", "sensorgrid_demo_grid",
+        "vehicle_demo_vehicle", "rss_demo_rss",
+      ],
+      widgetLayouts: {
+        weather:              { colSpan: 2, row: 1, rowSpan: 1 },
+        temp_group_0:         { colSpan: 1, row: 1, rowSpan: 1 },
+        person_0:             { colSpan: 1, row: 1, rowSpan: 1 },
+        electricity:          { colSpan: 2, row: 2, rowSpan: 1 },
+        calendar:             { colSpan: 2, row: 2, rowSpan: 1 },
+        photos:               { colSpan: 2, row: 3, rowSpan: 1 },
+        food_menu:            { colSpan: 1, row: 3, rowSpan: 1 },
+        notifications:        { colSpan: 1, row: 3, rowSpan: 1, widgetGroup: "notif_pollen" },
+        pollen:               { colSpan: 1, row: 3, rowSpan: 1, widgetGroup: "notif_pollen" },
+        general_demo_power:   { colSpan: 2, row: 4, rowSpan: 1 },
+        sensorgrid_demo_grid: { colSpan: 2, row: 4, rowSpan: 1 },
+        vehicle_demo_vehicle: { colSpan: 2, row: 5, rowSpan: 1 },
+        rss_demo_rss:         { colSpan: 2, row: 5, rowSpan: 1 },
+      } as Record<string, any>,
+      rowHeights: { 1: 220, 2: 240, 3: 280, 4: 220, 5: 200 } as Record<number, number>,
+    };
+  }, [isDemo, config.widgetOrder]);
+
   const gridColumns = isMobile ? 1 : (config.gridColumns || 4);
   const rowColumns = config.rowColumns || {};
-  const rowHeights = config.rowHeights || {};
+  const rowHeights = demoLayout?.rowHeights || config.rowHeights || {};
   const lockHeights = config.lockWidgetHeights ?? false;
 
   // Font size resolver
@@ -269,18 +299,20 @@ const Index = () => {
   const hasPollen = (effectivePollenConfig?.sensors?.length ?? 0) > 0;
 
   // Resolve ordered widget IDs
+  const effectiveWidgetLayouts = demoLayout?.widgetLayouts || config.widgetLayouts || {};
   const allWidgetIds = useMemo(() => {
     const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, vehicleIds, hasPollen);
-    if (config.widgetOrder && config.widgetOrder.length > 0) {
+    const order = demoLayout?.widgetOrder || config.widgetOrder;
+    if (order && order.length > 0) {
       const validSet = new Set(defaults);
-      const ordered = config.widgetOrder.filter((id) => validSet.has(id));
+      const ordered = order.filter((id) => validSet.has(id));
       const missing = defaults.filter((id) => !ordered.includes(id));
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, hasPollen]);
+  }, [demoLayout, config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, hasPollen]);
 
-  const getWidgetGroup = (id: string) => config.widgetLayouts?.[id]?.widgetGroup || "";
+  const getWidgetGroup = (id: string) => effectiveWidgetLayouts[id]?.widgetGroup || "";
 
   const renderWidget = (id: string) => {
     const fs = getFontSizes(id);
@@ -342,7 +374,7 @@ const Index = () => {
       const vehicleId = id.replace("vehicle_", "");
       const vData = vehicleDataMap[vehicleId];
       if (!vData) return null;
-      const vConfig = config.vehicles?.find(v => v.id === vehicleId);
+      const vConfig = effectiveVehicles.find(v => v.id === vehicleId) || config.vehicles?.find(v => v.id === vehicleId);
       return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} vehicleConfig={vConfig} />;
     }
     if (id === "pollen") {
@@ -352,21 +384,21 @@ const Index = () => {
   };
 
   const getColSpan = (id: string) => {
-    if (config.widgetLayouts?.[id]?.colSpan) return config.widgetLayouts[id].colSpan;
+    if (effectiveWidgetLayouts[id]?.colSpan) return effectiveWidgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
     if (id === "photos" || id === "food_menu") return 2;
     return 1;
   };
 
   const getRow = (id: string) => {
-    if (config.widgetLayouts?.[id]?.row) return config.widgetLayouts[id].row;
+    if (effectiveWidgetLayouts[id]?.row) return effectiveWidgetLayouts[id].row;
     if (id === "electricity" || id === "calendar") return 2;
     if (id === "photos") return 1;
     return 1;
   };
 
   const getRowSpan = (id: string) => {
-    return config.widgetLayouts?.[id]?.rowSpan || 1;
+    return effectiveWidgetLayouts[id]?.rowSpan || 1;
   };
 
   // Group widgets by row, then stretch last widget per row to fill
