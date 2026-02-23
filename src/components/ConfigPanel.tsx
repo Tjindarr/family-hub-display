@@ -167,7 +167,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [calendarDisplay, setCalendarDisplay] = useState<CalendarDisplayConfig>(
     config.calendarDisplay || {
       showEventBody: false, showEndDate: false, hideAllDayText: false, hideClockIcon: false, showWeekNumber: false,
-      firstDayOfWeek: 1,
+      firstDayOfWeek: 1, limitEvents: false, maxEvents: 20,
       fontSizeDay: 12, fontSizeTime: 10, fontSizeTitle: 14, fontSizeBody: 12,
     }
   );
@@ -945,6 +945,27 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     />
                     Show week number
                   </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={calendarDisplay.limitEvents ?? false}
+                      onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, limitEvents: !!v, maxEvents: calendarDisplay.maxEvents || 20 })}
+                    />
+                    Limit number of events
+                  </label>
+                  {calendarDisplay.limitEvents && (
+                    <div className="ml-6 mt-1">
+                      <Label className="text-xs text-muted-foreground">Max events</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={calendarDisplay.maxEvents || 20}
+                        onChange={(e) => setCalendarDisplay({ ...calendarDisplay, maxEvents: Number(e.target.value) || 20 })}
+                        placeholder="20"
+                        className="bg-muted border-border text-sm w-24 mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-3">
