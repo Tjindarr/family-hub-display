@@ -368,7 +368,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
             return (
               <div key={field}>
                 <Label className="text-[10px] text-muted-foreground">{STYLE_FIELD_LABELS[field]}</Label>
-                <Input type="number" min={8} max={64} value={style.iconSize || ""} onChange={(e) => onChange({ ...style, iconSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                <Input type="number" min={8} max={64} value={style.iconSize || ""} onChange={(e) => onChange({ ...style, iconSize: Number(e.target.value) || undefined })} placeholder="16 (default)" className="bg-muted border-border text-xs h-7" />
               </div>
             );
           }
@@ -443,6 +443,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   onChange={(e) => setRefreshInterval(Number(e.target.value))}
                   type="number"
                   min={5}
+                  placeholder="30"
                   className="mt-1 bg-muted border-border"
                 />
               </div>
@@ -705,7 +706,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Icon Size (px)</Label>
-                      <Input type="number" min={8} max={64} value={entity.iconSize || ""} onChange={(e) => updateTempEntity(i, { iconSize: Number(e.target.value) || undefined })} placeholder="16" className="bg-muted border-border text-xs h-7" />
+                      <Input type="number" min={8} max={64} value={entity.iconSize || ""} onChange={(e) => updateTempEntity(i, { iconSize: Number(e.target.value) || undefined })} placeholder="16 (default)" className="bg-muted border-border text-xs h-7" />
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Icon Color</Label>
@@ -725,15 +726,15 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Label Text Size</Label>
-                      <Input type="number" min={6} max={48} value={entity.labelTextSize || ""} onChange={(e) => updateTempEntity(i, { labelTextSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                      <Input type="number" min={6} max={48} value={entity.labelTextSize || ""} onChange={(e) => updateTempEntity(i, { labelTextSize: Number(e.target.value) || undefined })} placeholder="12 (default)" className="bg-muted border-border text-xs h-7" />
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Temp Text Size</Label>
-                      <Input type="number" min={8} max={80} value={entity.valueTextSize || ""} onChange={(e) => updateTempEntity(i, { valueTextSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                      <Input type="number" min={8} max={80} value={entity.valueTextSize || ""} onChange={(e) => updateTempEntity(i, { valueTextSize: Number(e.target.value) || undefined })} placeholder="18 (default)" className="bg-muted border-border text-xs h-7" />
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Humidity Text Size</Label>
-                      <Input type="number" min={6} max={48} value={entity.humidityTextSize || ""} onChange={(e) => updateTempEntity(i, { humidityTextSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                      <Input type="number" min={6} max={48} value={entity.humidityTextSize || ""} onChange={(e) => updateTempEntity(i, { humidityTextSize: Number(e.target.value) || undefined })} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
                     </div>
                   </div>
                 </div>
@@ -979,7 +980,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Icon Size (px)</Label>
-                    <Input type="number" min={8} max={64} value={getStyle("calendar").iconSize || ""} onChange={(e) => setStyle("calendar", { ...getStyle("calendar"), iconSize: Number(e.target.value) || undefined })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    <Input type="number" min={8} max={64} value={getStyle("calendar").iconSize || ""} onChange={(e) => setStyle("calendar", { ...getStyle("calendar"), iconSize: Number(e.target.value) || undefined })} placeholder="12 (default)" className="bg-muted border-border text-xs h-7" />
                   </div>
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Icon Color</Label>
@@ -1032,7 +1033,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Text Size</Label>
-                  <Input type="number" min={8} max={80} value={weatherConfig.clockTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, clockTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={8} max={80} value={weatherConfig.clockTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, clockTextSize: Number(e.target.value) || undefined }))} placeholder="50 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Text Color</Label>
@@ -1044,11 +1045,11 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
-                  <Input type="number" min={8} max={80} value={weatherConfig.tempIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, tempIconSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={8} max={80} value={weatherConfig.tempIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, tempIconSize: Number(e.target.value) || undefined }))} placeholder="40 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Text Size</Label>
-                  <Input type="number" min={8} max={80} value={weatherConfig.tempTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, tempTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={8} max={80} value={weatherConfig.tempTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, tempTextSize: Number(e.target.value) || undefined }))} placeholder="30 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div className="col-span-2">
                   <Label className="text-[10px] text-muted-foreground">Text Color</Label>
@@ -1060,11 +1061,11 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
-                  <Input type="number" min={8} max={64} value={weatherConfig.sunIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, sunIconSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={8} max={64} value={weatherConfig.sunIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, sunIconSize: Number(e.target.value) || undefined }))} placeholder="16 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Text Size</Label>
-                  <Input type="number" min={8} max={48} value={weatherConfig.sunTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, sunTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={8} max={48} value={weatherConfig.sunTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, sunTextSize: Number(e.target.value) || undefined }))} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Text Color</Label>
@@ -1080,11 +1081,11 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Day Text Size</Label>
-                  <Input type="number" min={6} max={32} value={weatherConfig.chartDayTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, chartDayTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={6} max={32} value={weatherConfig.chartDayTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, chartDayTextSize: Number(e.target.value) || undefined }))} placeholder="10 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
-                  <Input type="number" min={8} max={64} value={weatherConfig.chartIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, chartIconSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={8} max={64} value={weatherConfig.chartIconSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, chartIconSize: Number(e.target.value) || undefined }))} placeholder="32 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div className="col-span-2">
                   <Label className="text-[10px] text-muted-foreground">Day Text Color</Label>
@@ -1101,7 +1102,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Text Size</Label>
-                    <Input type="number" min={6} max={48} value={weatherConfig.dateTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, dateTextSize: Number(e.target.value) || undefined }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    <Input type="number" min={6} max={48} value={weatherConfig.dateTextSize || ""} onChange={(e) => setWeatherConfig((prev) => ({ ...prev, dateTextSize: Number(e.target.value) || undefined }))} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
                   </div>
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Text Color</Label>
@@ -1209,15 +1210,15 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Day Size (px)</Label>
-                    <Input value={foodMenuConfig.style?.dayFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dayFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    <Input value={foodMenuConfig.style?.dayFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dayFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
                   </div>
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Date Size (px)</Label>
-                    <Input value={foodMenuConfig.style?.dateFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dateFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    <Input value={foodMenuConfig.style?.dateFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dateFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="11 (default)" className="bg-muted border-border text-xs h-7" />
                   </div>
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Meal Size (px)</Label>
-                    <Input value={foodMenuConfig.style?.mealFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, mealFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                    <Input value={foodMenuConfig.style?.mealFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, mealFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="13 (default)" className="bg-muted border-border text-xs h-7" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1286,7 +1287,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Current Price Size</Label>
-                  <Input type="number" min={8} max={80} value={config.electricityStyle?.priceTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, priceTextSize: Number(e.target.value) || undefined } })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={8} max={80} value={config.electricityStyle?.priceTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, priceTextSize: Number(e.target.value) || undefined } })} placeholder="18 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Current Price Color</Label>
@@ -1294,7 +1295,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Unit Text Size</Label>
-                  <Input type="number" min={6} max={48} value={config.electricityStyle?.unitTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, unitTextSize: Number(e.target.value) || undefined } })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={6} max={48} value={config.electricityStyle?.unitTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, unitTextSize: Number(e.target.value) || undefined } })} placeholder="10 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Unit Text Color</Label>
@@ -1302,7 +1303,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Stats Row Size</Label>
-                  <Input type="number" min={6} max={32} value={config.electricityStyle?.statsTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, statsTextSize: Number(e.target.value) || undefined } })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={6} max={32} value={config.electricityStyle?.statsTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, statsTextSize: Number(e.target.value) || undefined } })} placeholder="13 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Stats Row Color</Label>
@@ -1310,7 +1311,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Chart Axis Size</Label>
-                  <Input type="number" min={6} max={24} value={config.electricityStyle?.axisTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, axisTextSize: Number(e.target.value) || undefined } })} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                  <Input type="number" min={6} max={24} value={config.electricityStyle?.axisTextSize || ""} onChange={(e) => onSave({ electricityStyle: { ...config.electricityStyle, axisTextSize: Number(e.target.value) || undefined } })} placeholder="10 (default)" className="bg-muted border-border text-xs h-7" />
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Chart Axis Color</Label>
@@ -1396,7 +1397,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     <Input
                       value={person.avatarSize || 80}
                       onChange={(e) => { const u = [...personEntities]; u[i] = { ...u[i], avatarSize: Number(e.target.value) || 80 }; setPersonEntities(u); }}
-                      type="number" min={40} max={300} placeholder="80"
+                      type="number" min={40} max={300} placeholder="80 (default)"
                       className="mt-1 bg-muted border-border text-sm"
                     />
                   </div>
@@ -1409,15 +1410,15 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 <div className="flex gap-2 flex-wrap">
                   <div className="w-24">
                     <Label className="text-xs text-muted-foreground">Location px</Label>
-                    <Input type="number" min={8} max={48} value={personCardFontSizes.locationSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, locationSize: Number(e.target.value) || undefined }))} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.locationSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, locationSize: Number(e.target.value) || undefined }))} placeholder="14 (default)" className="mt-1 bg-muted border-border text-xs h-8" />
                   </div>
                   <div className="w-24">
                     <Label className="text-xs text-muted-foreground">Battery px</Label>
-                    <Input type="number" min={8} max={48} value={personCardFontSizes.batterySize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, batterySize: Number(e.target.value) || undefined }))} placeholder="12" className="mt-1 bg-muted border-border text-xs h-8" />
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.batterySize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, batterySize: Number(e.target.value) || undefined }))} placeholder="12 (default)" className="mt-1 bg-muted border-border text-xs h-8" />
                   </div>
                   <div className="w-24">
                     <Label className="text-xs text-muted-foreground">Distance px</Label>
-                    <Input type="number" min={8} max={48} value={personCardFontSizes.distanceSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, distanceSize: Number(e.target.value) || undefined }))} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
+                    <Input type="number" min={8} max={48} value={personCardFontSizes.distanceSize || ""} onChange={(e) => setPersonCardFontSizes((p) => ({ ...p, distanceSize: Number(e.target.value) || undefined }))} placeholder="14 (default)" className="mt-1 bg-muted border-border text-xs h-8" />
                   </div>
                 </div>
               </div>
@@ -1531,15 +1532,15 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     </div>
                     <div className="w-20">
                       <Label className="text-xs text-muted-foreground">Value px</Label>
-                      <Input type="number" min={8} max={48} value={gs.fontSize?.value || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, value: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="18" className="mt-1 bg-muted border-border text-xs h-8" />
+                      <Input type="number" min={8} max={48} value={gs.fontSize?.value || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, value: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="18 (default)" className="mt-1 bg-muted border-border text-xs h-8" />
                     </div>
                     <div className="w-20">
                       <Label className="text-xs text-muted-foreground">Body px</Label>
-                      <Input type="number" min={8} max={48} value={gs.fontSize?.body || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, body: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="14" className="mt-1 bg-muted border-border text-xs h-8" />
+                      <Input type="number" min={8} max={48} value={gs.fontSize?.body || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, body: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="14 (default)" className="mt-1 bg-muted border-border text-xs h-8" />
                     </div>
                     <div className="w-20">
                       <Label className="text-xs text-muted-foreground">Label px</Label>
-                      <Input type="number" min={8} max={48} value={gs.fontSize?.label || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, label: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="10" className="mt-1 bg-muted border-border text-xs h-8" />
+                      <Input type="number" min={8} max={48} value={gs.fontSize?.label || ""} onChange={(e) => { const u = [...generalSensors]; u[gsIdx] = { ...u[gsIdx], fontSize: { ...u[gsIdx].fontSize, label: Number(e.target.value) || undefined } }; setGeneralSensors(u); }} placeholder="10 (default)" className="mt-1 bg-muted border-border text-xs h-8" />
                     </div>
                   </div>
 
@@ -1773,23 +1774,23 @@ function WidgetStyleControls({ style, onChange, fields }: {
                         <div className="flex gap-2 items-end pl-5 flex-wrap">
                           <div className="w-16">
                             <Label className="text-[12px] text-muted-foreground">Icon px</Label>
-                            <Input type="number" min={8} max={64} value={cell.iconSize || ""} onChange={(e) => updateCell({ iconSize: Number(e.target.value) || undefined })} placeholder="16" className="bg-muted border-border text-xs h-7" />
+                            <Input type="number" min={8} max={64} value={cell.iconSize || ""} onChange={(e) => updateCell({ iconSize: Number(e.target.value) || undefined })} placeholder="16 (default)" className="bg-muted border-border text-xs h-7" />
                           </div>
                           <div className="w-16">
                             <Label className="text-[12px] text-muted-foreground">Value px</Label>
-                            <Input type="number" min={8} max={48} value={cell.fontSize || ""} onChange={(e) => updateCell({ fontSize: Number(e.target.value) || undefined })} placeholder="14" className="bg-muted border-border text-xs h-7" />
+                            <Input type="number" min={8} max={48} value={cell.fontSize || ""} onChange={(e) => updateCell({ fontSize: Number(e.target.value) || undefined })} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
                           </div>
                           <div className="w-16">
                             <Label className="text-[12px] text-muted-foreground">Label px</Label>
-                            <Input type="number" min={8} max={48} value={cell.labelFontSize || ""} onChange={(e) => updateCell({ labelFontSize: Number(e.target.value) || undefined })} placeholder="10" className="bg-muted border-border text-xs h-7" />
+                            <Input type="number" min={8} max={48} value={cell.labelFontSize || ""} onChange={(e) => updateCell({ labelFontSize: Number(e.target.value) || undefined })} placeholder="10 (default)" className="bg-muted border-border text-xs h-7" />
                           </div>
                           <div className="w-16">
                             <Label className="text-[12px] text-muted-foreground">Col span</Label>
-                            <Input type="number" min={1} max={6} value={cell.colSpan || ""} onChange={(e) => updateCell({ colSpan: Number(e.target.value) || undefined })} placeholder="1" className="bg-muted border-border text-xs h-7" />
+                            <Input type="number" min={1} max={6} value={cell.colSpan || ""} onChange={(e) => updateCell({ colSpan: Number(e.target.value) || undefined })} placeholder="1 (default)" className="bg-muted border-border text-xs h-7" />
                           </div>
                           <div className="w-16">
                             <Label className="text-[12px] text-muted-foreground">Row span</Label>
-                            <Input type="number" min={1} max={6} value={cell.rowSpan || ""} onChange={(e) => updateCell({ rowSpan: Number(e.target.value) || undefined })} placeholder="1" className="bg-muted border-border text-xs h-7" />
+                            <Input type="number" min={1} max={6} value={cell.rowSpan || ""} onChange={(e) => updateCell({ rowSpan: Number(e.target.value) || undefined })} placeholder="1 (default)" className="bg-muted border-border text-xs h-7" />
                           </div>
                           <div className="w-16">
                             <Label className="text-[12px] text-muted-foreground">Order</Label>
@@ -2157,7 +2158,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
-                      <Input type="number" min={8} max={64} value={rule.iconSize || ""} onChange={(e) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, iconSize: Number(e.target.value) || undefined } : r) }))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                      <Input type="number" min={8} max={64} value={rule.iconSize || ""} onChange={(e) => setNotificationConfig((prev) => ({ ...prev, alertRules: prev.alertRules.map((r, i) => i === idx ? { ...r, iconSize: Number(e.target.value) || undefined } : r) }))} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Title Color</Label>
@@ -2273,7 +2274,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Icon Size</Label>
-                      <Input type="number" min={8} max={64} value={vc.iconSize || ""} onChange={(e) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, iconSize: Number(e.target.value) || undefined } : v))} placeholder="auto" className="bg-muted border-border text-xs h-7" />
+                      <Input type="number" min={8} max={64} value={vc.iconSize || ""} onChange={(e) => setVehicles((prev) => prev.map((v, i) => i === vcIdx ? { ...v, iconSize: Number(e.target.value) || undefined } : v))} placeholder="16 (default)" className="bg-muted border-border text-xs h-7" />
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Icon Color</Label>
