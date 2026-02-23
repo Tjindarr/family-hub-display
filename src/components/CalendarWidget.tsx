@@ -68,8 +68,13 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
 
   const firstDayOfWeek = display?.firstDayOfWeek ?? 1;
 
+  // Apply max events limit
+  const limitedEvents = display?.limitEvents && display.maxEvents
+    ? events.slice(0, display.maxEvents)
+    : events;
+
   // Group by day
-  const grouped = events.reduce<Record<string, EnrichedCalendarEvent[]>>((acc, event) => {
+  const grouped = limitedEvents.reduce<Record<string, EnrichedCalendarEvent[]>>((acc, event) => {
     const label = getDayLabel(event);
     if (!acc[label]) acc[label] = [];
     acc[label].push(event);

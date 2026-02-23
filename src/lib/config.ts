@@ -49,6 +49,8 @@ export interface CalendarDisplayConfig {
   hideClockIcon: boolean;
   showWeekNumber: boolean;
   firstDayOfWeek: 0 | 1 | 6; // 0=Sunday, 1=Monday, 6=Saturday
+  limitEvents: boolean; // enable max event count
+  maxEvents: number; // max number of events to show (default 20)
   fontSizeDay: number;    // px
   fontSizeTime: number;   // px
   fontSizeTitle: number;  // px
@@ -419,6 +421,8 @@ const DEFAULT_CONFIG: DashboardConfig = {
     hideClockIcon: false,
     showWeekNumber: false,
     firstDayOfWeek: 1,
+    limitEvents: false,
+    maxEvents: 20,
     fontSizeDay: 12,
     fontSizeTime: 10,
     fontSizeTitle: 14,
