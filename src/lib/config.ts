@@ -171,6 +171,7 @@ export interface PollenConfig {
   iconSize?: number; // px (default 18)
   labelFontSize?: number; // px (default 13)
   valueFontSize?: number; // px (default 12)
+  headingFontSize?: number; // px (default 10)
   headingColor?: string;
 }
 
