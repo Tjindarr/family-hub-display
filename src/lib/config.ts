@@ -319,6 +319,7 @@ export interface DashboardConfig {
   gridColumns: number; // number of grid columns (1-6)
   rowColumns: Record<number, number>; // per-row column overrides (row number -> columns)
   rowHeights: Record<number, number>; // per-row height in px (row number -> px)
+  lockWidgetHeights: boolean; // prevent widgets from expanding beyond their grid cell
   configBackendUrl: string; // URL to a simple REST API for persisting config
   photoWidget: PhotoWidgetConfig;
   personEntities: PersonEntityConfig[];
@@ -436,6 +437,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   widgetOrder: [],
   rowColumns: {},
   rowHeights: {},
+  lockWidgetHeights: false,
   gridColumns: 4,
   configBackendUrl: "",
   photoWidget: { photos: [], intervalSeconds: 10, displayMode: "contain" },
