@@ -2267,6 +2267,14 @@ function WidgetStyleControls({ style, onChange, fields }: {
                       <Label className="text-xs text-muted-foreground">Color</Label>
                       <ColorPicker value={sensor.color} onChange={(val) => setPollenConfig((prev) => ({ ...prev, sensors: prev.sensors.map((s, i) => i === sIdx ? { ...s, color: val } : s) }))} className="w-full" />
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Label Size (px)</Label>
+                      <Input type="number" min={8} max={32} value={sensor.labelFontSize || ""} onChange={(e) => setPollenConfig((prev) => ({ ...prev, sensors: prev.sensors.map((s, i) => i === sIdx ? { ...s, labelFontSize: Number(e.target.value) || undefined } : s) }))} placeholder="Global" className="bg-muted border-border text-xs h-7" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Value Size (px)</Label>
+                      <Input type="number" min={8} max={32} value={sensor.valueFontSize || ""} onChange={(e) => setPollenConfig((prev) => ({ ...prev, sensors: prev.sensors.map((s, i) => i === sIdx ? { ...s, valueFontSize: Number(e.target.value) || undefined } : s) }))} placeholder="Global" className="bg-muted border-border text-xs h-7" />
+                    </div>
                   </div>
                 </div>
               ))}

@@ -9,6 +9,8 @@ export interface PollenLevel {
   state: string; // current level text e.g. "Low", "Moderate"
   numericState: number; // numeric level 0-6
   forecast: { date: string; level: string; numericLevel: number }[];
+  labelFontSize?: number;
+  valueFontSize?: number;
 }
 
 export interface PollenData {
@@ -94,6 +96,8 @@ export function usePollenData(
         state,
         numericState,
         forecast: forecast.slice(0, config.forecastDays || 4),
+        labelFontSize: sensor.labelFontSize,
+        valueFontSize: sensor.valueFontSize,
       };
     });
 

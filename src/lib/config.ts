@@ -161,6 +161,8 @@ export interface PollenSensorConfig {
   label: string;
   icon: string; // mdi icon name e.g. "mdi:tree"
   color: string; // HSL color
+  labelFontSize?: number; // per-sensor label font size (px)
+  valueFontSize?: number; // per-sensor value font size (px)
 }
 
 export interface PollenConfig {
