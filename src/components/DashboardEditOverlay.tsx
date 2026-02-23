@@ -305,7 +305,7 @@ export default function DashboardEditOverlay({
         variant="outline"
         size="sm"
         onClick={() => setEditMode(true)}
-        className="fixed left-14 top-4 z-50 gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+        className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
       >
         <Pencil className="h-3.5 w-3.5" />
         Edit Layout

@@ -343,7 +343,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
         variant="ghost"
         size="icon"
         onClick={() => setOpen(true)}
-        className="fixed right-4 top-4 z-50 text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground"
       >
         <Settings className="h-5 w-5" />
       </Button>
