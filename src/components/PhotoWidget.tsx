@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { ImageIcon, Info } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import type { PhotoWidgetConfig } from "@/lib/config";
 
 interface ServerPhoto {
@@ -27,11 +27,8 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
   const [photos, setPhotos] = useState<ServerPhoto[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fade, setFade] = useState(true);
-  const [dimensions, setDimensions] = useState<{ w: number; h: number } | null>(null);
-  const [hovered, setHovered] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  // Fetch photos from server
   useEffect(() => {
     if (isDemo) {
       setPhotos(DEMO_PHOTOS);
@@ -54,7 +51,6 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
       }
     };
     fetchPhotos();
-    // Re-fetch periodically to pick up new uploads
     const interval = setInterval(fetchPhotos, 60_000);
     return () => clearInterval(interval);
   }, [isDemo]);
@@ -92,33 +88,10 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
     );
   }
 
-  const currentPhoto = photos[currentIndex];
-  const src = currentPhoto?.url || "";
-
-  const formatSize = (bytes?: number) => {
-    if (!bytes) return "";
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const ext = currentPhoto?.filename?.split(".").pop()?.toUpperCase() || "";
-  const aspectRatio = dimensions ? `${dimensions.w}:${dimensions.h}` : "";
-  // Simplify aspect ratio
-  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
-  const simpleRatio = dimensions
-    ? (() => {
-        const d = gcd(dimensions.w, dimensions.h);
-        return `${dimensions.w / d}:${dimensions.h / d}`;
-      })()
-    : "";
+  const src = photos[currentIndex]?.url || "";
 
   return (
-    <Card
-      className="h-full max-h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur"
-      style={{ minHeight: 0 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <Card className="h-full max-h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur" style={{ minHeight: 0 }}>
       <CardContent className="relative h-full max-h-full p-0 overflow-hidden" style={{ minHeight: 0 }}>
         {displayMode === "blur-fill" && (
           <img
@@ -138,54 +111,7 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
             displayMode === "cover" ? "object-cover object-top" : "object-contain object-top"
           }`}
           style={{ opacity: fade ? 1 : 0 }}
-          onLoad={(e) => {
-            const img = e.currentTarget;
-            setDimensions({ w: img.naturalWidth, h: img.naturalHeight });
-          }}
         />
-        {/* Hover info panel */}
-        <div
-          className={`absolute top-0 left-0 right-0 z-10 transition-all duration-300 ${
-            hovered ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"
-          }`}
-        >
-          <div className="m-2 rounded-lg bg-background/80 backdrop-blur-md border border-border/50 p-3 shadow-lg">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Info className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-medium text-foreground">Photo Info</span>
-            </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-              <div className="text-muted-foreground">Filename</div>
-              <div className="text-foreground truncate" title={currentPhoto?.filename}>
-                {currentPhoto?.filename || "—"}
-              </div>
-              {dimensions && (
-                <>
-                  <div className="text-muted-foreground">Resolution</div>
-                  <div className="text-foreground">{dimensions.w} × {dimensions.h} px</div>
-                  <div className="text-muted-foreground">Aspect Ratio</div>
-                  <div className="text-foreground">{simpleRatio}</div>
-                </>
-              )}
-              {currentPhoto?.sizeBytes && (
-                <>
-                  <div className="text-muted-foreground">File Size</div>
-                  <div className="text-foreground">{formatSize(currentPhoto.sizeBytes)}</div>
-                </>
-              )}
-              {ext && (
-                <>
-                  <div className="text-muted-foreground">Format</div>
-                  <div className="text-foreground">{ext}</div>
-                </>
-              )}
-              <div className="text-muted-foreground">Display Mode</div>
-              <div className="text-foreground capitalize">{displayMode.replace("-", " ")}</div>
-              <div className="text-muted-foreground">Photo</div>
-              <div className="text-foreground">{currentIndex + 1} / {photos.length}</div>
-            </div>
-          </div>
-        </div>
         {photos.length > 1 && (
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
             {photos.length <= 20 && photos.map((_, i) => (
