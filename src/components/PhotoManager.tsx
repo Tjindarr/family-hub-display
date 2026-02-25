@@ -141,14 +141,19 @@ export default function PhotoManager() {
               return (
                 <HoverCard key={photo.filename} openDelay={200} closeDelay={100}>
                   <HoverCardTrigger asChild>
-                    <div className="group relative aspect-square overflow-hidden rounded-md border border-border/50 cursor-pointer">
-                      <img
-                        src={photo.thumbUrl}
-                        alt={photo.filename}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute left-1 bottom-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="group relative overflow-hidden rounded-md border border-border/50 cursor-pointer">
+                      <div className="aspect-square overflow-hidden">
+                        <img
+                          src={photo.thumbUrl}
+                          alt={photo.filename}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="px-1 py-0.5 bg-muted/50 text-[9px] text-muted-foreground text-center truncate">
+                        {formatSize(photo.sizeBytes)}
+                      </div>
+                      <div className="absolute left-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Info className="h-3 w-3 text-foreground/70 drop-shadow" />
                       </div>
                       <button
