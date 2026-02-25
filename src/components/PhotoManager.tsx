@@ -150,7 +150,7 @@ export default function PhotoManager() {
                           loading="lazy"
                         />
                       </div>
-                      <div className="px-1 py-0.5 bg-muted/50 text-[9px] text-muted-foreground text-center truncate">
+                      <div className="px-1 py-0.5 bg-muted/50 text-xs text-muted-foreground text-center truncate">
                         {formatSize(photo.sizeBytes)}
                       </div>
                       <div className="absolute left-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -164,8 +164,8 @@ export default function PhotoManager() {
                       </button>
                     </div>
                   </HoverCardTrigger>
-                  <HoverCardContent side="top" className="w-56 p-3">
-                    <div className="space-y-2">
+                  <HoverCardContent side="top" className="w-52 p-3">
+                    <div className="space-y-1.5">
                       <p className="text-xs font-medium text-foreground truncate" title={photo.filename}>
                         {photo.filename}
                       </p>
@@ -174,22 +174,6 @@ export default function PhotoManager() {
                         <span className="text-foreground">{ext}</span>
                         <span className="text-muted-foreground">File Size</span>
                         <span className="text-foreground">{formatSize(photo.sizeBytes)}</span>
-                      </div>
-                      <img
-                        src={photo.url}
-                        alt={photo.filename}
-                        className="w-full rounded border border-border/30 mt-1"
-                        onLoad={(e) => {
-                          const img = e.currentTarget;
-                          const infoEl = img.parentElement?.querySelector("[data-dimensions]");
-                          if (infoEl) {
-                            infoEl.textContent = `${img.naturalWidth} × ${img.naturalHeight} px`;
-                          }
-                        }}
-                      />
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
-                        <span className="text-muted-foreground">Resolution</span>
-                        <span className="text-foreground" data-dimensions>Loading…</span>
                       </div>
                     </div>
                   </HoverCardContent>
