@@ -7,13 +7,14 @@ interface ServerPhoto {
   filename: string;
   url: string;
   thumbUrl: string;
+  sizeBytes?: number;
 }
 
 const DEMO_PHOTOS: ServerPhoto[] = [
-  { filename: "demo1.jpg", url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&h=600&fit=crop", thumbUrl: "" },
-  { filename: "demo2.jpg", url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop", thumbUrl: "" },
-  { filename: "demo3.jpg", url: "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800&h=600&fit=crop", thumbUrl: "" },
-  { filename: "demo4.jpg", url: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=600&fit=crop", thumbUrl: "" },
+  { filename: "demo1.jpg", url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&h=600&fit=crop", thumbUrl: "", sizeBytes: 245000 },
+  { filename: "demo2.jpg", url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop", thumbUrl: "", sizeBytes: 312000 },
+  { filename: "demo3.jpg", url: "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800&h=600&fit=crop", thumbUrl: "", sizeBytes: 198000 },
+  { filename: "demo4.jpg", url: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=600&fit=crop", thumbUrl: "", sizeBytes: 278000 },
 ];
 
 interface PhotoWidgetProps {
@@ -26,6 +27,7 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
   const [photos, setPhotos] = useState<ServerPhoto[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fade, setFade] = useState(true);
+  const [dimensions, setDimensions] = useState<{ w: number; h: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   // Fetch photos from server
@@ -89,7 +91,14 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
     );
   }
 
-  const src = photos[currentIndex]?.url || "";
+  const currentPhoto = photos[currentIndex];
+  const src = currentPhoto?.url || "";
+
+  const formatSize = (bytes?: number) => {
+    if (!bytes) return "";
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   return (
     <Card className="h-full max-h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur" style={{ minHeight: 0 }}>
@@ -112,7 +121,24 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
             displayMode === "cover" ? "object-cover object-top" : "object-contain object-top"
           }`}
           style={{ opacity: fade ? 1 : 0 }}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            setDimensions({ w: img.naturalWidth, h: img.naturalHeight });
+          }}
         />
+        {/* Photo info overlay */}
+        <div className="absolute top-2 left-2 z-10 flex gap-1.5">
+          {dimensions && (
+            <span className="text-[10px] bg-background/60 backdrop-blur-sm text-foreground/80 rounded px-1.5 py-0.5">
+              {dimensions.w}×{dimensions.h}
+            </span>
+          )}
+          {currentPhoto?.sizeBytes && (
+            <span className="text-[10px] bg-background/60 backdrop-blur-sm text-foreground/80 rounded px-1.5 py-0.5">
+              {formatSize(currentPhoto.sizeBytes)}
+            </span>
+          )}
+        </div>
         {photos.length > 1 && (
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
             {photos.length <= 20 && photos.map((_, i) => (

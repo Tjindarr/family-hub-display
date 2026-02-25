@@ -50,11 +50,15 @@ app.get("/api/photos", (_req, res) => {
       const ext = path.extname(f).toLowerCase();
       return [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"].includes(ext);
     });
-    const photos = files.map((f) => ({
-      filename: f,
-      url: `/api/photos/file/${encodeURIComponent(f)}`,
-      thumbUrl: `/api/photos/thumb/${encodeURIComponent(f)}`,
-    }));
+    const photos = files.map((f) => {
+      const stats = fs.statSync(path.join(PHOTOS_DIR, f));
+      return {
+        filename: f,
+        url: `/api/photos/file/${encodeURIComponent(f)}`,
+        thumbUrl: `/api/photos/thumb/${encodeURIComponent(f)}`,
+        sizeBytes: stats.size,
+      };
+    });
     res.json(photos);
   } catch (err) {
     res.status(500).json({ error: "Failed to list photos" });
