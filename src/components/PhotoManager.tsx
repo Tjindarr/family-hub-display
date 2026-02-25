@@ -1,11 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Upload, Trash2, Loader2, ImageIcon } from "lucide-react";
+import { Upload, Trash2, Loader2, ImageIcon, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface ServerPhoto {
   filename: string;
   url: string;
   thumbUrl: string;
+  sizeBytes?: number;
 }
 
 export default function PhotoManager() {
@@ -124,22 +130,67 @@ export default function PhotoManager() {
         <>
           <p className="text-xs text-muted-foreground">{photos.length} photo{photos.length !== 1 ? "s" : ""}</p>
           <div className="grid grid-cols-3 gap-2">
-            {photos.map((photo) => (
-              <div key={photo.filename} className="group relative aspect-square overflow-hidden rounded-md border border-border/50">
-                <img
-                  src={photo.thumbUrl}
-                  alt={photo.filename}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-                <button
-                  onClick={() => handleDelete(photo.filename)}
-                  className="absolute right-1 top-1 rounded-full bg-destructive/80 p-0.5 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
+            {photos.map((photo) => {
+              const ext = photo.filename.split(".").pop()?.toUpperCase() || "";
+              const formatSize = (bytes?: number) => {
+                if (!bytes) return "—";
+                if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+                return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+              };
+
+              return (
+                <HoverCard key={photo.filename} openDelay={200} closeDelay={100}>
+                  <HoverCardTrigger asChild>
+                    <div className="group relative aspect-square overflow-hidden rounded-md border border-border/50 cursor-pointer">
+                      <img
+                        src={photo.thumbUrl}
+                        alt={photo.filename}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute left-1 bottom-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Info className="h-3 w-3 text-foreground/70 drop-shadow" />
+                      </div>
+                      <button
+                        onClick={() => handleDelete(photo.filename)}
+                        className="absolute right-1 top-1 rounded-full bg-destructive/80 p-0.5 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </HoverCardTrigger>
+                  <HoverCardContent side="top" className="w-56 p-3">
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-foreground truncate" title={photo.filename}>
+                        {photo.filename}
+                      </p>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                        <span className="text-muted-foreground">Format</span>
+                        <span className="text-foreground">{ext}</span>
+                        <span className="text-muted-foreground">File Size</span>
+                        <span className="text-foreground">{formatSize(photo.sizeBytes)}</span>
+                      </div>
+                      <img
+                        src={photo.url}
+                        alt={photo.filename}
+                        className="w-full rounded border border-border/30 mt-1"
+                        onLoad={(e) => {
+                          const img = e.currentTarget;
+                          const infoEl = img.parentElement?.querySelector("[data-dimensions]");
+                          if (infoEl) {
+                            infoEl.textContent = `${img.naturalWidth} × ${img.naturalHeight} px`;
+                          }
+                        }}
+                      />
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                        <span className="text-muted-foreground">Resolution</span>
+                        <span className="text-foreground" data-dimensions>Loading…</span>
+                      </div>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              );
+            })}
           </div>
         </>
       )}
