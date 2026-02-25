@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Upload, Trash2, Loader2, ImageIcon, Info } from "lucide-react";
+import { Upload, Trash2, Loader2, ImageIcon, Info, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   HoverCard,
@@ -12,12 +12,16 @@ interface ServerPhoto {
   url: string;
   thumbUrl: string;
   sizeBytes?: number;
+  createdAt?: number;
 }
+
+type SortMode = "date-desc" | "date-asc" | "size-desc" | "size-asc";
 
 export default function PhotoManager() {
   const [photos, setPhotos] = useState<ServerPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("date-desc");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchPhotos = useCallback(async () => {
@@ -128,9 +132,32 @@ export default function PhotoManager() {
         </div>
       ) : (
         <>
-          <p className="text-xs text-muted-foreground">{photos.length} photo{photos.length !== 1 ? "s" : ""}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">{photos.length} photo{photos.length !== 1 ? "s" : ""}</p>
+            <div className="flex items-center gap-1">
+              <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+              <select
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value as SortMode)}
+                className="text-[11px] bg-transparent border border-border/50 rounded px-1.5 py-0.5 text-foreground"
+              >
+                <option value="date-desc">Newest first</option>
+                <option value="date-asc">Oldest first</option>
+                <option value="size-desc">Largest first</option>
+                <option value="size-asc">Smallest first</option>
+              </select>
+            </div>
+          </div>
           <div className="grid grid-cols-3 gap-2">
-            {photos.map((photo) => {
+            {[...photos].sort((a, b) => {
+              switch (sortMode) {
+                case "size-desc": return (b.sizeBytes || 0) - (a.sizeBytes || 0);
+                case "size-asc": return (a.sizeBytes || 0) - (b.sizeBytes || 0);
+                case "date-asc": return (a.createdAt || 0) - (b.createdAt || 0);
+                case "date-desc":
+                default: return (b.createdAt || 0) - (a.createdAt || 0);
+              }
+            }).map((photo) => {
               const ext = photo.filename.split(".").pop()?.toUpperCase() || "";
               const formatSize = (bytes?: number) => {
                 if (!bytes) return "—";

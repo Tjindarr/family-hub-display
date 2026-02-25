@@ -57,6 +57,7 @@ app.get("/api/photos", (_req, res) => {
         url: `/api/photos/file/${encodeURIComponent(f)}`,
         thumbUrl: `/api/photos/thumb/${encodeURIComponent(f)}`,
         sizeBytes: stats.size,
+        createdAt: stats.birthtimeMs || stats.ctimeMs,
       };
     });
     res.json(photos);
