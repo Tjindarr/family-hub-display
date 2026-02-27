@@ -370,6 +370,7 @@ export interface PersonCustomSensor {
   entityId: string;
   icon: string; // mdi icon name
   label?: string; // optional display label
+  attribute?: string; // optional attribute key; empty/"state" = main state value
 }
 
 export interface PersonEntityConfig {
