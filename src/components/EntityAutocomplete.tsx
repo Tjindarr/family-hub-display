@@ -58,7 +58,7 @@ export default function EntityAutocomplete({
     const query = value.toLowerCase();
     return entities
       .filter((e) => {
-        if (domainFilter && !e.entity_id.startsWith(domainFilter + ".")) return false;
+        if (domainFilter && !domainFilter.split(",").some(d => e.entity_id.startsWith(d.trim() + "."))) return false;
         return (
           e.entity_id.toLowerCase().includes(query) ||
           (e.attributes?.friendly_name || "").toLowerCase().includes(query)
