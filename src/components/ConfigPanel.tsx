@@ -1429,8 +1429,18 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     <EntityAutocomplete value={person.batteryChargingEntity} onChange={(val) => { const u = [...personEntities]; u[i] = { ...u[i], batteryChargingEntity: val }; setPersonEntities(u); }} config={config} domainFilter="binary_sensor,sensor" placeholder="sensor.john_phone_battery_state" className="mt-1 bg-muted border-border text-sm" />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Distance from Home (km)</Label>
+                    <Label className="text-xs text-muted-foreground">Distance from Home</Label>
                     <EntityAutocomplete value={person.distanceEntity} onChange={(val) => { const u = [...personEntities]; u[i] = { ...u[i], distanceEntity: val }; setPersonEntities(u); }} config={config} domainFilter="sensor" placeholder="sensor.john_distance_from_home" className="mt-1 bg-muted border-border text-sm" />
+                    <select
+                      value={person.distanceUnit || "auto"}
+                      onChange={(e) => { const u = [...personEntities]; u[i] = { ...u[i], distanceUnit: e.target.value as any }; setPersonEntities(u); }}
+                      className="mt-1 w-full text-xs bg-muted border border-border rounded px-2 py-1.5 text-foreground"
+                    >
+                      <option value="auto">Auto (from sensor)</option>
+                      <option value="km">Kilometers (km)</option>
+                      <option value="m">Meters (m)</option>
+                      <option value="mi">Miles (mi)</option>
+                    </select>
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Avatar Size (px)</Label>

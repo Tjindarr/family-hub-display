@@ -548,8 +548,17 @@ export function usePersonData(
         if (state) {
           const parsed = parseFloat(state.state);
           if (!isNaN(parsed)) {
-            const unit = state.attributes?.unit_of_measurement || "";
-            distanceKm = unit === "m" ? parsed / 1000 : parsed;
+            const unit = pe.distanceUnit || "auto";
+            if (unit === "auto") {
+              const haUnit = (state.attributes?.unit_of_measurement || "").toLowerCase();
+              distanceKm = haUnit === "m" ? parsed / 1000 : haUnit === "mi" ? parsed * 1.60934 : parsed;
+            } else if (unit === "m") {
+              distanceKm = parsed / 1000;
+            } else if (unit === "mi") {
+              distanceKm = parsed * 1.60934;
+            } else {
+              distanceKm = parsed;
+            }
           }
         }
       }

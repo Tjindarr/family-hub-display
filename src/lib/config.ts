@@ -373,6 +373,7 @@ export interface PersonEntityConfig {
   batteryEntity: string;
   batteryChargingEntity: string;
   distanceEntity: string;
+  distanceUnit?: "km" | "m" | "mi" | "auto";
   avatarSize?: number; // px, default 80
 }
 
