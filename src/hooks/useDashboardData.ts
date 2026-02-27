@@ -539,7 +539,7 @@ export function usePersonData(
         const state = getCachedState(pe.batteryChargingEntity);
         if (state) {
           const s = state.state.toLowerCase();
-          isCharging = s === "on" || s === "charging";
+          isCharging = s === "on" || s === "charging" || s === "full";
         }
       }
 
