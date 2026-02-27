@@ -1425,8 +1425,8 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     <EntityAutocomplete value={person.batteryEntity} onChange={(val) => { const u = [...personEntities]; u[i] = { ...u[i], batteryEntity: val }; setPersonEntities(u); }} config={config} domainFilter="sensor" placeholder="sensor.john_phone_battery_level" className="mt-1 bg-muted border-border text-sm" />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Charging Sensor (binary)</Label>
-                    <EntityAutocomplete value={person.batteryChargingEntity} onChange={(val) => { const u = [...personEntities]; u[i] = { ...u[i], batteryChargingEntity: val }; setPersonEntities(u); }} config={config} domainFilter="binary_sensor" placeholder="binary_sensor.john_phone_is_charging" className="mt-1 bg-muted border-border text-sm" />
+                    <Label className="text-xs text-muted-foreground">Charging Sensor</Label>
+                    <EntityAutocomplete value={person.batteryChargingEntity} onChange={(val) => { const u = [...personEntities]; u[i] = { ...u[i], batteryChargingEntity: val }; setPersonEntities(u); }} config={config} domainFilter="binary_sensor,sensor" placeholder="sensor.john_phone_battery_state" className="mt-1 bg-muted border-border text-sm" />
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Distance from Home (km)</Label>
