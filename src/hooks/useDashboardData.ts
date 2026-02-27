@@ -547,7 +547,10 @@ export function usePersonData(
         const state = getCachedState(pe.distanceEntity);
         if (state) {
           const parsed = parseFloat(state.state);
-          distanceKm = isNaN(parsed) ? null : parsed;
+          if (!isNaN(parsed)) {
+            const unit = state.attributes?.unit_of_measurement || "";
+            distanceKm = unit === "m" ? parsed / 1000 : parsed;
+          }
         }
       }
 
