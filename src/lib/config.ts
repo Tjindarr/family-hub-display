@@ -366,6 +366,12 @@ export interface PersonCardFontSizes {
   distanceSize?: number; // px
 }
 
+export interface PersonCustomSensor {
+  entityId: string;
+  icon: string; // mdi icon name
+  label?: string; // optional display label
+}
+
 export interface PersonEntityConfig {
   name: string;
   entityPicture: string;
@@ -375,6 +381,7 @@ export interface PersonEntityConfig {
   distanceEntity: string;
   distanceUnit?: "km" | "m" | "mi" | "auto";
   avatarSize?: number; // px, default 80
+  customSensors?: PersonCustomSensor[];
 }
 
 export interface HAState {

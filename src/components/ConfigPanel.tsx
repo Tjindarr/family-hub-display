@@ -1442,6 +1442,62 @@ function WidgetStyleControls({ style, onChange, fields }: {
                       <option value="mi">Miles (mi)</option>
                     </select>
                   </div>
+                  {/* Custom Sensors */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Custom Sensors</Label>
+                    {(person.customSensors || []).map((cs, csIdx) => (
+                      <div key={csIdx} className="flex items-center gap-1 mt-1">
+                        <IconPicker
+                          value={cs.icon}
+                          onChange={(val) => {
+                            const u = [...personEntities];
+                            const sensors = [...(u[i].customSensors || [])];
+                            sensors[csIdx] = { ...sensors[csIdx], icon: val };
+                            u[i] = { ...u[i], customSensors: sensors };
+                            setPersonEntities(u);
+                          }}
+                          className="w-28 bg-muted border-border text-xs h-8"
+                        />
+                        <EntityAutocomplete
+                          value={cs.entityId}
+                          onChange={(val) => {
+                            const u = [...personEntities];
+                            const sensors = [...(u[i].customSensors || [])];
+                            sensors[csIdx] = { ...sensors[csIdx], entityId: val };
+                            u[i] = { ...u[i], customSensors: sensors };
+                            setPersonEntities(u);
+                          }}
+                          config={config}
+                          placeholder="sensor.entity_id"
+                          className="flex-1 bg-muted border-border text-xs h-8"
+                        />
+                        <Button
+                          variant="ghost" size="icon"
+                          className="h-7 w-7 shrink-0 text-destructive"
+                          onClick={() => {
+                            const u = [...personEntities];
+                            const sensors = [...(u[i].customSensors || [])];
+                            sensors.splice(csIdx, 1);
+                            u[i] = { ...u[i], customSensors: sensors };
+                            setPersonEntities(u);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline" size="sm"
+                      className="mt-1 text-xs h-7"
+                      onClick={() => {
+                        const u = [...personEntities];
+                        u[i] = { ...u[i], customSensors: [...(u[i].customSensors || []), { entityId: "", icon: "mdi:eye" }] };
+                        setPersonEntities(u);
+                      }}
+                    >
+                      + Add Sensor
+                    </Button>
+                  </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Avatar Size (px)</Label>
                     <Input
