@@ -3,6 +3,13 @@ import { Icon } from "@iconify/react";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
 import type { PersonCardFontSizes, WidgetStyleConfig } from "@/lib/config";
 
+export interface PersonCustomSensorData {
+  icon: string;
+  label?: string;
+  value: string | null;
+  unit?: string;
+}
+
 export interface PersonData {
   name: string;
   pictureUrl: string | null;
@@ -12,6 +19,7 @@ export interface PersonData {
   distanceKm: number | null;
   avatarSize?: number;
   zoneIcon?: string | null;
+  customSensors?: PersonCustomSensorData[];
 }
 
 interface PersonWidgetProps {
@@ -143,6 +151,15 @@ export default function PersonWidget({ person, loading, fontSizes, personFontSiz
             {person.distanceKm !== null ? `${person.distanceKm.toFixed(1)} km` : "—"}
           </span>
         </div>
+        {/* Custom Sensors */}
+        {person.customSensors?.map((cs, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <Icon icon={cs.icon.includes(":") ? cs.icon : `mdi:${cs.icon}`} className="shrink-0" style={{ width: iconPx, height: iconPx, color: ws.secondaryIconColor || "hsl(var(--accent))" }} />
+            <span style={{ fontSize: pfs.distanceSize || fs.body, color: ws.labelColor || "hsl(var(--foreground))" }}>
+              {cs.value !== null ? `${cs.value}${cs.unit ? ` ${cs.unit}` : ""}` : "—"}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

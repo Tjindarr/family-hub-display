@@ -563,7 +563,18 @@ export function usePersonData(
         }
       }
 
-      return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm, avatarSize: pe.avatarSize, zoneIcon };
+      // Custom sensors
+      const customSensors = (pe.customSensors || []).map((cs) => {
+        const state = cs.entityId ? getCachedState(cs.entityId) : null;
+        return {
+          icon: cs.icon,
+          label: cs.label,
+          value: state ? state.state : null,
+          unit: state?.attributes?.unit_of_measurement || undefined,
+        };
+      });
+
+      return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm, avatarSize: pe.avatarSize, zoneIcon, customSensors };
     });
 
     setPersons(results);
