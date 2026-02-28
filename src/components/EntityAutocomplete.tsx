@@ -53,7 +53,41 @@ export default function EntityAutocomplete({
     });
   }, [config]);
 
+  // Determine if we're in "attribute mode": value matches an existing entity_id + "."
+  const attributeMode = useMemo(() => {
+    if (!value || !value.includes(".")) return null;
+    // Try to find the longest matching entity_id prefix
+    // Entity IDs have format "domain.object_id", so at minimum 2 dot-separated parts
+    const parts = value.split(".");
+    if (parts.length < 3) return null; // need at least domain.name.attr_partial
+    
+    // The entity_id is "domain.object_id" — try the first two parts
+    const candidateId = parts[0] + "." + parts[1];
+    const entity = entities.find((e) => e.entity_id === candidateId);
+    if (!entity) return null;
+    
+    const attrQuery = parts.slice(2).join(".").toLowerCase();
+    return { entity, entityId: candidateId, attrQuery };
+  }, [value, entities]);
+
   const filtered = useMemo(() => {
+    // Attribute mode: show attributes of the matched entity
+    if (attributeMode) {
+      const { entity, attrQuery } = attributeMode;
+      const attrs = entity.attributes || {};
+      const attrKeys = Object.keys(attrs);
+      // Always include "state" as an option (the default)
+      const allOptions = ["state", ...attrKeys.filter((k) => k !== "state")];
+      return allOptions
+        .filter((key) => !attrQuery || key.toLowerCase().includes(attrQuery))
+        .slice(0, 25)
+        .map((key) => ({
+          key,
+          value: key === "state" ? entity.state : String(attrs[key] ?? ""),
+        }));
+    }
+
+    // Normal entity mode
     if (!value || value.length < 2) return [];
     const query = value.toLowerCase();
     return entities
@@ -64,8 +98,9 @@ export default function EntityAutocomplete({
           (e.attributes?.friendly_name || "").toLowerCase().includes(query)
         );
       })
-      .slice(0, 20);
-  }, [value, entities, domainFilter]);
+      .slice(0, 20)
+      .map((e) => ({ entity: e }));
+  }, [value, entities, domainFilter, attributeMode]);
 
   const showDropdown = open && focused && filtered.length > 0;
 
@@ -96,7 +131,6 @@ export default function EntityAutocomplete({
           setOpen(true);
         }}
         onBlur={() => {
-          // Delay to allow click on dropdown
           setTimeout(() => setFocused(false), 150);
         }}
         placeholder={placeholder}
@@ -112,28 +146,52 @@ export default function EntityAutocomplete({
           ref={listRef}
           className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-lg"
         >
-          {filtered.map((entity) => (
-            <button
-              key={entity.entity_id}
-              type="button"
-              className={cn(
-                "flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-accent",
-                entity.entity_id === value && "bg-accent"
-              )}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onChange(entity.entity_id);
-                setOpen(false);
-              }}
-            >
-              <span className="font-medium text-foreground">{entity.entity_id}</span>
-              {entity.attributes?.friendly_name && (
-                <span className="text-xs text-muted-foreground">
-                  {entity.attributes.friendly_name} — {entity.state}
-                </span>
-              )}
-            </button>
-          ))}
+          {attributeMode
+            ? (filtered as { key: string; value: string }[]).map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={cn(
+                    "flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent",
+                    value === `${attributeMode.entityId}.${item.key}` && "bg-accent"
+                  )}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    if (item.key === "state") {
+                      // Select just the entity (no attribute)
+                      onChange(attributeMode.entityId);
+                    } else {
+                      onChange(`${attributeMode.entityId}.${item.key}`);
+                    }
+                    setOpen(false);
+                  }}
+                >
+                  <span className="font-medium text-foreground">{item.key}</span>
+                  <span className="text-xs text-muted-foreground truncate ml-2 max-w-[50%]">{item.value}</span>
+                </button>
+              ))
+            : (filtered as { entity: HAState }[]).map((item) => (
+                <button
+                  key={item.entity.entity_id}
+                  type="button"
+                  className={cn(
+                    "flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-accent",
+                    item.entity.entity_id === value && "bg-accent"
+                  )}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onChange(item.entity.entity_id);
+                    setOpen(false);
+                  }}
+                >
+                  <span className="font-medium text-foreground">{item.entity.entity_id}</span>
+                  {item.entity.attributes?.friendly_name && (
+                    <span className="text-xs text-muted-foreground">
+                      {item.entity.attributes.friendly_name} — {item.entity.state}
+                    </span>
+                  )}
+                </button>
+              ))}
         </div>
       )}
     </div>

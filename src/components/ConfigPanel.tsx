@@ -1460,16 +1460,23 @@ function WidgetStyleControls({ style, onChange, fields }: {
                             className="w-28 bg-muted border-border text-xs h-8"
                           />
                           <EntityAutocomplete
-                            value={cs.entityId}
+                            value={cs.attribute ? `${cs.entityId}.${cs.attribute}` : cs.entityId}
                             onChange={(val) => {
                               const u = [...personEntities];
                               const sensors = [...(u[i].customSensors || [])];
-                              sensors[csIdx] = { ...sensors[csIdx], entityId: val, attribute: "" };
+                              const dotParts = val.split(".");
+                              let entityId = val;
+                              let attribute = "";
+                              if (dotParts.length >= 3) {
+                                entityId = dotParts[0] + "." + dotParts[1];
+                                attribute = dotParts.slice(2).join(".");
+                              }
+                              sensors[csIdx] = { ...sensors[csIdx], entityId, attribute };
                               u[i] = { ...u[i], customSensors: sensors };
                               setPersonEntities(u);
                             }}
                             config={config}
-                            placeholder="sensor.entity_id"
+                            placeholder="sensor.entity_id.attribute"
                             className="flex-1 bg-muted border-border text-xs h-8"
                           />
                           <Button
@@ -1486,19 +1493,6 @@ function WidgetStyleControls({ style, onChange, fields }: {
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
-                        <input
-                          type="text"
-                          value={cs.attribute || ""}
-                          onChange={(e) => {
-                            const u = [...personEntities];
-                            const sensors = [...(u[i].customSensors || [])];
-                            sensors[csIdx] = { ...sensors[csIdx], attribute: e.target.value };
-                            u[i] = { ...u[i], customSensors: sensors };
-                            setPersonEntities(u);
-                          }}
-                          placeholder="Attribute (empty = state)"
-                          className="w-full bg-muted border border-border rounded px-2 py-1 text-xs h-7"
-                        />
                       </div>
                     ))}
                     <Button
