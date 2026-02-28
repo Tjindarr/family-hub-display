@@ -148,7 +148,7 @@ export default function PersonWidget({ person, loading, fontSizes, personFontSiz
         <div className="flex items-center gap-2">
           <Navigation className="shrink-0" style={{ width: iconPx, height: iconPx, color: ws.secondaryIconColor || "hsl(var(--accent))" }} />
           <span style={{ fontSize: pfs.distanceSize || fs.body, color: ws.labelColor || "hsl(var(--foreground))" }}>
-            {person.distanceKm !== null ? `${person.distanceKm.toFixed(1)} km` : "—"}
+            {person.distanceKm !== null ? `${Math.floor(person.distanceKm)} km` : "—"}
           </span>
         </div>
         {/* Custom Sensors */}
