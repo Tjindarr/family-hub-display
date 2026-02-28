@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { DashboardConfig, isConfigured as checkConfigured, type HAState, type VehicleConfig } from "@/lib/config";
 import type { GetCachedState, OnStateChange } from "@/hooks/useDashboardData";
+import { resolveEntityValue, parseEntityRef } from "@/lib/entity-resolver";
 
 export interface VehicleEntityData {
   entityId: string;
@@ -83,14 +84,14 @@ export function useVehicleData(
           type: s.type,
           label: s.label,
           entities: s.entities.map((e) => {
-            const state = getCachedState(e.entityId);
-            const val = state?.state ?? "—";
+            const resolved = resolveEntityValue(e.entityId, getCachedState);
+            const val = resolved.value ?? "—";
             const num = parseFloat(val);
             return {
               entityId: e.entityId,
               label: e.label,
               icon: e.icon,
-              unit: e.unit,
+              unit: e.unit || resolved.unit || "",
               color: e.color,
               value: val,
               numericValue: isNaN(num) ? null : num,
@@ -127,7 +128,7 @@ export function useVehicleData(
     for (const vc of (config.vehicles || [])) {
       for (const s of vc.sections) {
         for (const e of s.entities) {
-          if (e.entityId) entityIds.add(e.entityId);
+          if (e.entityId) entityIds.add(parseEntityRef(e.entityId).entityId);
         }
       }
     }

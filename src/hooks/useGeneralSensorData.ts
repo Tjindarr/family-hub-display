@@ -3,6 +3,7 @@ import { DashboardConfig, isConfigured as checkConfigured, GeneralSensorConfig, 
 import { createHAClient } from "@/lib/ha-api";
 import type { GeneralSensorLiveData } from "@/components/GeneralSensorWidget";
 import type { GetCachedState, OnStateChange } from "@/hooks/useDashboardData";
+import { resolveEntityValue, parseEntityRef } from "@/lib/entity-resolver";
 
 function getBucketKey(iso: string, grouping: ChartGrouping): string {
   const d = new Date(iso);
@@ -140,13 +141,13 @@ export function useGeneralSensorData(
       const result: Record<string, GeneralSensorLiveData> = {};
       for (const sc of sensors) {
         const topValues = sc.topInfo.map((ti) => {
-          const state = getCachedState(ti.entityId);
-          if (state) return { label: ti.label, value: state.state, unit: ti.unit || state.attributes?.unit_of_measurement || "", color: ti.color };
+          const resolved = resolveEntityValue(ti.entityId, getCachedState);
+          if (resolved.value !== null) return { label: ti.label, value: resolved.value, unit: ti.unit || resolved.unit || "", color: ti.color };
           return { label: ti.label, value: prev[sc.id]?.topValues?.find((v) => v.label === ti.label)?.value || "—", unit: ti.unit, color: ti.color };
         });
         const bottomValues = sc.bottomInfo.map((bi) => {
-          const state = getCachedState(bi.entityId);
-          if (state) return { label: bi.label, value: state.state, unit: bi.unit || state.attributes?.unit_of_measurement || "", color: bi.color };
+          const resolved = resolveEntityValue(bi.entityId, getCachedState);
+          if (resolved.value !== null) return { label: bi.label, value: resolved.value, unit: bi.unit || resolved.unit || "", color: bi.color };
           return { label: bi.label, value: prev[sc.id]?.bottomValues?.find((v) => v.label === bi.label)?.value || "—", unit: bi.unit, color: bi.color };
         });
         const chartSeriesMeta = sc.chartSeries.map((cs, idx) => ({
@@ -233,8 +234,8 @@ export function useGeneralSensorData(
     if (!onStateChange || !checkConfigured(config)) return;
     const entityIds = new Set<string>();
     for (const sc of (config.generalSensors || [])) {
-      for (const ti of sc.topInfo) entityIds.add(ti.entityId);
-      for (const bi of sc.bottomInfo) entityIds.add(bi.entityId);
+      for (const ti of sc.topInfo) entityIds.add(parseEntityRef(ti.entityId).entityId);
+      for (const bi of sc.bottomInfo) entityIds.add(parseEntityRef(bi.entityId).entityId);
     }
     if (entityIds.size === 0) return;
     const unsubscribe = onStateChange((entityId) => {

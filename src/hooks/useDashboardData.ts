@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DashboardConfig, loadConfig, saveConfig, saveRemoteConfig, loadRemoteConfig, isConfigured, type HAState } from "@/lib/config";
+import { parseEntityRef, resolveEntityValue } from "@/lib/entity-resolver";
 import type { CalendarEntityConfig } from "@/lib/config";
 import {
   createHAClient,
@@ -82,8 +83,8 @@ export type OnStateChange = (callback: (entityId: string, state: HAState) => voi
 function collectTempEntityIds(config: DashboardConfig): Set<string> {
   const ids = new Set<string>();
   for (const e of config.temperatureEntities) {
-    ids.add(e.entityId);
-    if (e.humidityEntityId) ids.add(e.humidityEntityId);
+    ids.add(parseEntityRef(e.entityId).entityId);
+    if (e.humidityEntityId) ids.add(parseEntityRef(e.humidityEntityId).entityId);
   }
   return ids;
 }
@@ -105,16 +106,18 @@ export function useTemperatureData(
 
     setSensors((prev) => {
       return config.temperatureEntities.map((entity, i) => {
-        const tempState = getCachedState(entity.entityId);
+        const tempResolved = resolveEntityValue(entity.entityId, getCachedState);
+        const tempState = tempResolved.state;
+        const tempValue = tempResolved.value;
         let humidity: number | null = null;
         if (entity.humidityEntityId) {
-          const humState = getCachedState(entity.humidityEntityId);
-          if (humState) humidity = parseFloat(humState.state) || null;
+          const humResolved = resolveEntityValue(entity.humidityEntityId, getCachedState);
+          if (humResolved.value) humidity = parseFloat(humResolved.value) || null;
         }
         return {
           label: entity.label,
           color: entity.color,
-          temperature: tempState ? (isNaN(parseFloat(tempState.state)) ? null : parseFloat(tempState.state)) : (prev[i]?.temperature ?? null),
+          temperature: tempValue ? (isNaN(parseFloat(tempValue)) ? null : parseFloat(tempValue)) : (prev[i]?.temperature ?? null),
           humidity: humidity ?? prev[i]?.humidity ?? null,
           entityId: entity.entityId,
           showChart: entity.showChart,
@@ -409,7 +412,7 @@ export function useElectricityPrices(
 
   const updateFromCache = useCallback(() => {
     if (!isConfigured(config) || !getCachedState) return;
-    const state = getCachedState(config.electricityPriceEntity);
+    const state = getCachedState(parseEntityRef(config.electricityPriceEntity).entityId);
     if (!state) return;
     processElectricityState(state);
     setLoading(false);
@@ -442,7 +445,7 @@ export function useElectricityPrices(
     updateFromCache();
 
     // Fallback if cache is empty
-    if (!getCachedState?.(config.electricityPriceEntity)) {
+    if (!getCachedState?.(parseEntityRef(config.electricityPriceEntity).entityId)) {
       try {
         const client = createHAClient(config);
         const state = await client.getState(config.electricityPriceEntity);
@@ -510,17 +513,17 @@ export function usePersonData(
       let zoneIcon: string | null = null;
 
       if (pe.entityPicture) {
-        const state = getCachedState(pe.entityPicture);
-        if (state) {
-          const pic = state.attributes?.entity_picture;
+        const picResolved = resolveEntityValue(pe.entityPicture, getCachedState);
+        if (picResolved.state) {
+          const pic = picResolved.state.attributes?.entity_picture;
           if (pic) pictureUrl = pic.startsWith("http") ? pic : `${config.haUrl}${pic}`;
         }
       }
 
       if (pe.locationEntity) {
-        const state = getCachedState(pe.locationEntity);
-        if (state) {
-          location = state.state || null;
+        const locResolved = resolveEntityValue(pe.locationEntity, getCachedState);
+        if (locResolved.value) {
+          location = locResolved.value || null;
           if (location && location !== "not_home" && location !== "unknown" && location !== "unavailable") {
             const matchedZone = zoneEntities.find(
               (z) => (z.attributes?.friendly_name || "").toLowerCase() === location!.toLowerCase()
@@ -531,35 +534,26 @@ export function usePersonData(
       }
 
       if (pe.batteryEntity) {
-        const state = getCachedState(pe.batteryEntity);
-        if (state) batteryPercent = parseFloat(state.state) || null;
+        const batResolved = resolveEntityValue(pe.batteryEntity, getCachedState);
+        if (batResolved.value) batteryPercent = parseFloat(batResolved.value) || null;
       }
 
       if (pe.batteryChargingEntity) {
-        const state = getCachedState(pe.batteryChargingEntity);
-        if (state) {
-          const s = state.state.toLowerCase();
+        const chgResolved = resolveEntityValue(pe.batteryChargingEntity, getCachedState);
+        if (chgResolved.value) {
+          const s = chgResolved.value.toLowerCase();
           isCharging = s === "on" || s === "charging";
         }
       }
 
       if (pe.distanceEntity) {
-        // Support "entity_id.attribute" format
-        let distEntityId = pe.distanceEntity;
-        let distAttrKey: string | null = null;
-        const distParts = pe.distanceEntity.split(".");
-        if (distParts.length >= 3) {
-          distEntityId = distParts[0] + "." + distParts[1];
-          distAttrKey = distParts.slice(2).join(".");
-        }
-        const state = getCachedState(distEntityId);
-        if (state) {
-          const rawVal = distAttrKey ? state.attributes?.[distAttrKey] : state.state;
-          const parsed = parseFloat(String(rawVal ?? ""));
+        const distResolved = resolveEntityValue(pe.distanceEntity, getCachedState);
+        if (distResolved.value) {
+          const parsed = parseFloat(distResolved.value);
           if (!isNaN(parsed)) {
             const unit = pe.distanceUnit || "auto";
             if (unit === "auto") {
-              const haUnit = (state.attributes?.unit_of_measurement || "").toLowerCase();
+              const haUnit = (distResolved.state?.attributes?.unit_of_measurement || "").toLowerCase();
               distanceKm = haUnit === "m" ? parsed / 1000 : haUnit === "mi" ? parsed * 1.60934 : parsed;
             } else if (unit === "m") {
               distanceKm = parsed / 1000;
@@ -569,32 +563,16 @@ export function usePersonData(
               distanceKm = parsed;
             }
           }
-        } else {
-          console.warn(`[PersonCard] Distance entity "${distEntityId}" not found in cache`);
         }
       }
 
       // Custom sensors
       const customSensors = (pe.customSensors || []).map((cs) => {
-        const state = cs.entityId ? getCachedState(cs.entityId) : null;
-        const attrKey = cs.attribute && cs.attribute !== "state" ? cs.attribute : null;
-        let value: string | null = null;
-        let unit: string | undefined;
-        if (state) {
-          if (attrKey) {
-            const attrVal = state.attributes?.[attrKey];
-            value = attrVal != null ? String(attrVal) : null;
-            if (value === null) {
-              console.warn(`[PersonCard] Entity "${cs.entityId}" found but attribute "${attrKey}" not in attributes:`, Object.keys(state.attributes || {}));
-            }
-          } else {
-            value = state.state;
-            unit = state.attributes?.unit_of_measurement || undefined;
-          }
-        } else if (cs.entityId) {
-          console.warn(`[PersonCard] Entity "${cs.entityId}" not found in state cache`);
-        }
-        return { icon: cs.icon, label: cs.label, value, unit };
+        if (!cs.entityId) return { icon: cs.icon, label: cs.label, value: null as string | null, unit: undefined as string | undefined };
+        // Combine entityId + attribute into a single ref for resolveEntityValue
+        const ref = cs.attribute && cs.attribute !== "state" ? `${cs.entityId}.${cs.attribute}` : cs.entityId;
+        const resolved = resolveEntityValue(ref, getCachedState);
+        return { icon: cs.icon, label: cs.label, value: resolved.value, unit: resolved.unit };
       });
 
       return { name: pe.name, pictureUrl, location, batteryPercent, isCharging, distanceKm, avatarSize: pe.avatarSize, zoneIcon, customSensors };
@@ -638,11 +616,11 @@ export function usePersonData(
     if (!onStateChange || !isConfigured(config)) return;
     const entityIds = new Set<string>();
     for (const pe of (config.personEntities || [])) {
-      if (pe.entityPicture) entityIds.add(pe.entityPicture);
-      if (pe.locationEntity) entityIds.add(pe.locationEntity);
-      if (pe.batteryEntity) entityIds.add(pe.batteryEntity);
-      if (pe.batteryChargingEntity) entityIds.add(pe.batteryChargingEntity);
-      if (pe.distanceEntity) entityIds.add(pe.distanceEntity);
+      if (pe.entityPicture) entityIds.add(parseEntityRef(pe.entityPicture).entityId);
+      if (pe.locationEntity) entityIds.add(parseEntityRef(pe.locationEntity).entityId);
+      if (pe.batteryEntity) entityIds.add(parseEntityRef(pe.batteryEntity).entityId);
+      if (pe.batteryChargingEntity) entityIds.add(parseEntityRef(pe.batteryChargingEntity).entityId);
+      if (pe.distanceEntity) entityIds.add(parseEntityRef(pe.distanceEntity).entityId);
     }
     const unsubscribe = onStateChange((entityId) => {
       if (entityId === "__bulk_load__" || entityIds.has(entityId)) updateFromCache();

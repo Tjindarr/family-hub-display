@@ -3,6 +3,7 @@ import { DashboardConfig, isConfigured as checkConfigured, type HAState } from "
 import { createHAClient } from "@/lib/ha-api";
 import type { NotificationAlertRule } from "@/lib/config";
 import type { GetCachedState, OnStateChange, GetAllStates } from "@/hooks/useDashboardData";
+import { resolveEntityValue, parseEntityRef } from "@/lib/entity-resolver";
 
 export interface NotificationItem {
   id: string;
@@ -53,9 +54,9 @@ export function useNotificationData(
     // Alert rules from cache
     if (nc.alertRules?.length && getCachedState) {
       for (const rule of nc.alertRules) {
-        const state = getCachedState(rule.entityId);
-        if (!state) continue;
-        const value = parseFloat(state.state);
+        const resolved = resolveEntityValue(rule.entityId, getCachedState);
+        if (!resolved.value) continue;
+        const value = parseFloat(resolved.value);
         if (isNaN(value)) continue;
 
         let triggered = false;
@@ -71,7 +72,7 @@ export function useNotificationData(
             message: `Value: ${value} (${rule.condition} ${rule.threshold})`,
             icon: rule.icon || "alert-triangle",
             color: rule.color || "hsl(0, 72%, 55%)",
-            timestamp: state.last_updated || new Date().toISOString(),
+            timestamp: resolved.state?.last_updated || new Date().toISOString(),
             iconSize: rule.iconSize,
             labelColor: rule.labelColor,
             valueColor: rule.valueColor,
@@ -128,7 +129,7 @@ export function useNotificationData(
 
     const alertEntityIds = new Set<string>();
     for (const rule of (nc.alertRules || [])) {
-      alertEntityIds.add(rule.entityId);
+      alertEntityIds.add(parseEntityRef(rule.entityId).entityId);
     }
 
     const unsubscribe = onStateChange((entityId) => {
