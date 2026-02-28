@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PollenConfig, PollenSensorConfig } from "@/lib/config";
+import { resolveEntityValue, parseEntityRef } from "@/lib/entity-resolver";
 
 export interface PollenLevel {
   entityId: string;
@@ -58,8 +59,9 @@ export function usePollenData(
     }
 
     const sensors: PollenLevel[] = config.sensors.map((sensor) => {
-      const haState = getCachedState(sensor.entityId);
-      const state = haState?.state || "unknown";
+      const resolved = resolveEntityValue(sensor.entityId, getCachedState);
+      const haState = resolved.state;
+      const state = resolved.value || "unknown";
       const numericState = parsePollenLevel(state);
       const attrs = haState?.attributes || {};
 
@@ -111,7 +113,7 @@ export function usePollenData(
 
   useEffect(() => {
     if (!config || config.sensors.length === 0) return;
-    const entityIds = config.sensors.map((s) => s.entityId);
+    const entityIds = config.sensors.map((s) => parseEntityRef(s.entityId).entityId);
     const unsub = onStateChange((entityId) => {
       if (entityIds.includes(entityId)) {
         buildData();

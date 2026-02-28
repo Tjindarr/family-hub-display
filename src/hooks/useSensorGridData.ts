@@ -3,6 +3,7 @@ import { DashboardConfig, isConfigured as checkConfigured, type HAState } from "
 import { createHAClient } from "@/lib/ha-api";
 import type { SensorGridLiveData } from "@/components/SensorGridWidget";
 import type { GetCachedState, OnStateChange } from "@/hooks/useDashboardData";
+import { resolveEntityValue, parseEntityRef } from "@/lib/entity-resolver";
 
 export function useSensorGridData(
   config: DashboardConfig,
@@ -22,11 +23,11 @@ export function useSensorGridData(
     for (const grid of grids) {
       const values = grid.cells.map((cell) => {
         if (!cell.entityId) return { value: "", unit: cell.unit };
-        const state = getCachedState(cell.entityId);
-        if (state) {
+        const resolved = resolveEntityValue(cell.entityId, getCachedState);
+        if (resolved.value !== null) {
           return {
-            value: state.state,
-            unit: cell.unit || state.attributes?.unit_of_measurement || "",
+            value: resolved.value,
+            unit: cell.unit || resolved.unit || "",
             history: cell.showChart ? historyRef.current[cell.entityId] : undefined,
           };
         }
@@ -136,7 +137,7 @@ export function useSensorGridData(
     const entityIds = new Set<string>();
     for (const grid of (config.sensorGrids || [])) {
       for (const cell of grid.cells) {
-        if (cell.entityId) entityIds.add(cell.entityId);
+        if (cell.entityId) entityIds.add(parseEntityRef(cell.entityId).entityId);
       }
     }
     if (entityIds.size === 0) return;
