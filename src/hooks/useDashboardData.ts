@@ -544,9 +544,18 @@ export function usePersonData(
       }
 
       if (pe.distanceEntity) {
-        const state = getCachedState(pe.distanceEntity);
+        // Support "entity_id.attribute" format
+        let distEntityId = pe.distanceEntity;
+        let distAttrKey: string | null = null;
+        const distParts = pe.distanceEntity.split(".");
+        if (distParts.length >= 3) {
+          distEntityId = distParts[0] + "." + distParts[1];
+          distAttrKey = distParts.slice(2).join(".");
+        }
+        const state = getCachedState(distEntityId);
         if (state) {
-          const parsed = parseFloat(state.state);
+          const rawVal = distAttrKey ? state.attributes?.[distAttrKey] : state.state;
+          const parsed = parseFloat(String(rawVal ?? ""));
           if (!isNaN(parsed)) {
             const unit = pe.distanceUnit || "auto";
             if (unit === "auto") {
@@ -560,6 +569,8 @@ export function usePersonData(
               distanceKm = parsed;
             }
           }
+        } else {
+          console.warn(`[PersonCard] Distance entity "${distEntityId}" not found in cache`);
         }
       }
 
