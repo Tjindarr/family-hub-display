@@ -573,11 +573,15 @@ export function usePersonData(
           if (attrKey) {
             const attrVal = state.attributes?.[attrKey];
             value = attrVal != null ? String(attrVal) : null;
-            unit = undefined; // attributes don't have a standard unit
+            if (value === null) {
+              console.warn(`[PersonCard] Entity "${cs.entityId}" found but attribute "${attrKey}" not in attributes:`, Object.keys(state.attributes || {}));
+            }
           } else {
             value = state.state;
             unit = state.attributes?.unit_of_measurement || undefined;
           }
+        } else if (cs.entityId) {
+          console.warn(`[PersonCard] Entity "${cs.entityId}" not found in state cache`);
         }
         return { icon: cs.icon, label: cs.label, value, unit };
       });
