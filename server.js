@@ -354,14 +354,23 @@ app.post("/api/chores/logs", (req, res) => {
   const data = readChores();
   data.settings = data.settings || {};
 
-  // Calculate bonus day multiplier
-  const now = new Date();
-  const todayDay = now.getDay();
-  const todayStr = now.toISOString().split("T")[0];
+  // Calculate streak bonus multiplier for this kid
+  const kidLogs = data.logs.filter((l) => l.kidId === req.body.kidId && !l.undoneAt);
+  const choreDatesForStreak = new Set(kidLogs.map((l) => new Date(l.completedAt).toDateString()));
+  let kidStreak = 0;
+  const todayDate = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(todayDate.getTime() - i * 86400000);
+    if (choreDatesForStreak.has(d.toDateString())) kidStreak++;
+    else if (i > 0) break;
+  }
+  // If today has no chores yet, the current completion counts as day 1
+  if (!choreDatesForStreak.has(todayDate.toDateString())) kidStreak++;
+
   let bonusMultiplier = 1;
-  for (const bd of (data.settings.bonusDays || [])) {
-    if (bd.date && bd.date === todayStr) { bonusMultiplier = bd.multiplier; break; }
-    if (bd.dayOfWeek >= 0 && bd.dayOfWeek === todayDay) { bonusMultiplier = bd.multiplier; break; }
+  const streakBonuses = (data.settings.streakBonuses || []).sort((a, b) => b.daysRequired - a.daysRequired);
+  for (const sb of streakBonuses) {
+    if (kidStreak >= sb.daysRequired) { bonusMultiplier = sb.multiplier; break; }
   }
 
   // Calculate early bonus
@@ -391,28 +400,24 @@ app.post("/api/chores/logs", (req, res) => {
   data.logs.push(log);
 
   // Check badges
-  const kidLogs = data.logs.filter((l) => l.kidId === log.kidId && !l.undoneAt);
-  const totalChores = kidLogs.length;
+  const allKidLogs = data.logs.filter((l) => l.kidId === log.kidId && !l.undoneAt);
+  const totalChores = allKidLogs.length;
   const choreMap = {};
   (data.chores || []).forEach((c) => { choreMap[c.id] = c; });
-  const totalPoints = kidLogs.reduce((s, l) => {
+  const totalPoints = allKidLogs.reduce((s, l) => {
     const base = choreMap[l.choreId]?.points || 0;
     const mult = l.bonusMultiplier || 1;
     const early = l.earlyBonusEarned || 0;
     return s + (base * mult) + early;
   }, 0);
 
-  // Simple streak calc with streak protections
-  const protectedDates = new Set(
-    (data.streakProtections || []).filter((p) => p.kidId === log.kidId).map((p) => new Date(p.date).toDateString())
-  );
-  const choreDates = new Set(kidLogs.map((l) => new Date(l.completedAt).toDateString()));
+  // Simple streak calc
+  const choreDates = new Set(allKidLogs.map((l) => new Date(l.completedAt).toDateString()));
   let streak = 0;
   const today = new Date();
   for (let i = 0; i < 365; i++) {
     const d = new Date(today.getTime() - i * 86400000);
-    const ds = d.toDateString();
-    if (choreDates.has(ds) || protectedDates.has(ds)) streak++;
+    if (choreDates.has(d.toDateString())) streak++;
     else if (i > 0) break;
   }
 
@@ -522,22 +527,7 @@ app.put("/api/chores/settings", (req, res) => {
 });
 
 
-// --- Streak Protections ---
-app.post("/api/chores/streak-protections", (req, res) => {
-  const data = readChores();
-  data.streakProtections = data.streakProtections || [];
-  const sp = { id: uid(), ...req.body };
-  data.streakProtections.push(sp);
-  writeChores(data);
-  res.json(sp);
-});
 
-app.delete("/api/chores/streak-protections/:id", (req, res) => {
-  const data = readChores();
-  data.streakProtections = (data.streakProtections || []).filter((s) => s.id !== req.params.id);
-  writeChores(data);
-  res.json({ success: true });
-});
 
 // --- Chore Submissions ---
 app.post("/api/chores/submissions", (req, res) => {

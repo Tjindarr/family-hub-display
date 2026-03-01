@@ -6,7 +6,7 @@ import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/Phot
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS, getKidLevel,
-  getTodayBonusMultiplier,
+  getStreakBonusMultiplier,
 } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
@@ -76,11 +76,11 @@ export default function KidsPage() {
   const kid = selectedKid;
   const totalPoints = getKidTotalPoints(kid.id, data.logs, data.chores);
   const weeklyPoints = getKidWeeklyPoints(kid.id, data.logs, data.chores);
-  const streak = getKidStreak(kid.id, data.logs, data.streakProtections);
+  const streak = getKidStreak(kid.id, data.logs);
   const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards);
   const badges = (data.kidBadges || []).filter((kb: any) => kb.kidId === kid.id);
   const level = getKidLevel(totalPoints);
-  const bonus = getTodayBonusMultiplier(data.settings?.bonusDays || []);
+  const streakBonus = getStreakBonusMultiplier(streak, data.settings?.streakBonuses || []);
 
   // Get due chores grouped by time of day
   const dueChores = data.chores.filter((c) => {
@@ -108,7 +108,7 @@ export default function KidsPage() {
     try {
       await choresApi.completeChore(chore.id, kid.id);
       refresh();
-      const bonusText = bonus ? ` (${bonus.multiplier}x bonus!)` : "";
+      const bonusText = streakBonus ? ` (${streakBonus.multiplier}x streak bonus!)` : "";
       const earlyText = chore.deadline ? (() => {
         const [dh, dm] = chore.deadline!.split(":").map(Number);
         const deadlineMin = dh * 60 + dm;
@@ -240,11 +240,11 @@ export default function KidsPage() {
       </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
-        {/* Bonus day banner */}
-        {bonus && (
+        {/* Streak bonus banner */}
+        {streakBonus && (
           <Card className="border-yellow-500/30 bg-yellow-500/5">
             <CardContent className="p-3 text-center">
-              <span className="text-sm font-medium text-yellow-400">🎉 {bonus.label} — All points are {bonus.multiplier}x today!</span>
+              <span className="text-sm font-medium text-yellow-400">🔥 {streak}-day streak! All points are {streakBonus.multiplier}x!</span>
             </CardContent>
           </Card>
         )}
@@ -361,7 +361,7 @@ export default function KidsPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-                            <span>{chore.points}pts{bonus ? ` (${Math.round(chore.points * bonus.multiplier)}✨)` : ""}</span>
+                            <span>{chore.points}pts{streakBonus ? ` (${Math.round(chore.points * streakBonus.multiplier)}✨)` : ""}</span>
                             <span>{"⭐".repeat(chore.difficulty)}</span>
                             {chore.requirePhoto && <Camera className="w-4 h-4" />}
                           </div>

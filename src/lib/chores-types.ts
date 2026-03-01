@@ -101,22 +101,11 @@ export interface BulkTemplate {
   chores: Omit<Chore, "id" | "createdAt">[];
 }
 
-// ── Bonus Days ──
-export interface BonusDay {
+// ── Streak Bonus Milestones ──
+export interface StreakBonus {
   id: string;
-  dayOfWeek: number; // 0=Sun…6=Sat, or -1 for specific date
-  date?: string; // ISO date for one-off bonus days
-  multiplier: number; // e.g. 2 for double points
-  label: string; // e.g. "Double Point Saturday"
-}
-
-
-// ── Streak Protection ──
-export interface StreakProtection {
-  id: string;
-  kidId: string;
-  date: string; // ISO date of the protected day
-  reason: string; // e.g. "Sick", "Vacation"
+  daysRequired: number; // e.g. 7
+  multiplier: number; // e.g. 2 for 2x points
 }
 
 // ── Leveling ──
@@ -158,7 +147,7 @@ export interface ChoreSettings {
   showSuggestions: boolean;
   categoriesEnabled: boolean;
   categories: string[];
-  bonusDays: BonusDay[];
+  streakBonuses: StreakBonus[];
 }
 
 export interface ChoresData {
@@ -171,7 +160,6 @@ export interface ChoresData {
   rewardClaims: RewardClaim[];
   settings: ChoreSettings;
   
-  streakProtections: StreakProtection[];
   submissions: ChoreSubmission[];
 }
 
@@ -194,7 +182,7 @@ export const DEFAULT_SETTINGS: ChoreSettings = {
   showSuggestions: true,
   categoriesEnabled: false,
   categories: ["Kitchen", "Bedroom", "Bathroom", "Outdoor", "General"],
-  bonusDays: [],
+  streakBonuses: [],
 };
 
 export const EMPTY_CHORES_DATA: ChoresData = {
@@ -206,8 +194,6 @@ export const EMPTY_CHORES_DATA: ChoresData = {
   rewards: [],
   rewardClaims: [],
   settings: { ...DEFAULT_SETTINGS },
-  
-  streakProtections: [],
   submissions: [],
 };
 
@@ -220,15 +206,15 @@ export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
 
 export const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/** Check if today is a bonus day */
-export function getTodayBonusMultiplier(bonusDays: BonusDay[]): { multiplier: number; label: string } | null {
-  const now = new Date();
-  const todayDay = now.getDay();
-  const todayStr = now.toISOString().split("T")[0];
-
-  for (const bd of bonusDays) {
-    if (bd.date && bd.date === todayStr) return { multiplier: bd.multiplier, label: bd.label };
-    if (bd.dayOfWeek >= 0 && bd.dayOfWeek === todayDay) return { multiplier: bd.multiplier, label: bd.label };
+/** Get the active streak bonus multiplier for a kid */
+export function getStreakBonusMultiplier(streak: number, streakBonuses: StreakBonus[]): { multiplier: number; daysRequired: number } | null {
+  if (!streakBonuses || streakBonuses.length === 0) return null;
+  // Sort descending by daysRequired, pick the highest tier the kid qualifies for
+  const sorted = [...streakBonuses].sort((a, b) => b.daysRequired - a.daysRequired);
+  for (const sb of sorted) {
+    if (streak >= sb.daysRequired) {
+      return { multiplier: sb.multiplier, daysRequired: sb.daysRequired };
+    }
   }
   return null;
 }
@@ -333,17 +319,10 @@ export function daysUntilDue(chore: Chore, logs: ChoreLog[]): number | null {
   return null;
 }
 
-/** Get kid's streak (consecutive days with at least one chore), considering streak protections */
-export function getKidStreak(kidId: string, logs: ChoreLog[], protections?: StreakProtection[]): number {
+/** Get kid's streak (consecutive days with at least one chore) */
+export function getKidStreak(kidId: string, logs: ChoreLog[]): number {
   const kidLogs = logs.filter((l) => l.kidId === kidId && !l.undoneAt);
   if (kidLogs.length === 0) return 0;
-
-  const protectedDates = new Set(
-    (protections || []).filter((p) => p.kidId === kidId).map((p) => {
-      const d = new Date(p.date);
-      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    })
-  );
 
   // Get unique dates
   const dates = new Set(
@@ -358,7 +337,7 @@ export function getKidStreak(kidId: string, logs: ChoreLog[], protections?: Stre
   for (let i = 0; i < 365; i++) {
     const checkDate = new Date(today.getTime() - i * 86400000);
     const key = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
-    if (dates.has(key) || protectedDates.has(key)) {
+    if (dates.has(key)) {
       streak++;
     } else if (i > 0) {
       break;
