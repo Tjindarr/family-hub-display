@@ -480,6 +480,99 @@ Levels are color-coded from green (none) through yellow/orange (moderate) to red
 
 ---
 
+## ✅ Chore System
+
+A gamified chore management system for families with separate **Parent** (`/parent`) and **Kids** (`/kids`) pages.
+
+### Parent Page (`/parent`)
+
+Manage kids, chores, rewards, approvals, and settings via a hamburger-menu navigation with the following tabs:
+
+| Tab | Description |
+|---|---|
+| **Chores** | Create, edit, pause, and delete chores. Assign difficulty, points, recurrence, deadlines, and photo/approval requirements |
+| **Kids** | Add/remove kids with custom avatars (emoji or uploaded image) and colors |
+| **Rewards** | Define rewards kids can redeem with earned points |
+| **Leaderboard** | View streaks, weekly/total points, and levels for all kids |
+| **Approvals** | Review pending chore completions and custom chore submissions from kids |
+| **History** | Browse all completed chores with filters by kid and date |
+| **Settings** | Configure rotation, categories, streak bonuses, and suggestions |
+
+### Kids Page (`/kids`)
+
+Kid-facing interface optimized for simplicity:
+
+- **Kid picker** on launch — each kid sees only their chores
+- **Today's chores** grouped by time of day (Morning, Afternoon, Evening, Anytime)
+- **One-tap completion** with optional photo capture
+- **Custom chore submissions** — kids can suggest chores for parent approval
+- **Rewards shop** — redeem earned points for configured rewards
+- **Progress tracking** — streaks, levels, badges, and XP progress bar
+
+### Chore Configuration
+
+| Setting | Description |
+|---|---|
+| Title & Icon | Display name and emoji icon |
+| Points | Base points earned on completion |
+| Difficulty | 1–5 star rating |
+| Time of Day | Morning, Afternoon, Evening, or Anytime |
+| Recurrence | Once, Daily, Every X days, or Weekly (specific days) |
+| Deadline | Optional HH:MM deadline with early completion bonus |
+| Require Photo | Kid must attach a photo when completing |
+| Require Approval | Parent must approve before points are awarded |
+| Per Kid | Each kid can complete independently |
+| Rotation | Auto-rotate assignment among selected kids |
+| Category | Optional tag (when categories are enabled) |
+
+### Categories
+
+Categories (e.g. Kitchen, Bedroom, Outdoor) are **optional and off by default**. Enable in Settings → Categories toggle. When enabled, chores can be tagged and filtered by category.
+
+### Streak Bonuses
+
+Configurable point multipliers that activate when a kid maintains a daily streak:
+
+| Example Config | Effect |
+|---|---|
+| 7 days → 2x | After 7 consecutive days, all points are doubled |
+| 14 days → 3x | After 14 consecutive days, all points are tripled |
+
+The highest qualifying tier applies. Streak bonuses are configured in Settings → Streak Bonuses. Multipliers are applied automatically on chore completion.
+
+### Leveling System
+
+Kids level up based on total points earned:
+
+| Level | Icon | Points Required |
+|---|---|---|
+| Beginner | 🌱 | 0 |
+| Helper | 🤝 | 50 |
+| Worker | ⚒️ | 150 |
+| Pro | ⭐ | 350 |
+| Expert | 💎 | 700 |
+| Master | 👑 | 1,500 |
+| Legend | 🏆 | 3,000 |
+
+### Badges
+
+Automatic achievements awarded for milestones:
+
+- **Chore count**: 1, 10, 50, 100 chores completed
+- **Streak days**: 3, 7, 30 consecutive days
+- **Total points**: 100, 500 points earned
+
+### Data Storage
+
+Chore data is stored server-side at `/data/chores.json` via the Express API:
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/chores` | GET | Load all chore data |
+| `/api/chores` | PUT | Save all chore data |
+
+---
+
 ## 🐳 Docker
 
 ```yaml
