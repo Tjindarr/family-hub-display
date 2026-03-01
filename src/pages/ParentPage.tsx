@@ -174,8 +174,8 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                       )}
                     </div>
                     {fairKid && !completed && due && (
-                      <div className="text-xs mt-0.5" style={{ color: fairKid.color }}>
-                        Suggestion: {fairKid.avatar} {fairKid.name}'s turn
+                      <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: fairKid.color }}>
+                        Suggestion: <KidAvatar kid={fairKid} size={16} /> {fairKid.name}'s turn
                       </div>
                     )}
                   </div>
@@ -585,7 +585,7 @@ function ApprovalsTab({ data, refresh }: any) {
                 <div className="flex-1">
                   <div className="font-medium">{chore?.title}</div>
                   <div className="text-xs text-muted-foreground">
-                    By {kid?.avatar} {kid?.name} • {new Date(log.completedAt).toLocaleString()}
+                    By {kid && <KidAvatar kid={kid} size={16} />} {kid?.name} • {new Date(log.completedAt).toLocaleString()}
                   </div>
                   {log.photoUrl && (
                     <img src={log.photoUrl} alt="Proof" className="mt-2 rounded w-32 h-32 object-cover" />
@@ -647,7 +647,7 @@ function HistoryTab({ data }: any) {
             <div key={log.id} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded hover:bg-secondary/50">
               <span>{chore?.icon}</span>
               <span className="flex-1 truncate">{chore?.title}</span>
-              <span style={{ color: kid?.color }}>{kid?.avatar} {kid?.name}</span>
+              <span className="flex items-center gap-1" style={{ color: kid?.color }}>{kid && <KidAvatar kid={kid} size={16} />} {kid?.name}</span>
               <span className="text-xs text-muted-foreground">
                 {new Date(log.completedAt).toLocaleDateString()}
               </span>
