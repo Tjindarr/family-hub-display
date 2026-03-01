@@ -280,15 +280,41 @@ app.delete("/api/chores/chores/:id", (req, res) => {
 // --- Chore Logs ---
 app.post("/api/chores/logs", (req, res) => {
   const data = readChores();
+  data.settings = data.settings || {};
+
+  // Calculate bonus day multiplier
+  const now = new Date();
+  const todayDay = now.getDay();
+  const todayStr = now.toISOString().split("T")[0];
+  let bonusMultiplier = 1;
+  for (const bd of (data.settings.bonusDays || [])) {
+    if (bd.date && bd.date === todayStr) { bonusMultiplier = bd.multiplier; break; }
+    if (bd.dayOfWeek >= 0 && bd.dayOfWeek === todayDay) { bonusMultiplier = bd.multiplier; break; }
+  }
+
+  // Calculate early bonus
+  let earlyBonusEarned = 0;
+  const chore = data.chores.find((c) => c.id === req.body.choreId);
+  if (chore && chore.deadline && chore.earlyBonus) {
+    const [dh, dm] = chore.deadline.split(":").map(Number);
+    const deadlineMinutes = dh * 60 + dm;
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    if (nowMinutes <= deadlineMinutes) {
+      earlyBonusEarned = chore.earlyBonus;
+    }
+  }
+
   const log = {
     id: uid(),
     choreId: req.body.choreId,
     kidId: req.body.kidId,
-    completedAt: new Date().toISOString(),
+    completedAt: now.toISOString(),
     photoUrl: req.body.photoUrl || null,
     approved: false,
     approvedAt: null,
     undoneAt: null,
+    bonusMultiplier: bonusMultiplier > 1 ? bonusMultiplier : undefined,
+    earlyBonusEarned: earlyBonusEarned > 0 ? earlyBonusEarned : undefined,
   };
   data.logs.push(log);
 
@@ -297,15 +323,24 @@ app.post("/api/chores/logs", (req, res) => {
   const totalChores = kidLogs.length;
   const choreMap = {};
   (data.chores || []).forEach((c) => { choreMap[c.id] = c; });
-  const totalPoints = kidLogs.reduce((s, l) => s + (choreMap[l.choreId]?.points || 0), 0);
+  const totalPoints = kidLogs.reduce((s, l) => {
+    const base = choreMap[l.choreId]?.points || 0;
+    const mult = l.bonusMultiplier || 1;
+    const early = l.earlyBonusEarned || 0;
+    return s + (base * mult) + early;
+  }, 0);
 
-  // Simple streak calc
-  const dates = new Set(kidLogs.map((l) => new Date(l.completedAt).toDateString()));
+  // Simple streak calc with streak protections
+  const protectedDates = new Set(
+    (data.streakProtections || []).filter((p) => p.kidId === log.kidId).map((p) => new Date(p.date).toDateString())
+  );
+  const choreDates = new Set(kidLogs.map((l) => new Date(l.completedAt).toDateString()));
   let streak = 0;
   const today = new Date();
   for (let i = 0; i < 365; i++) {
     const d = new Date(today.getTime() - i * 86400000);
-    if (dates.has(d.toDateString())) streak++;
+    const ds = d.toDateString();
+    if (choreDates.has(ds) || protectedDates.has(ds)) streak++;
     else if (i > 0) break;
   }
 
@@ -319,6 +354,32 @@ app.post("/api/chores/logs", (req, res) => {
     if (earned) {
       data.kidBadges = data.kidBadges || [];
       data.kidBadges.push({ kidId: log.kidId, badgeId: badge.id, earnedAt: new Date().toISOString() });
+    }
+  }
+
+  // Check weekly challenges
+  data.challenges = data.challenges || [];
+  for (const challenge of data.challenges) {
+    if (challenge.completedBy && challenge.completedBy.includes(log.kidId)) continue;
+    const ws = new Date(challenge.weekStart);
+    const we = new Date(ws.getTime() + 7 * 86400000);
+    if (now < ws || now >= we) continue;
+    const weekLogs = data.logs.filter(
+      (l) => l.kidId === log.kidId && !l.undoneAt && new Date(l.completedAt) >= ws && new Date(l.completedAt) < we
+    );
+    let progress = 0;
+    if (challenge.targetType === "chores_count") progress = weekLogs.length;
+    else if (challenge.targetType === "points_earned") {
+      progress = weekLogs.reduce((s, l) => s + ((choreMap[l.choreId]?.points || 0) * (l.bonusMultiplier || 1)) + (l.earlyBonusEarned || 0), 0);
+    }
+    else if (challenge.targetType === "early_completions") progress = weekLogs.filter((l) => (l.earlyBonusEarned || 0) > 0).length;
+    else if (challenge.targetType === "categories_covered") {
+      const cats = new Set(weekLogs.map((l) => choreMap[l.choreId]?.category).filter(Boolean));
+      progress = cats.size;
+    }
+    if (progress >= challenge.targetValue) {
+      challenge.completedBy = challenge.completedBy || [];
+      challenge.completedBy.push(log.kidId);
     }
   }
 
@@ -403,6 +464,48 @@ app.post("/api/chores/rewards/claim", (req, res) => {
   data.rewardClaims.push(claim);
   writeChores(data);
   res.json(claim);
+});
+
+// --- Settings ---
+app.put("/api/chores/settings", (req, res) => {
+  const data = readChores();
+  data.settings = { ...(data.settings || {}), ...req.body };
+  writeChores(data);
+  res.json(data.settings);
+});
+
+// --- Challenges ---
+app.post("/api/chores/challenges", (req, res) => {
+  const data = readChores();
+  data.challenges = data.challenges || [];
+  const challenge = { id: uid(), weekStart: req.body.weekStart || new Date().toISOString(), completedBy: [], ...req.body };
+  data.challenges.push(challenge);
+  writeChores(data);
+  res.json(challenge);
+});
+
+app.delete("/api/chores/challenges/:id", (req, res) => {
+  const data = readChores();
+  data.challenges = (data.challenges || []).filter((c) => c.id !== req.params.id);
+  writeChores(data);
+  res.json({ success: true });
+});
+
+// --- Streak Protections ---
+app.post("/api/chores/streak-protections", (req, res) => {
+  const data = readChores();
+  data.streakProtections = data.streakProtections || [];
+  const sp = { id: uid(), ...req.body };
+  data.streakProtections.push(sp);
+  writeChores(data);
+  res.json(sp);
+});
+
+app.delete("/api/chores/streak-protections/:id", (req, res) => {
+  const data = readChores();
+  data.streakProtections = (data.streakProtections || []).filter((s) => s.id !== req.params.id);
+  writeChores(data);
+  res.json({ success: true });
 });
 
 // --- Static files ---
