@@ -302,6 +302,9 @@ export interface ChoreWidgetConfig {
   choreTextColor?: string;
   choreTextSize?: number;
   urgencyDotSize?: number;
+  avatarSize?: number;
+  ptsTextSize?: number;
+  ptsTextColor?: string;
 }
 
 export interface DashboardConfig {

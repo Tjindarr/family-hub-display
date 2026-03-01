@@ -2664,9 +2664,21 @@ function WidgetStyleControls({ style, onChange, fields }: {
                           <Label className="text-[10px] text-muted-foreground">Chore Text Size (px)</Label>
                           <Input type="number" min={8} max={32} value={choreWidgetConfig.choreTextSize || ""} onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, choreTextSize: Number(e.target.value) || undefined }))} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <Label className="text-[10px] text-muted-foreground">Urgency Dot Size (px)</Label>
                           <Input type="number" min={4} max={16} value={choreWidgetConfig.urgencyDotSize || ""} onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, urgencyDotSize: Number(e.target.value) || undefined }))} placeholder="8 (default)" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Avatar Size (px)</Label>
+                          <Input type="number" min={8} max={32} value={choreWidgetConfig.avatarSize || ""} onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, avatarSize: Number(e.target.value) || undefined }))} placeholder="16 (default)" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Points Text Size (px)</Label>
+                          <Input type="number" min={8} max={24} value={choreWidgetConfig.ptsTextSize || ""} onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, ptsTextSize: Number(e.target.value) || undefined }))} placeholder="12 (default)" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Points Text Color</Label>
+                          <ColorPicker value={choreWidgetConfig.ptsTextColor || ""} onChange={(val) => setChoreWidgetConfig((prev) => ({ ...prev, ptsTextColor: val || undefined }))} className="w-full" />
                         </div>
                       </div>
                     </div>
