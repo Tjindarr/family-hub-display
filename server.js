@@ -566,9 +566,23 @@ app.put("/api/chores/submissions/:id/reject", (req, res) => {
 
 app.use(express.static("/usr/share/nginx/html"));
 
-// SPA fallback
-app.get("/{*splat}", (_req, res) => {
-  res.sendFile("/usr/share/nginx/html/index.html");
+// SPA fallback — inject correct manifest for parent vs kids PWA
+app.get("/{*splat}", (req, res) => {
+  const htmlPath = "/usr/share/nginx/html/index.html";
+  const isParent = req.path.startsWith("/parent");
+  
+  try {
+    let html = fs.readFileSync(htmlPath, "utf-8");
+    if (isParent) {
+      html = html.replace('href="/manifest.json"', 'href="/manifest-parent.json"');
+      html = html.replace('content="Chores"', 'content="Parent"');
+      html = html.replace('<title>HomeDash</title>', '<title>HomeDash Parent</title>');
+    }
+    res.set("Content-Type", "text/html");
+    res.send(html);
+  } catch {
+    res.sendFile(htmlPath);
+  }
 });
 
 app.listen(PORT, () => {
