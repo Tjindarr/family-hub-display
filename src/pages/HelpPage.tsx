@@ -365,13 +365,15 @@ climate.living_room.current_temperature → "22.0"`}
       <>
         <P>HomeChores is a family chore tracking system built into HomeDash. Enable it in Settings → General → HomeChores.</P>
         <H4>Parent Page (/parent)</H4>
-        <P>The parent dashboard has 5 tabs:</P>
+        <P>The parent dashboard uses a mobile-friendly hamburger menu with 7 tabs. A persistent badge on the menu icon shows pending approvals.</P>
         <Ul>
-          <li><strong>Chores</strong> — Create, edit, pause, and delete chores. Set recurrence, points, difficulty, time of day, photo requirements, and approval mode.</li>
-          <li><strong>Kids</strong> — Add kids with emoji or photo avatars and colors. View their points, streaks, and earned badges.</li>
+          <li><strong>Chores</strong> — Create, edit, pause, and delete chores. Set recurrence, points, difficulty, time of day, deadlines with early bonuses, photo requirements, and approval mode.</li>
+          <li><strong>Kids</strong> — Add kids with emoji or photo avatars and colors. View their points, streaks, levels, and earned badges.</li>
           <li><strong>Rewards</strong> — Define rewards with point costs. Kids can claim rewards when they have enough points.</li>
-          <li><strong>Approvals</strong> — Review and approve chores that require parent verification (with optional photo proof).</li>
-          <li><strong>History</strong> — View all completed chores with weekly summary scoreboard.</li>
+          <li><strong>Leaderboard</strong> — Compare streaks, weekly/total points, and levels across all kids.</li>
+          <li><strong>Approvals</strong> — Review pending chore completions and custom chore submissions from kids. Reject with optional reason.</li>
+          <li><strong>History</strong> — Browse completed chores with expandable detail cards, proof photos, and filters by kid/date.</li>
+          <li><strong>Settings</strong> — Configure rotation, categories (optional), streak bonuses, and suggestions.</li>
         </Ul>
         <H4>Kids Page (/kids)</H4>
         <P>A mobile-first page designed for kids. Features:</P>
@@ -380,17 +382,16 @@ climate.living_room.current_temperature → "22.0"`}
           <li>Chores grouped by time of day (Morning, Afternoon, Evening, Anytime)</li>
           <li>One-tap completion with 5-minute undo window</li>
           <li>Photo capture for chores that require proof</li>
-          <li>Stats: total points, day streak, weekly points</li>
+          <li>Custom chore submissions — kids can suggest their own tasks for parent approval</li>
+          <li>Stats: total points, day streak, weekly points, level progress</li>
           <li>Badge collection display</li>
           <li>Reward shop with progress bars</li>
         </Ul>
         <H4>Installing as iPhone App</H4>
-        <P>The kids page is a PWA (Progressive Web App). To install on iPhone:</P>
+        <P>Both the Kids and Parent pages are PWAs. To install on iPhone:</P>
         <Ul>
-          <li>Open <Code>http://YOUR_IP:3000/kids</Code> in Safari</li>
-          <li>Tap the Share button (square with arrow)</li>
-          <li>Tap "Add to Home Screen"</li>
-          <li>Tap "Add" — it will appear as a standalone app</li>
+          <li>Open <Code>http://YOUR_IP:3000/kids</Code> (or <Code>/parent</Code>) in Safari</li>
+          <li>Tap the Share button → "Add to Home Screen" → "Add"</li>
         </Ul>
         <H4>Recurrence</H4>
         <Table
@@ -402,17 +403,45 @@ climate.living_room.current_temperature → "22.0"`}
             ["Weekly", "Appears on selected weekdays, resets each occurrence"],
           ]}
         />
+        <H4>Categories</H4>
+        <P>Chore categories (e.g. Kitchen, Bedroom, Outdoor) are <strong>optional and off by default</strong>. Enable in Settings → Categories toggle. When enabled, chores can be tagged and filtered by category.</P>
+        <H4>Streak Bonuses</H4>
+        <P>Configure milestone-based point multipliers in Settings → Streak Bonuses. When a kid maintains a consecutive daily streak, the highest qualifying multiplier applies automatically.</P>
+        <Table
+          headers={["Example Config", "Effect"]}
+          rows={[
+            ["7 days → 2×", "All points doubled after 7 consecutive days"],
+            ["14 days → 3×", "All points tripled after 14 consecutive days"],
+          ]}
+        />
+        <H4>Leveling System</H4>
+        <Table
+          headers={["Level", "Icon", "Points"]}
+          rows={[
+            ["Beginner", "🌱", "0"],
+            ["Helper", "🤝", "50"],
+            ["Worker", "⚒️", "150"],
+            ["Pro", "⭐", "350"],
+            ["Expert", "💎", "700"],
+            ["Master", "👑", "1,500"],
+            ["Legend", "🏆", "3,000"],
+          ]}
+        />
         <H4>Gamification</H4>
         <Ul>
           <li><strong>Points</strong> — each chore has a point value, harder chores = more points</li>
-          <li><strong>Difficulty</strong> — 1-5 stars, shown to kids</li>
           <li><strong>Streaks</strong> — consecutive days with at least one chore completed</li>
-          <li><strong>Badges</strong> — automatically awarded: First Chore, 10/50/100 chores, 3/7/30 day streaks, 100/500 points</li>
-          <li><strong>Rewards</strong> — parent-defined prizes with point costs, kids see progress and can claim</li>
-          <li><strong>Fairness</strong> — the system suggests whose turn it is based on completion history</li>
+          <li><strong>Streak Bonuses</strong> — configurable multipliers at streak milestones</li>
+          <li><strong>Deadlines</strong> — optional deadline with early completion bonus points</li>
+          <li><strong>Badges</strong> — auto-awarded for chore count, streak, and point milestones</li>
+          <li><strong>Levels</strong> — 7 tiers from Beginner to Legend based on total points</li>
+          <li><strong>Rewards</strong> — parent-defined prizes, kids see progress and can claim</li>
+          <li><strong>Per-kid mode</strong> — each kid completes independently</li>
+          <li><strong>Rotation</strong> — auto-rotate assignment among selected kids</li>
+          <li><strong>Fairness suggestions</strong> — suggests whose turn based on history</li>
         </Ul>
         <H4>Dashboard Widget</H4>
-        <P>When enabled, a Chores widget appears on the main dashboard showing today's due chores with color-coded urgency (red = due today, yellow = due tomorrow, green = not urgent), who completed what, upcoming countdowns, and weekly scoreboard.</P>
+        <P>When enabled, a Chores widget appears on the main dashboard showing today's due chores with color-coded urgency dots, completions, countdowns, and weekly scoreboard.</P>
       </>
     ),
   },
