@@ -208,6 +208,12 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
           const fairKid = suggestFairKid(chore.id, data.kids, data.logs, chore.rotationKids, data.settings?.rotationEnabled);
           const countdown = daysUntilDue(chore, data.logs);
 
+          // Per-kid completion tracking
+          const perKidCompletions = chore.perKid
+            ? data.kids.map((k: Kid) => ({ kid: k, log: isChoreCompletedToday(chore.id, data.logs, k.id) }))
+            : [];
+          const allKidsDone = chore.perKid && perKidCompletions.every((x: any) => x.log);
+
           return (
             <Card key={chore.id} className={`${chore.paused ? "opacity-50" : ""}`}>
               <CardContent className="p-3">
@@ -218,6 +224,7 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                       <span className="font-medium truncate">{chore.title}</span>
                       {chore.requirePhoto && <span title="Photo required" className="text-xs">📸</span>}
                       {chore.requireApproval && <Shield className="w-3 h-3 text-muted-foreground" />}
+                      {chore.perKid && <span title="Each kid completes"><Users className="w-3 h-3 text-muted-foreground" /></span>}
                       {chore.paused && <Pause className="w-3 h-3 text-muted-foreground" />}
                       {chore.deadline && <span title={`Deadline: ${chore.deadline}`}><Clock className="w-3 h-3 text-muted-foreground" /></span>}
                     </div>
@@ -234,13 +241,24 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                       {countdown !== null && countdown > 0 && (
                         <span className="text-primary">Due in {countdown}d</span>
                       )}
-                      {due && !completed && (
+                      {due && !completed && !chore.perKid && (
                         <span className="text-yellow-500 font-medium">Due today</span>
                       )}
-                      {completed && kid && (
+                      {!chore.perKid && completed && kid && (
                         <span style={{ color: kid.color }}>✅ {kid.name}</span>
                       )}
                     </div>
+                    {chore.perKid && due && (
+                      <div className="flex items-center gap-2 text-xs mt-1 flex-wrap">
+                        {perKidCompletions.map((x: any) => (
+                          <span key={x.kid.id} className={`flex items-center gap-0.5 ${x.log ? "" : "opacity-50"}`} style={{ color: x.kid.color }}>
+                            <KidAvatar kid={x.kid} size={14} />
+                            {x.log ? "✅" : "⬜"}
+                          </span>
+                        ))}
+                        {allKidsDone && <span className="text-primary font-medium">All done!</span>}
+                      </div>
+                    )}
                     {showSuggestions && fairKid && !completed && due && (
                       <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: fairKid.color }}>
                         {data.settings?.rotationEnabled && chore.rotationKids?.length ? "Rotation:" : "Suggestion:"}{" "}
@@ -292,6 +310,7 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
   const [weekdays, setWeekdays] = useState<number[]>(chore?.recurrence.weekdays ?? [1]);
   const [requirePhoto, setRequirePhoto] = useState(chore?.requirePhoto ?? false);
   const [requireApproval, setRequireApproval] = useState(chore?.requireApproval ?? false);
+  const [perKid, setPerKid] = useState(chore?.perKid ?? false);
   const [category, setCategory] = useState(chore?.category ?? "");
   const [deadline, setDeadline] = useState(chore?.deadline ?? "");
   const [earlyBonus, setEarlyBonus] = useState(chore?.earlyBonus ?? 0);
@@ -305,6 +324,7 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
     onSave({
       title: title.trim(), icon, points, difficulty, timeOfDay,
       recurrence, requirePhoto, requireApproval, paused: chore?.paused ?? false,
+      perKid: perKid || undefined,
       category: category || undefined,
       deadline: deadline || undefined,
       earlyBonus: earlyBonus > 0 ? earlyBonus : undefined,
@@ -450,7 +470,7 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
           </div>
         )}
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 flex-wrap">
           <div className="flex items-center gap-2">
             <Switch checked={requirePhoto} onCheckedChange={setRequirePhoto} />
             <Label className="text-xs">Require photo</Label>
@@ -458,6 +478,10 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
           <div className="flex items-center gap-2">
             <Switch checked={requireApproval} onCheckedChange={setRequireApproval} />
             <Label className="text-xs">Require approval</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={perKid} onCheckedChange={setPerKid} />
+            <Label className="text-xs">Each kid completes</Label>
           </div>
         </div>
 
