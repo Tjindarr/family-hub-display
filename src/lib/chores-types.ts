@@ -3,7 +3,7 @@
 export interface Kid {
   id: string;
   name: string;
-  avatar: string; // emoji
+  avatar: string; // emoji or image URL (starts with "/" for image)
   color: string; // HSL color string
 }
 

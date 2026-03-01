@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType } from "@/lib/chores-types";
+import { KidAvatar } from "@/components/KidAvatar";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, getKidSpentPoints, suggestFairKid,
@@ -350,9 +351,25 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("👦");
   const [color, setColor] = useState(KID_COLORS[0]);
+  const [useImage, setUseImage] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = await choresApi.uploadPhoto(file);
+      setImageUrl(url);
+      setAvatar(url);
+    } catch (err) {
+      toast.error("Upload failed");
+    }
+  };
 
   return (
     <>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
       <div className="flex items-center justify-between">
         <h2 className="text-base font-medium">Kids ({data.kids.length})</h2>
         <Button size="sm" onClick={() => setShowAdd(true)}>
@@ -365,15 +382,38 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
           <CardContent className="p-4 space-y-3">
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
             <div>
-              <Label className="text-xs">Avatar</Label>
-              <div className="flex gap-1 mt-1">
-                {KID_EMOJIS.map((e) => (
-                  <button key={e} onClick={() => setAvatar(e)}
-                    className={`text-xl p-1 rounded ${avatar === e ? "bg-primary/20 ring-1 ring-primary" : ""}`}>
-                    {e}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2 mb-1">
+                <Label className="text-xs">Avatar</Label>
+                <button
+                  onClick={() => { setUseImage(!useImage); if (useImage) setAvatar("👦"); }}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {useImage ? "Use emoji" : "Use photo"}
+                </button>
               </div>
+              {useImage ? (
+                <div className="flex items-center gap-3">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt="avatar" className="w-12 h-12 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-muted-foreground text-xs">
+                      No img
+                    </div>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+                    Upload Photo
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {KID_EMOJIS.map((e) => (
+                    <button key={e} onClick={() => setAvatar(e)}
+                      className={`text-xl p-1 rounded ${avatar === e ? "bg-primary/20 ring-1 ring-primary" : ""}`}>
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <Label className="text-xs">Color</Label>
@@ -390,7 +430,7 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
               <Button className="flex-1" onClick={async () => {
                 if (!name.trim()) return;
                 await choresApi.addKid({ name: name.trim(), avatar, color });
-                setName(""); setShowAdd(false); refresh();
+                setName(""); setShowAdd(false); setUseImage(false); setImageUrl(""); refresh();
                 toast.success("Kid added");
               }}>Add</Button>
               <Button variant="outline" onClick={() => setShowAdd(false)}><X className="w-4 h-4" /></Button>
@@ -411,8 +451,8 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
             <Card key={kid.id}>
               <CardContent className="p-3">
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: kid.color + "33" }}>
-                    {kid.avatar}
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: kid.color + "33" }}>
+                    <KidAvatar kid={kid} size={48} />
                   </div>
                   <div className="flex-1">
                     <div className="font-medium" style={{ color: kid.color }}>{kid.name}</div>

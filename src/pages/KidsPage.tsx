@@ -6,6 +6,7 @@ import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS,
 } from "@/lib/chores-types";
+import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -33,7 +34,7 @@ export default function KidsPage() {
                 onClick={() => setSelectedKid(kid)}
                 className="flex flex-col items-center gap-2 p-6 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all active:scale-95"
               >
-                <span className="text-5xl">{kid.avatar}</span>
+                <KidAvatar kid={kid} size={64} />
                 <span className="font-semibold text-lg" style={{ color: kid.color }}>{kid.name}</span>
               </button>
             ))}

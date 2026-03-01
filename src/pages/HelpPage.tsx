@@ -1,0 +1,589 @@
+import { useState } from "react";
+import { ArrowLeft, Search, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+
+interface Section {
+  id: string;
+  icon: string;
+  title: string;
+  content: React.ReactNode;
+}
+
+function HelpSection({ section, open, onToggle }: { section: Section; open: boolean; onToggle: () => void }) {
+  return (
+    <div className="border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 p-4 text-left hover:bg-secondary/30 transition-colors"
+      >
+        <span className="text-xl">{section.icon}</span>
+        <span className="flex-1 font-medium">{section.title}</span>
+        {open ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 border-t border-border pt-3 prose prose-sm prose-invert max-w-none">
+          {section.content}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function P({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-muted-foreground leading-relaxed mb-3">{children}</p>;
+}
+function H4({ children }: { children: React.ReactNode }) {
+  return <h4 className="text-sm font-semibold text-foreground mt-4 mb-2">{children}</h4>;
+}
+function Code({ children }: { children: React.ReactNode }) {
+  return <code className="text-xs bg-secondary px-1.5 py-0.5 rounded text-primary">{children}</code>;
+}
+function Ul({ children }: { children: React.ReactNode }) {
+  return <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc mb-3">{children}</ul>;
+}
+function Table({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <div className="overflow-x-auto mb-3">
+      <table className="text-xs w-full border border-border rounded">
+        <thead><tr className="bg-secondary/50">{headers.map((h, i) => <th key={i} className="px-3 py-1.5 text-left font-medium text-foreground">{h}</th>)}</tr></thead>
+        <tbody>{rows.map((row, i) => <tr key={i} className="border-t border-border">{row.map((cell, j) => <td key={j} className="px-3 py-1.5 text-muted-foreground">{cell}</td>)}</tr>)}</tbody>
+      </table>
+    </div>
+  );
+}
+
+const sections: Section[] = [
+  {
+    id: "getting-started",
+    icon: "🚀",
+    title: "Getting Started",
+    content: (
+      <>
+        <P>HomeDash is a smart home dashboard that connects to Home Assistant via WebSocket. It displays real-time data from your sensors, cameras, calendars, and more in a customizable grid layout.</P>
+        <H4>Requirements</H4>
+        <Ul>
+          <li>A running Home Assistant instance</li>
+          <li>A Long-Lived Access Token from HA (Profile → Security → Long-Lived Access Tokens)</li>
+          <li>CORS configured in HA if running on a different domain</li>
+        </Ul>
+        <H4>Quick Setup</H4>
+        <Ul>
+          <li>Open the ⚙️ Settings panel (gear icon in the header)</li>
+          <li>Enter your HA URL (e.g. <Code>http://192.168.1.100:8123</Code>)</li>
+          <li>Paste your Long-Lived Access Token</li>
+          <li>Click Save — the dashboard will connect and start showing data</li>
+        </Ul>
+        <H4>CORS Configuration</H4>
+        <P>Add this to your Home Assistant <Code>configuration.yaml</Code>:</P>
+        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+{`http:
+  cors_allowed_origins:
+    - "http://YOUR_DASHBOARD_IP:3000"
+    - "http://localhost:3000"`}
+        </pre>
+      </>
+    ),
+  },
+  {
+    id: "deployment",
+    icon: "🐳",
+    title: "Docker & Deployment",
+    content: (
+      <>
+        <H4>Docker Compose</H4>
+        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+{`version: "3.8"
+services:
+  homedash:
+    build: .
+    ports:
+      - "3000:80"
+    volumes:
+      - config-data:/data
+    restart: unless-stopped
+volumes:
+  config-data:`}
+        </pre>
+        <H4>Unraid</H4>
+        <Ul>
+          <li>Go to Docker → Add Container</li>
+          <li>Set Repository to your built image or Docker Hub tag</li>
+          <li>Port: Host <Code>3000</Code> → Container <Code>80</Code></li>
+          <li>Path: Host <Code>/mnt/user/appdata/homedash</Code> → Container <Code>/data</Code></li>
+          <li>Click Apply</li>
+        </Ul>
+        <P>The <Code>/data</Code> directory stores <Code>config.json</Code>, <Code>chores.json</Code>, and uploaded photos. Map it to persistent storage to survive container updates.</P>
+        <H4>Kiosk Mode</H4>
+        <P>Append <Code>?kiosk</Code> to the URL to hide the header and settings button. Ideal for wall-mounted tablets. Combine with the blackout schedule for automatic screen dimming at night.</P>
+      </>
+    ),
+  },
+  {
+    id: "layout",
+    icon: "📐",
+    title: "Layout & Grid System",
+    content: (
+      <>
+        <P>The dashboard uses a CSS grid layout. You can customize columns, rows, and widget placement.</P>
+        <H4>Edit Layout Mode</H4>
+        <P>Click the "Edit Layout" button in the header to enter layout mode. Here you can:</P>
+        <Ul>
+          <li>Drag widgets to reorder them</li>
+          <li>Set column span (1-6) for each widget</li>
+          <li>Assign widgets to rows</li>
+          <li>Set row span for multi-row widgets</li>
+          <li>Group widgets (A-H) to stack them in one card</li>
+          <li>Set per-row column count and height overrides</li>
+        </Ul>
+        <H4>Mobile</H4>
+        <P>On mobile devices, the grid collapses to a single column. Column spans, row spans, and fixed heights are ignored for natural stacking.</P>
+      </>
+    ),
+  },
+  {
+    id: "widgets",
+    icon: "🧩",
+    title: "Widgets Overview",
+    content: (
+      <>
+        <P>HomeDash includes the following widget types. Each is configured in the Widgets tab of Settings.</P>
+        <Table
+          headers={["Widget", "Description", "Key Settings"]}
+          rows={[
+            ["🌡️ Temperature", "Shows temperature + humidity from HA sensors with optional background chart", "Entity, label, color, group, chart type, rounding"],
+            ["🌤️ Weather", "Current weather, sun times, and multi-day forecast chart", "Entity, forecast days, precipitation, sunrise/sunset"],
+            ["📅 Calendar", "Upcoming events from HA calendar entities", "Entities, prefix, color, forecast days, week number"],
+            ["⚡ Electricity", "Real-time electricity prices with hourly chart (Nordpool)", "Price entity, forecast entity, surcharge"],
+            ["📷 Photos", "Rotating photo gallery from uploaded images", "Photos, interval, display mode (contain/cover/blur-fill)"],
+            ["👤 Person", "Person tracking with location, battery, distance", "Entity, avatar size, custom sensors"],
+            ["🍽️ Food Menu", "School/restaurant menu from calendar or Skolmaten", "Source, entity, days, display mode"],
+            ["📊 General Sensor", "Flexible sensor card with chart and info rows", "Chart series, top/bottom info, history, aggregation"],
+            ["📋 Sensor Grid", "Compact multi-cell grid of sensors", "Rows, columns, intervals, value maps, visibility filters"],
+            ["📰 RSS News", "RSS feed reader via server proxy", "Feed URL, max items, label"],
+            ["🔔 Notifications", "HA persistent notifications + custom alert rules", "Alert entity, condition, threshold, icon"],
+            ["🚗 Vehicle", "Vehicle data organized in sections", "Sections, entities, icons, colors"],
+            ["🌿 Pollen", "Pollen levels with severity dots and forecast", "Sensors, forecast days, show label/forecast"],
+            ["✅ Chores", "HomeChores status widget (requires enabling)", "Auto-configured, click to manage"],
+          ]}
+        />
+      </>
+    ),
+  },
+  {
+    id: "temperature",
+    icon: "🌡️",
+    title: "Temperature Widget",
+    content: (
+      <>
+        <P>Displays temperature and optionally humidity from HA sensor entities. Multiple sensors can be grouped into a single widget card.</P>
+        <H4>Configuration</H4>
+        <Ul>
+          <li><strong>Entity ID</strong> — temperature sensor (e.g. <Code>sensor.living_room_temperature</Code>)</li>
+          <li><strong>Humidity Entity</strong> — optional humidity sensor</li>
+          <li><strong>Label</strong> — display name</li>
+          <li><strong>Color</strong> — accent color for icon and values</li>
+          <li><strong>Group</strong> — sensors with same group number share one widget card</li>
+          <li><strong>Show Chart</strong> — 24h history chart in background</li>
+          <li><strong>Chart Type</strong> — line, bar, area, step, or scatter</li>
+          <li><strong>Round Temperature</strong> — round to nearest integer</li>
+        </Ul>
+        <H4>Styling</H4>
+        <P>Per-sensor overrides for icon size, icon color, label/value color, and text sizes.</P>
+      </>
+    ),
+  },
+  {
+    id: "weather",
+    icon: "🌤️",
+    title: "Weather Widget",
+    content: (
+      <>
+        <P>Shows current temperature, conditions, sunrise/sunset times, and a multi-day forecast chart.</P>
+        <H4>Configuration</H4>
+        <Ul>
+          <li><strong>Entity ID</strong> — weather entity (e.g. <Code>weather.home</Code>)</li>
+          <li><strong>Forecast Days</strong> — number of days in forecast (default 5)</li>
+          <li><strong>Show Precipitation</strong> — rain probability in forecast</li>
+          <li><strong>Show Sunrise/Sunset</strong> — sun times display</li>
+          <li><strong>Show Date</strong> — current date display</li>
+        </Ul>
+        <H4>Styling</H4>
+        <P>Granular control over clock text size/color, temperature icon/text size/color, sun icon/text size/color, chart day text, and date display.</P>
+      </>
+    ),
+  },
+  {
+    id: "calendar",
+    icon: "📅",
+    title: "Calendar Widget",
+    content: (
+      <>
+        <P>Displays upcoming events from one or more HA calendar entities.</P>
+        <H4>Configuration</H4>
+        <Ul>
+          <li><strong>Calendar Entities</strong> — add multiple calendars with prefix and color</li>
+          <li><strong>Forecast Days</strong> — how many days ahead to show (default 7, per-calendar override available)</li>
+          <li><strong>Show Event Body</strong> — display event description</li>
+          <li><strong>Show End Date</strong> — display event end time</li>
+          <li><strong>Show Week Number</strong> — ISO week numbers</li>
+          <li><strong>First Day of Week</strong> — Sunday, Monday, or Saturday</li>
+          <li><strong>Limit Events</strong> — cap max events shown</li>
+        </Ul>
+        <H4>Display</H4>
+        <P>Font sizes for day label, time, title, and body are individually configurable.</P>
+      </>
+    ),
+  },
+  {
+    id: "electricity",
+    icon: "⚡",
+    title: "Electricity Price Widget",
+    content: (
+      <>
+        <P>Shows real-time electricity prices with an hourly bar chart, current price badge, and daily stats (min/avg/max).</P>
+        <H4>Configuration</H4>
+        <Ul>
+          <li><strong>Price Entity</strong> — Nordpool sensor entity</li>
+          <li><strong>Forecast Entity</strong> — optional tomorrow's prices entity</li>
+          <li><strong>Surcharge</strong> — fixed kr/kWh added to all prices</li>
+        </Ul>
+        <H4>Styling</H4>
+        <P>Price text, unit text, stats text, and axis text sizes and colors.</P>
+      </>
+    ),
+  },
+  {
+    id: "general-sensor",
+    icon: "📊",
+    title: "General Sensor Widget",
+    content: (
+      <>
+        <P>A flexible sensor card with a chart and up to 4 info items at top and bottom.</P>
+        <H4>Configuration</H4>
+        <Ul>
+          <li><strong>Chart Series</strong> — add sensors to plot (entity, label, color, chart type)</li>
+          <li><strong>Top/Bottom Info</strong> — up to 4 sensor values each (entity, label, unit, color)</li>
+          <li><strong>History</strong> — 1h, 6h, 24h, or 7 days</li>
+          <li><strong>Chart Grouping</strong> — aggregate by minute, hour, or day</li>
+          <li><strong>Aggregation</strong> — average, max, min, sum, last, or delta</li>
+        </Ul>
+        <H4>Delta Aggregation</H4>
+        <P>When using delta (common for cumulative energy meters), the chart calculates differences between time buckets. Negative deltas (meter resets) are automatically handled — the new value is used instead of showing a large negative spike.</P>
+      </>
+    ),
+  },
+  {
+    id: "sensor-grid",
+    icon: "📋",
+    title: "Sensor Grid Widget",
+    content: (
+      <>
+        <P>A compact grid of sensor cells with icons, values, and optional features.</P>
+        <H4>Cell Features</H4>
+        <Ul>
+          <li><strong>Intervals</strong> — conditional icon and color based on numeric value ranges</li>
+          <li><strong>Value Maps</strong> — rewrite raw values to display text (e.g. "on" → "Active")</li>
+          <li><strong>Visibility Filters</strong> — hide cells based on value range or exact match</li>
+          <li><strong>Column/Row Span</strong> — cells can span multiple grid positions</li>
+          <li><strong>Background Chart</strong> — mini chart like the temperature widget</li>
+        </Ul>
+      </>
+    ),
+  },
+  {
+    id: "photos",
+    icon: "📷",
+    title: "Photo Gallery",
+    content: (
+      <>
+        <P>A rotating photo gallery that displays uploaded images with configurable transitions.</P>
+        <H4>Photo Management</H4>
+        <P>Go to the Photos tab in Settings to upload, sort, and delete photos. Photos are stored server-side in <Code>/data/photos/</Code>.</P>
+        <H4>Display Modes</H4>
+        <Ul>
+          <li><strong>Contain</strong> — full image visible, letterboxed</li>
+          <li><strong>Cover</strong> — fills the area, crops edges</li>
+          <li><strong>Blur-fill</strong> — image centered with blurred version as background</li>
+        </Ul>
+        <P>Photos can be sorted by newest, oldest, largest, or smallest in the management view.</P>
+      </>
+    ),
+  },
+  {
+    id: "entity-attributes",
+    icon: "🔗",
+    title: "Entity Attribute Access",
+    content: (
+      <>
+        <P>All entity ID fields support dot-notation attribute access for reading specific attributes from an entity instead of its main state.</P>
+        <H4>Format</H4>
+        <pre className="text-xs bg-secondary p-3 rounded mb-3">
+{`domain.object_id                → main state value
+domain.object_id.attribute_name  → specific attribute
+
+Examples:
+sensor.temperature               → "21.5"
+sensor.phone.battery_level       → "85"
+climate.living_room.current_temperature → "22.0"`}
+        </pre>
+        <P>This works across all widget types: temperature, sensor grid, general sensor, vehicle, person, notification rules, and pollen.</P>
+      </>
+    ),
+  },
+  {
+    id: "themes",
+    icon: "🎨",
+    title: "Themes & Styling",
+    content: (
+      <>
+        <P>HomeDash ships with 6 built-in themes. Select your theme in Settings → General → Theme.</P>
+        <Table
+          headers={["Theme", "Description"]}
+          rows={[
+            ["Midnight Teal", "Dark blue-gray with teal accent (default)"],
+            ["Charcoal", "Neutral grays with amber accent"],
+            ["Deep Ocean", "Blue tones with blue accent"],
+            ["Warm Ember", "Dark warm tones with orange/red accent"],
+            ["AMOLED Black", "Pure black background, no shadows"],
+            ["macOS Dark", "Dark gray with blue accent, macOS-inspired"],
+          ]}
+        />
+        <H4>Global Font Sizes</H4>
+        <P>Four global font size categories affect all widgets: Heading, Value, Body, and Label. Per-widget overrides are available in each widget's settings.</P>
+        <H4>Widget Styles</H4>
+        <P>Most widgets support per-widget style overrides for icon size, icon color, text color, label color, value color, and heading color.</P>
+      </>
+    ),
+  },
+  {
+    id: "homechores",
+    icon: "✅",
+    title: "HomeChores — Chore Tracking",
+    content: (
+      <>
+        <P>HomeChores is a family chore tracking system built into HomeDash. Enable it in Settings → General → HomeChores.</P>
+        <H4>Parent Page (/parent)</H4>
+        <P>The parent dashboard has 5 tabs:</P>
+        <Ul>
+          <li><strong>Chores</strong> — Create, edit, pause, and delete chores. Set recurrence, points, difficulty, time of day, photo requirements, and approval mode.</li>
+          <li><strong>Kids</strong> — Add kids with emoji or photo avatars and colors. View their points, streaks, and earned badges.</li>
+          <li><strong>Rewards</strong> — Define rewards with point costs. Kids can claim rewards when they have enough points.</li>
+          <li><strong>Approvals</strong> — Review and approve chores that require parent verification (with optional photo proof).</li>
+          <li><strong>History</strong> — View all completed chores with weekly summary scoreboard.</li>
+        </Ul>
+        <H4>Kids Page (/kids)</H4>
+        <P>A mobile-first page designed for kids. Features:</P>
+        <Ul>
+          <li>Kid selection screen with large avatar buttons</li>
+          <li>Chores grouped by time of day (Morning, Afternoon, Evening, Anytime)</li>
+          <li>One-tap completion with 5-minute undo window</li>
+          <li>Photo capture for chores that require proof</li>
+          <li>Stats: total points, day streak, weekly points</li>
+          <li>Badge collection display</li>
+          <li>Reward shop with progress bars</li>
+        </Ul>
+        <H4>Installing as iPhone App</H4>
+        <P>The kids page is a PWA (Progressive Web App). To install on iPhone:</P>
+        <Ul>
+          <li>Open <Code>http://YOUR_IP:3000/kids</Code> in Safari</li>
+          <li>Tap the Share button (square with arrow)</li>
+          <li>Tap "Add to Home Screen"</li>
+          <li>Tap "Add" — it will appear as a standalone app</li>
+        </Ul>
+        <H4>Recurrence</H4>
+        <Table
+          headers={["Type", "Description"]}
+          rows={[
+            ["Once", "Appears once, disappears when completed"],
+            ["Daily", "Resets every day"],
+            ["Every X days", "Reappears X days after last completion"],
+            ["Weekly", "Appears on selected weekdays, resets each occurrence"],
+          ]}
+        />
+        <H4>Gamification</H4>
+        <Ul>
+          <li><strong>Points</strong> — each chore has a point value, harder chores = more points</li>
+          <li><strong>Difficulty</strong> — 1-5 stars, shown to kids</li>
+          <li><strong>Streaks</strong> — consecutive days with at least one chore completed</li>
+          <li><strong>Badges</strong> — automatically awarded: First Chore, 10/50/100 chores, 3/7/30 day streaks, 100/500 points</li>
+          <li><strong>Rewards</strong> — parent-defined prizes with point costs, kids see progress and can claim</li>
+          <li><strong>Fairness</strong> — the system suggests whose turn it is based on completion history</li>
+        </Ul>
+        <H4>Dashboard Widget</H4>
+        <P>When enabled, a Chores widget appears on the main dashboard showing today's due chores with color-coded urgency (red = due today, yellow = due tomorrow, green = not urgent), who completed what, upcoming countdowns, and weekly scoreboard.</P>
+      </>
+    ),
+  },
+  {
+    id: "date-time",
+    icon: "🕐",
+    title: "Date & Time Formats",
+    content: (
+      <>
+        <P>Global date and time format settings affect all widgets. Configure in Settings → General.</P>
+        <Table
+          headers={["Format", "Example"]}
+          rows={[
+            ["yyyy-MM-dd (ISO)", "2025-02-21"],
+            ["dd/MM/yyyy", "21/02/2025"],
+            ["MM/dd/yyyy", "02/21/2025"],
+            ["dd.MM.yyyy", "21.02.2025"],
+          ]}
+        />
+        <P>Time format: 24-hour (14:30) or 12-hour (2:30 PM).</P>
+      </>
+    ),
+  },
+  {
+    id: "api",
+    icon: "⚙️",
+    title: "Server API & Technical",
+    content: (
+      <>
+        <P>HomeDash runs an Express server that serves the frontend and handles API requests.</P>
+        <H4>API Endpoints</H4>
+        <Table
+          headers={["Method", "Path", "Description"]}
+          rows={[
+            ["GET", "/api/config", "Get dashboard configuration"],
+            ["PUT", "/api/config", "Save dashboard configuration"],
+            ["GET", "/api/photos", "List uploaded photos"],
+            ["POST", "/api/photos/upload", "Upload photos (base64 JSON)"],
+            ["DELETE", "/api/photos/:filename", "Delete a photo"],
+            ["GET", "/api/rss?url=...", "Proxy RSS feed (avoids CORS)"],
+            ["GET", "/api/chores", "Get all chores data"],
+            ["POST", "/api/chores/kids", "Add a kid"],
+            ["POST", "/api/chores/chores", "Add a chore"],
+            ["POST", "/api/chores/logs", "Complete a chore"],
+            ["PUT", "/api/chores/logs/:id/undo", "Undo a completion (5 min)"],
+            ["PUT", "/api/chores/logs/:id/approve", "Approve a completion"],
+            ["POST", "/api/chores/rewards", "Add a reward"],
+            ["POST", "/api/chores/rewards/claim", "Claim a reward"],
+          ]}
+        />
+        <H4>Data Persistence</H4>
+        <Ul>
+          <li><Code>/data/config.json</Code> — dashboard configuration</li>
+          <li><Code>/data/chores.json</Code> — chores, kids, logs, badges, rewards</li>
+          <li><Code>/data/photos/</Code> — uploaded photo files</li>
+        </Ul>
+        <H4>WebSocket Connection</H4>
+        <P>The dashboard connects to Home Assistant via WebSocket for real-time state updates. The connection indicator in the header shows: connecting (yellow), connected (green), or disconnected (red).</P>
+      </>
+    ),
+  },
+  {
+    id: "import-export",
+    icon: "💾",
+    title: "Import / Export Configuration",
+    content: (
+      <>
+        <P>You can export your entire dashboard configuration as a JSON file and import it on another instance.</P>
+        <H4>Export</H4>
+        <P>Settings → General → Import/Export → Export. Downloads a <Code>homedash-config.json</Code> file.</P>
+        <H4>Import</H4>
+        <P>Click Import and select a previously exported JSON file. The configuration will be loaded and saved immediately.</P>
+        <P>⚠️ Importing replaces your entire configuration. Export a backup first.</P>
+      </>
+    ),
+  },
+];
+
+export default function HelpPage() {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["getting-started"]));
+
+  const toggle = (id: string) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const expandAll = () => setOpenSections(new Set(sections.map((s) => s.id)));
+  const collapseAll = () => setOpenSections(new Set());
+
+  const filtered = search.trim()
+    ? sections.filter(
+        (s) =>
+          s.title.toLowerCase().includes(search.toLowerCase()) ||
+          s.id.toLowerCase().includes(search.toLowerCase())
+      )
+    : sections;
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold">📖 HomeDash Documentation</h1>
+            <p className="text-xs text-muted-foreground">Complete guide to setup and configuration</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto p-4 space-y-4">
+        {/* Search + controls */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search documentation..."
+              className="pl-9"
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={expandAll}>Expand all</Button>
+          <Button variant="outline" size="sm" onClick={collapseAll}>Collapse</Button>
+        </div>
+
+        {/* Table of contents */}
+        <div className="border border-border rounded-lg p-3">
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Contents</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+            {sections.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => { setOpenSections((prev) => new Set(prev).add(s.id)); document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: "smooth" }); }}
+                className="text-xs text-left text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-secondary/50 transition-colors truncate"
+              >
+                {s.icon} {s.title}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sections */}
+        <div className="space-y-2">
+          {filtered.map((section) => (
+            <div key={section.id} id={`section-${section.id}`}>
+              <HelpSection
+                section={section}
+                open={openSections.has(section.id)}
+                onToggle={() => toggle(section.id)}
+              />
+            </div>
+          ))}
+        </div>
+
+        {filtered.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">No sections match your search.</p>
+        )}
+
+        <div className="text-center text-xs text-muted-foreground py-8 border-t border-border">
+          HomeDash — Smart Home Dashboard
+        </div>
+      </div>
+    </div>
+  );
+}
