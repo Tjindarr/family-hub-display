@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, BonusDay, StreakProtection, ChoreSubmission } from "@/lib/chores-types";
+import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, ChoreSubmission } from "@/lib/chores-types";
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import { KidAvatar } from "@/components/KidAvatar";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, getKidSpentPoints, suggestFairKid,
   WEEKDAY_LABELS, TIME_OF_DAY_LABELS, daysUntilDue, getKidLevel,
-  getTodayBonusMultiplier,
+  getStreakBonusMultiplier,
   DEFAULT_SETTINGS,
 } from "@/lib/chores-types";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, BarChart3, ShieldCheck, Clock, Tag, Send, Menu } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, BarChart3, Clock, Tag, Send, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -70,7 +70,7 @@ export default function ParentPage() {
     ...(data.submissions || []).filter((s: ChoreSubmission) => s.status === "pending"),
   ];
 
-  const bonus = getTodayBonusMultiplier(data.settings?.bonusDays || []);
+  
 
   const pendingLogs = data.logs.filter(
     (l) => !l.undoneAt && !l.approved && data.chores.find((c) => c.id === l.choreId)?.requireApproval
@@ -132,11 +132,7 @@ export default function ParentPage() {
               <span>{pendingApprovals.length}</span>
             </button>
           )}
-          {bonus && pendingApprovals.length === 0 && (
-            <span className="ml-auto text-sm bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-full font-medium">
-              {bonus.label} ({bonus.multiplier}x)
-            </span>
-          )}
+          
         </div>
       </div>
 
@@ -622,7 +618,7 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
         {data.kids.map((kid: Kid) => {
           const total = getKidTotalPoints(kid.id, data.logs, data.chores);
           const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
-          const streak = getKidStreak(kid.id, data.logs, data.streakProtections);
+          const streak = getKidStreak(kid.id, data.logs);
           const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards);
           const badges = (data.kidBadges || []).filter((kb: any) => kb.kidId === kid.id);
           const level = getKidLevel(total);
@@ -760,7 +756,7 @@ function LeaderboardTab({ data }: any) {
   const kidStats = data.kids.map((kid: Kid) => {
     const total = getKidTotalPoints(kid.id, data.logs, data.chores);
     const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
-    const streak = getKidStreak(kid.id, data.logs, data.streakProtections);
+    const streak = getKidStreak(kid.id, data.logs);
     const level = getKidLevel(total);
     const choresDone = data.logs.filter((l: any) => l.kidId === kid.id && !l.undoneAt).length;
     return { kid, total, weekly, streak, level, choresDone };
@@ -1107,15 +1103,9 @@ function SettingsTab({ data, refresh }: any) {
   const [categoriesEnabled, setCategoriesEnabled] = useState(settings.categoriesEnabled ?? false);
   const [categories, setCategories] = useState<string[]>(settings.categories || DEFAULT_SETTINGS.categories);
   const [newCategory, setNewCategory] = useState("");
-  const [bonusDays, setBonusDays] = useState<BonusDay[]>(settings.bonusDays || []);
-  const [newBonusDayOfWeek, setNewBonusDayOfWeek] = useState(6); // Saturday
-  const [newBonusMultiplier, setNewBonusMultiplier] = useState(2);
-  const [newBonusLabel, setNewBonusLabel] = useState("");
-
-  // Streak protection
-  const [spKidId, setSpKidId] = useState(data.kids[0]?.id || "");
-  const [spDate, setSpDate] = useState(new Date().toISOString().split("T")[0]);
-  const [spReason, setSpReason] = useState("Sick");
+  const [streakBonuses, setStreakBonuses] = useState<{ id: string; daysRequired: number; multiplier: number }[]>(settings.streakBonuses || []);
+  const [newStreakDays, setNewStreakDays] = useState(7);
+  const [newStreakMultiplier, setNewStreakMultiplier] = useState(2);
 
   const saveSettings = async (partial: any) => {
     const updated = { ...settings, ...partial };
@@ -1138,7 +1128,7 @@ function SettingsTab({ data, refresh }: any) {
             </div>
             <Switch checked={rotationEnabled} onCheckedChange={(v) => {
               setRotationEnabled(v);
-              saveSettings({ rotationEnabled: v, showSuggestions, categoriesEnabled, categories, bonusDays });
+              saveSettings({ rotationEnabled: v, showSuggestions, categoriesEnabled, categories, streakBonuses });
             }} />
           </div>
         </CardContent>
@@ -1154,7 +1144,7 @@ function SettingsTab({ data, refresh }: any) {
             </div>
             <Switch checked={showSuggestions} onCheckedChange={(v) => {
               setShowSuggestions(v);
-              saveSettings({ rotationEnabled, showSuggestions: v, categoriesEnabled, categories, bonusDays });
+              saveSettings({ rotationEnabled, showSuggestions: v, categoriesEnabled, categories, streakBonuses });
             }} />
           </div>
         </CardContent>
@@ -1169,7 +1159,7 @@ function SettingsTab({ data, refresh }: any) {
             </div>
             <Switch checked={categoriesEnabled} onCheckedChange={(v) => {
               setCategoriesEnabled(v);
-              saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled: v, categories, bonusDays });
+              saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled: v, categories, streakBonuses });
             }} />
           </div>
           {categoriesEnabled && (
@@ -1181,7 +1171,7 @@ function SettingsTab({ data, refresh }: any) {
                     <button onClick={() => {
                       const updated = categories.filter((c) => c !== cat);
                       setCategories(updated);
-                      saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories: updated, bonusDays });
+                      saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories: updated, streakBonuses });
                     }} className="text-destructive hover:text-destructive/80">
                       <X className="w-3 h-3" />
                     </button>
@@ -1195,7 +1185,7 @@ function SettingsTab({ data, refresh }: any) {
                   const updated = [...categories, newCategory.trim()];
                   setCategories(updated);
                   setNewCategory("");
-                  saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories: updated, bonusDays });
+                  saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories: updated, streakBonuses });
                 }}>Add</Button>
               </div>
             </>
@@ -1203,126 +1193,49 @@ function SettingsTab({ data, refresh }: any) {
         </CardContent>
       </Card>
 
-      {/* Bonus Days */}
+      {/* Streak Bonuses */}
       <Card>
         <CardContent className="p-4 space-y-3">
-          <Label className="text-sm font-medium">🎉 Bonus Days</Label>
-          <p className="text-xs text-muted-foreground">Set specific days with point multipliers</p>
+          <Label className="text-sm font-medium">🔥 Streak Bonuses</Label>
+          <p className="text-xs text-muted-foreground">Multiply points after consecutive days of chores</p>
 
-          {bonusDays.map((bd) => (
-            <div key={bd.id} className="flex items-center gap-2 text-sm bg-secondary/50 px-3 py-2 rounded">
+          {streakBonuses.sort((a, b) => a.daysRequired - b.daysRequired).map((sb) => (
+            <div key={sb.id} className="flex items-center gap-2 text-sm bg-secondary/50 px-3 py-2 rounded">
               <span className="flex-1">
-                {bd.dayOfWeek >= 0 ? WEEKDAY_LABELS[bd.dayOfWeek] : bd.date} — {bd.multiplier}x — {bd.label}
+                After {sb.daysRequired} days → {sb.multiplier}x points
               </span>
               <button onClick={() => {
-                const updated = bonusDays.filter((b) => b.id !== bd.id);
-                setBonusDays(updated);
-                saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, bonusDays: updated });
+                const updated = streakBonuses.filter((b) => b.id !== sb.id);
+                setStreakBonuses(updated);
+                saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, streakBonuses: updated });
               }} className="text-destructive">
                 <X className="w-4 h-4" />
               </button>
             </div>
           ))}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-xs">Day</Label>
-              <Select value={String(newBonusDayOfWeek)} onValueChange={(v) => setNewBonusDayOfWeek(Number(v))}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {WEEKDAY_LABELS.map((label, i) => (
-                    <SelectItem key={i} value={String(i)}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">Days streak</Label>
+              <Input type="number" min={1} value={newStreakDays} onChange={(e) => setNewStreakDays(+e.target.value)} className="mt-1" />
             </div>
             <div>
               <Label className="text-xs">Multiplier</Label>
-              <Input type="number" min={1.5} step={0.5} value={newBonusMultiplier} onChange={(e) => setNewBonusMultiplier(+e.target.value)} className="mt-1" />
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <Label className="text-xs">Label</Label>
-              <Input value={newBonusLabel} onChange={(e) => setNewBonusLabel(e.target.value)} placeholder="2x Sunday" className="mt-1" />
+              <Input type="number" min={1.5} step={0.5} value={newStreakMultiplier} onChange={(e) => setNewStreakMultiplier(+e.target.value)} className="mt-1" />
             </div>
           </div>
           <Button size="sm" onClick={() => {
-            const bd: BonusDay = {
-              id: `bd_${Date.now()}`,
-              dayOfWeek: newBonusDayOfWeek,
-              multiplier: newBonusMultiplier,
-              label: newBonusLabel || `${newBonusMultiplier}x ${WEEKDAY_LABELS[newBonusDayOfWeek]}`,
+            if (newStreakDays < 1 || newStreakMultiplier < 1) return;
+            const sb = {
+              id: `sb_${Date.now()}`,
+              daysRequired: newStreakDays,
+              multiplier: newStreakMultiplier,
             };
-            const updated = [...bonusDays, bd];
-            setBonusDays(updated);
-            setNewBonusLabel("");
-            saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, bonusDays: updated });
+            const updated = [...streakBonuses, sb];
+            setStreakBonuses(updated);
+            saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, streakBonuses: updated });
           }}>
-            <Plus className="w-4 h-4 mr-1" /> Add Bonus Day
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Streak Protection */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <Label className="text-sm font-medium">🛡️ Streak Protection</Label>
-          <p className="text-xs text-muted-foreground">Mark days off (sick, vacation) to keep streaks alive</p>
-
-          {/* Existing protections */}
-          {(data.streakProtections || []).map((sp: StreakProtection) => {
-            const kid = data.kids.find((k: Kid) => k.id === sp.kidId);
-            return (
-              <div key={sp.id} className="flex items-center gap-2 text-sm bg-secondary/50 px-3 py-2 rounded">
-                {kid && <KidAvatar kid={kid} size={16} />}
-                <span className="flex-1">
-                  {kid?.name} — {sp.date} — {sp.reason}
-                </span>
-                <button onClick={async () => {
-                  await choresApi.deleteStreakProtection(sp.id);
-                  refresh();
-                }} className="text-destructive">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            );
-          })}
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <div>
-              <Label className="text-xs">Kid</Label>
-              <Select value={spKidId} onValueChange={setSpKidId}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {data.kids.map((k: Kid) => (
-                    <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Date</Label>
-              <Input type="date" value={spDate} onChange={(e) => setSpDate(e.target.value)} className="mt-1" />
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <Label className="text-xs">Reason</Label>
-              <Select value={spReason} onValueChange={setSpReason}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Sick">🤒 Sick</SelectItem>
-                  <SelectItem value="Vacation">🏖️ Vacation</SelectItem>
-                  <SelectItem value="Holiday">🎄 Holiday</SelectItem>
-                  <SelectItem value="Other">📝 Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <Button size="sm" onClick={async () => {
-            if (!spKidId) return;
-            await choresApi.addStreakProtection({ kidId: spKidId, date: spDate, reason: spReason });
-            refresh();
-            toast.success("Streak protected!");
-          }}>
-            <ShieldCheck className="w-4 h-4 mr-1" /> Protect Day
+            <Plus className="w-4 h-4 mr-1" /> Add Streak Bonus
           </Button>
         </CardContent>
       </Card>
