@@ -18,7 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, BarChart3, ShieldCheck, Clock, Tag, Send } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, BarChart3, ShieldCheck, Clock, Tag, Send, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ export default function ParentPage() {
   const [showAddKid, setShowAddKid] = useState(false);
   const [showAddReward, setShowAddReward] = useState(false);
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const showSuggestions = data.settings?.showSuggestions ?? true;
 
   useEffect(() => {
@@ -52,14 +54,13 @@ export default function ParentPage() {
   }, []);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "chores", label: "Chores", icon: <ClipboardList className="w-4 h-4" /> },
-    { id: "kids", label: "Kids", icon: <Users className="w-4 h-4" /> },
-    { id: "rewards", label: "Rewards", icon: <Gift className="w-4 h-4" /> },
-    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-4 h-4" /> },
-    
-    { id: "approvals", label: "Approvals", icon: <Shield className="w-4 h-4" /> },
-    { id: "history", label: "History", icon: <History className="w-4 h-4" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
+    { id: "chores", label: "Chores", icon: <ClipboardList className="w-5 h-5" /> },
+    { id: "kids", label: "Kids", icon: <Users className="w-5 h-5" /> },
+    { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
+    { id: "leaderboard", label: "Leaderboard", icon: <BarChart3 className="w-5 h-5" /> },
+    { id: "approvals", label: "Approvals", icon: <Shield className="w-5 h-5" /> },
+    { id: "history", label: "History", icon: <History className="w-5 h-5" /> },
+    { id: "settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
   ];
 
   const pendingApprovals = [
@@ -76,69 +77,66 @@ export default function ParentPage() {
   );
   const pendingSubmissions = (data.submissions || []).filter((s: ChoreSubmission) => s.status === "pending");
 
+  const currentTabLabel = tabs.find((t) => t.id === tab)?.label || "Chores";
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <h1 className="text-xl font-bold">Parent Dashboard</h1>
-          {bonus && (
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 relative">
+                <Menu className="w-6 h-6" />
+                {pendingApprovals.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {pendingApprovals.length}
+                  </span>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <div className="p-5 border-b border-border">
+                <h2 className="text-lg font-bold">Parent Dashboard</h2>
+              </div>
+              <nav className="p-3 space-y-1">
+                {tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => { setTab(t.id); setMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-colors ${
+                      tab === t.id
+                        ? "bg-primary/10 text-primary"
+                        : "text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {t.icon}
+                    <span>{t.label}</span>
+                    {t.id === "approvals" && pendingApprovals.length > 0 && (
+                      <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full px-2 py-0.5 min-w-[22px] text-center">
+                        {pendingApprovals.length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
+          <h1 className="text-lg font-bold">{currentTabLabel}</h1>
+          {pendingApprovals.length > 0 && tab !== "approvals" && (
+            <button
+              onClick={() => setTab("approvals")}
+              className="ml-auto flex items-center gap-1.5 bg-destructive/10 text-destructive px-3 py-1.5 rounded-full text-sm font-medium active:bg-destructive/20 transition-colors"
+            >
+              <Shield className="w-4 h-4" />
+              <span>{pendingApprovals.length}</span>
+            </button>
+          )}
+          {bonus && pendingApprovals.length === 0 && (
             <span className="ml-auto text-sm bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-full font-medium">
               {bonus.label} ({bonus.multiplier}x)
             </span>
           )}
-        </div>
-      </div>
-
-      {/* Pending banner */}
-      {(pendingLogs.length > 0 || pendingSubmissions.length > 0) && tab !== "approvals" && (
-        <div className="max-w-2xl mx-auto px-4 pt-3">
-          <button
-            onClick={() => setTab("approvals")}
-            className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-left transition-colors active:bg-destructive/20"
-          >
-            <div className="shrink-0 p-2 rounded-lg bg-destructive/20">
-              <Shield className="w-5 h-5 text-destructive" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-base text-foreground">
-                {pendingLogs.length + pendingSubmissions.length} pending approval{pendingLogs.length + pendingSubmissions.length !== 1 ? "s" : ""}
-              </div>
-              <div className="text-sm text-muted-foreground mt-0.5">
-                {pendingLogs.length > 0 && <span>{pendingLogs.length} chore{pendingLogs.length !== 1 ? "s" : ""} awaiting review</span>}
-                {pendingLogs.length > 0 && pendingSubmissions.length > 0 && <span> · </span>}
-                {pendingSubmissions.length > 0 && <span>{pendingSubmissions.length} kid submission{pendingSubmissions.length !== 1 ? "s" : ""}</span>}
-              </div>
-            </div>
-            <ArrowLeft className="w-5 h-5 text-muted-foreground rotate-180 shrink-0" />
-          </button>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="sticky top-[57px] z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto flex overflow-x-auto scrollbar-none">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`relative flex flex-col items-center gap-0.5 px-3.5 py-3 min-w-[64px] whitespace-nowrap border-b-2 transition-colors ${
-                tab === t.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <span className="relative">
-                {t.icon}
-                {t.id === "approvals" && pendingApprovals.length > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1.5 min-w-[16px] text-center leading-4">
-                    {pendingApprovals.length}
-                  </span>
-                )}
-              </span>
-              <span className="text-xs font-medium">{t.label}</span>
-            </button>
-          ))}
         </div>
       </div>
 
@@ -161,7 +159,6 @@ export default function ParentPage() {
           <RewardsTab data={data} refresh={refresh} showAdd={showAddReward} setShowAdd={setShowAddReward} />
         )}
         {tab === "leaderboard" && <LeaderboardTab data={data} />}
-        
         {tab === "approvals" && <ApprovalsTab data={data} refresh={refresh} />}
         {tab === "history" && <HistoryTab data={data} refresh={refresh} />}
         {tab === "settings" && <SettingsTab data={data} refresh={refresh} />}
@@ -182,23 +179,23 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
   return (
     <>
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-medium">Chores ({data.chores.length})</h2>
-        <Button size="sm" onClick={() => { setEditingChore(null); setShowAdd(true); }}>
-          <Plus className="w-4 h-4 mr-1" /> Add Chore
+        <h2 className="text-lg font-semibold">Chores ({data.chores.length})</h2>
+        <Button onClick={() => { setEditingChore(null); setShowAdd(true); }}>
+          <Plus className="w-4 h-4 mr-1.5" /> Add Chore
         </Button>
       </div>
 
       {/* Category filter */}
-      <div className="flex gap-1 flex-wrap">
+      <div className="flex gap-1.5 flex-wrap">
         <button
           onClick={() => setFilterCategory("all")}
-          className={`px-2 py-0.5 rounded-full text-xs ${filterCategory === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+          className={`px-3 py-1 rounded-full text-sm font-medium ${filterCategory === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
         >All</button>
         {categories.map((cat: string) => (
           <button
             key={cat}
             onClick={() => setFilterCategory(cat)}
-            className={`px-2 py-0.5 rounded-full text-xs ${filterCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+            className={`px-3 py-1 rounded-full text-sm font-medium ${filterCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
           >{cat}</button>
         ))}
       </div>
@@ -240,24 +237,24 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
 
           return (
             <Card key={chore.id} className={`${chore.paused ? "opacity-50" : ""}`}>
-              <CardContent className="p-3">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{chore.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">{chore.title}</span>
-                      {chore.requirePhoto && <span title="Photo required" className="text-xs">📸</span>}
-                      {chore.requireApproval && <Shield className="w-3 h-3 text-muted-foreground" />}
-                      {chore.perKid && <span title="Each kid completes"><Users className="w-3 h-3 text-muted-foreground" /></span>}
-                      {chore.paused && <Pause className="w-3 h-3 text-muted-foreground" />}
-                      {chore.deadline && <span title={`Deadline: ${chore.deadline}`}><Clock className="w-3 h-3 text-muted-foreground" /></span>}
+                      <span className="font-semibold text-base truncate">{chore.title}</span>
+                      {chore.requirePhoto && <span title="Photo required" className="text-sm">📸</span>}
+                      {chore.requireApproval && <Shield className="w-3.5 h-3.5 text-muted-foreground" />}
+                      {chore.perKid && <span title="Each kid completes"><Users className="w-3.5 h-3.5 text-muted-foreground" /></span>}
+                      {chore.paused && <Pause className="w-3.5 h-3.5 text-muted-foreground" />}
+                      {chore.deadline && <span title={`Deadline: ${chore.deadline}`}><Clock className="w-3.5 h-3.5 text-muted-foreground" /></span>}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 flex-wrap">
                       <span>{chore.points}pts</span>
                       <span>{"⭐".repeat(chore.difficulty)}</span>
                       <span>{TIME_OF_DAY_LABELS[chore.timeOfDay]}</span>
                       {chore.category && (
-                        <span className="bg-secondary px-1.5 rounded text-[10px]">{chore.category}</span>
+                        <span className="bg-secondary px-1.5 py-0.5 rounded text-xs">{chore.category}</span>
                       )}
                       {chore.deadline && (
                         <span className="text-primary">⏰ {chore.deadline}{chore.earlyBonus ? ` (+${chore.earlyBonus})` : ""}</span>
@@ -273,10 +270,10 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                       )}
                     </div>
                     {chore.perKid && due && (
-                      <div className="flex items-center gap-2 text-xs mt-1 flex-wrap">
+                      <div className="flex items-center gap-2 text-sm mt-1 flex-wrap">
                         {perKidCompletions.map((x: any) => (
                           <span key={x.kid.id} className={`flex items-center gap-0.5 ${x.log ? "" : "opacity-50"}`} style={{ color: x.kid.color }}>
-                            <KidAvatar kid={x.kid} size={14} />
+                            <KidAvatar kid={x.kid} size={16} />
                             {x.log ? "✅" : "⬜"}
                           </span>
                         ))}
@@ -284,9 +281,9 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                       </div>
                     )}
                     {showSuggestions && fairKid && !completed && due && (
-                      <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: fairKid.color }}>
+                      <div className="flex items-center gap-1 text-sm mt-1" style={{ color: fairKid.color }}>
                         {data.settings?.rotationEnabled && chore.rotationKids?.length ? "Rotation:" : "Suggestion:"}{" "}
-                        <KidAvatar kid={fairKid} size={16} /> {fairKid.name}'s turn
+                        <KidAvatar kid={fairKid} size={18} /> {fairKid.name}'s turn
                       </div>
                     )}
                   </div>
@@ -358,10 +355,10 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
 
   return (
     <Card>
-      <CardContent className="p-4 space-y-4">
+       <CardContent className="p-4 space-y-4">
         <div className="flex gap-2">
           <div>
-            <Label className="text-xs">Icon</Label>
+            <Label className="text-sm font-medium">Icon</Label>
             <div className="flex flex-wrap gap-1 mt-1">
               {EMOJI_OPTIONS.map((e) => (
                 <button key={e} onClick={() => setIcon(e)}
@@ -374,17 +371,17 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
         </div>
 
         <div>
-          <Label className="text-xs">Title</Label>
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Vacuum upstairs" className="mt-1" />
+          <Label className="text-sm font-medium">Title</Label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Vacuum upstairs" className="mt-1 h-11 text-base" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs">Points</Label>
-            <Input type="number" min={1} value={points} onChange={(e) => setPoints(+e.target.value)} className="mt-1" />
+            <Label className="text-sm font-medium">Points</Label>
+            <Input type="number" min={1} value={points} onChange={(e) => setPoints(+e.target.value)} className="mt-1 h-11 text-base" />
           </div>
           <div>
-            <Label className="text-xs">Difficulty</Label>
+            <Label className="text-sm font-medium">Difficulty</Label>
             <div className="flex gap-1 mt-2">
               {[1, 2, 3, 4, 5].map((d) => (
                 <button key={d} onClick={() => setDifficulty(d)} className="text-lg">
@@ -397,9 +394,9 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
 
         {/* Category */}
         <div>
-          <Label className="text-xs">Category</Label>
+          <Label className="text-sm font-medium">Category</Label>
           <Select value={category || "_none"} onValueChange={(v) => setCategory(v === "_none" ? "" : v)}>
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 h-11 text-base"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_none">No category</SelectItem>
               {categories.map((c: string) => (
@@ -410,9 +407,9 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
         </div>
 
         <div>
-          <Label className="text-xs">Time of Day</Label>
+          <Label className="text-sm font-medium">Time of Day</Label>
           <Select value={timeOfDay} onValueChange={(v) => setTimeOfDay(v as TimeOfDay)}>
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 h-11 text-base"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(TIME_OF_DAY_LABELS).map(([k, v]) => (
                 <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -422,9 +419,9 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
         </div>
 
         <div>
-          <Label className="text-xs">Recurrence</Label>
+          <Label className="text-sm font-medium">Recurrence</Label>
           <Select value={recType} onValueChange={(v) => setRecType(v as RecurrenceType)}>
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 h-11 text-base"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="once">Once</SelectItem>
               <SelectItem value="daily">Daily</SelectItem>
@@ -497,24 +494,24 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
         <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
           <div className="flex items-center gap-2">
             <Switch checked={requirePhoto} onCheckedChange={setRequirePhoto} />
-            <Label className="text-xs">Require photo</Label>
+            <Label className="text-sm">Require photo</Label>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={requireApproval} onCheckedChange={setRequireApproval} />
-            <Label className="text-xs">Require approval</Label>
+            <Label className="text-sm">Require approval</Label>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={perKid} onCheckedChange={setPerKid} />
-            <Label className="text-xs">Each kid completes</Label>
+            <Label className="text-sm">Each kid completes</Label>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} className="flex-1">
-            <Check className="w-4 h-4 mr-1" /> {chore ? "Update" : "Add"} Chore
+          <Button onClick={handleSubmit} className="flex-1 h-11 text-base">
+            <Check className="w-4 h-4 mr-1.5" /> {chore ? "Update" : "Add"} Chore
           </Button>
-          <Button variant="outline" onClick={onCancel}>
-            <X className="w-4 h-4" />
+          <Button variant="outline" onClick={onCancel} className="h-11">
+            <X className="w-5 h-5" />
           </Button>
         </div>
       </CardContent>
@@ -547,16 +544,16 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
     <>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-medium">Kids ({data.kids.length})</h2>
-        <Button size="sm" onClick={() => setShowAdd(true)}>
-          <Plus className="w-4 h-4 mr-1" /> Add Kid
+        <h2 className="text-lg font-semibold">Kids ({data.kids.length})</h2>
+        <Button onClick={() => setShowAdd(true)}>
+          <Plus className="w-4 h-4 mr-1.5" /> Add Kid
         </Button>
       </div>
 
       {showAdd && (
         <Card>
           <CardContent className="p-4 space-y-3">
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="h-11 text-base" />
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Label className="text-xs">Avatar</Label>
@@ -638,7 +635,7 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
                         {level.icon} {level.name}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
                       <span>🏆 {total}pts</span>
                       <span>📅 {weekly}/week</span>
                       <span>🔥 {streak}d streak</span>
@@ -690,9 +687,9 @@ function RewardsTab({ data, refresh, showAdd, setShowAdd }: any) {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-medium">Rewards ({(data.rewards || []).length})</h2>
-        <Button size="sm" onClick={() => setShowAdd(true)}>
-          <Plus className="w-4 h-4 mr-1" /> Add Reward
+        <h2 className="text-lg font-semibold">Rewards ({(data.rewards || []).length})</h2>
+        <Button onClick={() => setShowAdd(true)}>
+          <Plus className="w-4 h-4 mr-1.5" /> Add Reward
         </Button>
       </div>
 
@@ -767,7 +764,7 @@ function LeaderboardTab({ data }: any) {
 
   return (
     <>
-      <h2 className="text-base font-medium">🏆 Leaderboard</h2>
+      <h2 className="text-lg font-semibold">🏆 Leaderboard</h2>
 
       {/* Weekly rankings */}
       <Card>
@@ -840,9 +837,9 @@ function ApprovalsTab({ data, refresh }: any) {
 
   return (
     <>
-      <h2 className="text-base font-medium">Pending Approvals ({totalPending})</h2>
+      <h2 className="text-lg font-semibold">Pending Approvals ({totalPending})</h2>
       {totalPending === 0 && (
-        <p className="text-sm text-muted-foreground">No pending approvals 🎉</p>
+        <p className="text-base text-muted-foreground">No pending approvals 🎉</p>
       )}
 
       {/* Chore submissions from kids */}
@@ -960,7 +957,7 @@ function HistoryTab({ data, refresh }: any) {
 
   return (
     <>
-      <h2 className="text-base font-medium">Recent Activity</h2>
+      <h2 className="text-lg font-semibold">Recent Activity</h2>
 
       {/* Weekly summary */}
       <Card>
@@ -1122,7 +1119,7 @@ function SettingsTab({ data, refresh }: any) {
 
   return (
     <>
-      <h2 className="text-base font-medium">⚙️ Chore Settings</h2>
+      <h2 className="text-lg font-semibold">⚙️ Chore Settings</h2>
 
       {/* Rotation */}
       <Card>
