@@ -170,9 +170,10 @@ export default function ParentPage() {
 // ── Chores Tab ──
 function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditingChore, showSuggestions }: any) {
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const categoriesEnabled = data.settings?.categoriesEnabled ?? false;
   const categories = data.settings?.categories || DEFAULT_SETTINGS.categories;
 
-  const filteredChores = filterCategory === "all"
+  const filteredChores = (!categoriesEnabled || filterCategory === "all")
     ? data.chores
     : data.chores.filter((c: Chore) => c.category === filterCategory);
 
@@ -186,24 +187,27 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
       </div>
 
       {/* Category filter */}
-      <div className="flex gap-1.5 flex-wrap">
-        <button
-          onClick={() => setFilterCategory("all")}
-          className={`px-3 py-1 rounded-full text-sm font-medium ${filterCategory === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-        >All</button>
-        {categories.map((cat: string) => (
+      {categoriesEnabled && (
+        <div className="flex gap-1.5 flex-wrap">
           <button
-            key={cat}
-            onClick={() => setFilterCategory(cat)}
-            className={`px-3 py-1 rounded-full text-sm font-medium ${filterCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-          >{cat}</button>
-        ))}
-      </div>
+            onClick={() => setFilterCategory("all")}
+            className={`px-3 py-1 rounded-full text-sm font-medium ${filterCategory === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+          >All</button>
+          {categories.map((cat: string) => (
+            <button
+              key={cat}
+              onClick={() => setFilterCategory(cat)}
+              className={`px-3 py-1 rounded-full text-sm font-medium ${filterCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+            >{cat}</button>
+          ))}
+        </div>
+      )}
 
       {(showAdd || editingChore) && (
         <ChoreForm
           chore={editingChore}
           categories={categories}
+          categoriesEnabled={categoriesEnabled}
           kids={data.kids}
           rotationEnabled={data.settings?.rotationEnabled ?? false}
           onSave={async (chore: any) => {
@@ -253,7 +257,7 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                       <span>{chore.points}pts</span>
                       <span>{"⭐".repeat(chore.difficulty)}</span>
                       <span>{TIME_OF_DAY_LABELS[chore.timeOfDay]}</span>
-                      {chore.category && (
+                      {categoriesEnabled && chore.category && (
                         <span className="bg-secondary px-1.5 py-0.5 rounded text-xs">{chore.category}</span>
                       )}
                       {chore.deadline && (
@@ -317,8 +321,8 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
 }
 
 // ── Chore Form ──
-function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel }: {
-  chore?: Chore | null; categories: string[]; kids: Kid[]; rotationEnabled: boolean;
+function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled, onSave, onCancel }: {
+  chore?: Chore | null; categories: string[]; categoriesEnabled: boolean; kids: Kid[]; rotationEnabled: boolean;
   onSave: (c: any) => void; onCancel: () => void;
 }) {
   const [title, setTitle] = useState(chore?.title ?? "");
@@ -393,18 +397,20 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
         </div>
 
         {/* Category */}
-        <div>
-          <Label className="text-sm font-medium">Category</Label>
-          <Select value={category || "_none"} onValueChange={(v) => setCategory(v === "_none" ? "" : v)}>
-            <SelectTrigger className="mt-1 h-11 text-base"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_none">No category</SelectItem>
-              {categories.map((c: string) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {categoriesEnabled && (
+          <div>
+            <Label className="text-sm font-medium">Category</Label>
+            <Select value={category || "_none"} onValueChange={(v) => setCategory(v === "_none" ? "" : v)}>
+              <SelectTrigger className="mt-1 h-11 text-base"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">No category</SelectItem>
+                {categories.map((c: string) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div>
           <Label className="text-sm font-medium">Time of Day</Label>
@@ -1098,6 +1104,7 @@ function SettingsTab({ data, refresh }: any) {
   const settings = data.settings || DEFAULT_SETTINGS;
   const [rotationEnabled, setRotationEnabled] = useState(settings.rotationEnabled ?? false);
   const [showSuggestions, setShowSuggestions] = useState(settings.showSuggestions ?? true);
+  const [categoriesEnabled, setCategoriesEnabled] = useState(settings.categoriesEnabled ?? false);
   const [categories, setCategories] = useState<string[]>(settings.categories || DEFAULT_SETTINGS.categories);
   const [newCategory, setNewCategory] = useState("");
   const [bonusDays, setBonusDays] = useState<BonusDay[]>(settings.bonusDays || []);
@@ -1131,7 +1138,7 @@ function SettingsTab({ data, refresh }: any) {
             </div>
             <Switch checked={rotationEnabled} onCheckedChange={(v) => {
               setRotationEnabled(v);
-              saveSettings({ rotationEnabled: v, showSuggestions, categories, bonusDays });
+              saveSettings({ rotationEnabled: v, showSuggestions, categoriesEnabled, categories, bonusDays });
             }} />
           </div>
         </CardContent>
@@ -1147,7 +1154,7 @@ function SettingsTab({ data, refresh }: any) {
             </div>
             <Switch checked={showSuggestions} onCheckedChange={(v) => {
               setShowSuggestions(v);
-              saveSettings({ rotationEnabled, showSuggestions: v, categories, bonusDays });
+              saveSettings({ rotationEnabled, showSuggestions: v, categoriesEnabled, categories, bonusDays });
             }} />
           </div>
         </CardContent>
@@ -1155,31 +1162,44 @@ function SettingsTab({ data, refresh }: any) {
 
       <Card>
         <CardContent className="p-4 space-y-3">
-          <Label className="text-sm font-medium">🏷️ Categories</Label>
-          <div className="flex flex-wrap gap-1">
-            {categories.map((cat) => (
-              <div key={cat} className="flex items-center gap-1 bg-secondary px-2 py-1 rounded text-xs">
-                <span>{cat}</span>
-                <button onClick={() => {
-                  const updated = categories.filter((c) => c !== cat);
-                  setCategories(updated);
-                  saveSettings({ rotationEnabled, showSuggestions, categories: updated, bonusDays });
-                }} className="text-destructive hover:text-destructive/80">
-                  <X className="w-3 h-3" />
-                </button>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">🏷️ Categories</Label>
+              <p className="text-xs text-muted-foreground">Tag chores with categories and filter by them</p>
+            </div>
+            <Switch checked={categoriesEnabled} onCheckedChange={(v) => {
+              setCategoriesEnabled(v);
+              saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled: v, categories, bonusDays });
+            }} />
+          </div>
+          {categoriesEnabled && (
+            <>
+              <div className="flex flex-wrap gap-1">
+                {categories.map((cat) => (
+                  <div key={cat} className="flex items-center gap-1 bg-secondary px-2 py-1 rounded text-xs">
+                    <span>{cat}</span>
+                    <button onClick={() => {
+                      const updated = categories.filter((c) => c !== cat);
+                      setCategories(updated);
+                      saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories: updated, bonusDays });
+                    }} className="text-destructive hover:text-destructive/80">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category" className="flex-1" />
-            <Button size="sm" onClick={() => {
-              if (!newCategory.trim() || categories.includes(newCategory.trim())) return;
-              const updated = [...categories, newCategory.trim()];
-              setCategories(updated);
-              setNewCategory("");
-              saveSettings({ rotationEnabled, showSuggestions, categories: updated, bonusDays });
-            }}>Add</Button>
-          </div>
+              <div className="flex gap-2">
+                <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category" className="flex-1" />
+                <Button size="sm" onClick={() => {
+                  if (!newCategory.trim() || categories.includes(newCategory.trim())) return;
+                  const updated = [...categories, newCategory.trim()];
+                  setCategories(updated);
+                  setNewCategory("");
+                  saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories: updated, bonusDays });
+                }}>Add</Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -1197,7 +1217,7 @@ function SettingsTab({ data, refresh }: any) {
               <button onClick={() => {
                 const updated = bonusDays.filter((b) => b.id !== bd.id);
                 setBonusDays(updated);
-                saveSettings({ rotationEnabled, showSuggestions, categories, bonusDays: updated });
+                saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, bonusDays: updated });
               }} className="text-destructive">
                 <X className="w-4 h-4" />
               </button>
@@ -1235,7 +1255,7 @@ function SettingsTab({ data, refresh }: any) {
             const updated = [...bonusDays, bd];
             setBonusDays(updated);
             setNewBonusLabel("");
-            saveSettings({ rotationEnabled, showSuggestions, categories, bonusDays: updated });
+            saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, bonusDays: updated });
           }}>
             <Plus className="w-4 h-4 mr-1" /> Add Bonus Day
           </Button>
