@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const app = express();
 const PORT = 80;
 const CONFIG_PATH = "/data/config.json";
+const CHORES_PATH = "/data/chores.json";
 const PHOTOS_DIR = "/data/photos";
 const THUMBS_DIR = "/data/photos/thumbs";
 
@@ -18,6 +19,36 @@ const THUMBS_DIR = "/data/photos/thumbs";
 if (!fs.existsSync(CONFIG_PATH)) {
   fs.writeFileSync(CONFIG_PATH, JSON.stringify({}));
 }
+
+// Ensure chores file exists
+const DEFAULT_BADGES = [
+  { id: "first-chore", name: "First Chore!", icon: "⭐", description: "Completed your first chore", condition: { type: "total_chores", value: 1 } },
+  { id: "ten-chores", name: "Getting Started", icon: "🔥", description: "Completed 10 chores", condition: { type: "total_chores", value: 10 } },
+  { id: "fifty-chores", name: "Chore Champion", icon: "🏆", description: "Completed 50 chores", condition: { type: "total_chores", value: 50 } },
+  { id: "hundred-chores", name: "Chore Legend", icon: "👑", description: "Completed 100 chores", condition: { type: "total_chores", value: 100 } },
+  { id: "streak-3", name: "3-Day Streak", icon: "🔥", description: "Did chores 3 days in a row", condition: { type: "streak_days", value: 3 } },
+  { id: "streak-7", name: "Weekly Warrior", icon: "💪", description: "Did chores 7 days in a row", condition: { type: "streak_days", value: 7 } },
+  { id: "streak-30", name: "Monthly Master", icon: "🌟", description: "Did chores 30 days in a row", condition: { type: "streak_days", value: 30 } },
+  { id: "points-100", name: "100 Points!", icon: "💯", description: "Earned 100 points total", condition: { type: "total_points", value: 100 } },
+  { id: "points-500", name: "Point Pro", icon: "🎯", description: "Earned 500 points total", condition: { type: "total_points", value: 500 } },
+];
+
+const EMPTY_CHORES = { kids: [], chores: [], logs: [], badges: DEFAULT_BADGES, kidBadges: [], rewards: [], rewardClaims: [] };
+
+if (!fs.existsSync(CHORES_PATH)) {
+  fs.writeFileSync(CHORES_PATH, JSON.stringify(EMPTY_CHORES, null, 2));
+}
+
+function readChores() {
+  try { return JSON.parse(fs.readFileSync(CHORES_PATH, "utf-8")); }
+  catch { return { ...EMPTY_CHORES }; }
+}
+
+function writeChores(data) {
+  fs.writeFileSync(CHORES_PATH, JSON.stringify(data, null, 2));
+}
+
+function uid() { return crypto.randomBytes(8).toString("hex"); }
 
 // JSON body parsing
 app.use(express.json({ limit: "50mb" }));
@@ -187,6 +218,185 @@ app.get("/api/rss", async (req, res) => {
   } catch (err) {
     res.status(502).json({ error: "Failed to fetch feed" });
   }
+});
+
+// --- Chores API ---
+
+// Get all chores data
+app.get("/api/chores", (_req, res) => {
+  res.json(readChores());
+});
+
+// --- Kids CRUD ---
+app.post("/api/chores/kids", (req, res) => {
+  const data = readChores();
+  const kid = { id: uid(), ...req.body };
+  data.kids.push(kid);
+  writeChores(data);
+  res.json(kid);
+});
+
+app.put("/api/chores/kids/:id", (req, res) => {
+  const data = readChores();
+  const idx = data.kids.findIndex((k) => k.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Kid not found" });
+  data.kids[idx] = { ...data.kids[idx], ...req.body };
+  writeChores(data);
+  res.json(data.kids[idx]);
+});
+
+app.delete("/api/chores/kids/:id", (req, res) => {
+  const data = readChores();
+  data.kids = data.kids.filter((k) => k.id !== req.params.id);
+  writeChores(data);
+  res.json({ success: true });
+});
+
+// --- Chores CRUD ---
+app.post("/api/chores/chores", (req, res) => {
+  const data = readChores();
+  const chore = { id: uid(), createdAt: new Date().toISOString(), ...req.body };
+  data.chores.push(chore);
+  writeChores(data);
+  res.json(chore);
+});
+
+app.put("/api/chores/chores/:id", (req, res) => {
+  const data = readChores();
+  const idx = data.chores.findIndex((c) => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Chore not found" });
+  data.chores[idx] = { ...data.chores[idx], ...req.body };
+  writeChores(data);
+  res.json(data.chores[idx]);
+});
+
+app.delete("/api/chores/chores/:id", (req, res) => {
+  const data = readChores();
+  data.chores = data.chores.filter((c) => c.id !== req.params.id);
+  writeChores(data);
+  res.json({ success: true });
+});
+
+// --- Chore Logs ---
+app.post("/api/chores/logs", (req, res) => {
+  const data = readChores();
+  const log = {
+    id: uid(),
+    choreId: req.body.choreId,
+    kidId: req.body.kidId,
+    completedAt: new Date().toISOString(),
+    photoUrl: req.body.photoUrl || null,
+    approved: false,
+    approvedAt: null,
+    undoneAt: null,
+  };
+  data.logs.push(log);
+
+  // Check badges
+  const kidLogs = data.logs.filter((l) => l.kidId === log.kidId && !l.undoneAt);
+  const totalChores = kidLogs.length;
+  const choreMap = {};
+  (data.chores || []).forEach((c) => { choreMap[c.id] = c; });
+  const totalPoints = kidLogs.reduce((s, l) => s + (choreMap[l.choreId]?.points || 0), 0);
+
+  // Simple streak calc
+  const dates = new Set(kidLogs.map((l) => new Date(l.completedAt).toDateString()));
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today.getTime() - i * 86400000);
+    if (dates.has(d.toDateString())) streak++;
+    else if (i > 0) break;
+  }
+
+  const existingBadgeIds = new Set((data.kidBadges || []).filter((kb) => kb.kidId === log.kidId).map((kb) => kb.badgeId));
+  for (const badge of data.badges || []) {
+    if (existingBadgeIds.has(badge.id)) continue;
+    let earned = false;
+    if (badge.condition.type === "total_chores" && totalChores >= badge.condition.value) earned = true;
+    if (badge.condition.type === "total_points" && totalPoints >= badge.condition.value) earned = true;
+    if (badge.condition.type === "streak_days" && streak >= badge.condition.value) earned = true;
+    if (earned) {
+      data.kidBadges = data.kidBadges || [];
+      data.kidBadges.push({ kidId: log.kidId, badgeId: badge.id, earnedAt: new Date().toISOString() });
+    }
+  }
+
+  writeChores(data);
+  res.json(log);
+});
+
+app.put("/api/chores/logs/:id/undo", (req, res) => {
+  const data = readChores();
+  const log = data.logs.find((l) => l.id === req.params.id);
+  if (!log) return res.status(404).json({ error: "Log not found" });
+  // Check 5-min window
+  const elapsed = Date.now() - new Date(log.completedAt).getTime();
+  if (elapsed > 5 * 60 * 1000) return res.status(400).json({ error: "Undo window expired" });
+  log.undoneAt = new Date().toISOString();
+  writeChores(data);
+  res.json(log);
+});
+
+app.put("/api/chores/logs/:id/approve", (req, res) => {
+  const data = readChores();
+  const log = data.logs.find((l) => l.id === req.params.id);
+  if (!log) return res.status(404).json({ error: "Log not found" });
+  log.approved = true;
+  log.approvedAt = new Date().toISOString();
+  writeChores(data);
+  res.json(log);
+});
+
+// --- Rewards ---
+app.post("/api/chores/rewards", (req, res) => {
+  const data = readChores();
+  const reward = { id: uid(), ...req.body };
+  data.rewards = data.rewards || [];
+  data.rewards.push(reward);
+  writeChores(data);
+  res.json(reward);
+});
+
+app.put("/api/chores/rewards/:id", (req, res) => {
+  const data = readChores();
+  data.rewards = data.rewards || [];
+  const idx = data.rewards.findIndex((r) => r.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Reward not found" });
+  data.rewards[idx] = { ...data.rewards[idx], ...req.body };
+  writeChores(data);
+  res.json(data.rewards[idx]);
+});
+
+app.delete("/api/chores/rewards/:id", (req, res) => {
+  const data = readChores();
+  data.rewards = (data.rewards || []).filter((r) => r.id !== req.params.id);
+  writeChores(data);
+  res.json({ success: true });
+});
+
+app.post("/api/chores/rewards/claim", (req, res) => {
+  const data = readChores();
+  const reward = (data.rewards || []).find((r) => r.id === req.body.rewardId);
+  if (!reward) return res.status(404).json({ error: "Reward not found" });
+
+  // Check points
+  const choreMap = {};
+  (data.chores || []).forEach((c) => { choreMap[c.id] = c; });
+  const kidLogs = data.logs.filter((l) => l.kidId === req.body.kidId && !l.undoneAt);
+  const totalPoints = kidLogs.reduce((s, l) => s + (choreMap[l.choreId]?.points || 0), 0);
+  data.rewardClaims = data.rewardClaims || [];
+  const rewardMap = {};
+  (data.rewards || []).forEach((r) => { rewardMap[r.id] = r; });
+  const spentPoints = data.rewardClaims.filter((c) => c.kidId === req.body.kidId).reduce((s, c) => s + (rewardMap[c.rewardId]?.pointsCost || 0), 0);
+  const available = totalPoints - spentPoints;
+
+  if (available < reward.pointsCost) return res.status(400).json({ error: "Not enough points" });
+
+  const claim = { id: uid(), kidId: req.body.kidId, rewardId: req.body.rewardId, claimedAt: new Date().toISOString() };
+  data.rewardClaims.push(claim);
+  writeChores(data);
+  res.json(claim);
 });
 
 // --- Static files ---
