@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, ChoreSubmission } from "@/lib/chores-types";
@@ -38,6 +39,8 @@ export default function KidsPage() {
   const [showSubmit, setShowSubmit] = useState(false);
   const [captureLogId, setCaptureLogId] = useState<string | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const fireConfetti = useCallback(() => setConfettiTrigger((t) => t + 1), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const submitPhotoRef = useRef<HTMLInputElement>(null);
 
@@ -115,6 +118,7 @@ export default function KidsPage() {
         const nowMin = now.getHours() * 60 + now.getMinutes();
         return nowMin <= deadlineMin && chore.earlyBonus ? ` +${chore.earlyBonus} early bonus!` : "";
       })() : "";
+      fireConfetti();
       toast.success(`✅ ${chore.title} done! +${chore.points}pts${bonusText}${earlyText}`);
     } catch (e: any) {
       toast.error(e.message);
@@ -128,6 +132,7 @@ export default function KidsPage() {
       const photoUrl = await choresApi.uploadPhoto(file);
       await choresApi.completeChore(captureLogId, kid.id, photoUrl);
       refresh();
+      fireConfetti();
       toast.success("✅ Done with photo!");
     } catch (err: any) {
       toast.error(err.message);
@@ -160,7 +165,12 @@ export default function KidsPage() {
 
   // Submit chore view
   if (showSubmit) {
-    return <SubmitChoreView kid={kid} onBack={() => setShowSubmit(false)} refresh={refresh} submitPhotoRef={submitPhotoRef} />;
+    return (
+      <>
+        <ConfettiBurst trigger={confettiTrigger} />
+        <SubmitChoreView kid={kid} onBack={() => setShowSubmit(false)} refresh={refresh} submitPhotoRef={submitPhotoRef} fireConfetti={fireConfetti} />
+      </>
+    );
   }
 
 
@@ -208,6 +218,7 @@ export default function KidsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ConfettiBurst trigger={confettiTrigger} />
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoCapture} />
 
       {/* Header */}
@@ -396,7 +407,7 @@ export default function KidsPage() {
                         ) : (
                           <Button
                             size="lg"
-                            className="rounded-xl px-7 text-lg h-12"
+                            className="rounded-xl px-7 text-lg h-12 active:animate-celebrate-pop"
                             onClick={() => handleComplete(chore)}
                           >
                             Done!
@@ -517,8 +528,8 @@ const POINT_OPTIONS = [
   { value: 20, label: "20", emoji: "💎" },
 ];
 
-function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
-  kid: Kid; onBack: () => void; refresh: () => void; submitPhotoRef: React.RefObject<HTMLInputElement>;
+function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }: {
+  kid: Kid; onBack: () => void; refresh: () => void; submitPhotoRef: React.RefObject<HTMLInputElement>; fireConfetti: () => void;
 }) {
   const [selectedQuick, setSelectedQuick] = useState<string | null>(null);
   const [customTitle, setCustomTitle] = useState("");
@@ -561,6 +572,7 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
         points,
       });
       refresh();
+      fireConfetti();
       toast.success("📤 Sent! Waiting for parent to approve");
       onBack();
     } catch (e: any) {
