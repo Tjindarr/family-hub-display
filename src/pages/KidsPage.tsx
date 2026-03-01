@@ -493,16 +493,43 @@ export default function KidsPage() {
 }
 
 // ── Submit Chore View ──
+
+const QUICK_CHORES = [
+  { emoji: "🧹", label: "Swept" },
+  { emoji: "🧽", label: "Cleaned" },
+  { emoji: "🗑️", label: "Trash" },
+  { emoji: "🐕", label: "Pet care" },
+  { emoji: "📚", label: "Tidied up" },
+  { emoji: "🌱", label: "Gardening" },
+  { emoji: "🍽️", label: "Dishes" },
+  { emoji: "🧺", label: "Laundry" },
+  { emoji: "🛏️", label: "Made bed" },
+  { emoji: "🚗", label: "Car help" },
+  { emoji: "📦", label: "Organized" },
+  { emoji: "✨", label: "Other" },
+];
+
+const POINT_OPTIONS = [
+  { value: 3, label: "3", emoji: "⭐" },
+  { value: 5, label: "5", emoji: "⭐⭐" },
+  { value: 10, label: "10", emoji: "🌟" },
+  { value: 15, label: "15", emoji: "🌟🌟" },
+  { value: 20, label: "20", emoji: "💎" },
+];
+
 function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
   kid: Kid; onBack: () => void; refresh: () => void; submitPhotoRef: React.RefObject<HTMLInputElement>;
 }) {
-  const [title, setTitle] = useState("");
-  const [note, setNote] = useState("");
+  const [selectedQuick, setSelectedQuick] = useState<string | null>(null);
+  const [customTitle, setCustomTitle] = useState("");
   const [points, setPoints] = useState(5);
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const title = selectedQuick === "✨" ? customTitle : selectedQuick ? QUICK_CHORES.find(q => q.emoji === selectedQuick)?.label || "" : "";
+  const isCustom = selectedQuick === "✨";
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -520,21 +547,21 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
   };
 
   const handleSubmit = async () => {
-    if (!title.trim()) {
-      toast.error("Please describe what you did");
+    const finalTitle = isCustom ? customTitle.trim() : title;
+    if (!finalTitle) {
+      toast.error("Pick what you did!");
       return;
     }
     setSubmitting(true);
     try {
       await choresApi.submitChore({
         kidId: kid.id,
-        title: title.trim(),
-        note: note.trim() || undefined,
+        title: finalTitle,
         photoUrl: photoUrl || undefined,
         points,
       });
       refresh();
-      toast.success("📤 Submitted! Waiting for parent approval");
+      toast.success("📤 Sent! Waiting for parent to approve");
       onBack();
     } catch (e: any) {
       toast.error(e.message);
@@ -551,93 +578,110 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
           <Button variant="ghost" size="icon" className="h-10 w-10" onClick={onBack}>
             <ArrowLeft className="w-6 h-6" />
           </Button>
-          <h1 className="text-xl font-semibold">📤 Submit a Chore</h1>
+          <h1 className="text-2xl font-bold">What did you do?</h1>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto p-4 space-y-5">
-        <Card>
-          <CardContent className="p-5 space-y-5">
-            <div>
-              <label className="text-base font-medium mb-1.5 block">What did you do? *</label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Cleaned the garage, Organized bookshelf..."
-                maxLength={200}
-                className="h-12 text-base"
-              />
-            </div>
+      <div className="max-w-lg mx-auto p-4 space-y-6">
+        {/* Step 1: Pick what you did */}
+        <div>
+          <p className="text-lg text-muted-foreground mb-3">Tap one:</p>
+          <div className="grid grid-cols-3 gap-3">
+            {QUICK_CHORES.map((q) => (
+              <button
+                key={q.emoji}
+                onClick={() => { setSelectedQuick(q.emoji); if (q.emoji !== "✨") setCustomTitle(""); }}
+                className={`flex flex-col items-center gap-1.5 p-4 rounded-2xl border-2 transition-all active:scale-95 ${
+                  selectedQuick === q.emoji
+                    ? "border-primary bg-primary/10 shadow-md"
+                    : "border-border bg-card hover:border-primary/30"
+                }`}
+              >
+                <span className="text-4xl">{q.emoji}</span>
+                <span className="text-sm font-medium text-foreground">{q.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-            <div>
-              <label className="text-base font-medium mb-1.5 block">Add a note (optional)</label>
-              <Textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Any extra details..."
-                maxLength={500}
-                rows={3}
-                className="text-base"
-              />
-            </div>
+        {/* Custom title input - only shown for "Other" */}
+        {isCustom && (
+          <div>
+            <Input
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              placeholder="Tell us what you did..."
+              maxLength={200}
+              className="h-14 text-lg rounded-xl"
+              autoFocus
+            />
+          </div>
+        )}
 
-            <div>
-              <label className="text-base font-medium mb-2 block">How many points?</label>
-              <div className="flex items-center gap-2">
-                {[3, 5, 10, 15, 20].map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPoints(p)}
-                    className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
-                      points === p
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                    }`}
-                  >
-                    {p}pts
-                  </button>
-                ))}
+        {/* Step 2: Points - only shown after selection */}
+        {selectedQuick && (
+          <div>
+            <p className="text-lg text-muted-foreground mb-3">How many points?</p>
+            <div className="flex gap-2 justify-center">
+              {POINT_OPTIONS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => setPoints(p.value)}
+                  className={`flex flex-col items-center gap-1 px-5 py-3 rounded-xl border-2 transition-all active:scale-95 min-w-[4rem] ${
+                    points === p.value
+                      ? "border-primary bg-primary/10 shadow-md"
+                      : "border-border bg-card hover:border-primary/30"
+                  }`}
+                >
+                  <span className="text-lg">{p.emoji}</span>
+                  <span className="text-lg font-bold text-foreground">{p.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Photo - optional, compact */}
+        {selectedQuick && (
+          <div className="flex items-center gap-3">
+            {photoPreview ? (
+              <div className="relative">
+                <img src={photoPreview} alt="Preview" className="w-20 h-20 rounded-xl object-cover" />
+                {uploading && (
+                  <div className="absolute inset-0 bg-background/50 rounded-xl flex items-center justify-center">
+                    <span className="text-xs">...</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => { setPhotoPreview(""); setPhotoUrl(""); }}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </div>
-            </div>
+            ) : (
+              <Button variant="outline" className="h-12 text-base rounded-xl" onClick={() => submitPhotoRef.current?.click()}>
+                <Camera className="w-5 h-5 mr-2" /> Add photo
+              </Button>
+            )}
+          </div>
+        )}
 
-            <div>
-              <label className="text-base font-medium mb-1.5 block">Photo proof (optional)</label>
-              {photoPreview ? (
-                <div className="relative inline-block">
-                  <img src={photoPreview} alt="Preview" className="w-36 h-36 rounded-lg object-cover" />
-                  {uploading && (
-                    <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
-                      <span className="text-sm">Uploading...</span>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => { setPhotoPreview(""); setPhotoUrl(""); }}
-                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-7 h-7 flex items-center justify-center"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <Button variant="outline" className="h-11 text-base" onClick={() => submitPhotoRef.current?.click()}>
-                  <Camera className="w-5 h-5 mr-2" /> Add Photo
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Button
-          className="w-full text-lg"
-          size="lg"
-          disabled={!title.trim() || submitting || uploading}
-          onClick={handleSubmit}
-        >
-          <Send className="w-5 h-5 mr-2" />
-          {submitting ? "Submitting..." : "Submit for Approval"}
-        </Button>
+        {/* Submit */}
+        {selectedQuick && (
+          <Button
+            className="w-full text-xl h-14 rounded-xl"
+            size="lg"
+            disabled={(!title && !customTitle.trim()) || submitting || uploading}
+            onClick={handleSubmit}
+          >
+            <Send className="w-6 h-6 mr-2" />
+            {submitting ? "Sending..." : "Send to parent! 🚀"}
+          </Button>
+        )}
 
         <p className="text-sm text-center text-muted-foreground">
-          Your parent will review and approve this chore. Points are awarded after approval.
+          A parent will check and give you the points ✨
         </p>
       </div>
     </div>
