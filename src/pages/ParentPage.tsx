@@ -71,43 +71,75 @@ export default function ParentPage() {
 
   const bonus = getTodayBonusMultiplier(data.settings?.bonusDays || []);
 
+  const pendingLogs = data.logs.filter(
+    (l) => !l.undoneAt && !l.approved && data.chores.find((c) => c.id === l.choreId)?.requireApproval
+  );
+  const pendingSubmissions = (data.submissions || []).filter((s: ChoreSubmission) => s.status === "pending");
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-5 h-5" />
+          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-6 h-6" />
           </Button>
-          <h1 className="text-lg font-semibold">Parent Dashboard</h1>
+          <h1 className="text-xl font-bold">Parent Dashboard</h1>
           {bonus && (
-            <span className="ml-auto text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium">
+            <span className="ml-auto text-sm bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-full font-medium">
               {bonus.label} ({bonus.multiplier}x)
             </span>
           )}
         </div>
       </div>
 
+      {/* Pending banner */}
+      {(pendingLogs.length > 0 || pendingSubmissions.length > 0) && tab !== "approvals" && (
+        <div className="max-w-2xl mx-auto px-4 pt-3">
+          <button
+            onClick={() => setTab("approvals")}
+            className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-left transition-colors active:bg-destructive/20"
+          >
+            <div className="shrink-0 p-2 rounded-lg bg-destructive/20">
+              <Shield className="w-5 h-5 text-destructive" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-base text-foreground">
+                {pendingLogs.length + pendingSubmissions.length} pending approval{pendingLogs.length + pendingSubmissions.length !== 1 ? "s" : ""}
+              </div>
+              <div className="text-sm text-muted-foreground mt-0.5">
+                {pendingLogs.length > 0 && <span>{pendingLogs.length} chore{pendingLogs.length !== 1 ? "s" : ""} awaiting review</span>}
+                {pendingLogs.length > 0 && pendingSubmissions.length > 0 && <span> · </span>}
+                {pendingSubmissions.length > 0 && <span>{pendingSubmissions.length} kid submission{pendingSubmissions.length !== 1 ? "s" : ""}</span>}
+              </div>
+            </div>
+            <ArrowLeft className="w-5 h-5 text-muted-foreground rotate-180 shrink-0" />
+          </button>
+        </div>
+      )}
+
       {/* Tabs */}
-      <div className="sticky top-[53px] z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto flex overflow-x-auto">
+      <div className="sticky top-[57px] z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="max-w-2xl mx-auto flex overflow-x-auto scrollbar-none">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors ${
+              className={`relative flex flex-col items-center gap-0.5 px-3.5 py-3 min-w-[64px] whitespace-nowrap border-b-2 transition-colors ${
                 tab === t.id
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t.icon}
-              {t.label}
-              {t.id === "approvals" && pendingApprovals.length > 0 && (
-                <span className="bg-destructive text-destructive-foreground text-xs rounded-full px-1.5 min-w-[18px] text-center">
-                  {pendingApprovals.length}
-                </span>
-              )}
+              <span className="relative">
+                {t.icon}
+                {t.id === "approvals" && pendingApprovals.length > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1.5 min-w-[16px] text-center leading-4">
+                    {pendingApprovals.length}
+                  </span>
+                )}
+              </span>
+              <span className="text-xs font-medium">{t.label}</span>
             </button>
           ))}
         </div>
