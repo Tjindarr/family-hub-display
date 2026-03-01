@@ -155,10 +155,6 @@ export default function ParentPage() {
             editingChore={editingChore}
             setEditingChore={setEditingChore}
             showSuggestions={showSuggestions}
-            setShowSuggestions={async (v: boolean) => {
-              await choresApi.updateSettings({ ...data.settings, showSuggestions: v });
-              refresh();
-            }}
           />
         )}
         {tab === "kids" && (
@@ -178,7 +174,7 @@ export default function ParentPage() {
 }
 
 // ── Chores Tab ──
-function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditingChore, showSuggestions, setShowSuggestions }: any) {
+function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditingChore, showSuggestions }: any) {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const categories = data.settings?.categories || DEFAULT_SETTINGS.categories;
 
@@ -190,20 +186,9 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
     <>
       <div className="flex items-center justify-between">
         <h2 className="text-base font-medium">Chores ({data.chores.length})</h2>
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showSuggestions}
-              onChange={(e: any) => setShowSuggestions(e.target.checked)}
-              className="rounded"
-            />
-            Suggestions
-          </label>
-          <Button size="sm" onClick={() => { setEditingChore(null); setShowAdd(true); }}>
-            <Plus className="w-4 h-4 mr-1" /> Add Chore
-          </Button>
-        </div>
+        <Button size="sm" onClick={() => { setEditingChore(null); setShowAdd(true); }}>
+          <Plus className="w-4 h-4 mr-1" /> Add Chore
+        </Button>
       </div>
 
       {/* Category filter */}
