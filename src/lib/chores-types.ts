@@ -80,6 +80,20 @@ export interface RewardClaim {
   claimedAt: string;
 }
 
+// ── Chore Submissions (kid-initiated) ──
+export interface ChoreSubmission {
+  id: string;
+  kidId: string;
+  title: string;
+  note?: string;
+  photoUrl?: string;
+  points: number;
+  submittedAt: string;
+  status: "pending" | "approved" | "rejected";
+  reviewedAt?: string;
+  rejectionReason?: string;
+}
+
 export interface BulkTemplate {
   id: string;
   name: string;
@@ -168,6 +182,7 @@ export interface ChoresData {
   settings: ChoreSettings;
   challenges: WeeklyChallenge[];
   streakProtections: StreakProtection[];
+  submissions: ChoreSubmission[];
 }
 
 // ── Helpers ──
@@ -202,6 +217,7 @@ export const EMPTY_CHORES_DATA: ChoresData = {
   settings: { ...DEFAULT_SETTINGS },
   challenges: [],
   streakProtections: [],
+  submissions: [],
 };
 
 export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {

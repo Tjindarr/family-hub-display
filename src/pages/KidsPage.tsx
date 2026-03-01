@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, WeeklyChallenge } from "@/lib/chores-types";
+import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, WeeklyChallenge, ChoreSubmission } from "@/lib/chores-types";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS, getKidLevel,
@@ -11,8 +11,10 @@ import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Zap, Clock } from "lucide-react";
+import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Zap, Clock, Send, Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function KidsPage() {
   const { data, refresh } = useChoresData(3000);
@@ -32,8 +34,10 @@ export default function KidsPage() {
   const selectedKid = selectedKidId ? data.kids.find((k) => k.id === selectedKidId) || null : null;
   const [showRewards, setShowRewards] = useState(false);
   const [showChallenges, setShowChallenges] = useState(false);
+  const [showSubmit, setShowSubmit] = useState(false);
   const [captureLogId, setCaptureLogId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const submitPhotoRef = useRef<HTMLInputElement>(null);
 
   // If no kid selected, show kid picker
   if (!selectedKid) {
@@ -156,6 +160,11 @@ export default function KidsPage() {
 
   const nextReward = (data.rewards || []).sort((a: Reward, b: Reward) => a.pointsCost - b.pointsCost).find((r: Reward) => r.pointsCost > available) || null;
 
+  // Submit chore view
+  if (showSubmit) {
+    return <SubmitChoreView kid={kid} onBack={() => setShowSubmit(false)} refresh={refresh} submitPhotoRef={submitPhotoRef} />;
+  }
+
   // Challenges view
   if (showChallenges) {
     return (
@@ -269,6 +278,9 @@ export default function KidsPage() {
                   <Zap className="w-4 h-4" />
                 </Button>
               )}
+              <Button variant="outline" size="sm" onClick={() => setShowSubmit(true)}>
+                <Send className="w-4 h-4" />
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowRewards(true)}>
                 <Gift className="w-4 h-4" />
               </Button>
@@ -493,6 +505,198 @@ export default function KidsPage() {
             </div>
           </div>
         )}
+
+        {/* My submissions */}
+        {(() => {
+          const mySubmissions = (data.submissions || []).filter(
+            (s: ChoreSubmission) => s.kidId === kid.id && s.status !== "approved"
+          ).sort((a: ChoreSubmission, b: ChoreSubmission) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+          if (mySubmissions.length === 0) return null;
+          return (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">📤 My Submissions</h3>
+              <div className="space-y-2">
+                {mySubmissions.map((sub: ChoreSubmission) => (
+                  <Card key={sub.id} className={sub.status === "rejected" ? "border-destructive/30" : "border-yellow-500/30"}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <Send className="w-5 h-5 text-muted-foreground" />
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{sub.title}</div>
+                          {sub.note && <div className="text-xs text-muted-foreground">{sub.note}</div>}
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {sub.points}pts • {new Date(sub.submittedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                          {sub.status === "rejected" && (
+                            <div className="text-xs text-destructive mt-1">
+                              ❌ Rejected{sub.rejectionReason ? `: ${sub.rejectionReason}` : ""}
+                            </div>
+                          )}
+                        </div>
+                        {sub.photoUrl && (
+                          <img src={sub.photoUrl} alt="Proof" className="w-10 h-10 rounded object-cover" />
+                        )}
+                        <span className={`text-xs px-2 py-0.5 rounded ${sub.status === "pending" ? "bg-yellow-500/20 text-yellow-500" : "bg-destructive/20 text-destructive"}`}>
+                          {sub.status === "pending" ? "⏳ Pending" : "Rejected"}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
+// ── Submit Chore View ──
+function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
+  kid: Kid; onBack: () => void; refresh: () => void; submitPhotoRef: React.RefObject<HTMLInputElement>;
+}) {
+  const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
+  const [points, setPoints] = useState(5);
+  const [photoUrl, setPhotoUrl] = useState<string>("");
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoPreview(URL.createObjectURL(file));
+    setUploading(true);
+    try {
+      const url = await choresApi.uploadPhoto(file);
+      setPhotoUrl(url);
+    } catch {
+      toast.error("Photo upload failed");
+      setPhotoPreview("");
+    }
+    setUploading(false);
+  };
+
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      toast.error("Please describe what you did");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await choresApi.submitChore({
+        kidId: kid.id,
+        title: title.trim(),
+        note: note.trim() || undefined,
+        photoUrl: photoUrl || undefined,
+        points,
+      });
+      refresh();
+      toast.success("📤 Submitted! Waiting for parent approval");
+      onBack();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <input ref={submitPhotoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
+        <div className="max-w-lg mx-auto flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-lg font-semibold">📤 Submit a Chore</h1>
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto p-4 space-y-4">
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">What did you do? *</label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Cleaned the garage, Organized bookshelf..."
+                maxLength={200}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Add a note (optional)</label>
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Any extra details..."
+                maxLength={500}
+                rows={2}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">How many points?</label>
+              <div className="flex items-center gap-2">
+                {[3, 5, 10, 15, 20].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPoints(p)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      points === p
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    }`}
+                  >
+                    {p}pts
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Photo proof (optional)</label>
+              {photoPreview ? (
+                <div className="relative inline-block">
+                  <img src={photoPreview} alt="Preview" className="w-32 h-32 rounded-lg object-cover" />
+                  {uploading && (
+                    <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
+                      <span className="text-xs">Uploading...</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => { setPhotoPreview(""); setPhotoUrl(""); }}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <Button variant="outline" onClick={() => submitPhotoRef.current?.click()}>
+                  <Camera className="w-4 h-4 mr-2" /> Add Photo
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={!title.trim() || submitting || uploading}
+          onClick={handleSubmit}
+        >
+          <Send className="w-4 h-4 mr-2" />
+          {submitting ? "Submitting..." : "Submit for Approval"}
+        </Button>
+
+        <p className="text-xs text-center text-muted-foreground">
+          Your parent will review and approve this chore. Points are awarded after approval.
+        </p>
       </div>
     </div>
   );
