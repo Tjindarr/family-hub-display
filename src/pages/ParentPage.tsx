@@ -104,7 +104,7 @@ export default function ParentPage() {
           <RewardsTab data={data} refresh={refresh} showAdd={showAddReward} setShowAdd={setShowAddReward} />
         )}
         {tab === "approvals" && <ApprovalsTab data={data} refresh={refresh} />}
-        {tab === "history" && <HistoryTab data={data} />}
+        {tab === "history" && <HistoryTab data={data} refresh={refresh} />}
       </div>
     </div>
   );
@@ -608,7 +608,7 @@ function ApprovalsTab({ data, refresh }: any) {
 }
 
 // ── History Tab ──
-function HistoryTab({ data }: any) {
+function HistoryTab({ data, refresh }: any) {
   const logs = [...data.logs]
     .filter((l: any) => !l.undoneAt)
     .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
@@ -644,7 +644,7 @@ function HistoryTab({ data }: any) {
           const chore = data.chores.find((c: Chore) => c.id === log.choreId);
           const kid = data.kids.find((k: Kid) => k.id === log.kidId);
           return (
-            <div key={log.id} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded hover:bg-secondary/50">
+            <div key={log.id} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded hover:bg-secondary/50 group">
               <span>{chore?.icon}</span>
               <span className="flex-1 truncate">{chore?.title}</span>
               <span className="flex items-center gap-1" style={{ color: kid?.color }}>{kid && <KidAvatar kid={kid} size={16} />} {kid?.name}</span>
@@ -652,6 +652,18 @@ function HistoryTab({ data }: any) {
                 {new Date(log.completedAt).toLocaleDateString()}
               </span>
               {log.approved && <Check className="w-3 h-3 text-primary" />}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+                onClick={async () => {
+                  await choresApi.deleteLog(log.id);
+                  refresh();
+                  toast.success("Log entry removed");
+                }}
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
             </div>
           );
         })}
