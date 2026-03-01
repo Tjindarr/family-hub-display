@@ -152,6 +152,7 @@ export function getKidLevel(totalPoints: number): LevelDefinition & { level: num
 // ── Chore Settings ──
 export interface ChoreSettings {
   rotationEnabled: boolean;
+  showSuggestions: boolean;
   categories: string[];
   bonusDays: BonusDay[];
 }
@@ -185,6 +186,7 @@ export const DEFAULT_BADGES: Badge[] = [
 
 export const DEFAULT_SETTINGS: ChoreSettings = {
   rotationEnabled: false,
+  showSuggestions: true,
   categories: ["Kitchen", "Bedroom", "Bathroom", "Outdoor", "General"],
   bonusDays: [],
 };
