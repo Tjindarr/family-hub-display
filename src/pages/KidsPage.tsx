@@ -83,9 +83,12 @@ export default function KidsPage() {
   const bonus = getTodayBonusMultiplier(data.settings?.bonusDays || []);
 
   // Get due chores grouped by time of day
-  const dueChores = data.chores.filter((c) => isChoreDueToday(c, data.logs));
+  const dueChores = data.chores.filter((c) => {
+    if (c.perKid) return isChoreDueToday(c, data.logs.filter((l: any) => l.kidId === kid.id));
+    return isChoreDueToday(c, data.logs);
+  });
   const completedToday = data.chores
-    .map((c) => ({ chore: c, log: isChoreCompletedToday(c.id, data.logs) }))
+    .map((c) => ({ chore: c, log: isChoreCompletedToday(c.id, data.logs, kid.id) }))
     .filter((x) => x.log && x.log.kidId === kid.id);
 
   // Current challenges
@@ -391,9 +394,11 @@ export default function KidsPage() {
             <h3 className="text-sm font-medium text-muted-foreground mb-2">{group.label}</h3>
             <div className="space-y-2">
               {group.chores.map((chore) => {
-                const completed = isChoreCompletedToday(chore.id, data.logs);
+                const completed = chore.perKid
+                  ? isChoreCompletedToday(chore.id, data.logs, kid.id)
+                  : isChoreCompletedToday(chore.id, data.logs);
                 const completedByMe = completed && completed.kidId === kid.id;
-                const completedByOther = completed && completed.kidId !== kid.id;
+                const completedByOther = !chore.perKid && completed && completed.kidId !== kid.id;
                 const otherKid = completedByOther ? data.kids.find((k: Kid) => k.id === completed!.kidId) : null;
                 const canUndo = completedByMe;
 

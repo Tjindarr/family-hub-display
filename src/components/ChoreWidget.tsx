@@ -36,15 +36,21 @@ export default function ChoreWidget({ config }: Props) {
 
   const activeChores = data.chores.filter((c) => !c.paused);
   const dueToday = activeChores.filter((c) => isChoreDueToday(c, data.logs));
-  const completedToday = dueToday.filter((c) => isChoreCompletedToday(c.id, data.logs));
+  const completedToday = dueToday.filter((c) => {
+    if (c.perKid) return data.kids.every((k: Kid) => isChoreCompletedToday(c.id, data.logs, k.id));
+    return isChoreCompletedToday(c.id, data.logs);
+  });
   const pendingToday = dueToday.length - completedToday.length;
 
-  // Filter what to show
+  const isFullyCompleted = (c: Chore) => {
+    if (c.perKid) return data.kids.every((k: Kid) => isChoreCompletedToday(c.id, data.logs, k.id));
+    return !!isChoreCompletedToday(c.id, data.logs);
+  };
   let visibleChores: Chore[];
   if (showAllChores) {
-    visibleChores = showCompleted ? activeChores : activeChores.filter((c) => !isChoreCompletedToday(c.id, data.logs));
+    visibleChores = showCompleted ? activeChores : activeChores.filter((c) => !isFullyCompleted(c));
   } else {
-    visibleChores = showCompleted ? dueToday : dueToday.filter((c) => !isChoreCompletedToday(c.id, data.logs));
+    visibleChores = showCompleted ? dueToday : dueToday.filter((c) => !isFullyCompleted(c));
   }
   if (maxVisible > 0) visibleChores = visibleChores.slice(0, maxVisible);
 
@@ -87,16 +93,31 @@ export default function ChoreWidget({ config }: Props) {
             const log = isChoreCompletedToday(chore.id, data.logs);
             const kid = log ? data.kids.find((k: Kid) => k.id === log.kidId) : null;
             const fairKid = showFairness && !log ? suggestFairKid(chore.id, data.kids, data.logs, chore.rotationKids, data.settings?.rotationEnabled) : null;
+
+            // Per-kid: show avatars for each kid's completion
+            const perKidStatus = chore.perKid
+              ? data.kids.map((k: Kid) => ({ kid: k, done: !!isChoreCompletedToday(chore.id, data.logs, k.id) }))
+              : null;
+            const allDone = perKidStatus ? perKidStatus.every((x) => x.done) : !!log;
+
             return (
               <div key={chore.id} className="flex items-center gap-2" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
                 <span className="text-base">{chore.icon}</span>
                 <span
-                  className={`flex-1 truncate ${log ? "line-through" : ""}`}
-                  style={{ color: log ? "hsl(var(--muted-foreground))" : (choreTextColor || undefined) }}
+                  className={`flex-1 truncate ${allDone ? "line-through" : ""}`}
+                  style={{ color: allDone ? "hsl(var(--muted-foreground))" : (choreTextColor || undefined) }}
                 >
                   {chore.title}
                 </span>
-                {kid ? (
+                {perKidStatus ? (
+                  <span className="flex items-center gap-0.5">
+                    {perKidStatus.map((x) => (
+                      <span key={x.kid.id} className={x.done ? "" : "opacity-30"}>
+                        <KidAvatar kid={x.kid} size={avatarSize - 2} />
+                      </span>
+                    ))}
+                  </span>
+                ) : kid ? (
                   <span className="text-xs flex items-center gap-1" style={{ color: kid.color, fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
                     <KidAvatar kid={kid} size={avatarSize} /> {kid.name}
                   </span>

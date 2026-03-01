@@ -32,6 +32,7 @@ export interface Chore {
   deadline?: string; // HH:MM deadline time
   earlyBonus?: number; // bonus points for completing before deadline
   rotationKids?: string[]; // kid IDs for auto-rotation assignment
+  perKid?: boolean; // if true, each kid can complete independently
 }
 
 export interface ChoreLog {
@@ -281,8 +282,8 @@ export function isChoreDueToday(chore: Chore, logs: ChoreLog[]): boolean {
   }
 }
 
-/** Check if a chore was completed today */
-export function isChoreCompletedToday(choreId: string, logs: ChoreLog[]): ChoreLog | null {
+/** Check if a chore was completed today (optionally for a specific kid) */
+export function isChoreCompletedToday(choreId: string, logs: ChoreLog[], kidId?: string): ChoreLog | null {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return (
@@ -290,7 +291,8 @@ export function isChoreCompletedToday(choreId: string, logs: ChoreLog[]): ChoreL
       (l) =>
         l.choreId === choreId &&
         !l.undoneAt &&
-        new Date(l.completedAt).getTime() >= today.getTime()
+        new Date(l.completedAt).getTime() >= today.getTime() &&
+        (kidId ? l.kidId === kidId : true)
     ) ?? null
   );
 }
