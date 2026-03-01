@@ -290,18 +290,18 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async () => {
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={async () => {
                       await choresApi.updateChore(chore.id, { paused: !chore.paused });
                       refresh();
                       toast.success(chore.paused ? "Chore resumed" : "Chore paused");
                     }}>
                       {chore.paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingChore(chore)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => setEditingChore(chore)}>
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive" onClick={async () => {
                       await choresApi.deleteChore(chore.id);
                       refresh();
                       toast.success("Chore deleted");
@@ -461,7 +461,7 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
         )}
 
         {/* Deadline & Early Bonus */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label className="text-xs">Deadline (optional)</Label>
             <Input type="time" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="mt-1" />
@@ -494,7 +494,7 @@ function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel 
           </div>
         )}
 
-        <div className="flex items-center gap-6 flex-wrap">
+        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
           <div className="flex items-center gap-2">
             <Switch checked={requirePhoto} onCheckedChange={setRequirePhoto} />
             <Label className="text-xs">Require photo</Label>
@@ -981,15 +981,15 @@ function ApprovalsTab({ data, refresh }: any) {
                       )}
                     </div>
                     {rejectingId !== sub.id && (
-                      <div className="flex gap-1">
-                        <Button size="sm" onClick={async () => {
+                      <div className="flex gap-1 shrink-0">
+                        <Button size="sm" className="text-xs px-2 sm:px-3" onClick={async () => {
                           await choresApi.approveSubmission(sub.id);
                           refresh();
                           toast.success(`Approved! +${sub.points}pts`);
                         }}>
-                          <Check className="w-4 h-4 mr-1" /> Approve
+                          <Check className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Approve</span>
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setRejectingId(sub.id)}>
+                        <Button size="sm" variant="outline" className="px-2" onClick={() => setRejectingId(sub.id)}>
                           ✕
                         </Button>
                       </div>
@@ -1298,7 +1298,7 @@ function SettingsTab({ data, refresh }: any) {
             </div>
           ))}
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <div>
               <Label className="text-xs">Day</Label>
               <Select value={String(newBonusDayOfWeek)} onValueChange={(v) => setNewBonusDayOfWeek(Number(v))}>
@@ -1314,7 +1314,7 @@ function SettingsTab({ data, refresh }: any) {
               <Label className="text-xs">Multiplier</Label>
               <Input type="number" min={1.5} step={0.5} value={newBonusMultiplier} onChange={(e) => setNewBonusMultiplier(+e.target.value)} className="mt-1" />
             </div>
-            <div>
+            <div className="col-span-2 sm:col-span-1">
               <Label className="text-xs">Label</Label>
               <Input value={newBonusLabel} onChange={(e) => setNewBonusLabel(e.target.value)} placeholder="2x Sunday" className="mt-1" />
             </div>
@@ -1361,7 +1361,7 @@ function SettingsTab({ data, refresh }: any) {
             );
           })}
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <div>
               <Label className="text-xs">Kid</Label>
               <Select value={spKidId} onValueChange={setSpKidId}>
@@ -1377,7 +1377,7 @@ function SettingsTab({ data, refresh }: any) {
               <Label className="text-xs">Date</Label>
               <Input type="date" value={spDate} onChange={(e) => setSpDate(e.target.value)} className="mt-1" />
             </div>
-            <div>
+            <div className="col-span-2 sm:col-span-1">
               <Label className="text-xs">Reason</Label>
               <Select value={spReason} onValueChange={setSpReason}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
