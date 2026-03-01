@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, BonusDay, WeeklyChallenge, StreakProtection, ChoreSubmission } from "@/lib/chores-types";
@@ -40,6 +40,16 @@ export default function ParentPage() {
   const [showAddReward, setShowAddReward] = useState(false);
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
   const showSuggestions = data.settings?.showSuggestions ?? true;
+
+  useEffect(() => {
+    const link = document.querySelector('link[rel="manifest"]');
+    if (link) link.setAttribute('href', '/manifest-parent.json');
+    document.title = 'HomeDash Parent';
+    return () => {
+      if (link) link.setAttribute('href', '/manifest.json');
+      document.title = 'HomeDash';
+    };
+  }, []);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "chores", label: "Chores", icon: <ClipboardList className="w-4 h-4" /> },
