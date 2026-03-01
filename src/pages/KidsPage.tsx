@@ -46,8 +46,8 @@ export default function KidsPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <h1 className="text-2xl font-bold mb-2">👋 Who are you?</h1>
-          <p className="text-muted-foreground mb-8">Tap your name to see your chores</p>
+          <h1 className="text-3xl font-bold mb-3">👋 Who are you?</h1>
+          <p className="text-muted-foreground text-lg mb-8">Tap your name to see your chores</p>
           <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
             {data.kids.map((kid) => {
               const total = getKidTotalPoints(kid.id, data.logs, data.chores);
@@ -59,14 +59,14 @@ export default function KidsPage() {
                   className="flex flex-col items-center gap-2 p-6 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all active:scale-95"
                 >
                   <KidAvatar kid={kid} size={64} />
-                  <span className="font-semibold text-lg" style={{ color: kid.color }}>{kid.name}</span>
-                  <span className="text-xs text-muted-foreground">{level.icon} {level.name}</span>
+                  <span className="font-semibold text-xl" style={{ color: kid.color }}>{kid.name}</span>
+                  <span className="text-sm text-muted-foreground">{level.icon} {level.name}</span>
                 </button>
               );
             })}
           </div>
           {data.kids.length === 0 && (
-            <p className="text-muted-foreground text-sm mt-8">No kids added yet. Ask a parent to set up the system.</p>
+            <p className="text-muted-foreground text-base mt-8">No kids added yet. Ask a parent to set up the system.</p>
           )}
         </div>
       </div>
@@ -270,12 +270,12 @@ export default function KidsPage() {
             <KidAvatar kid={kid} size={32} />
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold" style={{ color: kid.color }}>{kid.name}</span>
-                <span className="text-xs bg-secondary px-1.5 py-0.5 rounded">
+                <span className="font-semibold text-base" style={{ color: kid.color }}>{kid.name}</span>
+                <span className="text-sm bg-secondary px-1.5 py-0.5 rounded">
                   {level.icon} {level.name}
                 </span>
               </div>
-              <div className="text-xs text-muted-foreground">{dueChores.length} chores today</div>
+              <div className="text-sm text-muted-foreground">{dueChores.length} chores today</div>
             </div>
             <div className="flex gap-1">
               {currentChallenges.length > 0 && (
@@ -309,22 +309,22 @@ export default function KidsPage() {
           <Card>
             <CardContent className="p-3 text-center">
               <Trophy className="w-5 h-5 mx-auto mb-1 text-yellow-500" />
-              <div className="text-lg font-bold">{totalPoints}</div>
-              <div className="text-xs text-muted-foreground">Total pts</div>
+              <div className="text-xl font-bold">{totalPoints}</div>
+              <div className="text-sm text-muted-foreground">Total pts</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3 text-center">
               <Flame className="w-5 h-5 mx-auto mb-1 text-orange-500" />
-              <div className="text-lg font-bold">{streak}</div>
-              <div className="text-xs text-muted-foreground">Day streak</div>
+              <div className="text-xl font-bold">{streak}</div>
+              <div className="text-sm text-muted-foreground">Day streak</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3 text-center">
               <Star className="w-5 h-5 mx-auto mb-1 text-primary" />
-              <div className="text-lg font-bold">{weeklyPoints}</div>
-              <div className="text-xs text-muted-foreground">This week</div>
+              <div className="text-xl font-bold">{weeklyPoints}</div>
+              <div className="text-sm text-muted-foreground">This week</div>
             </CardContent>
           </Card>
         </div>
@@ -333,11 +333,11 @@ export default function KidsPage() {
         {level.nextLevel && (
           <Card>
             <CardContent className="p-3">
-              <div className="flex items-center gap-2 text-sm mb-1">
+              <div className="flex items-center gap-2 text-base mb-1">
                 <span>{level.icon} {level.name}</span>
                 <span className="text-muted-foreground">→</span>
                 <span>{level.nextLevel.icon} {level.nextLevel.name}</span>
-                <span className="ml-auto text-xs text-muted-foreground">{totalPoints}/{level.nextLevel.minPoints}</span>
+                <span className="ml-auto text-sm text-muted-foreground">{totalPoints}/{level.nextLevel.minPoints}</span>
               </div>
               <Progress value={level.progress} className="h-2" />
             </CardContent>
@@ -350,7 +350,7 @@ export default function KidsPage() {
             {badges.map((kb: any) => {
               const badge = data.badges.find((b: any) => b.id === kb.badgeId);
               return badge ? (
-                <div key={kb.badgeId} className="flex items-center gap-1 bg-secondary rounded-full px-3 py-1 text-sm">
+                <div key={kb.badgeId} className="flex items-center gap-1 bg-secondary rounded-full px-3 py-1 text-base">
                   <span>{badge.icon}</span>
                   <span className="text-secondary-foreground">{badge.name}</span>
                 </div>
@@ -363,10 +363,10 @@ export default function KidsPage() {
         {nextReward && (
           <Card>
             <CardContent className="p-3">
-              <div className="flex items-center gap-2 text-sm mb-1">
+              <div className="flex items-center gap-2 text-base mb-1">
                 <span>{nextReward.icon}</span>
                 <span>Next: {nextReward.title}</span>
-                <span className="ml-auto text-muted-foreground">{available}/{nextReward.pointsCost}</span>
+                <span className="ml-auto text-sm text-muted-foreground">{available}/{nextReward.pointsCost}</span>
               </div>
               <Progress value={(available / nextReward.pointsCost) * 100} className="h-2" />
             </CardContent>
@@ -377,10 +377,10 @@ export default function KidsPage() {
         {currentChallenges.length > 0 && (
           <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setShowChallenges(true)}>
             <CardContent className="p-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Zap className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-2 text-base">
+                <Zap className="w-5 h-5 text-primary" />
                 <span className="font-medium">Weekly Challenges</span>
-                <span className="ml-auto text-xs text-muted-foreground">
+                <span className="ml-auto text-sm text-muted-foreground">
                   {currentChallenges.filter((c: WeeklyChallenge) => c.completedBy?.includes(kid.id)).length}/{currentChallenges.length} done
                 </span>
               </div>
@@ -391,7 +391,7 @@ export default function KidsPage() {
         {/* Chore list grouped by time of day */}
         {grouped.map((group) => (
           <div key={group.key}>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">{group.label}</h3>
+            <h3 className="text-base font-medium text-muted-foreground mb-2">{group.label}</h3>
             <div className="space-y-2">
               {group.chores.map((chore) => {
                 const completed = chore.perKid
@@ -421,22 +421,22 @@ export default function KidsPage() {
                   <Card key={chore.id} className={completedByMe ? "border-primary/30 bg-primary/5" : completedByOther ? "opacity-50" : ""}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <span className="text-3xl">{chore.icon}</span>
+                        <span className="text-4xl">{chore.icon}</span>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{chore.title}</span>
+                            <span className="font-medium text-base">{chore.title}</span>
                             {chore.category && (
-                              <span className="text-[10px] bg-secondary px-1.5 rounded">{chore.category}</span>
+                              <span className="text-xs bg-secondary px-1.5 rounded">{chore.category}</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
                             <span>{chore.points}pts{bonus ? ` (${Math.round(chore.points * bonus.multiplier)}✨)` : ""}</span>
                             <span>{"⭐".repeat(chore.difficulty)}</span>
-                            {chore.requirePhoto && <Camera className="w-3 h-3" />}
+                            {chore.requirePhoto && <Camera className="w-4 h-4" />}
                           </div>
                           {deadlineInfo && (
-                            <div className={`flex items-center gap-1 text-xs mt-1 ${deadlineInfo.isUrgent ? "text-destructive" : "text-muted-foreground"}`}>
-                              <Clock className="w-3 h-3" />
+                          <div className={`flex items-center gap-1 text-sm mt-1 ${deadlineInfo.isUrgent ? "text-destructive" : "text-muted-foreground"}`}>
+                              <Clock className="w-4 h-4" />
                               <span>{deadlineInfo.text}</span>
                               {deadlineInfo.canEarnBonus && (
                                 <span className="text-primary font-medium">+{chore.earlyBonus} early bonus!</span>
@@ -444,15 +444,15 @@ export default function KidsPage() {
                             </div>
                           )}
                           {completedByOther && otherKid && (
-                            <div className="flex items-center gap-1 text-xs mt-1" style={{ color: otherKid.color }}>
-                              Done by <KidAvatar kid={otherKid} size={14} /> {otherKid.name}
+                            <div className="flex items-center gap-1 text-sm mt-1" style={{ color: otherKid.color }}>
+                              Done by <KidAvatar kid={otherKid} size={16} /> {otherKid.name}
                             </div>
                           )}
                         </div>
                         {completedByMe ? (
                           <div className="flex items-center gap-2">
-                            <div className="text-primary font-medium text-sm flex items-center gap-1">
-                              <Check className="w-5 h-5" /> Done!
+                            <div className="text-primary font-medium text-base flex items-center gap-1">
+                              <Check className="w-6 h-6" /> Done!
                             </div>
                             {canUndo && (
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleUndo(completed!.id)}>
@@ -483,31 +483,31 @@ export default function KidsPage() {
         {dueChores.length === 0 && (
           <div className="text-center py-12">
             <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-xl font-semibold mb-1">All done!</h2>
-            <p className="text-muted-foreground">No chores due today. Enjoy your free time!</p>
+            <h2 className="text-2xl font-semibold mb-1">All done!</h2>
+            <p className="text-muted-foreground text-base">No chores due today. Enjoy your free time!</p>
           </div>
         )}
 
         {/* Completed by me today */}
         {completedToday.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">✅ Completed today</h3>
+            <h3 className="text-base font-medium text-muted-foreground mb-2">✅ Completed today</h3>
             <div className="space-y-1">
               {completedToday.map(({ chore, log }) => (
-                <div key={log!.id} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded bg-primary/5">
+                <div key={log!.id} className="flex items-center gap-2 text-base py-1.5 px-2 rounded bg-primary/5">
                   <span>{chore.icon}</span>
                   <span className="flex-1">{chore.title}</span>
                   {log!.bonusMultiplier && log!.bonusMultiplier > 1 && (
-                    <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1 rounded">{log!.bonusMultiplier}x</span>
+                    <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1 rounded">{log!.bonusMultiplier}x</span>
                   )}
                   {log!.earlyBonusEarned && (
-                    <span className="text-[10px] bg-primary/20 text-primary px-1 rounded">+{log!.earlyBonusEarned}</span>
+                    <span className="text-xs bg-primary/20 text-primary px-1 rounded">+{log!.earlyBonusEarned}</span>
                   )}
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     {new Date(log!.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                   {log!.photoUrl && <PhotoIndicator onClick={() => setLightboxPhoto(log!.photoUrl!)} />}
-                  <span className="text-xs text-primary">+{chore.points}</span>
+                  <span className="text-sm text-primary">+{chore.points}</span>
                 </div>
               ))}
             </div>
@@ -522,7 +522,7 @@ export default function KidsPage() {
           if (mySubmissions.length === 0) return null;
           return (
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">📤 My Submissions</h3>
+              <h3 className="text-base font-medium text-muted-foreground mb-2">📤 My Submissions</h3>
               <div className="space-y-2">
                 {mySubmissions.map((sub: ChoreSubmission) => (
                   <Card key={sub.id} className={sub.status === "rejected" ? "border-destructive/30" : "border-yellow-500/30"}>
@@ -530,13 +530,13 @@ export default function KidsPage() {
                       <div className="flex items-center gap-3">
                         <Send className="w-5 h-5 text-muted-foreground" />
                         <div className="flex-1">
-                          <div className="font-medium text-sm">{sub.title}</div>
-                          {sub.note && <div className="text-xs text-muted-foreground">{sub.note}</div>}
-                          <div className="text-xs text-muted-foreground mt-0.5">
+                          <div className="font-medium text-base">{sub.title}</div>
+                          {sub.note && <div className="text-sm text-muted-foreground">{sub.note}</div>}
+                          <div className="text-sm text-muted-foreground mt-0.5">
                             {sub.points}pts • {new Date(sub.submittedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </div>
                           {sub.status === "rejected" && (
-                            <div className="text-xs text-destructive mt-1">
+                            <div className="text-sm text-destructive mt-1">
                               ❌ Rejected{sub.rejectionReason ? `: ${sub.rejectionReason}` : ""}
                             </div>
                           )}
