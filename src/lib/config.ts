@@ -295,6 +295,7 @@ export interface ChoreWidgetConfig {
   showUpcoming: boolean;
   showFairness: boolean;
   showCompleted: boolean;
+  showAllChores: boolean;
   maxVisible: number; // 0 = show all
   headingColor?: string;
   headingSize?: number;
@@ -519,6 +520,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
     showUpcoming: true,
     showFairness: true,
     showCompleted: true,
+    showAllChores: false,
     maxVisible: 0,
   },
 };

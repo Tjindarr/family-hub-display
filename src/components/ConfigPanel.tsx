@@ -205,7 +205,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [enableChores, setEnableChores] = useState(config.enableChores ?? false);
   const [choreWidgetConfig, setChoreWidgetConfig] = useState<ChoreWidgetConfig>(config.choreWidgetConfig || {
     enabled: false, label: "Chores", icon: "mdi:clipboard-check-outline",
-    showScoreboard: true, showUpcoming: true, showFairness: true, showCompleted: true, maxVisible: 0,
+    showScoreboard: true, showUpcoming: true, showFairness: true, showCompleted: true, showAllChores: false, maxVisible: 0,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
@@ -2623,6 +2623,13 @@ function WidgetStyleControls({ style, onChange, fields }: {
                             onCheckedChange={(v) => setChoreWidgetConfig((prev) => ({ ...prev, showCompleted: v }))}
                           />
                           <Label className="text-xs">Show completed</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={choreWidgetConfig.showAllChores ?? false}
+                            onCheckedChange={(v) => setChoreWidgetConfig((prev) => ({ ...prev, showAllChores: v }))}
+                          />
+                          <Label className="text-xs">Show all chores (not just due today)</Label>
                         </div>
                       </div>
                     </div>

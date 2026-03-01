@@ -21,6 +21,7 @@ export default function ChoreWidget({ config }: Props) {
   const showUpcoming = config?.showUpcoming ?? true;
   const showFairness = config?.showFairness ?? true;
   const showCompleted = config?.showCompleted ?? true;
+  const showAllChores = config?.showAllChores ?? false;
   const maxVisible = config?.maxVisible || 0;
   const headingColor = config?.headingColor;
   const headingSize = config?.headingSize;
@@ -36,7 +37,12 @@ export default function ChoreWidget({ config }: Props) {
   const pendingToday = dueToday.length - completedToday.length;
 
   // Filter what to show
-  let visibleChores = showCompleted ? dueToday : dueToday.filter((c) => !isChoreCompletedToday(c.id, data.logs));
+  let visibleChores: Chore[];
+  if (showAllChores) {
+    visibleChores = showCompleted ? activeChores : activeChores.filter((c) => !isChoreCompletedToday(c.id, data.logs));
+  } else {
+    visibleChores = showCompleted ? dueToday : dueToday.filter((c) => !isChoreCompletedToday(c.id, data.logs));
+  }
   if (maxVisible > 0) visibleChores = visibleChores.slice(0, maxVisible);
 
   // Upcoming chores (not due today)
