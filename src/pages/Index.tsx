@@ -382,8 +382,8 @@ const Index = () => {
     if (id === "pollen") {
       return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={effectivePollenConfig} />;
     }
-    if (id === "chores" && config.enableChores) {
-      return <ChoreWidget />;
+    if (id === "chores" && (config.enableChores || config.choreWidgetConfig?.enabled)) {
+      return <ChoreWidget config={config.choreWidgetConfig} />;
     }
     return null;
   };

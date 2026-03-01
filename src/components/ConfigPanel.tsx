@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -203,6 +203,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const setStyle = (id: string, s: WidgetStyleConfig) => setWidgetStyles(prev => ({ ...prev, [id]: s }));
   const [globalFormat, setGlobalFormat] = useState<GlobalFormatConfig>(config.globalFormat || { dateFormat: "yyyy-MM-dd", timeFormat: "24h" });
   const [enableChores, setEnableChores] = useState(config.enableChores ?? false);
+  const [choreWidgetConfig, setChoreWidgetConfig] = useState<ChoreWidgetConfig>(config.choreWidgetConfig || {
+    enabled: false, label: "Chores", icon: "mdi:clipboard-check-outline",
+    showScoreboard: true, showUpcoming: true, showFairness: true, showCompleted: true, maxVisible: 0,
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
@@ -225,6 +229,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const labelMap: Record<string, string> = {
       electricity: "Electricity Price", calendar: "Calendar", weather: "Weather", photos: "Photo Gallery",
       food_menu: "Food Menu", notifications: "Notifications", pollen: "Pollen Forecast",
+      chores: choreWidgetConfig.label || "Chores",
     };
     const groupMap = new Map<number, string[]>();
     tempEntities.forEach((e, i) => {
@@ -319,7 +324,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       widgetStyles,
       personCardFontSizes,
       globalFormat,
-      enableChores,
+      enableChores: enableChores || choreWidgetConfig.enabled,
+      choreWidgetConfig,
     });
     setOpen(false);
   };
@@ -2550,6 +2556,125 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   </div>
                 </div>
               ))}
+            </CollapsibleSection>
+
+            {/* HomeChores Widget */}
+            <CollapsibleSection title="HomeChores">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={choreWidgetConfig.enabled}
+                    onCheckedChange={(checked) => setChoreWidgetConfig((prev) => ({ ...prev, enabled: checked }))}
+                  />
+                  <Label className="text-sm text-foreground">Enable HomeChores widget</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Family chore tracking with points, badges, streaks, and rewards. Kids get a mobile-friendly page installable as an iPhone app.
+                </p>
+
+                {choreWidgetConfig.enabled && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Label</Label>
+                        <Input
+                          value={choreWidgetConfig.label}
+                          onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, label: e.target.value }))}
+                          placeholder="Chores"
+                          className="mt-1 bg-muted border-border"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Icon (mdi:*)</Label>
+                        <IconPicker
+                          value={choreWidgetConfig.icon}
+                          onChange={(val) => setChoreWidgetConfig((prev) => ({ ...prev, icon: val }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground uppercase tracking-wider">Display Options</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={choreWidgetConfig.showScoreboard}
+                            onCheckedChange={(v) => setChoreWidgetConfig((prev) => ({ ...prev, showScoreboard: v }))}
+                          />
+                          <Label className="text-xs">Weekly scoreboard</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={choreWidgetConfig.showUpcoming}
+                            onCheckedChange={(v) => setChoreWidgetConfig((prev) => ({ ...prev, showUpcoming: v }))}
+                          />
+                          <Label className="text-xs">Upcoming chores</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={choreWidgetConfig.showFairness}
+                            onCheckedChange={(v) => setChoreWidgetConfig((prev) => ({ ...prev, showFairness: v }))}
+                          />
+                          <Label className="text-xs">Fairness suggestions</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={choreWidgetConfig.showCompleted}
+                            onCheckedChange={(v) => setChoreWidgetConfig((prev) => ({ ...prev, showCompleted: v }))}
+                          />
+                          <Label className="text-xs">Show completed</Label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Max visible chores (0 = all)</Label>
+                      <Input
+                        type="number" min={0}
+                        value={choreWidgetConfig.maxVisible}
+                        onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, maxVisible: Number(e.target.value) || 0 }))}
+                        placeholder="0 (show all)"
+                        className="mt-1 bg-muted border-border"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground uppercase tracking-wider">Styling</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Heading Color</Label>
+                          <ColorPicker value={choreWidgetConfig.headingColor || ""} onChange={(val) => setChoreWidgetConfig((prev) => ({ ...prev, headingColor: val || undefined }))} className="w-full" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Heading Size (px)</Label>
+                          <Input type="number" min={8} max={32} value={choreWidgetConfig.headingSize || ""} onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, headingSize: Number(e.target.value) || undefined }))} placeholder="12 (default)" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Chore Text Color</Label>
+                          <ColorPicker value={choreWidgetConfig.choreTextColor || ""} onChange={(val) => setChoreWidgetConfig((prev) => ({ ...prev, choreTextColor: val || undefined }))} className="w-full" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Chore Text Size (px)</Label>
+                          <Input type="number" min={8} max={32} value={choreWidgetConfig.choreTextSize || ""} onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, choreTextSize: Number(e.target.value) || undefined }))} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-[10px] text-muted-foreground">Urgency Dot Size (px)</Label>
+                          <Input type="number" min={4} max={16} value={choreWidgetConfig.urgencyDotSize || ""} onChange={(e) => setChoreWidgetConfig((prev) => ({ ...prev, urgencyDotSize: Number(e.target.value) || undefined }))} placeholder="8 (default)" className="bg-muted border-border text-xs h-7" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open("/parent", "_blank")}>
+                        🧑‍💼 Parent Dashboard
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open("/kids", "_blank")}>
+                        👧 Kids Page
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </CollapsibleSection>
 
           </TabsContent>
