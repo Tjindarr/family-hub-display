@@ -629,7 +629,7 @@ function HistoryTab({ data, refresh }: any) {
               const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
               return (
                 <div key={kid.id} className="flex items-center gap-1.5 text-sm">
-                  <span>{kid.avatar}</span>
+                  <KidAvatar kid={kid} size={16} />
                   <span style={{ color: kid.color }}>{kid.name}</span>
                   <span className="text-muted-foreground">{weekly}pts</span>
                 </div>
