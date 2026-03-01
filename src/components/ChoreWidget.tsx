@@ -28,6 +28,9 @@ export default function ChoreWidget({ config }: Props) {
   const choreTextColor = config?.choreTextColor;
   const choreTextSize = config?.choreTextSize;
   const urgencyDotSize = config?.urgencyDotSize || 8;
+  const avatarSize = config?.avatarSize || 16;
+  const ptsTextSize = config?.ptsTextSize;
+  const ptsTextColor = config?.ptsTextColor;
 
   if (loading || data.chores.length === 0) return null;
 
@@ -94,12 +97,12 @@ export default function ChoreWidget({ config }: Props) {
                   {chore.title}
                 </span>
                 {kid ? (
-                  <span className="text-xs flex items-center gap-1" style={{ color: kid.color }}>
-                    <KidAvatar kid={kid} size={16} /> {kid.name}
+                  <span className="text-xs flex items-center gap-1" style={{ color: kid.color, fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
+                    <KidAvatar kid={kid} size={avatarSize} /> {kid.name}
                   </span>
                 ) : fairKid ? (
-                  <span className="text-xs flex items-center gap-1" style={{ color: fairKid.color, opacity: 0.6 }}>
-                    <KidAvatar kid={fairKid} size={14} /> {fairKid.name}?
+                  <span className="text-xs flex items-center gap-1" style={{ color: fairKid.color, opacity: 0.6, fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
+                    <KidAvatar kid={fairKid} size={avatarSize - 2} /> {fairKid.name}?
                   </span>
                 ) : (
                   <UrgencyDot days={0} size={urgencyDotSize} />
@@ -129,9 +132,9 @@ export default function ChoreWidget({ config }: Props) {
             {data.kids.map((kid: Kid) => {
               const pts = getKidWeeklyPoints(kid.id, data.logs, data.chores);
               return (
-                <span key={kid.id} className="text-xs flex items-center gap-1">
-                  <KidAvatar kid={kid} size={14} />
-                  <span style={{ color: kid.color }}>{pts}pts</span>
+                <span key={kid.id} className="text-xs flex items-center gap-1" style={{ fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
+                  <KidAvatar kid={kid} size={avatarSize - 2} />
+                  <span style={{ color: ptsTextColor || kid.color }}>{pts}pts</span>
                 </span>
               );
             })}
