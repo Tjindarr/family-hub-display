@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, BonusDay, WeeklyChallenge, StreakProtection } from "@/lib/chores-types";
+import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, BonusDay, WeeklyChallenge, StreakProtection, ChoreSubmission } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, Zap, BarChart3, ShieldCheck, Clock, Tag } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, Zap, BarChart3, ShieldCheck, Clock, Tag, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -51,9 +51,12 @@ export default function ParentPage() {
     { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
   ];
 
-  const pendingApprovals = data.logs.filter(
-    (l) => !l.undoneAt && !l.approved && data.chores.find((c) => c.id === l.choreId)?.requireApproval
-  );
+  const pendingApprovals = [
+    ...data.logs.filter(
+      (l) => !l.undoneAt && !l.approved && data.chores.find((c) => c.id === l.choreId)?.requireApproval
+    ),
+    ...(data.submissions || []).filter((s: ChoreSubmission) => s.status === "pending"),
+  ];
 
   const bonus = getTodayBonusMultiplier(data.settings?.bonusDays || []);
 
@@ -864,45 +867,124 @@ function ChallengesTab({ data, refresh }: any) {
 
 // ── Approvals Tab ──
 function ApprovalsTab({ data, refresh }: any) {
-  const pending = data.logs.filter(
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const pendingLogs = data.logs.filter(
     (l: any) => !l.undoneAt && !l.approved && data.chores.find((c: Chore) => c.id === l.choreId)?.requireApproval
   );
+  const pendingSubmissions: ChoreSubmission[] = (data.submissions || []).filter(
+    (s: ChoreSubmission) => s.status === "pending"
+  );
+
+  const totalPending = pendingLogs.length + pendingSubmissions.length;
 
   return (
     <>
-      <h2 className="text-base font-medium">Pending Approvals ({pending.length})</h2>
-      {pending.length === 0 && (
+      <h2 className="text-base font-medium">Pending Approvals ({totalPending})</h2>
+      {totalPending === 0 && (
         <p className="text-sm text-muted-foreground">No pending approvals 🎉</p>
       )}
-      <div className="space-y-2">
-        {pending.map((log: any) => {
-          const chore = data.chores.find((c: Chore) => c.id === log.choreId);
-          const kid = data.kids.find((k: Kid) => k.id === log.kidId);
-          return (
-            <Card key={log.id}>
-              <CardContent className="p-3 flex items-center gap-3">
-                <span className="text-2xl">{chore?.icon}</span>
-                <div className="flex-1">
-                  <div className="font-medium">{chore?.title}</div>
-                  <div className="text-xs text-muted-foreground">
-                    By {kid && <KidAvatar kid={kid} size={16} />} {kid?.name} • {new Date(log.completedAt).toLocaleString()}
+
+      {/* Chore submissions from kids */}
+      {pendingSubmissions.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-muted-foreground">📤 Kid Submissions</h3>
+          {pendingSubmissions.map((sub: ChoreSubmission) => {
+            const kid = data.kids.find((k: Kid) => k.id === sub.kidId);
+            return (
+              <Card key={sub.id} className="border-yellow-500/30">
+                <CardContent className="p-3">
+                  <div className="flex items-start gap-3">
+                    <Send className="w-5 h-5 mt-1 text-muted-foreground" />
+                    <div className="flex-1">
+                      <div className="font-medium">{sub.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        By {kid && <KidAvatar kid={kid} size={16} />} {kid?.name} • {new Date(sub.submittedAt).toLocaleString()}
+                      </div>
+                      {sub.note && <div className="text-xs text-muted-foreground mt-1">📝 {sub.note}</div>}
+                      <div className="text-xs mt-1">Requested: <span className="font-medium">{sub.points}pts</span></div>
+                      {sub.photoUrl && (
+                        <img src={sub.photoUrl} alt="Proof" className="mt-2 rounded w-32 h-32 object-cover" />
+                      )}
+                      {rejectingId === sub.id && (
+                        <div className="mt-2 flex gap-2">
+                          <Input
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            placeholder="Reason (optional)..."
+                            className="text-xs h-8"
+                          />
+                          <Button size="sm" variant="destructive" onClick={async () => {
+                            await choresApi.rejectSubmission(sub.id, rejectReason);
+                            refresh();
+                            setRejectingId(null);
+                            setRejectReason("");
+                            toast.success("Rejected");
+                          }}>
+                            Confirm
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setRejectingId(null); setRejectReason(""); }}>
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {rejectingId !== sub.id && (
+                      <div className="flex gap-1">
+                        <Button size="sm" onClick={async () => {
+                          await choresApi.approveSubmission(sub.id);
+                          refresh();
+                          toast.success(`Approved! +${sub.points}pts`);
+                        }}>
+                          <Check className="w-4 h-4 mr-1" /> Approve
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setRejectingId(sub.id)}>
+                          ✕
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  {log.photoUrl && (
-                    <img src={log.photoUrl} alt="Proof" className="mt-2 rounded w-32 h-32 object-cover" />
-                  )}
-                </div>
-                <Button size="sm" onClick={async () => {
-                  await choresApi.approveChore(log.id);
-                  refresh();
-                  toast.success("Approved!");
-                }}>
-                  <Check className="w-4 h-4 mr-1" /> Approve
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Regular chore approvals */}
+      {pendingLogs.length > 0 && (
+        <div className="space-y-2">
+          {pendingSubmissions.length > 0 && <h3 className="text-sm font-medium text-muted-foreground">📋 Chore Completions</h3>}
+          {pendingLogs.map((log: any) => {
+            const chore = data.chores.find((c: Chore) => c.id === log.choreId);
+            const kid = data.kids.find((k: Kid) => k.id === log.kidId);
+            return (
+              <Card key={log.id}>
+                <CardContent className="p-3 flex items-center gap-3">
+                  <span className="text-2xl">{chore?.icon}</span>
+                  <div className="flex-1">
+                    <div className="font-medium">{chore?.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      By {kid && <KidAvatar kid={kid} size={16} />} {kid?.name} • {new Date(log.completedAt).toLocaleString()}
+                    </div>
+                    {log.photoUrl && (
+                      <img src={log.photoUrl} alt="Proof" className="mt-2 rounded w-32 h-32 object-cover" />
+                    )}
+                  </div>
+                  <Button size="sm" onClick={async () => {
+                    await choresApi.approveChore(log.id);
+                    refresh();
+                    toast.success("Approved!");
+                  }}>
+                    <Check className="w-4 h-4 mr-1" /> Approve
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }

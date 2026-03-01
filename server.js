@@ -508,7 +508,62 @@ app.delete("/api/chores/streak-protections/:id", (req, res) => {
   res.json({ success: true });
 });
 
-// --- Static files ---
+// --- Chore Submissions ---
+app.post("/api/chores/submissions", (req, res) => {
+  const data = readChores();
+  data.submissions = data.submissions || [];
+  const submission = {
+    id: uid(),
+    kidId: req.body.kidId,
+    title: (req.body.title || "").trim().slice(0, 200),
+    note: (req.body.note || "").trim().slice(0, 500) || undefined,
+    photoUrl: req.body.photoUrl || undefined,
+    points: Math.max(1, Math.min(50, Number(req.body.points) || 5)),
+    submittedAt: new Date().toISOString(),
+    status: "pending",
+  };
+  data.submissions.push(submission);
+  writeChores(data);
+  res.json(submission);
+});
+
+app.put("/api/chores/submissions/:id/approve", (req, res) => {
+  const data = readChores();
+  data.submissions = data.submissions || [];
+  const sub = data.submissions.find((s) => s.id === req.params.id);
+  if (!sub) return res.status(404).json({ error: "Submission not found" });
+  sub.status = "approved";
+  sub.reviewedAt = new Date().toISOString();
+
+  // Create a log entry for the approved submission
+  const log = {
+    id: uid(),
+    choreId: `submission_${sub.id}`,
+    kidId: sub.kidId,
+    completedAt: sub.submittedAt,
+    photoUrl: sub.photoUrl || null,
+    approved: true,
+    approvedAt: new Date().toISOString(),
+    undoneAt: null,
+  };
+  data.logs.push(log);
+  writeChores(data);
+  res.json(sub);
+});
+
+app.put("/api/chores/submissions/:id/reject", (req, res) => {
+  const data = readChores();
+  data.submissions = data.submissions || [];
+  const sub = data.submissions.find((s) => s.id === req.params.id);
+  if (!sub) return res.status(404).json({ error: "Submission not found" });
+  sub.status = "rejected";
+  sub.reviewedAt = new Date().toISOString();
+  sub.rejectionReason = (req.body.reason || "").trim().slice(0, 300) || undefined;
+  writeChores(data);
+  res.json(sub);
+});
+
+
 app.use(express.static("/usr/share/nginx/html"));
 
 // SPA fallback
