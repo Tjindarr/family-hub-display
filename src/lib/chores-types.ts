@@ -110,18 +110,6 @@ export interface BonusDay {
   label: string; // e.g. "Double Point Saturday"
 }
 
-// ── Weekly Challenges ──
-export interface WeeklyChallenge {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  targetType: "chores_count" | "points_earned" | "early_completions" | "categories_covered";
-  targetValue: number;
-  bonusPoints: number;
-  weekStart: string; // ISO date of the Monday this challenge starts
-  completedBy: string[]; // kid IDs who completed it
-}
 
 // ── Streak Protection ──
 export interface StreakProtection {
@@ -181,7 +169,7 @@ export interface ChoresData {
   rewards: Reward[];
   rewardClaims: RewardClaim[];
   settings: ChoreSettings;
-  challenges: WeeklyChallenge[];
+  
   streakProtections: StreakProtection[];
   submissions: ChoreSubmission[];
 }
@@ -216,7 +204,7 @@ export const EMPTY_CHORES_DATA: ChoresData = {
   rewards: [],
   rewardClaims: [],
   settings: { ...DEFAULT_SETTINGS },
-  challenges: [],
+  
   streakProtections: [],
   submissions: [],
 };
@@ -456,48 +444,3 @@ export function suggestFairKid(choreId: string, kids: Kid[], logs: ChoreLog[], r
   return fairKid;
 }
 
-/** Check challenge progress for a kid this week */
-export function getChallengeProgress(challenge: WeeklyChallenge, kidId: string, logs: ChoreLog[], chores: Chore[]): number {
-  const weekStart = new Date(challenge.weekStart);
-  const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
-  const weekLogs = logs.filter(
-    (l) => l.kidId === kidId && !l.undoneAt &&
-      new Date(l.completedAt) >= weekStart && new Date(l.completedAt) < weekEnd
-  );
-
-  switch (challenge.targetType) {
-    case "chores_count":
-      return weekLogs.length;
-    case "points_earned": {
-      const choreMap = new Map(chores.map((c) => [c.id, c]));
-      return weekLogs.reduce((s, l) => {
-        const base = choreMap.get(l.choreId)?.points ?? 0;
-        return s + (base * (l.bonusMultiplier || 1)) + (l.earlyBonusEarned || 0);
-      }, 0);
-    }
-    case "early_completions":
-      return weekLogs.filter((l) => (l.earlyBonusEarned || 0) > 0).length;
-    case "categories_covered": {
-      const choreMap = new Map(chores.map((c) => [c.id, c]));
-      const cats = new Set(weekLogs.map((l) => choreMap.get(l.choreId)?.category).filter(Boolean));
-      return cats.size;
-    }
-    default:
-      return 0;
-  }
-}
-
-/** Generate weekly challenges */
-export function generateWeeklyChallenges(): Omit<WeeklyChallenge, "id" | "weekStart" | "completedBy">[] {
-  const pool: Omit<WeeklyChallenge, "id" | "weekStart" | "completedBy">[] = [
-    { title: "Chore Machine", description: "Complete 10 chores this week", icon: "⚡", targetType: "chores_count", targetValue: 10, bonusPoints: 20 },
-    { title: "Early Bird", description: "Complete 3 chores before deadline", icon: "🐦", targetType: "early_completions", targetValue: 3, bonusPoints: 15 },
-    { title: "Point Hunter", description: "Earn 30 points this week", icon: "🎯", targetType: "points_earned", targetValue: 30, bonusPoints: 10 },
-    { title: "Explorer", description: "Do chores in 3 different categories", icon: "🗺️", targetType: "categories_covered", targetValue: 3, bonusPoints: 15 },
-    { title: "Super Helper", description: "Complete 15 chores this week", icon: "🦸", targetType: "chores_count", targetValue: 15, bonusPoints: 30 },
-    { title: "Score Big", description: "Earn 50 points this week", icon: "💰", targetType: "points_earned", targetValue: 50, bonusPoints: 20 },
-  ];
-  // Pick 2 random challenges
-  const shuffled = pool.sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 2);
-}
