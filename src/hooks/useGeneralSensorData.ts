@@ -54,7 +54,10 @@ function aggregateByGrouping(
         case "last": point[k] = b.last[k] ?? 0; break;
         case "delta": {
           const currentLast = b.last[k] ?? 0;
-          point[k] = eIdx > 0 ? currentLast - (entries[eIdx - 1][1].last[k] ?? 0) : currentLast - (b.first[k] ?? 0);
+          const prevLast = eIdx > 0 ? (entries[eIdx - 1][1].last[k] ?? 0) : (b.first[k] ?? 0);
+          const diff = currentLast - prevLast;
+          // If negative, the meter likely reset (e.g. new month) — treat new value as the delta
+          point[k] = diff < 0 ? currentLast : diff;
           break;
         }
         case "average": default:
