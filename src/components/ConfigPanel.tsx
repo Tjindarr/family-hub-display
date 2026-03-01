@@ -2558,8 +2558,8 @@ function WidgetStyleControls({ style, onChange, fields }: {
               ))}
             </CollapsibleSection>
 
-            {/* HomeChores Widget */}
-            <CollapsibleSection title="HomeChores">
+            {/* HomeChores Widget — only visible when enabled in General */}
+            {enableChores && <CollapsibleSection title="HomeChores">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Switch
@@ -2675,7 +2675,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   </>
                 )}
               </div>
-            </CollapsibleSection>
+            </CollapsibleSection>}
 
           </TabsContent>
 
