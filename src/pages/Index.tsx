@@ -14,6 +14,7 @@ import RssNewsWidget from "@/components/RssNewsWidget";
 import NotificationWidget from "@/components/NotificationWidget";
 import VehicleWidget from "@/components/VehicleWidget";
 import PollenWidget from "@/components/PollenWidget";
+import ChoreWidget from "@/components/ChoreWidget";
 import ConfigPanel from "@/components/ConfigPanel";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import DashboardEditOverlay from "@/components/DashboardEditOverlay";
@@ -60,6 +61,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     "food_menu",
     "weather",
     "photos",
+    "chores",
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
@@ -379,6 +381,9 @@ const Index = () => {
     }
     if (id === "pollen") {
       return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={effectivePollenConfig} />;
+    }
+    if (id === "chores") {
+      return <ChoreWidget />;
     }
     return null;
   };

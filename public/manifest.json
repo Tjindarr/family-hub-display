@@ -1,0 +1,23 @@
+{
+  "name": "HomeDash Kids",
+  "short_name": "Chores",
+  "description": "Kid-friendly chore tracker",
+  "start_url": "/kids",
+  "scope": "/kids",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
