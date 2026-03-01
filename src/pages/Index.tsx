@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, lazy, Suspense } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import CalendarWidget from "@/components/CalendarWidget";
@@ -15,9 +15,6 @@ import NotificationWidget from "@/components/NotificationWidget";
 import VehicleWidget from "@/components/VehicleWidget";
 import PollenWidget from "@/components/PollenWidget";
 import ChoreWidget from "@/components/ChoreWidget";
-import ConfigPanel from "@/components/ConfigPanel";
-import ConnectionStatus from "@/components/ConnectionStatus";
-import DashboardEditOverlay from "@/components/DashboardEditOverlay";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +35,11 @@ import { useVehicleData } from "@/hooks/useVehicleData";
 import { usePollenData } from "@/hooks/usePollenData";
 import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
+
+// Lazy-load heavy components not needed in kiosk mode
+const ConfigPanel = lazy(() => import("@/components/ConfigPanel"));
+const ConnectionStatus = lazy(() => import("@/components/ConnectionStatus"));
+const DashboardEditOverlay = lazy(() => import("@/components/DashboardEditOverlay"));
 
 function getTempGroupIds(entities: { group?: number }[]): string[] {
   const seen = new Set<number>();
@@ -73,11 +75,10 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
 
 const Index = () => {
   const { config, updateConfig, isConfigured } = useDashboardConfig();
+  const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isDemo = !isConfigured;
-
-  // Compute effective sensor grids (inject demo data when unconfigured)
   const effectiveSensorGrids = useMemo(() => {
-    if (isDemo && (config.sensorGrids || []).length === 0) {
+    if (!isKiosk && isDemo && (config.sensorGrids || []).length === 0) {
       return [{ id: "demo_grid", label: "Sensors", rows: 2, columns: 3, cells: [
         { entityId: "sensor.demo_1", label: "Humidity", icon: "droplets", unit: "%", color: "hsl(200, 70%, 55%)" },
         { entityId: "sensor.demo_2", label: "Pressure", icon: "gauge", unit: "hPa", color: "hsl(32, 95%, 55%)" },
@@ -88,19 +89,19 @@ const Index = () => {
       ]}];
     }
     return config.sensorGrids || [];
-  }, [isDemo, config.sensorGrids]);
+  }, [isKiosk, isDemo, config.sensorGrids]);
 
   // Inject demo RSS feed
   const effectiveRssFeeds = useMemo(() => {
-    if (isDemo && (config.rssFeeds || []).length === 0) {
+    if (!isKiosk && isDemo && (config.rssFeeds || []).length === 0) {
       return [{ id: "demo_rss", label: "News", feedUrl: "https://demo.example.com/rss", maxItems: 5 }];
     }
     return config.rssFeeds || [];
-  }, [isDemo, config.rssFeeds]);
+  }, [isKiosk, isDemo, config.rssFeeds]);
 
   // Inject demo vehicle
   const effectiveVehicles = useMemo(() => {
-    if (isDemo && (config.vehicles || []).length === 0) {
+    if (!isKiosk && isDemo && (config.vehicles || []).length === 0) {
       return [{
         id: "demo_vehicle",
         name: "Tesla Model 3",
@@ -120,11 +121,11 @@ const Index = () => {
       }];
     }
     return config.vehicles || [];
-  }, [isDemo, config.vehicles]);
+  }, [isKiosk, isDemo, config.vehicles]);
 
   // Inject demo general sensor
   const effectiveGeneralSensors = useMemo(() => {
-    if (isDemo && (config.generalSensors || []).length === 0) {
+    if (!isKiosk && isDemo && (config.generalSensors || []).length === 0) {
       return [{
         id: "demo_power",
         label: "Power Usage",
@@ -147,19 +148,19 @@ const Index = () => {
       }];
     }
     return config.generalSensors || [];
-  }, [isDemo, config.generalSensors]);
+  }, [isKiosk, isDemo, config.generalSensors]);
 
   // Inject demo notification config
   const effectiveNotificationConfig = useMemo(() => {
-    if (isDemo && !config.notificationConfig) {
+    if (!isKiosk && isDemo && !config.notificationConfig) {
       return { showHANotifications: true, alertRules: [] };
     }
     return config.notificationConfig;
-  }, [isDemo, config.notificationConfig]);
+  }, [isKiosk, isDemo, config.notificationConfig]);
 
   // Inject demo pollen config
   const effectivePollenConfig = useMemo(() => {
-    if (isDemo && (config.pollenConfig?.sensors?.length ?? 0) === 0) {
+    if (!isKiosk && isDemo && (config.pollenConfig?.sensors?.length ?? 0) === 0) {
       return {
         sensors: [
           { entityId: "sensor.demo_birch", label: "Björk", icon: "mdi:tree", color: "hsl(80, 50%, 50%)" },
@@ -172,7 +173,7 @@ const Index = () => {
       };
     }
     return config.pollenConfig;
-  }, [isDemo, config.pollenConfig]);
+  }, [isKiosk, isDemo, config.pollenConfig]);
 
   const effectiveConfig = useMemo(() => ({
     ...config,
@@ -203,7 +204,7 @@ const Index = () => {
 
   // Provide mock pollen data in demo mode
   const pollenData = useMemo(() => {
-    if (isDemo && (effectivePollenConfig?.sensors?.length ?? 0) > 0 && rawPollenData.sensors.every(s => s.state === "unknown" || s.numericState < 0)) {
+    if (!isKiosk && isDemo && (effectivePollenConfig?.sensors?.length ?? 0) > 0 && rawPollenData.sensors.every(s => s.state === "unknown" || s.numericState < 0)) {
       const mockLevels = [1, 3, 5];
       return {
         sensors: effectivePollenConfig!.sensors.map((s, idx) => ({
@@ -223,7 +224,6 @@ const Index = () => {
     }
     return rawPollenData;
   }, [isDemo, rawPollenData, effectivePollenConfig]);
-  const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isMobile = useIsMobile();
 
   // Blackout schedule
@@ -445,29 +445,31 @@ const Index = () => {
     <div className="min-h-screen bg-background" style={{ padding: "5px" }}>
       {!isKiosk && (
         <>
-          <div className="fixed right-4 top-4 z-50 flex items-center gap-1">
-            <DashboardEditOverlay
-              allWidgetIds={allWidgetIds}
-              config={config}
-              onSave={updateConfig}
-              renderWidget={renderWidget}
-              getColSpan={getColSpan}
-              getRow={getRow}
-              getRowSpan={getRowSpan}
-              gridColumns={gridColumns}
-              isMobile={isMobile}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={enterKiosk}
-              className="text-muted-foreground hover:text-foreground"
-              title="Enter kiosk mode"
-            >
-              <Monitor className="h-5 w-5" />
-            </Button>
-            <ConfigPanel config={config} onSave={updateConfig} />
-          </div>
+          <Suspense fallback={null}>
+            <div className="fixed right-4 top-4 z-50 flex items-center gap-1">
+              <DashboardEditOverlay
+                allWidgetIds={allWidgetIds}
+                config={config}
+                onSave={updateConfig}
+                renderWidget={renderWidget}
+                getColSpan={getColSpan}
+                getRow={getRow}
+                getRowSpan={getRowSpan}
+                gridColumns={gridColumns}
+                isMobile={isMobile}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={enterKiosk}
+                className="text-muted-foreground hover:text-foreground"
+                title="Enter kiosk mode"
+              >
+                <Monitor className="h-5 w-5" />
+              </Button>
+              <ConfigPanel config={config} onSave={updateConfig} />
+            </div>
+          </Suspense>
         </>
       )}
 
@@ -479,7 +481,9 @@ const Index = () => {
               Home Dashboard
             </h1>
             <div className="flex items-center gap-3">
-              <ConnectionStatus isConfigured={isConfigured} wsState={wsState} />
+              <Suspense fallback={null}>
+                <ConnectionStatus isConfigured={isConfigured} wsState={wsState} />
+              </Suspense>
               <span className="text-xs text-muted-foreground">v1.0.0</span>
             </div>
           </div>
