@@ -15,7 +15,21 @@ import { toast } from "sonner";
 
 export default function KidsPage() {
   const { data, refresh } = useChoresData(3000);
-  const [selectedKid, setSelectedKid] = useState<Kid | null>(null);
+  const [selectedKidId, setSelectedKidId] = useState<string | null>(
+    () => localStorage.getItem("chores_selected_kid")
+  );
+
+  const selectKid = (kid: Kid | null) => {
+    setSelectedKidId(kid?.id ?? null);
+    if (kid) {
+      localStorage.setItem("chores_selected_kid", kid.id);
+    } else {
+      localStorage.removeItem("chores_selected_kid");
+    }
+  };
+
+  const selectedKid = selectedKidId ? data.kids.find((k) => k.id === selectedKidId) || null : null;
+
   const [showRewards, setShowRewards] = useState(false);
   const [captureLogId, setCaptureLogId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +45,7 @@ export default function KidsPage() {
             {data.kids.map((kid) => (
               <button
                 key={kid.id}
-                onClick={() => setSelectedKid(kid)}
+                onClick={() => selectKid(kid)}
                 className="flex flex-col items-center gap-2 p-6 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all active:scale-95"
               >
                 <KidAvatar kid={kid} size={64} />
@@ -170,7 +184,7 @@ export default function KidsPage() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setSelectedKid(null)}>
+            <Button variant="ghost" size="icon" onClick={() => selectKid(null)}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="text-2xl">{kid.avatar}</div>
