@@ -202,6 +202,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const getStyle = (id: string): WidgetStyleConfig => widgetStyles[id] || {};
   const setStyle = (id: string, s: WidgetStyleConfig) => setWidgetStyles(prev => ({ ...prev, [id]: s }));
   const [globalFormat, setGlobalFormat] = useState<GlobalFormatConfig>(config.globalFormat || { dateFormat: "yyyy-MM-dd", timeFormat: "24h" });
+  const [enableChores, setEnableChores] = useState(config.enableChores ?? false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
@@ -318,6 +319,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       widgetStyles,
       personCardFontSizes,
       globalFormat,
+      enableChores,
     });
     setOpen(false);
   };
@@ -526,6 +528,40 @@ function WidgetStyleControls({ style, onChange, fields }: {
               </div>
               <p className="text-xs text-muted-foreground">
                 When enabled, widgets won't expand beyond their row height. Content that doesn't fit will be scrollable inside the widget.
+              </p>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">HomeChores</h3>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={enableChores}
+                  onCheckedChange={setEnableChores}
+                />
+                <Label className="text-sm text-foreground">Enable HomeChores</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                HomeChores is a chore tracking system for families. Parents can create chores with recurrence schedules, assign points, and track progress. Kids get their own mobile-friendly page where they can mark chores as done, earn points, unlock badges, and claim rewards. The kids page is installable as an app on iPhone via Safari.
+              </p>
+              {enableChores && (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open("/parent", "_blank")}>
+                    Open Parent Dashboard
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open("/kids", "_blank")}>
+                    Open Kids Page
+                  </Button>
+                </div>
+              )}
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Help & Documentation</h3>
+              <Button variant="outline" size="sm" onClick={() => window.open("/help", "_blank")}>
+                📖 Open Documentation
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Complete guide covering setup, widgets, chores, photos, and technical details.
               </p>
             </section>
 

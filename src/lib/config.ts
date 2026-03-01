@@ -339,6 +339,7 @@ export interface DashboardConfig {
   widgetStyles: Record<string, WidgetStyleConfig>;
   personCardFontSizes: PersonCardFontSizes;
   globalFormat: GlobalFormatConfig;
+  enableChores: boolean; // enable HomeChores chore tracking system
 }
 
 export interface TemperatureEntityConfig {
@@ -492,6 +493,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   widgetStyles: {},
   personCardFontSizes: {},
   globalFormat: { dateFormat: "yyyy-MM-dd", timeFormat: "24h" },
+  enableChores: false,
 };
 
 export function loadConfig(): DashboardConfig {
