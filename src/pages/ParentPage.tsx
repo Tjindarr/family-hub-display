@@ -81,9 +81,6 @@ export default function ParentPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-6 h-6" />
-          </Button>
           <h1 className="text-xl font-bold">Parent Dashboard</h1>
           {bonus && (
             <span className="ml-auto text-sm bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-full font-medium">
