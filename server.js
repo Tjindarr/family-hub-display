@@ -6,14 +6,58 @@ const crypto = require("crypto");
 const app = express();
 const PORT = 80;
 const CONFIG_PATH = "/data/config.json";
+const CONFIG_BACKUP_DIR = "/data/config-backups";
+const MAX_CONFIG_BACKUPS = 3;
 const CHORES_PATH = "/data/chores.json";
 const PHOTOS_DIR = "/data/photos";
 const THUMBS_DIR = "/data/photos/thumbs";
 
 // Ensure directories exist
-[path.dirname(CONFIG_PATH), PHOTOS_DIR, THUMBS_DIR].forEach((dir) => {
+[path.dirname(CONFIG_PATH), PHOTOS_DIR, THUMBS_DIR, CONFIG_BACKUP_DIR].forEach((dir) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
+
+// ── Config backup helpers ──
+function createConfigBackup() {
+  try {
+    if (!fs.existsSync(CONFIG_PATH)) return;
+    const content = fs.readFileSync(CONFIG_PATH, "utf-8");
+    // Don't backup empty/invalid configs
+    const parsed = JSON.parse(content);
+    if (!parsed || Object.keys(parsed).length === 0) return;
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const backupPath = path.join(CONFIG_BACKUP_DIR, `config-${timestamp}.json`);
+    fs.writeFileSync(backupPath, content);
+
+    // Prune old backups, keep only MAX_CONFIG_BACKUPS
+    const backups = fs.readdirSync(CONFIG_BACKUP_DIR)
+      .filter(f => f.startsWith("config-") && f.endsWith(".json"))
+      .sort()
+      .reverse();
+    for (let i = MAX_CONFIG_BACKUPS; i < backups.length; i++) {
+      fs.unlinkSync(path.join(CONFIG_BACKUP_DIR, backups[i]));
+    }
+  } catch (err) {
+    console.error("Failed to create config backup:", err);
+  }
+}
+
+function listConfigBackups() {
+  try {
+    return fs.readdirSync(CONFIG_BACKUP_DIR)
+      .filter(f => f.startsWith("config-") && f.endsWith(".json"))
+      .sort()
+      .reverse()
+      .map(f => {
+        const stats = fs.statSync(path.join(CONFIG_BACKUP_DIR, f));
+        // Parse timestamp from filename: config-2026-03-01T21-32-24-006Z.json
+        const tsMatch = f.match(/^config-(.+)\.json$/);
+        const ts = tsMatch ? tsMatch[1].replace(/-/g, (m, i) => i <= 15 ? (i === 10 ? "T" : [4,7].includes(i) ? "-" : [13,16].includes(i) ? ":" : m) : m) : "";
+        return { filename: f, size: stats.size, createdAt: stats.birthtimeMs || stats.ctimeMs };
+      });
+  } catch { return []; }
+}
 
 // Ensure config file exists
 if (!fs.existsSync(CONFIG_PATH)) {
@@ -65,10 +109,38 @@ app.get("/api/config", (_req, res) => {
 
 app.put("/api/config", (req, res) => {
   try {
+    createConfigBackup();
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(req.body, null, 2));
     res.json(req.body);
   } catch (err) {
     res.status(500).json({ error: "Failed to save config" });
+  }
+});
+
+// --- Config Backups API ---
+app.get("/api/config/backups", (_req, res) => {
+  res.json(listConfigBackups());
+});
+
+app.post("/api/config/backups/restore/:filename", (req, res) => {
+  const filename = req.params.filename;
+  if (filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+    return res.status(400).json({ error: "Invalid filename" });
+  }
+  const backupPath = path.join(CONFIG_BACKUP_DIR, filename);
+  if (!fs.existsSync(backupPath)) {
+    return res.status(404).json({ error: "Backup not found" });
+  }
+  try {
+    // Backup current before restoring
+    createConfigBackup();
+    const content = fs.readFileSync(backupPath, "utf-8");
+    // Validate JSON
+    JSON.parse(content);
+    fs.writeFileSync(CONFIG_PATH, content);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to restore backup" });
   }
 });
 

@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react";
-import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image, Download, ClipboardCopy, ClipboardPaste, ChevronDown } from "lucide-react";
+import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image, Download, ClipboardCopy, ClipboardPaste, ChevronDown, RotateCcw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,66 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+
+function ConfigBackupSection() {
+  const [backups, setBackups] = useState<{ filename: string; size: number; createdAt: number }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchBackups = async () => {
+    try {
+      const res = await fetch("/api/config/backups");
+      if (res.ok) setBackups(await res.json());
+    } catch {}
+  };
+
+  const restoreBackup = async (filename: string) => {
+    if (!confirm("Restore this backup? Your current config will be backed up first.")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/config/backups/restore/${encodeURIComponent(filename)}`, { method: "POST" });
+      if (res.ok) {
+        alert("Config restored! The page will reload.");
+        window.location.reload();
+      } else {
+        alert("Failed to restore backup.");
+      }
+    } catch {
+      alert("Failed to restore backup.");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Config Backups</h3>
+      <p className="text-[12px] text-muted-foreground">
+        The server automatically saves the last 3 versions of your config. Restore a previous version if something goes wrong.
+      </p>
+      <Button variant="outline" size="sm" onClick={fetchBackups}>
+        <RotateCcw className="mr-1 h-3 w-3" /> Load Backups
+      </Button>
+      {backups.length > 0 && (
+        <div className="space-y-2">
+          {backups.map((b) => (
+            <div key={b.filename} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-secondary/40 border border-border/30">
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-foreground truncate">
+                  {new Date(b.createdAt).toLocaleString()}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {(b.size / 1024).toFixed(1)} KB
+                </div>
+              </div>
+              <Button variant="outline" size="sm" disabled={loading} onClick={() => restoreBackup(b.filename)}>
+                <RotateCcw className="mr-1 h-3 w-3" /> Restore
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function CollapsibleSection({ title, actions, children, defaultOpen = false }: {
   title: string;
@@ -658,6 +718,9 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 Export downloads your current config as JSON. Import loads a previously exported config file.
               </p>
             </section>
+
+            {/* Config Backups */}
+            <ConfigBackupSection />
           </TabsContent>
 
           {/* ===== WIDGETS TAB ===== */}
