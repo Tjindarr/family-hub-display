@@ -287,6 +287,22 @@ export const THEMES: { id: ThemeId; label: string }[] = [
   { id: "macos-dark", label: "macOS Dark" },
 ];
 
+export interface ChoreWidgetConfig {
+  enabled: boolean;
+  label: string;
+  icon: string; // mdi icon name
+  showScoreboard: boolean;
+  showUpcoming: boolean;
+  showFairness: boolean;
+  showCompleted: boolean;
+  maxVisible: number; // 0 = show all
+  headingColor?: string;
+  headingSize?: number;
+  choreTextColor?: string;
+  choreTextSize?: number;
+  urgencyDotSize?: number;
+}
+
 export interface DashboardConfig {
   haUrl: string;
   haToken: string;
@@ -339,7 +355,8 @@ export interface DashboardConfig {
   widgetStyles: Record<string, WidgetStyleConfig>;
   personCardFontSizes: PersonCardFontSizes;
   globalFormat: GlobalFormatConfig;
-  enableChores: boolean; // enable HomeChores chore tracking system
+  enableChores: boolean; // legacy, kept for migration
+  choreWidgetConfig: ChoreWidgetConfig;
 }
 
 export interface TemperatureEntityConfig {
@@ -494,6 +511,16 @@ const DEFAULT_CONFIG: DashboardConfig = {
   personCardFontSizes: {},
   globalFormat: { dateFormat: "yyyy-MM-dd", timeFormat: "24h" },
   enableChores: false,
+  choreWidgetConfig: {
+    enabled: false,
+    label: "Chores",
+    icon: "mdi:clipboard-check-outline",
+    showScoreboard: true,
+    showUpcoming: true,
+    showFairness: true,
+    showCompleted: true,
+    maxVisible: 0,
+  },
 };
 
 export function loadConfig(): DashboardConfig {
