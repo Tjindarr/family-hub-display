@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, WeeklyChallenge, ChoreSubmission } from "@/lib/chores-types";
+import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS, getKidLevel,
@@ -36,6 +37,7 @@ export default function KidsPage() {
   const [showChallenges, setShowChallenges] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
   const [captureLogId, setCaptureLogId] = useState<string | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const submitPhotoRef = useRef<HTMLInputElement>(null);
 
@@ -499,6 +501,7 @@ export default function KidsPage() {
                   <span className="text-xs text-muted-foreground">
                     {new Date(log!.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
+                  {log!.photoUrl && <PhotoIndicator onClick={() => setLightboxPhoto(log!.photoUrl!)} />}
                   <span className="text-xs text-primary">+{chore.points}</span>
                 </div>
               ))}
@@ -534,7 +537,7 @@ export default function KidsPage() {
                           )}
                         </div>
                         {sub.photoUrl && (
-                          <img src={sub.photoUrl} alt="Proof" className="w-10 h-10 rounded object-cover" />
+                          <PhotoThumbnail src={sub.photoUrl} size="sm" onClick={() => setLightboxPhoto(sub.photoUrl!)} />
                         )}
                         <span className={`text-xs px-2 py-0.5 rounded ${sub.status === "pending" ? "bg-yellow-500/20 text-yellow-500" : "bg-destructive/20 text-destructive"}`}>
                           {sub.status === "pending" ? "⏳ Pending" : "Rejected"}
@@ -548,6 +551,7 @@ export default function KidsPage() {
           );
         })()}
       </div>
+      <PhotoLightbox src={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
     </div>
   );
 }
