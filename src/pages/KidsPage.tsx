@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, ChoreSubmission } from "@/lib/chores-types";
@@ -239,6 +240,7 @@ export default function KidsPage() {
               <div className="text-base text-muted-foreground">{dueChores.length} chores today</div>
             </div>
             <div className="flex gap-2">
+              <PushNotificationToggle role="kid" kidId={kid.id} compact />
               <Button variant="outline" size="icon" className="h-11 w-11" onClick={() => setShowSubmit(true)}>
                 <Send className="w-5 h-5" />
               </Button>

@@ -2,6 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const webpush = require("web-push");
 
 const app = express();
 const PORT = 80;
@@ -11,6 +12,8 @@ const MAX_CONFIG_BACKUPS = 3;
 const CHORES_PATH = "/data/chores.json";
 const PHOTOS_DIR = "/data/photos";
 const THUMBS_DIR = "/data/photos/thumbs";
+const PUSH_SUBS_PATH = "/data/push-subscriptions.json";
+const VAPID_PATH = "/data/vapid-keys.json";
 
 // Ensure directories exist
 [path.dirname(CONFIG_PATH), PHOTOS_DIR, THUMBS_DIR, CONFIG_BACKUP_DIR].forEach((dir) => {
@@ -93,6 +96,56 @@ function writeChores(data) {
 }
 
 function uid() { return crypto.randomBytes(8).toString("hex"); }
+
+// ── Web Push setup ──
+function getVapidKeys() {
+  if (fs.existsSync(VAPID_PATH)) {
+    try { return JSON.parse(fs.readFileSync(VAPID_PATH, "utf-8")); } catch {}
+  }
+  const keys = webpush.generateVAPIDKeys();
+  const vapid = { publicKey: keys.publicKey, privateKey: keys.privateKey };
+  fs.writeFileSync(VAPID_PATH, JSON.stringify(vapid, null, 2));
+  console.log("Generated new VAPID keys");
+  return vapid;
+}
+
+const vapidKeys = getVapidKeys();
+webpush.setVapidDetails("mailto:homedash@localhost", vapidKeys.publicKey, vapidKeys.privateKey);
+
+function readPushSubs() {
+  try { return JSON.parse(fs.readFileSync(PUSH_SUBS_PATH, "utf-8")); }
+  catch { return []; }
+}
+
+function writePushSubs(subs) {
+  fs.writeFileSync(PUSH_SUBS_PATH, JSON.stringify(subs, null, 2));
+}
+
+// Send push to all subscribers matching a role (and optionally kidId)
+async function sendPush(targetRole, payload, targetKidId) {
+  const subs = readPushSubs();
+  const targets = subs.filter((s) => {
+    if (s.role !== targetRole) return false;
+    if (targetKidId && s.kidId && s.kidId !== targetKidId) return false;
+    return true;
+  });
+  const expired = [];
+  for (const sub of targets) {
+    try {
+      await webpush.sendNotification(sub.subscription, JSON.stringify(payload));
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        expired.push(sub.subscription.endpoint);
+      }
+      console.error("Push failed:", err.statusCode || err.message);
+    }
+  }
+  // Clean up expired subscriptions
+  if (expired.length > 0) {
+    const remaining = subs.filter((s) => !expired.includes(s.subscription.endpoint));
+    writePushSubs(remaining);
+  }
+}
 
 // JSON body parsing
 app.use(express.json({ limit: "50mb" }));
@@ -435,6 +488,18 @@ app.post("/api/chores/logs", (req, res) => {
   }
 
 
+  // Notify parent if chore requires approval
+  if (chore && chore.requireApproval) {
+    const kid = (data.kids || []).find((k) => k.id === req.body.kidId);
+    const kidName = kid ? kid.name : "A kid";
+    sendPush("parent", {
+      title: "📋 Needs Approval",
+      body: `${kidName} completed: ${chore.title}${log.photoUrl ? " (with photo)" : ""}`,
+      url: "/parent",
+      tag: `approval-${log.id}`,
+    });
+  }
+
   writeChores(data);
   res.json(log);
 });
@@ -515,6 +580,17 @@ app.post("/api/chores/rewards/claim", (req, res) => {
   const claim = { id: uid(), kidId: req.body.kidId, rewardId: req.body.rewardId, claimedAt: new Date().toISOString() };
   data.rewardClaims.push(claim);
   writeChores(data);
+
+  // Notify parents
+  const kid = (data.kids || []).find((k) => k.id === req.body.kidId);
+  const kidName = kid ? kid.name : "A kid";
+  sendPush("parent", {
+    title: "🎁 Reward Claimed",
+    body: `${kidName} claimed: ${reward.title} (${reward.pointsCost}pts)`,
+    url: "/parent",
+    tag: `reward-${claim.id}`,
+  });
+
   res.json(claim);
 });
 
@@ -545,6 +621,17 @@ app.post("/api/chores/submissions", (req, res) => {
   };
   data.submissions.push(submission);
   writeChores(data);
+
+  // Notify parents
+  const kid = (data.kids || []).find((k) => k.id === req.body.kidId);
+  const kidName = kid ? kid.name : "A kid";
+  sendPush("parent", {
+    title: "📤 New Submission",
+    body: `${kidName} submitted: ${submission.title} (${submission.points}pts)`,
+    url: "/parent",
+    tag: `submission-${submission.id}`,
+  });
+
   res.json(submission);
 });
 
@@ -569,6 +656,15 @@ app.put("/api/chores/submissions/:id/approve", (req, res) => {
   };
   data.logs.push(log);
   writeChores(data);
+
+  // Notify kid
+  sendPush("kid", {
+    title: "✅ Approved!",
+    body: `"${sub.title}" was approved! +${sub.points}pts`,
+    url: "/kids",
+    tag: `approved-${sub.id}`,
+  }, sub.kidId);
+
   res.json(sub);
 });
 
@@ -581,9 +677,52 @@ app.put("/api/chores/submissions/:id/reject", (req, res) => {
   sub.reviewedAt = new Date().toISOString();
   sub.rejectionReason = (req.body.reason || "").trim().slice(0, 300) || undefined;
   writeChores(data);
+
+  // Notify kid
+  sendPush("kid", {
+    title: "❌ Not Approved",
+    body: `"${sub.title}" was not approved${sub.rejectionReason ? `: ${sub.rejectionReason}` : ""}`,
+    url: "/kids",
+    tag: `rejected-${sub.id}`,
+  }, sub.kidId);
+
   res.json(sub);
 });
 
+
+// --- Push Notification API ---
+app.get("/api/push/vapid-public-key", (_req, res) => {
+  res.json({ publicKey: vapidKeys.publicKey });
+});
+
+app.post("/api/push/subscribe", (req, res) => {
+  const { subscription, role, kidId } = req.body;
+  if (!subscription || !subscription.endpoint) return res.status(400).json({ error: "Invalid subscription" });
+  const subs = readPushSubs();
+  // Remove existing sub with same endpoint
+  const filtered = subs.filter((s) => s.subscription.endpoint !== subscription.endpoint);
+  filtered.push({ subscription, role: role || "parent", kidId: kidId || null, createdAt: new Date().toISOString() });
+  writePushSubs(filtered);
+  res.json({ success: true });
+});
+
+app.post("/api/push/unsubscribe", (req, res) => {
+  const { endpoint } = req.body;
+  if (!endpoint) return res.status(400).json({ error: "Missing endpoint" });
+  const subs = readPushSubs();
+  writePushSubs(subs.filter((s) => s.subscription.endpoint !== endpoint));
+  res.json({ success: true });
+});
+
+app.post("/api/push/test", (req, res) => {
+  const { role } = req.body;
+  sendPush(role || "parent", {
+    title: "🔔 Test Notification",
+    body: "Push notifications are working!",
+    url: role === "kid" ? "/kids" : "/parent",
+  });
+  res.json({ success: true });
+});
 
 app.use(express.static("/usr/share/nginx/html"));
 

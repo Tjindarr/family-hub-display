@@ -3,6 +3,7 @@ import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, ChoreSubmission } from "@/lib/chores-types";
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { KidAvatar } from "@/components/KidAvatar";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
@@ -132,7 +133,7 @@ export default function ParentPage() {
               <span>{pendingApprovals.length}</span>
             </button>
           )}
-          
+          <PushNotificationToggle role="parent" compact />
         </div>
       </div>
 
