@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, BonusDay, WeeklyChallenge, StreakProtection, ChoreSubmission } from "@/lib/chores-types";
+import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import { KidAvatar } from "@/components/KidAvatar";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
@@ -869,6 +870,7 @@ function ChallengesTab({ data, refresh }: any) {
 function ApprovalsTab({ data, refresh }: any) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
 
   const pendingLogs = data.logs.filter(
     (l: any) => !l.undoneAt && !l.approved && data.chores.find((c: Chore) => c.id === l.choreId)?.requireApproval
@@ -905,7 +907,7 @@ function ApprovalsTab({ data, refresh }: any) {
                       {sub.note && <div className="text-xs text-muted-foreground mt-1">📝 {sub.note}</div>}
                       <div className="text-xs mt-1">Requested: <span className="font-medium">{sub.points}pts</span></div>
                       {sub.photoUrl && (
-                        <img src={sub.photoUrl} alt="Proof" className="mt-2 rounded w-32 h-32 object-cover" />
+                        <PhotoThumbnail src={sub.photoUrl} onClick={() => setLightboxPhoto(sub.photoUrl!)} />
                       )}
                       {rejectingId === sub.id && (
                         <div className="mt-2 flex gap-2">
@@ -969,7 +971,7 @@ function ApprovalsTab({ data, refresh }: any) {
                       By {kid && <KidAvatar kid={kid} size={16} />} {kid?.name} • {new Date(log.completedAt).toLocaleString()}
                     </div>
                     {log.photoUrl && (
-                      <img src={log.photoUrl} alt="Proof" className="mt-2 rounded w-32 h-32 object-cover" />
+                      <PhotoThumbnail src={log.photoUrl} onClick={() => setLightboxPhoto(log.photoUrl)} />
                     )}
                   </div>
                   <Button size="sm" onClick={async () => {
@@ -985,12 +987,14 @@ function ApprovalsTab({ data, refresh }: any) {
           })}
         </div>
       )}
+      <PhotoLightbox src={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
     </>
   );
 }
 
 // ── History Tab ──
 function HistoryTab({ data, refresh }: any) {
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const logs = [...data.logs]
     .filter((l: any) => !l.undoneAt)
     .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
@@ -1039,6 +1043,7 @@ function HistoryTab({ data, refresh }: any) {
               <span className="text-xs text-muted-foreground">
                 {new Date(log.completedAt).toLocaleDateString()}
               </span>
+              {log.photoUrl && <PhotoIndicator onClick={() => setLightboxPhoto(log.photoUrl)} />}
               {log.approved && <Check className="w-3 h-3 text-primary" />}
               <Button
                 variant="ghost"
@@ -1056,6 +1061,7 @@ function HistoryTab({ data, refresh }: any) {
           );
         })}
       </div>
+      <PhotoLightbox src={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
     </>
   );
 }
