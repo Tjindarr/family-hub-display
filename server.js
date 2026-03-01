@@ -330,12 +330,18 @@ app.put("/api/chores/logs/:id/undo", (req, res) => {
   const data = readChores();
   const log = data.logs.find((l) => l.id === req.params.id);
   if (!log) return res.status(404).json({ error: "Log not found" });
-  // Check 5-min window
-  const elapsed = Date.now() - new Date(log.completedAt).getTime();
-  if (elapsed > 5 * 60 * 1000) return res.status(400).json({ error: "Undo window expired" });
   log.undoneAt = new Date().toISOString();
   writeChores(data);
   res.json(log);
+});
+
+app.delete("/api/chores/logs/:id", (req, res) => {
+  const data = readChores();
+  const idx = data.logs.findIndex((l) => l.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Log not found" });
+  data.logs.splice(idx, 1);
+  writeChores(data);
+  res.json({ ok: true });
 });
 
 app.put("/api/chores/logs/:id/approve", (req, res) => {

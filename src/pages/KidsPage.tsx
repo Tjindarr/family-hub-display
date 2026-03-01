@@ -250,7 +250,7 @@ export default function KidsPage() {
                 const completedByMe = completed && completed.kidId === kid.id;
                 const completedByOther = completed && completed.kidId !== kid.id;
                 const otherKid = completedByOther ? data.kids.find((k: Kid) => k.id === completed!.kidId) : null;
-                const canUndo = completedByMe && (Date.now() - new Date(completed!.completedAt).getTime()) < 5 * 60 * 1000;
+                const canUndo = completedByMe;
 
                 return (
                   <Card key={chore.id} className={completedByMe ? "border-primary/30 bg-primary/5" : completedByOther ? "opacity-50" : ""}>

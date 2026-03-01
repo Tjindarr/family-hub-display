@@ -51,6 +51,7 @@ export const choresApi = {
   completeChore: (choreId: string, kidId: string, photoUrl?: string) =>
     post<ChoreLog>("/logs", { choreId, kidId, photoUrl }),
   undoChore: (logId: string) => put<ChoreLog>(`/logs/${logId}/undo`, {}),
+  deleteLog: (logId: string) => del(`/logs/${logId}`),
   approveChore: (logId: string) => put<ChoreLog>(`/logs/${logId}/approve`, {}),
 
   // Rewards
