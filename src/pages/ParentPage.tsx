@@ -38,9 +38,7 @@ export default function ParentPage() {
   const [showAddKid, setShowAddKid] = useState(false);
   const [showAddReward, setShowAddReward] = useState(false);
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState<boolean>(
-    () => localStorage.getItem("chores_show_suggestions") !== "false"
-  );
+  const showSuggestions = data.settings?.showSuggestions ?? true;
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "chores", label: "Chores", icon: <ClipboardList className="w-4 h-4" /> },
@@ -111,9 +109,9 @@ export default function ParentPage() {
             editingChore={editingChore}
             setEditingChore={setEditingChore}
             showSuggestions={showSuggestions}
-            setShowSuggestions={(v: boolean) => {
-              setShowSuggestions(v);
-              localStorage.setItem("chores_show_suggestions", String(v));
+            setShowSuggestions={async (v: boolean) => {
+              await choresApi.updateSettings({ ...data.settings, showSuggestions: v });
+              refresh();
             }}
           />
         )}
@@ -984,6 +982,7 @@ function HistoryTab({ data, refresh }: any) {
 function SettingsTab({ data, refresh }: any) {
   const settings = data.settings || DEFAULT_SETTINGS;
   const [rotationEnabled, setRotationEnabled] = useState(settings.rotationEnabled ?? false);
+  const [showSuggestions, setShowSuggestions] = useState(settings.showSuggestions ?? true);
   const [categories, setCategories] = useState<string[]>(settings.categories || DEFAULT_SETTINGS.categories);
   const [newCategory, setNewCategory] = useState("");
   const [bonusDays, setBonusDays] = useState<BonusDay[]>(settings.bonusDays || []);
@@ -1017,13 +1016,28 @@ function SettingsTab({ data, refresh }: any) {
             </div>
             <Switch checked={rotationEnabled} onCheckedChange={(v) => {
               setRotationEnabled(v);
-              saveSettings({ rotationEnabled: v, categories, bonusDays });
+              saveSettings({ rotationEnabled: v, showSuggestions, categories, bonusDays });
             }} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Categories */}
+      {/* Suggestions */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">💡 Kid Suggestions</Label>
+              <p className="text-xs text-muted-foreground">Show suggested kid assignments on chores, widget & kids page</p>
+            </div>
+            <Switch checked={showSuggestions} onCheckedChange={(v) => {
+              setShowSuggestions(v);
+              saveSettings({ rotationEnabled, showSuggestions: v, categories, bonusDays });
+            }} />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="p-4 space-y-3">
           <Label className="text-sm font-medium">🏷️ Categories</Label>
@@ -1034,7 +1048,7 @@ function SettingsTab({ data, refresh }: any) {
                 <button onClick={() => {
                   const updated = categories.filter((c) => c !== cat);
                   setCategories(updated);
-                  saveSettings({ rotationEnabled, categories: updated, bonusDays });
+                  saveSettings({ rotationEnabled, showSuggestions, categories: updated, bonusDays });
                 }} className="text-destructive hover:text-destructive/80">
                   <X className="w-3 h-3" />
                 </button>
@@ -1048,7 +1062,7 @@ function SettingsTab({ data, refresh }: any) {
               const updated = [...categories, newCategory.trim()];
               setCategories(updated);
               setNewCategory("");
-              saveSettings({ rotationEnabled, categories: updated, bonusDays });
+              saveSettings({ rotationEnabled, showSuggestions, categories: updated, bonusDays });
             }}>Add</Button>
           </div>
         </CardContent>
@@ -1068,7 +1082,7 @@ function SettingsTab({ data, refresh }: any) {
               <button onClick={() => {
                 const updated = bonusDays.filter((b) => b.id !== bd.id);
                 setBonusDays(updated);
-                saveSettings({ rotationEnabled, categories, bonusDays: updated });
+                saveSettings({ rotationEnabled, showSuggestions, categories, bonusDays: updated });
               }} className="text-destructive">
                 <X className="w-4 h-4" />
               </button>
@@ -1106,7 +1120,7 @@ function SettingsTab({ data, refresh }: any) {
             const updated = [...bonusDays, bd];
             setBonusDays(updated);
             setNewBonusLabel("");
-            saveSettings({ rotationEnabled, categories, bonusDays: updated });
+            saveSettings({ rotationEnabled, showSuggestions, categories, bonusDays: updated });
           }}>
             <Plus className="w-4 h-4 mr-1" /> Add Bonus Day
           </Button>

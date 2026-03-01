@@ -19,7 +19,7 @@ export default function ChoreWidget({ config }: Props) {
   const icon = config?.icon || "mdi:clipboard-check-outline";
   const showScoreboard = config?.showScoreboard ?? true;
   const showUpcoming = config?.showUpcoming ?? true;
-  const showFairness = config?.showFairness ?? true;
+  const showFairness = (config?.showFairness ?? true) && (data.settings?.showSuggestions ?? true);
   const showCompleted = config?.showCompleted ?? true;
   const showAllChores = config?.showAllChores ?? false;
   const maxVisible = config?.maxVisible || 0;
