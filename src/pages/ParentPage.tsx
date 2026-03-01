@@ -1074,7 +1074,7 @@ function HistoryTab({ data, refresh }: any) {
         </CardContent>
       </Card>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {logs.map((log: any) => {
           const chore = data.chores.find((c: Chore) => c.id === log.choreId);
           const kid = data.kids.find((k: Kid) => k.id === log.kidId);
@@ -1084,21 +1084,21 @@ function HistoryTab({ data, refresh }: any) {
           return (
             <Card key={log.id} className={`transition-colors ${isExpanded ? "border-primary/30" : ""}`}>
               <button
-                className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-sm cursor-pointer"
+                className="w-full text-left px-2.5 py-1.5 sm:px-3 sm:py-2.5 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm cursor-pointer"
                 onClick={() => setExpandedId(isExpanded ? null : log.id)}
               >
-                <span className="text-lg">{chore?.icon}</span>
+                <span className="text-base sm:text-lg">{chore?.icon}</span>
                 <span className="flex-1 truncate font-medium">{chore?.title}</span>
-                <span className="flex items-center gap-1 text-xs shrink-0" style={{ color: kid?.color }}>
-                  {kid && <KidAvatar kid={kid} size={16} />}
-                  {kid?.name}
+                <span className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs shrink-0" style={{ color: kid?.color }}>
+                  {kid && <KidAvatar kid={kid} size={14} />}
+                  <span className="hidden sm:inline">{kid?.name}</span>
                 </span>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {completedDate.toLocaleDateString()}
+                <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">
+                  {completedDate.toLocaleDateString([], { month: "short", day: "numeric" })}
                 </span>
-                {log.photoUrl && <span className="text-xs shrink-0">📷</span>}
+                {log.photoUrl && <span className="text-[10px] sm:text-xs shrink-0">📷</span>}
                 <svg
-                  className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                  className={`w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1106,45 +1106,45 @@ function HistoryTab({ data, refresh }: any) {
               </button>
 
               {isExpanded && (
-                <div className="px-3 pb-3 border-t border-border pt-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3 border-t border-border pt-2.5 sm:pt-3 space-y-2 sm:space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-2 text-xs sm:text-sm">
                     <div>
-                      <span className="text-muted-foreground text-xs">Completed</span>
+                      <span className="text-muted-foreground text-[10px] sm:text-xs">Completed</span>
                       <div className="font-medium">
                         {completedDate.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
-                        {" at "}
+                        {" "}
                         {completedDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Points earned</span>
+                      <span className="text-muted-foreground text-[10px] sm:text-xs">Points</span>
                       <div className="font-medium">
                         +{chore?.points || 0}pts
                         {log.bonusMultiplier && log.bonusMultiplier > 1 && (
-                          <span className="ml-1 text-yellow-400">({log.bonusMultiplier}x bonus)</span>
+                          <span className="ml-1 text-yellow-400">({log.bonusMultiplier}x)</span>
                         )}
                         {log.earlyBonusEarned && (
-                          <span className="ml-1 text-primary">+{log.earlyBonusEarned} early</span>
+                          <span className="ml-1 text-primary">+{log.earlyBonusEarned}</span>
                         )}
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Difficulty</span>
+                      <span className="text-muted-foreground text-[10px] sm:text-xs">Difficulty</span>
                       <div className="font-medium">{"⭐".repeat(chore?.difficulty || 1)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Category</span>
+                      <span className="text-muted-foreground text-[10px] sm:text-xs">Category</span>
                       <div className="font-medium">{chore?.category || "—"}</div>
                     </div>
                     {chore?.requireApproval && (
                       <div>
-                        <span className="text-muted-foreground text-xs">Approval</span>
+                        <span className="text-muted-foreground text-[10px] sm:text-xs">Approval</span>
                         <div className="font-medium">{log.approved ? "✅ Approved" : "⏳ Pending"}</div>
                       </div>
                     )}
                     {chore?.requirePhoto && !log.photoUrl && (
                       <div>
-                        <span className="text-muted-foreground text-xs">Photo proof</span>
+                        <span className="text-muted-foreground text-[10px] sm:text-xs">Photo</span>
                         <div className="font-medium">❌ Missing</div>
                       </div>
                     )}
@@ -1152,21 +1152,21 @@ function HistoryTab({ data, refresh }: any) {
 
                   {log.photoUrl && (
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-1.5">📷 Photo proof</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground block mb-1">📷 Photo proof</span>
                       <img
                         src={log.photoUrl}
                         alt="Chore proof"
-                        className="w-36 h-36 rounded-lg object-cover cursor-pointer border border-border hover:border-primary/50 transition-colors"
+                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-lg object-cover cursor-pointer border border-border hover:border-primary/50 transition-colors"
                         onClick={() => setLightboxPhoto(log.photoUrl)}
                       />
                     </div>
                   )}
 
-                  <div className="flex justify-end pt-1">
+                  <div className="flex justify-end">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive h-7 text-xs"
                       onClick={async () => {
                         await choresApi.deleteLog(log.id);
                         refresh();
