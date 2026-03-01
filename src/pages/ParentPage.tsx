@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType } from "@/lib/chores-types";
+import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, BonusDay, WeeklyChallenge, StreakProtection } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, getKidSpentPoints, suggestFairKid,
-  WEEKDAY_LABELS, TIME_OF_DAY_LABELS, daysUntilDue,
+  WEEKDAY_LABELS, TIME_OF_DAY_LABELS, daysUntilDue, getKidLevel,
+  getTodayBonusMultiplier, getChallengeProgress, generateWeeklyChallenges,
+  DEFAULT_SETTINGS,
 } from "@/lib/chores-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, Zap, BarChart3, ShieldCheck, Clock, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -26,7 +28,7 @@ const KID_COLORS = [
   "hsl(280 70% 55%)", "hsl(174 72% 50%)", "hsl(0 72% 55%)", "hsl(45 90% 50%)",
 ];
 
-type Tab = "chores" | "kids" | "rewards" | "history" | "approvals";
+type Tab = "chores" | "kids" | "rewards" | "history" | "approvals" | "leaderboard" | "challenges" | "settings";
 
 export default function ParentPage() {
   const { data, refresh } = useChoresData();
@@ -44,13 +46,18 @@ export default function ParentPage() {
     { id: "chores", label: "Chores", icon: <ClipboardList className="w-4 h-4" /> },
     { id: "kids", label: "Kids", icon: <Users className="w-4 h-4" /> },
     { id: "rewards", label: "Rewards", icon: <Gift className="w-4 h-4" /> },
+    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-4 h-4" /> },
+    { id: "challenges", label: "Challenges", icon: <Zap className="w-4 h-4" /> },
     { id: "approvals", label: "Approvals", icon: <Shield className="w-4 h-4" /> },
     { id: "history", label: "History", icon: <History className="w-4 h-4" /> },
+    { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
   ];
 
   const pendingApprovals = data.logs.filter(
     (l) => !l.undoneAt && !l.approved && data.chores.find((c) => c.id === l.choreId)?.requireApproval
   );
+
+  const bonus = getTodayBonusMultiplier(data.settings?.bonusDays || []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -61,6 +68,11 @@ export default function ParentPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-lg font-semibold">Parent Dashboard</h1>
+          {bonus && (
+            <span className="ml-auto text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium">
+              {bonus.label} ({bonus.multiplier}x)
+            </span>
+          )}
         </div>
       </div>
 
@@ -71,7 +83,7 @@ export default function ParentPage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors ${
                 tab === t.id
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -80,7 +92,7 @@ export default function ParentPage() {
               {t.icon}
               {t.label}
               {t.id === "approvals" && pendingApprovals.length > 0 && (
-                <span className="ml-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="bg-destructive text-destructive-foreground text-xs rounded-full px-1.5 min-w-[18px] text-center">
                   {pendingApprovals.length}
                 </span>
               )}
@@ -111,8 +123,11 @@ export default function ParentPage() {
         {tab === "rewards" && (
           <RewardsTab data={data} refresh={refresh} showAdd={showAddReward} setShowAdd={setShowAddReward} />
         )}
+        {tab === "leaderboard" && <LeaderboardTab data={data} />}
+        {tab === "challenges" && <ChallengesTab data={data} refresh={refresh} />}
         {tab === "approvals" && <ApprovalsTab data={data} refresh={refresh} />}
         {tab === "history" && <HistoryTab data={data} refresh={refresh} />}
+        {tab === "settings" && <SettingsTab data={data} refresh={refresh} />}
       </div>
     </div>
   );
@@ -120,6 +135,13 @@ export default function ParentPage() {
 
 // ── Chores Tab ──
 function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditingChore, showSuggestions, setShowSuggestions }: any) {
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const categories = data.settings?.categories || DEFAULT_SETTINGS.categories;
+
+  const filteredChores = filterCategory === "all"
+    ? data.chores
+    : data.chores.filter((c: Chore) => c.category === filterCategory);
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -129,7 +151,7 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
             <input
               type="checkbox"
               checked={showSuggestions}
-              onChange={(e) => setShowSuggestions(e.target.checked)}
+              onChange={(e: any) => setShowSuggestions(e.target.checked)}
               className="rounded"
             />
             Suggestions
@@ -140,10 +162,28 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
         </div>
       </div>
 
+      {/* Category filter */}
+      <div className="flex gap-1 flex-wrap">
+        <button
+          onClick={() => setFilterCategory("all")}
+          className={`px-2 py-0.5 rounded-full text-xs ${filterCategory === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+        >All</button>
+        {categories.map((cat: string) => (
+          <button
+            key={cat}
+            onClick={() => setFilterCategory(cat)}
+            className={`px-2 py-0.5 rounded-full text-xs ${filterCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+          >{cat}</button>
+        ))}
+      </div>
+
       {(showAdd || editingChore) && (
         <ChoreForm
           chore={editingChore}
-          onSave={async (chore) => {
+          categories={categories}
+          kids={data.kids}
+          rotationEnabled={data.settings?.rotationEnabled ?? false}
+          onSave={async (chore: any) => {
             if (editingChore) {
               await choresApi.updateChore(editingChore.id, chore);
             } else {
@@ -159,11 +199,11 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
       )}
 
       <div className="space-y-2">
-        {data.chores.map((chore: Chore) => {
+        {filteredChores.map((chore: Chore) => {
           const due = isChoreDueToday(chore, data.logs);
           const completed = isChoreCompletedToday(chore.id, data.logs);
           const kid = completed ? data.kids.find((k: Kid) => k.id === completed.kidId) : null;
-          const fairKid = suggestFairKid(chore.id, data.kids, data.logs);
+          const fairKid = suggestFairKid(chore.id, data.kids, data.logs, chore.rotationKids, data.settings?.rotationEnabled);
           const countdown = daysUntilDue(chore, data.logs);
 
           return (
@@ -177,11 +217,18 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                       {chore.requirePhoto && <span title="Photo required" className="text-xs">📸</span>}
                       {chore.requireApproval && <Shield className="w-3 h-3 text-muted-foreground" />}
                       {chore.paused && <Pause className="w-3 h-3 text-muted-foreground" />}
+                      {chore.deadline && <span title={`Deadline: ${chore.deadline}`}><Clock className="w-3 h-3 text-muted-foreground" /></span>}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                       <span>{chore.points}pts</span>
                       <span>{"⭐".repeat(chore.difficulty)}</span>
                       <span>{TIME_OF_DAY_LABELS[chore.timeOfDay]}</span>
+                      {chore.category && (
+                        <span className="bg-secondary px-1.5 rounded text-[10px]">{chore.category}</span>
+                      )}
+                      {chore.deadline && (
+                        <span className="text-primary">⏰ {chore.deadline}{chore.earlyBonus ? ` (+${chore.earlyBonus})` : ""}</span>
+                      )}
                       {countdown !== null && countdown > 0 && (
                         <span className="text-primary">Due in {countdown}d</span>
                       )}
@@ -194,7 +241,8 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                     </div>
                     {showSuggestions && fairKid && !completed && due && (
                       <div className="flex items-center gap-1 text-xs mt-0.5" style={{ color: fairKid.color }}>
-                        Suggestion: <KidAvatar kid={fairKid} size={16} /> {fairKid.name}'s turn
+                        {data.settings?.rotationEnabled && chore.rotationKids?.length ? "Rotation:" : "Suggestion:"}{" "}
+                        <KidAvatar kid={fairKid} size={16} /> {fairKid.name}'s turn
                       </div>
                     )}
                   </div>
@@ -228,7 +276,10 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
 }
 
 // ── Chore Form ──
-function ChoreForm({ chore, onSave, onCancel }: { chore?: Chore | null; onSave: (c: any) => void; onCancel: () => void }) {
+function ChoreForm({ chore, categories, kids, rotationEnabled, onSave, onCancel }: {
+  chore?: Chore | null; categories: string[]; kids: Kid[]; rotationEnabled: boolean;
+  onSave: (c: any) => void; onCancel: () => void;
+}) {
   const [title, setTitle] = useState(chore?.title ?? "");
   const [icon, setIcon] = useState(chore?.icon ?? "🧹");
   const [points, setPoints] = useState(chore?.points ?? 1);
@@ -239,6 +290,10 @@ function ChoreForm({ chore, onSave, onCancel }: { chore?: Chore | null; onSave: 
   const [weekdays, setWeekdays] = useState<number[]>(chore?.recurrence.weekdays ?? [1]);
   const [requirePhoto, setRequirePhoto] = useState(chore?.requirePhoto ?? false);
   const [requireApproval, setRequireApproval] = useState(chore?.requireApproval ?? false);
+  const [category, setCategory] = useState(chore?.category ?? "");
+  const [deadline, setDeadline] = useState(chore?.deadline ?? "");
+  const [earlyBonus, setEarlyBonus] = useState(chore?.earlyBonus ?? 0);
+  const [rotationKids, setRotationKids] = useState<string[]>(chore?.rotationKids ?? []);
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -248,6 +303,10 @@ function ChoreForm({ chore, onSave, onCancel }: { chore?: Chore | null; onSave: 
     onSave({
       title: title.trim(), icon, points, difficulty, timeOfDay,
       recurrence, requirePhoto, requireApproval, paused: chore?.paused ?? false,
+      category: category || undefined,
+      deadline: deadline || undefined,
+      earlyBonus: earlyBonus > 0 ? earlyBonus : undefined,
+      rotationKids: rotationKids.length > 0 ? rotationKids : undefined,
     });
   };
 
@@ -288,6 +347,20 @@ function ChoreForm({ chore, onSave, onCancel }: { chore?: Chore | null; onSave: 
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Category */}
+        <div>
+          <Label className="text-xs">Category</Label>
+          <Select value={category || "_none"} onValueChange={(v) => setCategory(v === "_none" ? "" : v)}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_none">No category</SelectItem>
+              {categories.map((c: string) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
@@ -335,6 +408,40 @@ function ChoreForm({ chore, onSave, onCancel }: { chore?: Chore | null; onSave: 
                   }`}
                 >
                   {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Deadline & Early Bonus */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Deadline (optional)</Label>
+            <Input type="time" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">Early bonus pts</Label>
+            <Input type="number" min={0} value={earlyBonus} onChange={(e) => setEarlyBonus(+e.target.value)} className="mt-1" />
+          </div>
+        </div>
+
+        {/* Rotation */}
+        {rotationEnabled && kids.length > 0 && (
+          <div>
+            <Label className="text-xs">Rotation kids (auto-assign)</Label>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {kids.map((k: Kid) => (
+                <button
+                  key={k.id}
+                  onClick={() => setRotationKids((prev) =>
+                    prev.includes(k.id) ? prev.filter((id) => id !== k.id) : [...prev, k.id]
+                  )}
+                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                    rotationKids.includes(k.id) ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  <KidAvatar kid={k} size={14} /> {k.name}
                 </button>
               ))}
             </div>
@@ -462,9 +569,10 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
         {data.kids.map((kid: Kid) => {
           const total = getKidTotalPoints(kid.id, data.logs, data.chores);
           const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
-          const streak = getKidStreak(kid.id, data.logs);
+          const streak = getKidStreak(kid.id, data.logs, data.streakProtections);
           const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards);
           const badges = (data.kidBadges || []).filter((kb: any) => kb.kidId === kid.id);
+          const level = getKidLevel(total);
 
           return (
             <Card key={kid.id}>
@@ -474,13 +582,26 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
                     <KidAvatar kid={kid} size={48} />
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium" style={{ color: kid.color }}>{kid.name}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium" style={{ color: kid.color }}>{kid.name}</span>
+                      <span className="text-xs bg-secondary px-1.5 py-0.5 rounded" title={`Level ${level.level}`}>
+                        {level.icon} {level.name}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                       <span>🏆 {total}pts</span>
                       <span>📅 {weekly}/week</span>
                       <span>🔥 {streak}d streak</span>
                       <span>💰 {available} avail</span>
                     </div>
+                    {level.nextLevel && (
+                      <div className="mt-1">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                          <span>Next: {level.nextLevel.icon} {level.nextLevel.name} ({level.nextLevel.minPoints}pts)</span>
+                        </div>
+                        <Progress value={level.progress} className="h-1" />
+                      </div>
+                    )}
                     {badges.length > 0 && (
                       <div className="flex gap-1 mt-1">
                         {badges.map((kb: any) => {
@@ -581,6 +702,168 @@ function RewardsTab({ data, refresh, showAdd, setShowAdd }: any) {
   );
 }
 
+// ── Leaderboard Tab ──
+function LeaderboardTab({ data }: any) {
+  const kidStats = data.kids.map((kid: Kid) => {
+    const total = getKidTotalPoints(kid.id, data.logs, data.chores);
+    const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
+    const streak = getKidStreak(kid.id, data.logs, data.streakProtections);
+    const level = getKidLevel(total);
+    const choresDone = data.logs.filter((l: any) => l.kidId === kid.id && !l.undoneAt).length;
+    return { kid, total, weekly, streak, level, choresDone };
+  }).sort((a: any, b: any) => b.total - a.total);
+
+  const trophies = ["🥇", "🥈", "🥉"];
+
+  return (
+    <>
+      <h2 className="text-base font-medium">🏆 Leaderboard</h2>
+
+      {/* Weekly rankings */}
+      <Card>
+        <CardHeader className="pb-2 pt-3 px-4">
+          <CardTitle className="text-sm">📅 This Week</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-3 space-y-2">
+          {[...kidStats].sort((a: any, b: any) => b.weekly - a.weekly).map((stat: any, i: number) => (
+            <div key={stat.kid.id} className="flex items-center gap-3">
+              <span className="text-lg w-6 text-center">{trophies[i] || `${i + 1}.`}</span>
+              <KidAvatar kid={stat.kid} size={32} />
+              <div className="flex-1">
+                <span className="font-medium text-sm" style={{ color: stat.kid.color }}>{stat.kid.name}</span>
+              </div>
+              <span className="font-bold text-sm">{stat.weekly} pts</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* All-time stats */}
+      <Card>
+        <CardHeader className="pb-2 pt-3 px-4">
+          <CardTitle className="text-sm">🏅 All-Time</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-3 space-y-3">
+          {kidStats.map((stat: any, i: number) => (
+            <div key={stat.kid.id} className="flex items-center gap-3">
+              <span className="text-lg w-6 text-center">{trophies[i] || `${i + 1}.`}</span>
+              <KidAvatar kid={stat.kid} size={36} />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm" style={{ color: stat.kid.color }}>{stat.kid.name}</span>
+                  <span className="text-xs bg-secondary px-1.5 py-0.5 rounded">
+                    {stat.level.icon} {stat.level.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                  <span>🏆 {stat.total} pts</span>
+                  <span>✅ {stat.choresDone} chores</span>
+                  <span>🔥 {stat.streak}d streak</span>
+                </div>
+                {stat.level.nextLevel && (
+                  <Progress value={stat.level.progress} className="h-1 mt-1" />
+                )}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+// ── Challenges Tab ──
+function ChallengesTab({ data, refresh }: any) {
+  const challenges: WeeklyChallenge[] = data.challenges || [];
+  const now = new Date();
+
+  // Get current week's Monday
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayOfWeek = today.getDay();
+  const monday = new Date(today.getTime() - ((dayOfWeek === 0 ? 6 : dayOfWeek - 1)) * 86400000);
+  const mondayStr = monday.toISOString().split("T")[0];
+
+  const currentChallenges = challenges.filter((c) => {
+    const ws = new Date(c.weekStart);
+    const we = new Date(ws.getTime() + 7 * 86400000);
+    return now >= ws && now < we;
+  });
+
+  const generateNew = async () => {
+    const templates = generateWeeklyChallenges();
+    for (const t of templates) {
+      await choresApi.addChallenge({ ...t, weekStart: mondayStr });
+    }
+    refresh();
+    toast.success("New challenges generated!");
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-medium">⚡ Weekly Challenges</h2>
+        <Button size="sm" onClick={generateNew}>
+          <Zap className="w-4 h-4 mr-1" /> Generate New
+        </Button>
+      </div>
+
+      {currentChallenges.length === 0 && (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <Zap className="w-8 h-8 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No active challenges this week.</p>
+            <p className="text-xs mt-1">Click "Generate New" to create weekly challenges!</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {currentChallenges.map((challenge) => (
+        <Card key={challenge.id}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">{challenge.icon}</span>
+              <div className="flex-1">
+                <div className="font-medium">{challenge.title}</div>
+                <div className="text-xs text-muted-foreground">{challenge.description}</div>
+                <div className="text-xs text-primary mt-1">+{challenge.bonusPoints} bonus points</div>
+
+                {/* Progress per kid */}
+                <div className="mt-3 space-y-2">
+                  {data.kids.map((kid: Kid) => {
+                    const progress = getChallengeProgress(challenge, kid.id, data.logs, data.chores);
+                    const completed = challenge.completedBy?.includes(kid.id);
+                    const pct = Math.min(100, (progress / challenge.targetValue) * 100);
+                    return (
+                      <div key={kid.id}>
+                        <div className="flex items-center gap-2 text-xs mb-0.5">
+                          <KidAvatar kid={kid} size={14} />
+                          <span style={{ color: kid.color }}>{kid.name}</span>
+                          <span className="text-muted-foreground ml-auto">
+                            {progress}/{challenge.targetValue}
+                            {completed && " ✅"}
+                          </span>
+                        </div>
+                        <Progress value={pct} className="h-1.5" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                await choresApi.deleteChallenge(challenge.id);
+                refresh();
+                toast.success("Challenge removed");
+              }}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </>
+  );
+}
+
 // ── Approvals Tab ──
 function ApprovalsTab({ data, refresh }: any) {
   const pending = data.logs.filter(
@@ -666,6 +949,12 @@ function HistoryTab({ data, refresh }: any) {
             <div key={log.id} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded hover:bg-secondary/50 group">
               <span>{chore?.icon}</span>
               <span className="flex-1 truncate">{chore?.title}</span>
+              {log.bonusMultiplier && log.bonusMultiplier > 1 && (
+                <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1 rounded">{log.bonusMultiplier}x</span>
+              )}
+              {log.earlyBonusEarned && (
+                <span className="text-[10px] bg-primary/20 text-primary px-1 rounded">+{log.earlyBonusEarned}</span>
+              )}
               <span className="flex items-center gap-1" style={{ color: kid?.color }}>{kid && <KidAvatar kid={kid} size={16} />} {kid?.name}</span>
               <span className="text-xs text-muted-foreground">
                 {new Date(log.completedAt).toLocaleDateString()}
@@ -687,6 +976,207 @@ function HistoryTab({ data, refresh }: any) {
           );
         })}
       </div>
+    </>
+  );
+}
+
+// ── Settings Tab ──
+function SettingsTab({ data, refresh }: any) {
+  const settings = data.settings || DEFAULT_SETTINGS;
+  const [rotationEnabled, setRotationEnabled] = useState(settings.rotationEnabled ?? false);
+  const [categories, setCategories] = useState<string[]>(settings.categories || DEFAULT_SETTINGS.categories);
+  const [newCategory, setNewCategory] = useState("");
+  const [bonusDays, setBonusDays] = useState<BonusDay[]>(settings.bonusDays || []);
+  const [newBonusDayOfWeek, setNewBonusDayOfWeek] = useState(6); // Saturday
+  const [newBonusMultiplier, setNewBonusMultiplier] = useState(2);
+  const [newBonusLabel, setNewBonusLabel] = useState("");
+
+  // Streak protection
+  const [spKidId, setSpKidId] = useState(data.kids[0]?.id || "");
+  const [spDate, setSpDate] = useState(new Date().toISOString().split("T")[0]);
+  const [spReason, setSpReason] = useState("Sick");
+
+  const saveSettings = async (partial: any) => {
+    const updated = { ...settings, ...partial };
+    await choresApi.updateSettings(updated);
+    refresh();
+    toast.success("Settings saved");
+  };
+
+  return (
+    <>
+      <h2 className="text-base font-medium">⚙️ Chore Settings</h2>
+
+      {/* Rotation */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">🔄 Chore Rotation</Label>
+              <p className="text-xs text-muted-foreground">Auto-assign chores to kids in rotating order</p>
+            </div>
+            <Switch checked={rotationEnabled} onCheckedChange={(v) => {
+              setRotationEnabled(v);
+              saveSettings({ rotationEnabled: v, categories, bonusDays });
+            }} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Categories */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <Label className="text-sm font-medium">🏷️ Categories</Label>
+          <div className="flex flex-wrap gap-1">
+            {categories.map((cat) => (
+              <div key={cat} className="flex items-center gap-1 bg-secondary px-2 py-1 rounded text-xs">
+                <span>{cat}</span>
+                <button onClick={() => {
+                  const updated = categories.filter((c) => c !== cat);
+                  setCategories(updated);
+                  saveSettings({ rotationEnabled, categories: updated, bonusDays });
+                }} className="text-destructive hover:text-destructive/80">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category" className="flex-1" />
+            <Button size="sm" onClick={() => {
+              if (!newCategory.trim() || categories.includes(newCategory.trim())) return;
+              const updated = [...categories, newCategory.trim()];
+              setCategories(updated);
+              setNewCategory("");
+              saveSettings({ rotationEnabled, categories: updated, bonusDays });
+            }}>Add</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bonus Days */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <Label className="text-sm font-medium">🎉 Bonus Days</Label>
+          <p className="text-xs text-muted-foreground">Set specific days with point multipliers</p>
+
+          {bonusDays.map((bd) => (
+            <div key={bd.id} className="flex items-center gap-2 text-sm bg-secondary/50 px-3 py-2 rounded">
+              <span className="flex-1">
+                {bd.dayOfWeek >= 0 ? WEEKDAY_LABELS[bd.dayOfWeek] : bd.date} — {bd.multiplier}x — {bd.label}
+              </span>
+              <button onClick={() => {
+                const updated = bonusDays.filter((b) => b.id !== bd.id);
+                setBonusDays(updated);
+                saveSettings({ rotationEnabled, categories, bonusDays: updated });
+              }} className="text-destructive">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs">Day</Label>
+              <Select value={String(newBonusDayOfWeek)} onValueChange={(v) => setNewBonusDayOfWeek(Number(v))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {WEEKDAY_LABELS.map((label, i) => (
+                    <SelectItem key={i} value={String(i)}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Multiplier</Label>
+              <Input type="number" min={1.5} step={0.5} value={newBonusMultiplier} onChange={(e) => setNewBonusMultiplier(+e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs">Label</Label>
+              <Input value={newBonusLabel} onChange={(e) => setNewBonusLabel(e.target.value)} placeholder="2x Sunday" className="mt-1" />
+            </div>
+          </div>
+          <Button size="sm" onClick={() => {
+            const bd: BonusDay = {
+              id: `bd_${Date.now()}`,
+              dayOfWeek: newBonusDayOfWeek,
+              multiplier: newBonusMultiplier,
+              label: newBonusLabel || `${newBonusMultiplier}x ${WEEKDAY_LABELS[newBonusDayOfWeek]}`,
+            };
+            const updated = [...bonusDays, bd];
+            setBonusDays(updated);
+            setNewBonusLabel("");
+            saveSettings({ rotationEnabled, categories, bonusDays: updated });
+          }}>
+            <Plus className="w-4 h-4 mr-1" /> Add Bonus Day
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Streak Protection */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <Label className="text-sm font-medium">🛡️ Streak Protection</Label>
+          <p className="text-xs text-muted-foreground">Mark days off (sick, vacation) to keep streaks alive</p>
+
+          {/* Existing protections */}
+          {(data.streakProtections || []).map((sp: StreakProtection) => {
+            const kid = data.kids.find((k: Kid) => k.id === sp.kidId);
+            return (
+              <div key={sp.id} className="flex items-center gap-2 text-sm bg-secondary/50 px-3 py-2 rounded">
+                {kid && <KidAvatar kid={kid} size={16} />}
+                <span className="flex-1">
+                  {kid?.name} — {sp.date} — {sp.reason}
+                </span>
+                <button onClick={async () => {
+                  await choresApi.deleteStreakProtection(sp.id);
+                  refresh();
+                }} className="text-destructive">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs">Kid</Label>
+              <Select value={spKidId} onValueChange={setSpKidId}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {data.kids.map((k: Kid) => (
+                    <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Date</Label>
+              <Input type="date" value={spDate} onChange={(e) => setSpDate(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs">Reason</Label>
+              <Select value={spReason} onValueChange={setSpReason}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Sick">🤒 Sick</SelectItem>
+                  <SelectItem value="Vacation">🏖️ Vacation</SelectItem>
+                  <SelectItem value="Holiday">🎄 Holiday</SelectItem>
+                  <SelectItem value="Other">📝 Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button size="sm" onClick={async () => {
+            if (!spKidId) return;
+            await choresApi.addStreakProtection({ kidId: spKidId, date: spDate, reason: spReason });
+            refresh();
+            toast.success("Streak protected!");
+          }}>
+            <ShieldCheck className="w-4 h-4 mr-1" /> Protect Day
+          </Button>
+        </CardContent>
+      </Card>
     </>
   );
 }

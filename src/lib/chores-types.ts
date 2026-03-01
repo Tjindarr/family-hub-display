@@ -28,6 +28,10 @@ export interface Chore {
   requireApproval: boolean;
   paused: boolean;
   createdAt: string;
+  category?: string; // category tag
+  deadline?: string; // HH:MM deadline time
+  earlyBonus?: number; // bonus points for completing before deadline
+  rotationKids?: string[]; // kid IDs for auto-rotation assignment
 }
 
 export interface ChoreLog {
@@ -38,7 +42,9 @@ export interface ChoreLog {
   photoUrl?: string;
   approved: boolean;
   approvedAt?: string;
-  undoneAt?: string; // if undone within 5 min
+  undoneAt?: string; // if undone
+  bonusMultiplier?: number; // applied bonus day multiplier
+  earlyBonusEarned?: number; // early completion bonus points earned
 }
 
 export interface Badge {
@@ -80,6 +86,76 @@ export interface BulkTemplate {
   chores: Omit<Chore, "id" | "createdAt">[];
 }
 
+// ── Bonus Days ──
+export interface BonusDay {
+  id: string;
+  dayOfWeek: number; // 0=Sun…6=Sat, or -1 for specific date
+  date?: string; // ISO date for one-off bonus days
+  multiplier: number; // e.g. 2 for double points
+  label: string; // e.g. "Double Point Saturday"
+}
+
+// ── Weekly Challenges ──
+export interface WeeklyChallenge {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  targetType: "chores_count" | "points_earned" | "early_completions" | "categories_covered";
+  targetValue: number;
+  bonusPoints: number;
+  weekStart: string; // ISO date of the Monday this challenge starts
+  completedBy: string[]; // kid IDs who completed it
+}
+
+// ── Streak Protection ──
+export interface StreakProtection {
+  id: string;
+  kidId: string;
+  date: string; // ISO date of the protected day
+  reason: string; // e.g. "Sick", "Vacation"
+}
+
+// ── Leveling ──
+export interface LevelDefinition {
+  name: string;
+  icon: string;
+  minPoints: number;
+}
+
+export const LEVEL_DEFINITIONS: LevelDefinition[] = [
+  { name: "Beginner", icon: "🌱", minPoints: 0 },
+  { name: "Helper", icon: "🤝", minPoints: 50 },
+  { name: "Worker", icon: "⚒️", minPoints: 150 },
+  { name: "Pro", icon: "⭐", minPoints: 350 },
+  { name: "Expert", icon: "💎", minPoints: 700 },
+  { name: "Master", icon: "👑", minPoints: 1500 },
+  { name: "Legend", icon: "🏆", minPoints: 3000 },
+];
+
+export function getKidLevel(totalPoints: number): LevelDefinition & { level: number; nextLevel?: LevelDefinition; progress: number } {
+  let current = LEVEL_DEFINITIONS[0];
+  let level = 1;
+  for (let i = 1; i < LEVEL_DEFINITIONS.length; i++) {
+    if (totalPoints >= LEVEL_DEFINITIONS[i].minPoints) {
+      current = LEVEL_DEFINITIONS[i];
+      level = i + 1;
+    }
+  }
+  const nextLevel = level < LEVEL_DEFINITIONS.length ? LEVEL_DEFINITIONS[level] : undefined;
+  const progress = nextLevel
+    ? ((totalPoints - current.minPoints) / (nextLevel.minPoints - current.minPoints)) * 100
+    : 100;
+  return { ...current, level, nextLevel, progress };
+}
+
+// ── Chore Settings ──
+export interface ChoreSettings {
+  rotationEnabled: boolean;
+  categories: string[];
+  bonusDays: BonusDay[];
+}
+
 export interface ChoresData {
   kids: Kid[];
   chores: Chore[];
@@ -88,6 +164,9 @@ export interface ChoresData {
   kidBadges: KidBadge[];
   rewards: Reward[];
   rewardClaims: RewardClaim[];
+  settings: ChoreSettings;
+  challenges: WeeklyChallenge[];
+  streakProtections: StreakProtection[];
 }
 
 // ── Helpers ──
@@ -104,6 +183,12 @@ export const DEFAULT_BADGES: Badge[] = [
   { id: "points-500", name: "Point Pro", icon: "🎯", description: "Earned 500 points total", condition: { type: "total_points", value: 500 } },
 ];
 
+export const DEFAULT_SETTINGS: ChoreSettings = {
+  rotationEnabled: false,
+  categories: ["Kitchen", "Bedroom", "Bathroom", "Outdoor", "General"],
+  bonusDays: [],
+};
+
 export const EMPTY_CHORES_DATA: ChoresData = {
   kids: [],
   chores: [],
@@ -112,6 +197,9 @@ export const EMPTY_CHORES_DATA: ChoresData = {
   kidBadges: [],
   rewards: [],
   rewardClaims: [],
+  settings: { ...DEFAULT_SETTINGS },
+  challenges: [],
+  streakProtections: [],
 };
 
 export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
@@ -122,6 +210,19 @@ export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
 };
 
 export const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Check if today is a bonus day */
+export function getTodayBonusMultiplier(bonusDays: BonusDay[]): { multiplier: number; label: string } | null {
+  const now = new Date();
+  const todayDay = now.getDay();
+  const todayStr = now.toISOString().split("T")[0];
+
+  for (const bd of bonusDays) {
+    if (bd.date && bd.date === todayStr) return { multiplier: bd.multiplier, label: bd.label };
+    if (bd.dayOfWeek >= 0 && bd.dayOfWeek === todayDay) return { multiplier: bd.multiplier, label: bd.label };
+  }
+  return null;
+}
 
 /** Check if a chore is "due" today based on recurrence and logs */
 export function isChoreDueToday(chore: Chore, logs: ChoreLog[]): boolean {
@@ -142,11 +243,9 @@ export function isChoreDueToday(chore: Chore, logs: ChoreLog[]): boolean {
 
   switch (chore.recurrence.type) {
     case "once":
-      // Due if never completed
       return choreLogs.length === 0;
 
     case "daily":
-      // Due if not completed today
       return !lastDay || lastDay.getTime() < today.getTime();
 
     case "interval": {
@@ -156,7 +255,6 @@ export function isChoreDueToday(chore: Chore, logs: ChoreLog[]): boolean {
     }
 
     case "weekly":
-      // Due if today is one of the weekdays AND not completed today
       if (!chore.recurrence.weekdays?.includes(todayDay)) return false;
       return !lastDay || lastDay.getTime() < today.getTime();
 
@@ -225,10 +323,17 @@ export function daysUntilDue(chore: Chore, logs: ChoreLog[]): number | null {
   return null;
 }
 
-/** Get kid's streak (consecutive days with at least one chore) */
-export function getKidStreak(kidId: string, logs: ChoreLog[]): number {
+/** Get kid's streak (consecutive days with at least one chore), considering streak protections */
+export function getKidStreak(kidId: string, logs: ChoreLog[], protections?: StreakProtection[]): number {
   const kidLogs = logs.filter((l) => l.kidId === kidId && !l.undoneAt);
   if (kidLogs.length === 0) return 0;
+
+  const protectedDates = new Set(
+    (protections || []).filter((p) => p.kidId === kidId).map((p) => {
+      const d = new Date(p.date);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    })
+  );
 
   // Get unique dates
   const dates = new Set(
@@ -243,7 +348,7 @@ export function getKidStreak(kidId: string, logs: ChoreLog[]): number {
   for (let i = 0; i < 365; i++) {
     const checkDate = new Date(today.getTime() - i * 86400000);
     const key = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
-    if (dates.has(key)) {
+    if (dates.has(key) || protectedDates.has(key)) {
       streak++;
     } else if (i > 0) {
       break;
@@ -254,12 +359,17 @@ export function getKidStreak(kidId: string, logs: ChoreLog[]): number {
   return streak;
 }
 
-/** Get total points for a kid */
+/** Get total points for a kid (including bonuses) */
 export function getKidTotalPoints(kidId: string, logs: ChoreLog[], chores: Chore[]): number {
   const choreMap = new Map(chores.map((c) => [c.id, c]));
   return logs
     .filter((l) => l.kidId === kidId && !l.undoneAt)
-    .reduce((sum, l) => sum + (choreMap.get(l.choreId)?.points ?? 0), 0);
+    .reduce((sum, l) => {
+      const basePoints = choreMap.get(l.choreId)?.points ?? 0;
+      const multiplier = l.bonusMultiplier || 1;
+      const earlyBonus = l.earlyBonusEarned || 0;
+      return sum + (basePoints * multiplier) + earlyBonus;
+    }, 0);
 }
 
 /** Get weekly points for a kid */
@@ -269,7 +379,12 @@ export function getKidWeeklyPoints(kidId: string, logs: ChoreLog[], chores: Chor
   weekAgo.setDate(weekAgo.getDate() - 7);
   return logs
     .filter((l) => l.kidId === kidId && !l.undoneAt && new Date(l.completedAt) >= weekAgo)
-    .reduce((sum, l) => sum + (choreMap.get(l.choreId)?.points ?? 0), 0);
+    .reduce((sum, l) => {
+      const basePoints = choreMap.get(l.choreId)?.points ?? 0;
+      const multiplier = l.bonusMultiplier || 1;
+      const earlyBonus = l.earlyBonusEarned || 0;
+      return sum + (basePoints * multiplier) + earlyBonus;
+    }, 0);
 }
 
 /** Get spent points (redeemed rewards) */
@@ -285,9 +400,24 @@ export function getKidAvailablePoints(kidId: string, logs: ChoreLog[], chores: C
   return getKidTotalPoints(kidId, logs, chores) - getKidSpentPoints(kidId, claims, rewards);
 }
 
-/** Suggest which kid should do a chore based on fairness */
-export function suggestFairKid(choreId: string, kids: Kid[], logs: ChoreLog[]): Kid | null {
+/** Suggest which kid should do a chore based on fairness or rotation */
+export function suggestFairKid(choreId: string, kids: Kid[], logs: ChoreLog[], rotationKids?: string[], rotationEnabled?: boolean): Kid | null {
   if (kids.length === 0) return null;
+
+  // If rotation is enabled and this chore has rotation kids
+  if (rotationEnabled && rotationKids && rotationKids.length > 0) {
+    const rotKids = kids.filter((k) => rotationKids.includes(k.id));
+    if (rotKids.length > 0) {
+      const choreLogs = logs.filter((l) => l.choreId === choreId && !l.undoneAt)
+        .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+      const lastKidId = choreLogs[0]?.kidId;
+      if (!lastKidId) return rotKids[0];
+      const lastIdx = rotKids.findIndex((k) => k.id === lastKidId);
+      return rotKids[(lastIdx + 1) % rotKids.length];
+    }
+  }
+
+  // Default fairness-based suggestion
   const counts = new Map<string, number>();
   kids.forEach((k) => counts.set(k.id, 0));
   logs
@@ -304,4 +434,50 @@ export function suggestFairKid(choreId: string, kids: Kid[], logs: ChoreLog[]): 
     }
   }
   return fairKid;
+}
+
+/** Check challenge progress for a kid this week */
+export function getChallengeProgress(challenge: WeeklyChallenge, kidId: string, logs: ChoreLog[], chores: Chore[]): number {
+  const weekStart = new Date(challenge.weekStart);
+  const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
+  const weekLogs = logs.filter(
+    (l) => l.kidId === kidId && !l.undoneAt &&
+      new Date(l.completedAt) >= weekStart && new Date(l.completedAt) < weekEnd
+  );
+
+  switch (challenge.targetType) {
+    case "chores_count":
+      return weekLogs.length;
+    case "points_earned": {
+      const choreMap = new Map(chores.map((c) => [c.id, c]));
+      return weekLogs.reduce((s, l) => {
+        const base = choreMap.get(l.choreId)?.points ?? 0;
+        return s + (base * (l.bonusMultiplier || 1)) + (l.earlyBonusEarned || 0);
+      }, 0);
+    }
+    case "early_completions":
+      return weekLogs.filter((l) => (l.earlyBonusEarned || 0) > 0).length;
+    case "categories_covered": {
+      const choreMap = new Map(chores.map((c) => [c.id, c]));
+      const cats = new Set(weekLogs.map((l) => choreMap.get(l.choreId)?.category).filter(Boolean));
+      return cats.size;
+    }
+    default:
+      return 0;
+  }
+}
+
+/** Generate weekly challenges */
+export function generateWeeklyChallenges(): Omit<WeeklyChallenge, "id" | "weekStart" | "completedBy">[] {
+  const pool: Omit<WeeklyChallenge, "id" | "weekStart" | "completedBy">[] = [
+    { title: "Chore Machine", description: "Complete 10 chores this week", icon: "⚡", targetType: "chores_count", targetValue: 10, bonusPoints: 20 },
+    { title: "Early Bird", description: "Complete 3 chores before deadline", icon: "🐦", targetType: "early_completions", targetValue: 3, bonusPoints: 15 },
+    { title: "Point Hunter", description: "Earn 30 points this week", icon: "🎯", targetType: "points_earned", targetValue: 30, bonusPoints: 10 },
+    { title: "Explorer", description: "Do chores in 3 different categories", icon: "🗺️", targetType: "categories_covered", targetValue: 3, bonusPoints: 15 },
+    { title: "Super Helper", description: "Complete 15 chores this week", icon: "🦸", targetType: "chores_count", targetValue: 15, bonusPoints: 30 },
+    { title: "Score Big", description: "Earn 50 points this week", icon: "💰", targetType: "points_earned", targetValue: 50, bonusPoints: 20 },
+  ];
+  // Pick 2 random challenges
+  const shuffled = pool.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 2);
 }

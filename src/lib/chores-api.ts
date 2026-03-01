@@ -1,4 +1,4 @@
-import type { ChoresData, Kid, Chore, ChoreLog, Reward, RewardClaim, KidBadge, EMPTY_CHORES_DATA } from "./chores-types";
+import type { ChoresData, Kid, Chore, ChoreLog, Reward, RewardClaim, KidBadge, ChoreSettings, WeeklyChallenge, StreakProtection } from "./chores-types";
 
 const BASE = "/api/chores";
 
@@ -60,6 +60,19 @@ export const choresApi = {
   deleteReward: (id: string) => del(`/rewards/${id}`),
   claimReward: (rewardId: string, kidId: string) =>
     post<RewardClaim>("/rewards/claim", { rewardId, kidId }),
+
+  // Settings
+  updateSettings: (settings: Partial<ChoreSettings>) => put<ChoreSettings>("/settings", settings),
+
+  // Challenges
+  addChallenge: (challenge: Omit<WeeklyChallenge, "id" | "completedBy">) =>
+    post<WeeklyChallenge>("/challenges", challenge),
+  deleteChallenge: (id: string) => del(`/challenges/${id}`),
+
+  // Streak Protections
+  addStreakProtection: (sp: Omit<StreakProtection, "id">) =>
+    post<StreakProtection>("/streak-protections", sp),
+  deleteStreakProtection: (id: string) => del(`/streak-protections/${id}`),
 
   // Upload chore photo
   uploadPhoto: async (file: File): Promise<string> => {

@@ -83,7 +83,7 @@ export default function ChoreWidget({ config }: Props) {
           {visibleChores.map((chore) => {
             const log = isChoreCompletedToday(chore.id, data.logs);
             const kid = log ? data.kids.find((k: Kid) => k.id === log.kidId) : null;
-            const fairKid = showFairness && !log ? suggestFairKid(chore.id, data.kids, data.logs) : null;
+            const fairKid = showFairness && !log ? suggestFairKid(chore.id, data.kids, data.logs, chore.rotationKids, data.settings?.rotationEnabled) : null;
             return (
               <div key={chore.id} className="flex items-center gap-2" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
                 <span className="text-base">{chore.icon}</span>
