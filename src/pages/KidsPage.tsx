@@ -46,9 +46,9 @@ export default function KidsPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <h1 className="text-3xl font-bold mb-3">👋 Who are you?</h1>
-          <p className="text-muted-foreground text-lg mb-8">Tap your name to see your chores</p>
-          <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+          <h1 className="text-4xl font-bold mb-3">👋 Who are you?</h1>
+          <p className="text-muted-foreground text-xl mb-8">Tap your name to see your chores</p>
+          <div className="grid grid-cols-2 gap-5 w-full max-w-md">
             {data.kids.map((kid) => {
               const total = getKidTotalPoints(kid.id, data.logs, data.chores);
               const level = getKidLevel(total);
@@ -56,17 +56,17 @@ export default function KidsPage() {
                 <button
                   key={kid.id}
                   onClick={() => selectKid(kid)}
-                  className="flex flex-col items-center gap-2 p-6 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all active:scale-95"
+                  className="flex flex-col items-center gap-3 p-7 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all active:scale-95"
                 >
-                  <KidAvatar kid={kid} size={64} />
-                  <span className="font-semibold text-xl" style={{ color: kid.color }}>{kid.name}</span>
-                  <span className="text-sm text-muted-foreground">{level.icon} {level.name}</span>
+                  <KidAvatar kid={kid} size={72} />
+                  <span className="font-semibold text-2xl" style={{ color: kid.color }}>{kid.name}</span>
+                  <span className="text-base text-muted-foreground">{level.icon} {level.name}</span>
                 </button>
               );
             })}
           </div>
           {data.kids.length === 0 && (
-            <p className="text-muted-foreground text-base mt-8">No kids added yet. Ask a parent to set up the system.</p>
+            <p className="text-muted-foreground text-lg mt-8">No kids added yet. Ask a parent to set up the system.</p>
           )}
         </div>
       </div>
@@ -168,13 +168,13 @@ export default function KidsPage() {
   if (showRewards) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
           <div className="max-w-lg mx-auto flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setShowRewards(false)}>
-              <ArrowLeft className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setShowRewards(false)}>
+              <ArrowLeft className="w-6 h-6" />
             </Button>
-            <h1 className="text-lg font-semibold">🎁 Rewards</h1>
-            <div className="ml-auto text-sm font-medium text-primary">{available} pts available</div>
+            <h1 className="text-xl font-semibold">🎁 Rewards</h1>
+            <div className="ml-auto text-base font-medium text-primary">{available} pts available</div>
           </div>
         </div>
         <div className="max-w-lg mx-auto p-4 space-y-3">
@@ -182,16 +182,16 @@ export default function KidsPage() {
             const canAfford = available >= reward.pointsCost;
             return (
               <Card key={reward.id} className={!canAfford ? "opacity-50" : ""}>
-                <CardContent className="p-4 flex items-center gap-4">
-                  <span className="text-3xl">{reward.icon}</span>
+                <CardContent className="p-5 flex items-center gap-4">
+                  <span className="text-4xl">{reward.icon}</span>
                   <div className="flex-1">
-                    <div className="font-semibold">{reward.title}</div>
-                    <div className="text-sm text-muted-foreground">{reward.pointsCost} points</div>
+                    <div className="font-semibold text-lg">{reward.title}</div>
+                    <div className="text-base text-muted-foreground">{reward.pointsCost} points</div>
                     {!canAfford && (
-                      <Progress value={(available / reward.pointsCost) * 100} className="mt-2 h-2" />
+                      <Progress value={(available / reward.pointsCost) * 100} className="mt-2 h-2.5" />
                     )}
                   </div>
-                  <Button size="sm" disabled={!canAfford} onClick={() => handleClaimReward(reward)}>
+                  <Button disabled={!canAfford} onClick={() => handleClaimReward(reward)} className="text-base px-5 h-11">
                     Claim
                   </Button>
                 </CardContent>
@@ -199,7 +199,7 @@ export default function KidsPage() {
             );
           })}
           {(data.rewards || []).length === 0 && (
-            <p className="text-center text-muted-foreground">No rewards set up yet</p>
+            <p className="text-center text-muted-foreground text-base">No rewards set up yet</p>
           )}
         </div>
       </div>
@@ -211,64 +211,64 @@ export default function KidsPage() {
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoCapture} />
 
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => selectKid(null)}>
-              <ArrowLeft className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => selectKid(null)}>
+              <ArrowLeft className="w-6 h-6" />
             </Button>
-            <KidAvatar kid={kid} size={32} />
-            <div className="flex-1">
+            <KidAvatar kid={kid} size={40} />
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-base" style={{ color: kid.color }}>{kid.name}</span>
-                <span className="text-sm bg-secondary px-1.5 py-0.5 rounded">
+                <span className="font-semibold text-lg" style={{ color: kid.color }}>{kid.name}</span>
+                <span className="text-sm bg-secondary px-2 py-0.5 rounded">
                   {level.icon} {level.name}
                 </span>
               </div>
-              <div className="text-sm text-muted-foreground">{dueChores.length} chores today</div>
+              <div className="text-base text-muted-foreground">{dueChores.length} chores today</div>
             </div>
-            <div className="flex gap-1">
-              <Button variant="outline" size="sm" onClick={() => setShowSubmit(true)}>
-                <Send className="w-4 h-4" />
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" className="h-11 w-11" onClick={() => setShowSubmit(true)}>
+                <Send className="w-5 h-5" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowRewards(true)}>
-                <Gift className="w-4 h-4" />
+              <Button variant="outline" size="icon" className="h-11 w-11" onClick={() => setShowRewards(true)}>
+                <Gift className="w-5 h-5" />
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+      <div className="max-w-lg mx-auto p-4 space-y-5">
         {/* Streak bonus banner */}
         {streakBonus && (
           <Card className="border-yellow-500/30 bg-yellow-500/5">
-            <CardContent className="p-3 text-center">
-              <span className="text-sm font-medium text-yellow-400">🔥 {streak}-day streak! All points are {streakBonus.multiplier}x!</span>
+            <CardContent className="p-4 text-center">
+              <span className="text-base font-medium text-yellow-400">🔥 {streak}-day streak! All points are {streakBonus.multiplier}x!</span>
             </CardContent>
           </Card>
         )}
 
         {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           <Card>
-            <CardContent className="p-3 text-center">
-              <Trophy className="w-5 h-5 mx-auto mb-1 text-yellow-500" />
-              <div className="text-xl font-bold">{totalPoints}</div>
+            <CardContent className="p-4 text-center">
+              <Trophy className="w-6 h-6 mx-auto mb-1.5 text-yellow-500" />
+              <div className="text-2xl font-bold">{totalPoints}</div>
               <div className="text-sm text-muted-foreground">Total pts</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 text-center">
-              <Flame className="w-5 h-5 mx-auto mb-1 text-orange-500" />
-              <div className="text-xl font-bold">{streak}</div>
+            <CardContent className="p-4 text-center">
+              <Flame className="w-6 h-6 mx-auto mb-1.5 text-orange-500" />
+              <div className="text-2xl font-bold">{streak}</div>
               <div className="text-sm text-muted-foreground">Day streak</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 text-center">
-              <Star className="w-5 h-5 mx-auto mb-1 text-primary" />
-              <div className="text-xl font-bold">{weeklyPoints}</div>
+            <CardContent className="p-4 text-center">
+              <Star className="w-6 h-6 mx-auto mb-1.5 text-primary" />
+              <div className="text-2xl font-bold">{weeklyPoints}</div>
               <div className="text-sm text-muted-foreground">This week</div>
             </CardContent>
           </Card>
@@ -277,14 +277,14 @@ export default function KidsPage() {
         {/* Level progress */}
         {level.nextLevel && (
           <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 text-base mb-1">
-                <span>{level.icon} {level.name}</span>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-base mb-2">
+                <span className="font-medium">{level.icon} {level.name}</span>
                 <span className="text-muted-foreground">→</span>
-                <span>{level.nextLevel.icon} {level.nextLevel.name}</span>
+                <span className="font-medium">{level.nextLevel.icon} {level.nextLevel.name}</span>
                 <span className="ml-auto text-sm text-muted-foreground">{totalPoints}/{level.nextLevel.minPoints}</span>
               </div>
-              <Progress value={level.progress} className="h-2" />
+              <Progress value={level.progress} className="h-2.5" />
             </CardContent>
           </Card>
         )}
@@ -295,7 +295,7 @@ export default function KidsPage() {
             {badges.map((kb: any) => {
               const badge = data.badges.find((b: any) => b.id === kb.badgeId);
               return badge ? (
-                <div key={kb.badgeId} className="flex items-center gap-1 bg-secondary rounded-full px-3 py-1 text-base">
+                <div key={kb.badgeId} className="flex items-center gap-1.5 bg-secondary rounded-full px-3 py-1.5 text-base">
                   <span>{badge.icon}</span>
                   <span className="text-secondary-foreground">{badge.name}</span>
                 </div>
@@ -307,13 +307,13 @@ export default function KidsPage() {
         {/* Next reward progress */}
         {nextReward && (
           <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 text-base mb-1">
-                <span>{nextReward.icon}</span>
-                <span>Next: {nextReward.title}</span>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-base mb-2">
+                <span className="text-xl">{nextReward.icon}</span>
+                <span className="font-medium">Next: {nextReward.title}</span>
                 <span className="ml-auto text-sm text-muted-foreground">{available}/{nextReward.pointsCost}</span>
               </div>
-              <Progress value={(available / nextReward.pointsCost) * 100} className="h-2" />
+              <Progress value={(available / nextReward.pointsCost) * 100} className="h-2.5" />
             </CardContent>
           </Card>
         )}
@@ -322,8 +322,8 @@ export default function KidsPage() {
         {/* Chore list grouped by time of day */}
         {grouped.map((group) => (
           <div key={group.key}>
-            <h3 className="text-base font-medium text-muted-foreground mb-2">{group.label}</h3>
-            <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-muted-foreground mb-3">{group.label}</h3>
+            <div className="space-y-3">
               {group.chores.map((chore) => {
                 const completed = chore.perKid
                   ? isChoreCompletedToday(chore.id, data.logs, kid.id)
@@ -350,24 +350,24 @@ export default function KidsPage() {
 
                 return (
                   <Card key={chore.id} className={completedByMe ? "border-primary/30 bg-primary/5" : completedByOther ? "opacity-50" : ""}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-4xl">{chore.icon}</span>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-base">{chore.title}</span>
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-4">
+                        <span className="text-5xl">{chore.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-lg">{chore.title}</span>
                             {chore.category && (
-                              <span className="text-xs bg-secondary px-1.5 rounded">{chore.category}</span>
+                              <span className="text-xs bg-secondary px-2 py-0.5 rounded">{chore.category}</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                          <div className="flex items-center gap-3 text-base text-muted-foreground mt-1">
                             <span>{chore.points}pts{streakBonus ? ` (${Math.round(chore.points * streakBonus.multiplier)}✨)` : ""}</span>
                             <span>{"⭐".repeat(chore.difficulty)}</span>
-                            {chore.requirePhoto && <Camera className="w-4 h-4" />}
+                            {chore.requirePhoto && <Camera className="w-5 h-5" />}
                           </div>
                           {deadlineInfo && (
-                          <div className={`flex items-center gap-1 text-sm mt-1 ${deadlineInfo.isUrgent ? "text-destructive" : "text-muted-foreground"}`}>
-                              <Clock className="w-4 h-4" />
+                            <div className={`flex items-center gap-1.5 text-base mt-1.5 ${deadlineInfo.isUrgent ? "text-destructive" : "text-muted-foreground"}`}>
+                              <Clock className="w-5 h-5" />
                               <span>{deadlineInfo.text}</span>
                               {deadlineInfo.canEarnBonus && (
                                 <span className="text-primary font-medium">+{chore.earlyBonus} early bonus!</span>
@@ -375,28 +375,28 @@ export default function KidsPage() {
                             </div>
                           )}
                           {completedByOther && otherKid && (
-                            <div className="flex items-center gap-1 text-sm mt-1" style={{ color: otherKid.color }}>
-                              Done by <KidAvatar kid={otherKid} size={16} /> {otherKid.name}
+                            <div className="flex items-center gap-1.5 text-base mt-1.5" style={{ color: otherKid.color }}>
+                              Done by <KidAvatar kid={otherKid} size={20} /> {otherKid.name}
                             </div>
                           )}
                         </div>
                         {completedByMe ? (
                           <div className="flex items-center gap-2">
-                            <div className="text-primary font-medium text-base flex items-center gap-1">
-                              <Check className="w-6 h-6" /> Done!
+                            <div className="text-primary font-semibold text-lg flex items-center gap-1">
+                              <Check className="w-7 h-7" /> Done!
                             </div>
                             {canUndo && (
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleUndo(completed!.id)}>
-                                <Undo2 className="w-4 h-4" />
+                              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => handleUndo(completed!.id)}>
+                                <Undo2 className="w-5 h-5" />
                               </Button>
                             )}
                           </div>
                         ) : completedByOther ? (
-                          <Check className="w-5 h-5 text-muted-foreground" />
+                          <Check className="w-6 h-6 text-muted-foreground" />
                         ) : (
                           <Button
                             size="lg"
-                            className="rounded-xl px-6"
+                            className="rounded-xl px-7 text-lg h-12"
                             onClick={() => handleComplete(chore)}
                           >
                             Done!
@@ -412,33 +412,33 @@ export default function KidsPage() {
         ))}
 
         {dueChores.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-2xl font-semibold mb-1">All done!</h2>
-            <p className="text-muted-foreground text-base">No chores due today. Enjoy your free time!</p>
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-3xl font-semibold mb-2">All done!</h2>
+            <p className="text-muted-foreground text-lg">No chores due today. Enjoy your free time!</p>
           </div>
         )}
 
         {/* Completed by me today */}
         {completedToday.length > 0 && (
           <div>
-            <h3 className="text-base font-medium text-muted-foreground mb-2">✅ Completed today</h3>
-            <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-muted-foreground mb-3">✅ Completed today</h3>
+            <div className="space-y-2">
               {completedToday.map(({ chore, log }) => (
-                <div key={log!.id} className="flex items-center gap-2 text-base py-1.5 px-2 rounded bg-primary/5">
-                  <span>{chore.icon}</span>
-                  <span className="flex-1">{chore.title}</span>
+                <div key={log!.id} className="flex items-center gap-3 text-base py-2.5 px-3 rounded-lg bg-primary/5">
+                  <span className="text-xl">{chore.icon}</span>
+                  <span className="flex-1 font-medium">{chore.title}</span>
                   {log!.bonusMultiplier && log!.bonusMultiplier > 1 && (
-                    <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1 rounded">{log!.bonusMultiplier}x</span>
+                    <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">{log!.bonusMultiplier}x</span>
                   )}
                   {log!.earlyBonusEarned && (
-                    <span className="text-xs bg-primary/20 text-primary px-1 rounded">+{log!.earlyBonusEarned}</span>
+                    <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">+{log!.earlyBonusEarned}</span>
                   )}
                   <span className="text-sm text-muted-foreground">
                     {new Date(log!.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                   {log!.photoUrl && <PhotoIndicator onClick={() => setLightboxPhoto(log!.photoUrl!)} />}
-                  <span className="text-sm text-primary">+{chore.points}</span>
+                  <span className="text-base font-medium text-primary">+{chore.points}</span>
                 </div>
               ))}
             </div>
@@ -453,21 +453,21 @@ export default function KidsPage() {
           if (mySubmissions.length === 0) return null;
           return (
             <div>
-              <h3 className="text-base font-medium text-muted-foreground mb-2">📤 My Submissions</h3>
-              <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-muted-foreground mb-3">📤 My Submissions</h3>
+              <div className="space-y-3">
                 {mySubmissions.map((sub: ChoreSubmission) => (
                   <Card key={sub.id} className={sub.status === "rejected" ? "border-destructive/30" : "border-yellow-500/30"}>
-                    <CardContent className="p-3">
+                    <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <Send className="w-5 h-5 text-muted-foreground" />
-                        <div className="flex-1">
-                          <div className="font-medium text-base">{sub.title}</div>
-                          {sub.note && <div className="text-sm text-muted-foreground">{sub.note}</div>}
-                          <div className="text-sm text-muted-foreground mt-0.5">
+                        <Send className="w-6 h-6 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-lg">{sub.title}</div>
+                          {sub.note && <div className="text-base text-muted-foreground">{sub.note}</div>}
+                          <div className="text-base text-muted-foreground mt-0.5">
                             {sub.points}pts • {new Date(sub.submittedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </div>
                           {sub.status === "rejected" && (
-                            <div className="text-sm text-destructive mt-1">
+                            <div className="text-base text-destructive mt-1">
                               ❌ Rejected{sub.rejectionReason ? `: ${sub.rejectionReason}` : ""}
                             </div>
                           )}
@@ -475,7 +475,7 @@ export default function KidsPage() {
                         {sub.photoUrl && (
                           <PhotoThumbnail src={sub.photoUrl} size="sm" onClick={() => setLightboxPhoto(sub.photoUrl!)} />
                         )}
-                        <span className={`text-xs px-2 py-0.5 rounded ${sub.status === "pending" ? "bg-yellow-500/20 text-yellow-500" : "bg-destructive/20 text-destructive"}`}>
+                        <span className={`text-sm px-2.5 py-1 rounded font-medium ${sub.status === "pending" ? "bg-yellow-500/20 text-yellow-500" : "bg-destructive/20 text-destructive"}`}>
                           {sub.status === "pending" ? "⏳ Pending" : "Rejected"}
                         </span>
                       </div>
@@ -546,47 +546,49 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
     <div className="min-h-screen bg-background">
       <input ref={submitPhotoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
 
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-5 h-5" />
+          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={onBack}>
+            <ArrowLeft className="w-6 h-6" />
           </Button>
-          <h1 className="text-lg font-semibold">📤 Submit a Chore</h1>
+          <h1 className="text-xl font-semibold">📤 Submit a Chore</h1>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+      <div className="max-w-lg mx-auto p-4 space-y-5">
         <Card>
-          <CardContent className="p-4 space-y-4">
+          <CardContent className="p-5 space-y-5">
             <div>
-              <label className="text-sm font-medium mb-1 block">What did you do? *</label>
+              <label className="text-base font-medium mb-1.5 block">What did you do? *</label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Cleaned the garage, Organized bookshelf..."
                 maxLength={200}
+                className="h-12 text-base"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1 block">Add a note (optional)</label>
+              <label className="text-base font-medium mb-1.5 block">Add a note (optional)</label>
               <Textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Any extra details..."
                 maxLength={500}
-                rows={2}
+                rows={3}
+                className="text-base"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1 block">How many points?</label>
+              <label className="text-base font-medium mb-2 block">How many points?</label>
               <div className="flex items-center gap-2">
                 {[3, 5, 10, 15, 20].map((p) => (
                   <button
                     key={p}
                     onClick={() => setPoints(p)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-4 py-2.5 rounded-lg text-base font-medium transition-colors ${
                       points === p
                         ? "bg-primary text-primary-foreground"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -599,25 +601,25 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1 block">Photo proof (optional)</label>
+              <label className="text-base font-medium mb-1.5 block">Photo proof (optional)</label>
               {photoPreview ? (
                 <div className="relative inline-block">
-                  <img src={photoPreview} alt="Preview" className="w-32 h-32 rounded-lg object-cover" />
+                  <img src={photoPreview} alt="Preview" className="w-36 h-36 rounded-lg object-cover" />
                   {uploading && (
                     <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
-                      <span className="text-xs">Uploading...</span>
+                      <span className="text-sm">Uploading...</span>
                     </div>
                   )}
                   <button
                     onClick={() => { setPhotoPreview(""); setPhotoUrl(""); }}
-                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-7 h-7 flex items-center justify-center"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <Button variant="outline" onClick={() => submitPhotoRef.current?.click()}>
-                  <Camera className="w-4 h-4 mr-2" /> Add Photo
+                <Button variant="outline" className="h-11 text-base" onClick={() => submitPhotoRef.current?.click()}>
+                  <Camera className="w-5 h-5 mr-2" /> Add Photo
                 </Button>
               )}
             </div>
@@ -625,16 +627,16 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef }: {
         </Card>
 
         <Button
-          className="w-full"
+          className="w-full text-lg"
           size="lg"
           disabled={!title.trim() || submitting || uploading}
           onClick={handleSubmit}
         >
-          <Send className="w-4 h-4 mr-2" />
+          <Send className="w-5 h-5 mr-2" />
           {submitting ? "Submitting..." : "Submit for Approval"}
         </Button>
 
-        <p className="text-xs text-center text-muted-foreground">
+        <p className="text-sm text-center text-muted-foreground">
           Your parent will review and approve this chore. Points are awarded after approval.
         </p>
       </div>
