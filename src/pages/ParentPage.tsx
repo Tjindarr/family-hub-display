@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, BonusDay, WeeklyChallenge, StreakProtection, ChoreSubmission } from "@/lib/chores-types";
+import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, BonusDay, StreakProtection, ChoreSubmission } from "@/lib/chores-types";
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import { KidAvatar } from "@/components/KidAvatar";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, getKidSpentPoints, suggestFairKid,
   WEEKDAY_LABELS, TIME_OF_DAY_LABELS, daysUntilDue, getKidLevel,
-  getTodayBonusMultiplier, getChallengeProgress, generateWeeklyChallenges,
+  getTodayBonusMultiplier,
   DEFAULT_SETTINGS,
 } from "@/lib/chores-types";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, Zap, BarChart3, ShieldCheck, Clock, Tag, Send } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, BarChart3, ShieldCheck, Clock, Tag, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -29,7 +29,7 @@ const KID_COLORS = [
   "hsl(280 70% 55%)", "hsl(174 72% 50%)", "hsl(0 72% 55%)", "hsl(45 90% 50%)",
 ];
 
-type Tab = "chores" | "kids" | "rewards" | "history" | "approvals" | "leaderboard" | "challenges" | "settings";
+type Tab = "chores" | "kids" | "rewards" | "history" | "approvals" | "leaderboard" | "settings";
 
 export default function ParentPage() {
   const { data, refresh } = useChoresData();
@@ -56,7 +56,7 @@ export default function ParentPage() {
     { id: "kids", label: "Kids", icon: <Users className="w-4 h-4" /> },
     { id: "rewards", label: "Rewards", icon: <Gift className="w-4 h-4" /> },
     { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-4 h-4" /> },
-    { id: "challenges", label: "Challenges", icon: <Zap className="w-4 h-4" /> },
+    
     { id: "approvals", label: "Approvals", icon: <Shield className="w-4 h-4" /> },
     { id: "history", label: "History", icon: <History className="w-4 h-4" /> },
     { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
@@ -161,7 +161,7 @@ export default function ParentPage() {
           <RewardsTab data={data} refresh={refresh} showAdd={showAddReward} setShowAdd={setShowAddReward} />
         )}
         {tab === "leaderboard" && <LeaderboardTab data={data} />}
-        {tab === "challenges" && <ChallengesTab data={data} refresh={refresh} />}
+        
         {tab === "approvals" && <ApprovalsTab data={data} refresh={refresh} />}
         {tab === "history" && <HistoryTab data={data} refresh={refresh} />}
         {tab === "settings" && <SettingsTab data={data} refresh={refresh} />}
@@ -822,97 +822,6 @@ function LeaderboardTab({ data }: any) {
   );
 }
 
-// ── Challenges Tab ──
-function ChallengesTab({ data, refresh }: any) {
-  const challenges: WeeklyChallenge[] = data.challenges || [];
-  const now = new Date();
-
-  // Get current week's Monday
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dayOfWeek = today.getDay();
-  const monday = new Date(today.getTime() - ((dayOfWeek === 0 ? 6 : dayOfWeek - 1)) * 86400000);
-  const mondayStr = monday.toISOString().split("T")[0];
-
-  const currentChallenges = challenges.filter((c) => {
-    const ws = new Date(c.weekStart);
-    const we = new Date(ws.getTime() + 7 * 86400000);
-    return now >= ws && now < we;
-  });
-
-  const generateNew = async () => {
-    const templates = generateWeeklyChallenges();
-    for (const t of templates) {
-      await choresApi.addChallenge({ ...t, weekStart: mondayStr });
-    }
-    refresh();
-    toast.success("New challenges generated!");
-  };
-
-  return (
-    <>
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-medium">⚡ Weekly Challenges</h2>
-        <Button size="sm" onClick={generateNew}>
-          <Zap className="w-4 h-4 mr-1" /> Generate New
-        </Button>
-      </div>
-
-      {currentChallenges.length === 0 && (
-        <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
-            <Zap className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No active challenges this week.</p>
-            <p className="text-xs mt-1">Click "Generate New" to create weekly challenges!</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {currentChallenges.map((challenge) => (
-        <Card key={challenge.id}>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">{challenge.icon}</span>
-              <div className="flex-1">
-                <div className="font-medium">{challenge.title}</div>
-                <div className="text-xs text-muted-foreground">{challenge.description}</div>
-                <div className="text-xs text-primary mt-1">+{challenge.bonusPoints} bonus points</div>
-
-                {/* Progress per kid */}
-                <div className="mt-3 space-y-2">
-                  {data.kids.map((kid: Kid) => {
-                    const progress = getChallengeProgress(challenge, kid.id, data.logs, data.chores);
-                    const completed = challenge.completedBy?.includes(kid.id);
-                    const pct = Math.min(100, (progress / challenge.targetValue) * 100);
-                    return (
-                      <div key={kid.id}>
-                        <div className="flex items-center gap-2 text-xs mb-0.5">
-                          <KidAvatar kid={kid} size={14} />
-                          <span style={{ color: kid.color }}>{kid.name}</span>
-                          <span className="text-muted-foreground ml-auto">
-                            {progress}/{challenge.targetValue}
-                            {completed && " ✅"}
-                          </span>
-                        </div>
-                        <Progress value={pct} className="h-1.5" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
-                await choresApi.deleteChallenge(challenge.id);
-                refresh();
-                toast.success("Challenge removed");
-              }}>
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </>
-  );
-}
 
 // ── Approvals Tab ──
 function ApprovalsTab({ data, refresh }: any) {

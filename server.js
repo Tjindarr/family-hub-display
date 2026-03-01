@@ -429,31 +429,6 @@ app.post("/api/chores/logs", (req, res) => {
     }
   }
 
-  // Check weekly challenges
-  data.challenges = data.challenges || [];
-  for (const challenge of data.challenges) {
-    if (challenge.completedBy && challenge.completedBy.includes(log.kidId)) continue;
-    const ws = new Date(challenge.weekStart);
-    const we = new Date(ws.getTime() + 7 * 86400000);
-    if (now < ws || now >= we) continue;
-    const weekLogs = data.logs.filter(
-      (l) => l.kidId === log.kidId && !l.undoneAt && new Date(l.completedAt) >= ws && new Date(l.completedAt) < we
-    );
-    let progress = 0;
-    if (challenge.targetType === "chores_count") progress = weekLogs.length;
-    else if (challenge.targetType === "points_earned") {
-      progress = weekLogs.reduce((s, l) => s + ((choreMap[l.choreId]?.points || 0) * (l.bonusMultiplier || 1)) + (l.earlyBonusEarned || 0), 0);
-    }
-    else if (challenge.targetType === "early_completions") progress = weekLogs.filter((l) => (l.earlyBonusEarned || 0) > 0).length;
-    else if (challenge.targetType === "categories_covered") {
-      const cats = new Set(weekLogs.map((l) => choreMap[l.choreId]?.category).filter(Boolean));
-      progress = cats.size;
-    }
-    if (progress >= challenge.targetValue) {
-      challenge.completedBy = challenge.completedBy || [];
-      challenge.completedBy.push(log.kidId);
-    }
-  }
 
   writeChores(data);
   res.json(log);
@@ -546,22 +521,6 @@ app.put("/api/chores/settings", (req, res) => {
   res.json(data.settings);
 });
 
-// --- Challenges ---
-app.post("/api/chores/challenges", (req, res) => {
-  const data = readChores();
-  data.challenges = data.challenges || [];
-  const challenge = { id: uid(), weekStart: req.body.weekStart || new Date().toISOString(), completedBy: [], ...req.body };
-  data.challenges.push(challenge);
-  writeChores(data);
-  res.json(challenge);
-});
-
-app.delete("/api/chores/challenges/:id", (req, res) => {
-  const data = readChores();
-  data.challenges = (data.challenges || []).filter((c) => c.id !== req.params.id);
-  writeChores(data);
-  res.json({ success: true });
-});
 
 // --- Streak Protections ---
 app.post("/api/chores/streak-protections", (req, res) => {

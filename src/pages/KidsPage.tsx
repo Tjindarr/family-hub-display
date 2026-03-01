@@ -1,18 +1,18 @@
 import { useState, useRef } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, WeeklyChallenge, ChoreSubmission } from "@/lib/chores-types";
+import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, ChoreSubmission } from "@/lib/chores-types";
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS, getKidLevel,
-  getTodayBonusMultiplier, getChallengeProgress,
+  getTodayBonusMultiplier,
 } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Zap, Clock, Send, Plus, X } from "lucide-react";
+import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Clock, Send, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,7 +34,7 @@ export default function KidsPage() {
 
   const selectedKid = selectedKidId ? data.kids.find((k) => k.id === selectedKidId) || null : null;
   const [showRewards, setShowRewards] = useState(false);
-  const [showChallenges, setShowChallenges] = useState(false);
+  
   const [showSubmit, setShowSubmit] = useState(false);
   const [captureLogId, setCaptureLogId] = useState<string | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
@@ -91,14 +91,7 @@ export default function KidsPage() {
     .map((c) => ({ chore: c, log: isChoreCompletedToday(c.id, data.logs, kid.id) }))
     .filter((x) => x.log && x.log.kidId === kid.id);
 
-  // Current challenges
   const now = new Date();
-  const currentChallenges = (data.challenges || []).filter((c: WeeklyChallenge) => {
-    const ws = new Date(c.weekStart);
-    const we = new Date(ws.getTime() + 7 * 86400000);
-    return now >= ws && now < we;
-  });
-
   const groupOrder: TimeOfDay[] = ["morning", "afternoon", "evening", "anytime"];
   const grouped = groupOrder.map((tod) => ({
     key: tod,
@@ -170,49 +163,6 @@ export default function KidsPage() {
     return <SubmitChoreView kid={kid} onBack={() => setShowSubmit(false)} refresh={refresh} submitPhotoRef={submitPhotoRef} />;
   }
 
-  // Challenges view
-  if (showChallenges) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
-          <div className="max-w-lg mx-auto flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setShowChallenges(false)}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-lg font-semibold">⚡ Challenges</h1>
-          </div>
-        </div>
-        <div className="max-w-lg mx-auto p-4 space-y-3">
-          {currentChallenges.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No active challenges this week</p>
-          )}
-          {currentChallenges.map((challenge: WeeklyChallenge) => {
-            const progress = getChallengeProgress(challenge, kid.id, data.logs, data.chores);
-            const completed = challenge.completedBy?.includes(kid.id);
-            const pct = Math.min(100, (progress / challenge.targetValue) * 100);
-            return (
-              <Card key={challenge.id} className={completed ? "border-primary/30 bg-primary/5" : ""}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{challenge.icon}</span>
-                    <div className="flex-1">
-                      <div className="font-medium">{challenge.title} {completed && "✅"}</div>
-                      <div className="text-xs text-muted-foreground">{challenge.description}</div>
-                      <div className="text-xs text-primary mt-1">+{challenge.bonusPoints} bonus points</div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Progress value={pct} className="h-2 flex-1" />
-                        <span className="text-xs font-medium">{progress}/{challenge.targetValue}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
 
   // Rewards view
   if (showRewards) {
@@ -278,11 +228,6 @@ export default function KidsPage() {
               <div className="text-sm text-muted-foreground">{dueChores.length} chores today</div>
             </div>
             <div className="flex gap-1">
-              {currentChallenges.length > 0 && (
-                <Button variant="outline" size="sm" onClick={() => setShowChallenges(true)}>
-                  <Zap className="w-4 h-4" />
-                </Button>
-              )}
               <Button variant="outline" size="sm" onClick={() => setShowSubmit(true)}>
                 <Send className="w-4 h-4" />
               </Button>
@@ -373,20 +318,6 @@ export default function KidsPage() {
           </Card>
         )}
 
-        {/* Active challenges preview */}
-        {currentChallenges.length > 0 && (
-          <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setShowChallenges(true)}>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 text-base">
-                <Zap className="w-5 h-5 text-primary" />
-                <span className="font-medium">Weekly Challenges</span>
-                <span className="ml-auto text-sm text-muted-foreground">
-                  {currentChallenges.filter((c: WeeklyChallenge) => c.completedBy?.includes(kid.id)).length}/{currentChallenges.length} done
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Chore list grouped by time of day */}
         {grouped.map((group) => (
