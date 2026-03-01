@@ -16,6 +16,31 @@ docker compose up -d
 
 Dashboard available at `http://localhost:3000`. Config and photos persist in a Docker volume (`config-data` → `/data`).
 
+### Unraid
+
+1. In Unraid, go to **Docker → Add Container** (or use Community Applications to add a custom container)
+2. Configure the container:
+
+| Field | Value |
+|---|---|
+| **Name** | `homedash` |
+| **Repository** | Build from the cloned repo, or push your image to Docker Hub/GHCR and reference it here |
+| **Port Mapping** | Host: `3000` → Container: `80` |
+| **Path Mapping** | Host: `/mnt/user/appdata/homedash` → Container: `/data` |
+
+3. If building locally on Unraid:
+```bash
+cd /mnt/user/appdata/
+git clone <YOUR_GIT_URL> homedash-build
+cd homedash-build
+docker build -t homedash .
+```
+Then set **Repository** to `homedash` in the Unraid Docker UI.
+
+4. Click **Apply** — the dashboard will be available at `http://<UNRAID_IP>:3000`
+
+> **Persistence**: The `/data` path stores `config.json` and uploaded photos. Mapping it to `/mnt/user/appdata/homedash` ensures data survives container updates.
+
 ### Manual / Development
 
 Requires **Node.js 18+**.
@@ -73,6 +98,21 @@ All REST requests use `Authorization: Bearer <token>` headers. Calendar date par
 #### Connection Status
 
 A dynamic status indicator in the header reflects the WebSocket state: **connecting**, **connected**, or **disconnected**.
+
+### Entity Attribute Access
+
+All entity ID fields across every widget support **dot-notation attribute access**:
+
+```
+sensor.phone.battery_level
+```
+
+Format: `domain.object_id.attribute_name`
+
+- `sensor.temperature` → returns the entity's main state
+- `sensor.phone.battery_level` → returns the `battery_level` attribute from `sensor.phone`
+
+This works in temperature sensors, sensor grids, general sensor cards, vehicle widgets, person cards, notification rules, and pollen sensors.
 
 ### Server-Side API (Express)
 
@@ -306,6 +346,10 @@ Versatile widget with icon, label, top/bottom info rows (up to 4 sensors each), 
 
 **Per-widget font sizes**: Heading, value, body, label.
 
+#### Delta Aggregation & Meter Resets
+
+When using **delta** aggregation (common for cumulative energy meters), the chart calculates the difference between consecutive time buckets. If a negative delta is detected (e.g. a meter resetting at the start of a new month), the chart automatically treats the new value as the delta instead of showing a large negative spike.
+
 ---
 
 ### 🔲 Sensor Grid
@@ -409,6 +453,30 @@ Rotating photo slideshow with configurable display modes. Photos stored server-s
 | Display Mode | `contain` (fit), `cover` (fill + crop), `blur-fill` (fit + blurred bg) |
 
 Manage photos in Settings → **Photos** tab (upload/delete).
+
+---
+
+### 🌿 Pollen
+
+Displays pollen levels from HA sensors with color-coded severity dots and optional multi-day forecast.
+
+| Setting | Description |
+|---|---|
+| Show Label | Toggle "Pollen" heading |
+| Show Forecast | Toggle forecast dots |
+
+**Per-sensor settings:**
+
+| Setting | Description |
+|---|---|
+| Entity ID | Pollen sensor entity |
+| Label | Pollen type name (e.g. "Björk") |
+| Icon | MDI icon name |
+| Color | Icon color |
+
+**Styling**: Heading font size/color, icon size, label font size, value font size. Per-sensor label/value font size overrides available.
+
+Levels are color-coded from green (none) through yellow/orange (moderate) to red (high/very high).
 
 ---
 
