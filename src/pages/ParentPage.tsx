@@ -133,7 +133,7 @@ export default function ParentPage() {
               <span>{pendingApprovals.length}</span>
             </button>
           )}
-          <PushNotificationToggle role="parent" compact />
+          
         </div>
       </div>
 
@@ -1122,6 +1122,8 @@ function SettingsTab({ data, refresh }: any) {
   const [streakBonuses, setStreakBonuses] = useState<{ id: string; daysRequired: number; multiplier: number }[]>(settings.streakBonuses || []);
   const [newStreakDays, setNewStreakDays] = useState(7);
   const [newStreakMultiplier, setNewStreakMultiplier] = useState(2);
+  const [notifyParentOnComplete, setNotifyParentOnComplete] = useState(settings.notifyParentOnComplete ?? true);
+  const [notifyKidOnNewChore, setNotifyKidOnNewChore] = useState(settings.notifyKidOnNewChore ?? true);
 
   const saveSettings = async (partial: any) => {
     const updated = { ...settings, ...partial };
@@ -1133,6 +1135,39 @@ function SettingsTab({ data, refresh }: any) {
   return (
     <>
       <h2 className="text-lg font-semibold">⚙️ Chore Settings</h2>
+
+      {/* Notifications */}
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <Label className="text-sm font-medium">🔔 Notifications</Label>
+
+          <div className="space-y-2">
+            <PushNotificationToggle role="parent" />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm">Notify me when kid completes a chore</Label>
+              <p className="text-xs text-muted-foreground">Get a push when a chore is done or submitted</p>
+            </div>
+            <Switch checked={notifyParentOnComplete} onCheckedChange={(v) => {
+              setNotifyParentOnComplete(v);
+              saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, streakBonuses, notifyParentOnComplete: v, notifyKidOnNewChore });
+            }} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm">Notify kids when a new chore is added</Label>
+              <p className="text-xs text-muted-foreground">Kids get a push when you create a new chore</p>
+            </div>
+            <Switch checked={notifyKidOnNewChore} onCheckedChange={(v) => {
+              setNotifyKidOnNewChore(v);
+              saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, streakBonuses, notifyParentOnComplete, notifyKidOnNewChore: v });
+            }} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Rotation */}
       <Card>
