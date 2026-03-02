@@ -124,24 +124,33 @@ function writePushSubs(subs) {
 // Send push to all subscribers matching a role (and optionally kidId)
 async function sendPush(targetRole, payload, targetKidId) {
   const subs = readPushSubs();
+  console.log(`[PUSH] Sending to role="${targetRole}"${targetKidId ? ` kidId="${targetKidId}"` : ""}, total subs: ${subs.length}`);
   const targets = subs.filter((s) => {
     if (s.role !== targetRole) return false;
     if (targetKidId && s.kidId && s.kidId !== targetKidId) return false;
     return true;
   });
+  console.log(`[PUSH] Matched ${targets.length} subscriber(s) for payload: ${payload.title}`);
+  if (targets.length === 0) {
+    console.log("[PUSH] No matching subscribers found!");
+    return;
+  }
   const expired = [];
   for (const sub of targets) {
     try {
+      console.log(`[PUSH] Sending to endpoint: ${sub.subscription.endpoint.slice(0, 60)}...`);
       await webpush.sendNotification(sub.subscription, JSON.stringify(payload));
+      console.log(`[PUSH] ✅ Sent successfully`);
     } catch (err) {
       if (err.statusCode === 410 || err.statusCode === 404) {
         expired.push(sub.subscription.endpoint);
       }
-      console.error("Push failed:", err.statusCode || err.message);
+      console.error(`[PUSH] ❌ Failed:`, err.statusCode || err.message, err.body || "");
     }
   }
   // Clean up expired subscriptions
   if (expired.length > 0) {
+    console.log(`[PUSH] Cleaning up ${expired.length} expired subscription(s)`);
     const remaining = subs.filter((s) => !expired.includes(s.subscription.endpoint));
     writePushSubs(remaining);
   }
