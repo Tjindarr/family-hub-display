@@ -287,6 +287,13 @@ export const THEMES: { id: ThemeId; label: string }[] = [
   { id: "macos-dark", label: "macOS Dark" },
 ];
 
+export interface ChoreReminderConfig {
+  enabled: boolean;
+  weekdayHour: number; // 0-23
+  weekendHour: number; // 0-23
+  maxChoresInNotification: number; // how many chore names to include
+}
+
 export interface ChoreWidgetConfig {
   enabled: boolean;
   label: string;
@@ -361,6 +368,7 @@ export interface DashboardConfig {
   globalFormat: GlobalFormatConfig;
   enableChores: boolean; // legacy, kept for migration
   choreWidgetConfig: ChoreWidgetConfig;
+  choreReminderConfig: ChoreReminderConfig;
 }
 
 export interface TemperatureEntityConfig {
@@ -525,6 +533,12 @@ const DEFAULT_CONFIG: DashboardConfig = {
     showCompleted: true,
     showAllChores: false,
     maxVisible: 0,
+  },
+  choreReminderConfig: {
+    enabled: false,
+    weekdayHour: 16,
+    weekendHour: 10,
+    maxChoresInNotification: 3,
   },
 };
 

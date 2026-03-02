@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -267,6 +267,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     enabled: false, label: "Chores", icon: "mdi:clipboard-check-outline",
     showScoreboard: true, showUpcoming: true, showFairness: true, showCompleted: true, showAllChores: false, maxVisible: 0,
   });
+  const [choreReminderConfig, setChoreReminderConfig] = useState<ChoreReminderConfig>(config.choreReminderConfig || {
+    enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3,
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
@@ -386,6 +389,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       globalFormat,
       enableChores: enableChores || choreWidgetConfig.enabled,
       choreWidgetConfig,
+      choreReminderConfig,
     });
     setOpen(false);
   };
@@ -610,14 +614,67 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 HomeChores is a chore tracking system for families. Parents can create chores with recurrence schedules, assign points, and track progress. Kids get their own mobile-friendly page where they can mark chores as done, earn points, unlock badges, and claim rewards. The kids page is installable as an app on iPhone via Safari.
               </p>
               {enableChores && (
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open("/parent", "_blank")}>
-                    Open Parent Dashboard
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open("/kids", "_blank")}>
-                    Open Kids Page
-                  </Button>
-                </div>
+                <>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open("/parent", "_blank")}>
+                      Open Parent Dashboard
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => window.open("/kids", "_blank")}>
+                      Open Kids Page
+                    </Button>
+                  </div>
+
+                  {/* Daily Reminder Settings */}
+                  <div className="mt-3 space-y-3 border-t border-border/30 pt-3">
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={choreReminderConfig.enabled}
+                        onCheckedChange={(checked) => setChoreReminderConfig((prev) => ({ ...prev, enabled: checked }))}
+                      />
+                      <Label className="text-sm text-foreground">Daily chore reminder (push notification)</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Send a daily push notification to kids listing today's chores. Skips days with no chores scheduled.
+                    </p>
+                    {choreReminderConfig.enabled && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Weekday hour</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={choreReminderConfig.weekdayHour}
+                            onChange={(e) => setChoreReminderConfig((prev) => ({ ...prev, weekdayHour: parseInt(e.target.value) || 0 }))}
+                            className="mt-1 bg-muted border-border text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Weekend hour</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={choreReminderConfig.weekendHour}
+                            onChange={(e) => setChoreReminderConfig((prev) => ({ ...prev, weekendHour: parseInt(e.target.value) || 0 }))}
+                            className="mt-1 bg-muted border-border text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Max chores shown</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={choreReminderConfig.maxChoresInNotification}
+                            onChange={(e) => setChoreReminderConfig((prev) => ({ ...prev, maxChoresInNotification: parseInt(e.target.value) || 3 }))}
+                            className="mt-1 bg-muted border-border text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </section>
 
