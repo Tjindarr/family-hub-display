@@ -757,18 +757,26 @@ app.get("/{*splat}", (req, res) => {
 // ── Daily chore reminder scheduler ──
 function scheduleDailyReminder() {
   const check = () => {
+    // Read reminder config from dashboard config
+    let reminderConfig = { enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3 };
+    try {
+      const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
+      if (cfg.choreReminderConfig) reminderConfig = { ...reminderConfig, ...cfg.choreReminderConfig };
+    } catch {}
+
+    if (!reminderConfig.enabled) return;
+
     const now = new Date();
     const day = now.getDay(); // 0=Sun, 6=Sat
     const hour = now.getHours();
     const minute = now.getMinutes();
     const isWeekend = day === 0 || day === 6;
-    const targetHour = isWeekend ? 10 : 16;
+    const targetHour = isWeekend ? reminderConfig.weekendHour : reminderConfig.weekdayHour;
 
     if (hour === targetHour && minute === 0) {
       const data = readChores();
       if (data.kids && data.kids.length > 0) {
         const todayStr = now.toISOString().slice(0, 10);
-        // Check which chores are due today (daily or matching weekday)
         const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
         const todayName = dayNames[day];
         const activeChores = (data.chores || []).filter((c) => {
@@ -779,8 +787,9 @@ function scheduleDailyReminder() {
         });
 
         if (activeChores.length > 0) {
-          const choreNames = activeChores.slice(0, 3).map((c) => c.title).join(", ");
-          const extra = activeChores.length > 3 ? ` +${activeChores.length - 3} more` : "";
+          const maxShow = reminderConfig.maxChoresInNotification || 3;
+          const choreNames = activeChores.slice(0, maxShow).map((c) => c.title).join(", ");
+          const extra = activeChores.length > maxShow ? ` +${activeChores.length - maxShow} more` : "";
           console.log(`[PUSH] Sending daily chore reminder to kids (${activeChores.length} chores)`);
           sendPush("kid", {
             title: "⏰ Time for chores!",
@@ -795,7 +804,7 @@ function scheduleDailyReminder() {
 
   // Check every 60 seconds
   setInterval(check, 60_000);
-  console.log("[SCHEDULER] Daily chore reminder active (weekdays 16:00, weekends 10:00)");
+  console.log("[SCHEDULER] Daily chore reminder scheduler active");
 }
 
 app.listen(PORT, () => {
