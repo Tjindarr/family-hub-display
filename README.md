@@ -122,12 +122,17 @@ The built-in Express server (port 80 in Docker) provides:
 |---|---|---|
 | `/api/config` | GET | Load dashboard configuration |
 | `/api/config` | PUT | Save dashboard configuration (JSON body) |
+| `/api/config/backups` | GET | List configuration backups |
+| `/api/config/backups/restore/:file` | POST | Restore a config backup |
 | `/api/photos` | GET | List uploaded photos |
 | `/api/photos/upload` | POST | Upload photos (JSON with base64 `files` array) |
 | `/api/photos/file/:name` | GET | Serve full-size photo |
 | `/api/photos/thumb/:name` | GET | Serve thumbnail |
 | `/api/photos/:name` | DELETE | Delete a photo |
 | `/api/rss?url=` | GET | RSS feed proxy (avoids CORS) |
+| `/api/push/vapid-public-key` | GET | Get VAPID public key for push subscriptions |
+| `/api/push/subscribe` | POST | Register push notification subscription |
+| `/api/push/unsubscribe` | POST | Remove push notification subscription |
 
 ### Configuration Persistence
 
@@ -569,7 +574,124 @@ Chore data is stored server-side at `/data/chores.json` via the Express API:
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/chores` | GET | Load all chore data |
-| `/api/chores` | PUT | Save all chore data |
+| `/api/chores/kids` | POST | Add a kid |
+| `/api/chores/kids/:id` | PUT | Update a kid |
+| `/api/chores/kids/:id` | DELETE | Delete a kid |
+| `/api/chores/chores` | POST | Add a chore |
+| `/api/chores/chores/:id` | PUT | Update a chore |
+| `/api/chores/chores/:id` | DELETE | Delete a chore |
+| `/api/chores/logs` | POST | Complete a chore |
+| `/api/chores/logs/:id/approve` | PUT | Approve a completion |
+| `/api/chores/logs/:id/reject` | PUT | Reject a completion |
+| `/api/chores/logs/:id/undo` | PUT | Undo a completion |
+| `/api/chores/logs/:id` | DELETE | Delete a log entry |
+| `/api/chores/rewards` | POST | Add a reward |
+| `/api/chores/rewards/:id` | PUT | Update a reward |
+| `/api/chores/rewards/:id` | DELETE | Delete a reward |
+| `/api/chores/rewards/claim` | POST | Claim a reward |
+| `/api/chores/rewards/claims/:id/approve` | PUT | Approve a claim |
+| `/api/chores/rewards/claims/:id/reject` | PUT | Reject a claim |
+
+### Push Notifications
+
+HomeChores supports real-time push notifications via the Web Push API. Notifications are sent to parents when kids complete or submit chores, and to kids when their submissions are approved or rejected.
+
+#### Requirements
+
+Push notifications require **HTTPS** with a valid SSL certificate. Service Workers and the Push API are only available in secure contexts. There are several ways to set this up:
+
+##### Option 1: Nginx Reverse Proxy with Let's Encrypt (Recommended)
+
+```nginx
+server {
+    listen 80;
+    server_name homedash.yourdomain.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name homedash.yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/homedash.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/homedash.yourdomain.com/privkey.pem;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Generate certificates with Certbot:
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d homedash.yourdomain.com
+```
+
+##### Option 2: Nginx Proxy Manager (Unraid / NAS)
+
+If you run Unraid or a NAS with Nginx Proxy Manager:
+
+1. Add a new **Proxy Host** pointing to your HomeDash container IP and port (e.g. `192.168.1.50:3000`)
+2. Set the domain to your chosen hostname (e.g. `homedash.yourdomain.com`)
+3. Go to the **SSL** tab → select "Request a new SSL Certificate" with Let's Encrypt
+4. Enable **Force SSL** and **WebSocket Support**
+
+##### Option 3: Caddy (Automatic HTTPS)
+
+Caddy automatically provisions Let's Encrypt certificates:
+
+```
+homedash.yourdomain.com {
+    reverse_proxy localhost:3000
+}
+```
+
+##### Option 4: Cloudflare Tunnel
+
+If you don't want to open ports, use a Cloudflare Tunnel:
+
+1. Install `cloudflared` on your server
+2. Create a tunnel: `cloudflared tunnel create homedash`
+3. Configure it to route your domain to `http://localhost:3000`
+4. Cloudflare handles SSL automatically
+
+#### Setting Up Notifications
+
+1. Ensure HomeDash is accessible over HTTPS
+2. Enable HomeChores in Settings → General
+3. Open the **Parent** (`/parent`) or **Kids** (`/kids`) page
+4. Toggle the 🔔 notification bell to subscribe
+5. Accept the browser notification permission prompt
+
+**iOS (iPhone/iPad)**: Push notifications require iOS 16.4+ and the page must be installed as a PWA ("Add to Home Screen" from Safari). Push notifications do not work in regular Safari tabs.
+
+#### Daily Chore Reminders
+
+A configurable daily push notification can be sent to all kid subscribers listing today's scheduled chores. Configure in Settings → General → HomeChores:
+
+| Setting | Default | Description |
+|---|---|---|
+| Enable reminder | Off | Master toggle for daily reminders |
+| Weekday hour | 16 | Hour (0–23) to send on Mon–Fri |
+| Weekend hour | 10 | Hour (0–23) to send on Sat–Sun |
+| Max chores shown | 3 | Number of chore names in notification body |
+
+Days with no scheduled chores are automatically skipped.
+
+#### Data Files
+
+| File | Description |
+|---|---|
+| `/data/vapid-keys.json` | Auto-generated VAPID key pair for push encryption |
+| `/data/push-subscriptions.json` | Active push subscriptions |
 
 ---
 
@@ -587,7 +709,7 @@ services:
     restart: unless-stopped
 ```
 
-The `/data` volume stores `config.json` and `photos/`.
+The `/data` volume stores `config.json`, `chores.json`, `photos/`, `vapid-keys.json`, and `push-subscriptions.json`.
 
 ---
 

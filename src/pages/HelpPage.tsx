@@ -442,6 +442,113 @@ climate.living_room.current_temperature → "22.0"`}
         </Ul>
         <H4>Dashboard Widget</H4>
         <P>When enabled, a Chores widget appears on the main dashboard showing today's due chores with color-coded urgency dots, completions, countdowns, and weekly scoreboard.</P>
+        <H4>Push Notifications</H4>
+        <P>HomeChores supports real-time push notifications via the Web Push API. Parents are notified of submissions and completions, kids are notified of approvals and rejections.</P>
+        <Ul>
+          <li><strong>Requirement</strong>: HTTPS with a valid SSL certificate (see Push Notifications section below)</li>
+          <li><strong>iOS</strong>: Requires iOS 16.4+ and the page must be installed as a PWA via "Add to Home Screen" in Safari</li>
+          <li>Toggle the 🔔 bell icon on the Parent or Kids page to subscribe</li>
+        </Ul>
+        <H4>Daily Chore Reminders</H4>
+        <P>An optional daily push notification sent to kids listing today's scheduled chores. Enable in Settings → General → HomeChores.</P>
+        <Table
+          headers={["Setting", "Default", "Description"]}
+          rows={[
+            ["Enable reminder", "Off", "Master toggle for daily reminders"],
+            ["Weekday hour", "16", "Hour (0–23) to send on Mon–Fri"],
+            ["Weekend hour", "10", "Hour (0–23) to send on Sat–Sun"],
+            ["Max chores shown", "3", "Chore names included in the notification"],
+          ]}
+        />
+        <P>Days with no scheduled chores are automatically skipped.</P>
+      </>
+    ),
+  },
+  {
+    id: "push-notifications",
+    icon: "🔔",
+    title: "Push Notifications & HTTPS Setup",
+    content: (
+      <>
+        <P>Push notifications require <strong>HTTPS</strong> with a valid SSL certificate. Service Workers and the Push API only work in secure contexts. Here are several ways to set up HTTPS for HomeDash:</P>
+        
+        <H4>Option 1: Nginx + Let's Encrypt (Recommended)</H4>
+        <P>Set up Nginx as a reverse proxy with free Let's Encrypt SSL certificates:</P>
+        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+{`server {
+    listen 80;
+    server_name homedash.yourdomain.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name homedash.yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/homedash.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/homedash.yourdomain.com/privkey.pem;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}`}
+        </pre>
+        <P>Generate certificates with Certbot:</P>
+        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+{`sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d homedash.yourdomain.com`}
+        </pre>
+
+        <H4>Option 2: Nginx Proxy Manager (Unraid / NAS)</H4>
+        <P>If you run Unraid or a NAS with Nginx Proxy Manager:</P>
+        <Ul>
+          <li>Add a new <strong>Proxy Host</strong> pointing to your HomeDash container IP and port (e.g. <Code>192.168.1.50:3000</Code>)</li>
+          <li>Set the domain to your hostname (e.g. <Code>homedash.yourdomain.com</Code>)</li>
+          <li>Go to the <strong>SSL</strong> tab → "Request a new SSL Certificate" with Let's Encrypt</li>
+          <li>Enable <strong>Force SSL</strong> and <strong>WebSocket Support</strong></li>
+        </Ul>
+
+        <H4>Option 3: Caddy (Automatic HTTPS)</H4>
+        <P>Caddy automatically provisions Let's Encrypt certificates with zero configuration:</P>
+        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+{`homedash.yourdomain.com {
+    reverse_proxy localhost:3000
+}`}
+        </pre>
+
+        <H4>Option 4: Cloudflare Tunnel</H4>
+        <P>No open ports needed. Cloudflare handles SSL automatically:</P>
+        <Ul>
+          <li>Install <Code>cloudflared</Code> on your server</li>
+          <li>Create a tunnel: <Code>cloudflared tunnel create homedash</Code></li>
+          <li>Configure it to route your domain to <Code>http://localhost:3000</Code></li>
+        </Ul>
+
+        <H4>Subscribing to Notifications</H4>
+        <Ul>
+          <li>Ensure HomeDash is accessible over HTTPS</li>
+          <li>Enable HomeChores in Settings → General</li>
+          <li>Open the Parent (<Code>/parent</Code>) or Kids (<Code>/kids</Code>) page</li>
+          <li>Toggle the 🔔 notification bell to subscribe</li>
+          <li>Accept the browser notification permission prompt</li>
+        </Ul>
+        <P><strong>iOS note:</strong> Push notifications require iOS 16.4+ and the page must be installed as a PWA ("Add to Home Screen" from Safari). They do not work in regular Safari tabs.</P>
+
+        <H4>Data Files</H4>
+        <Table
+          headers={["File", "Description"]}
+          rows={[
+            ["/data/vapid-keys.json", "Auto-generated VAPID key pair for push encryption"],
+            ["/data/push-subscriptions.json", "Active push notification subscriptions"],
+          ]}
+        />
       </>
     ),
   },
@@ -478,6 +585,8 @@ climate.living_room.current_temperature → "22.0"`}
           rows={[
             ["GET", "/api/config", "Get dashboard configuration"],
             ["PUT", "/api/config", "Save dashboard configuration"],
+            ["GET", "/api/config/backups", "List config backups"],
+            ["POST", "/api/config/backups/restore/:file", "Restore a config backup"],
             ["GET", "/api/photos", "List uploaded photos"],
             ["POST", "/api/photos/upload", "Upload photos (base64 JSON)"],
             ["DELETE", "/api/photos/:filename", "Delete a photo"],
@@ -486,17 +595,24 @@ climate.living_room.current_temperature → "22.0"`}
             ["POST", "/api/chores/kids", "Add a kid"],
             ["POST", "/api/chores/chores", "Add a chore"],
             ["POST", "/api/chores/logs", "Complete a chore"],
-            ["PUT", "/api/chores/logs/:id/undo", "Undo a completion (5 min)"],
+            ["PUT", "/api/chores/logs/:id/undo", "Undo a completion"],
             ["PUT", "/api/chores/logs/:id/approve", "Approve a completion"],
+            ["PUT", "/api/chores/logs/:id/reject", "Reject a completion"],
+            ["DELETE", "/api/chores/logs/:id", "Delete a log entry"],
             ["POST", "/api/chores/rewards", "Add a reward"],
             ["POST", "/api/chores/rewards/claim", "Claim a reward"],
+            ["GET", "/api/push/vapid-public-key", "Get VAPID public key"],
+            ["POST", "/api/push/subscribe", "Register push subscription"],
+            ["POST", "/api/push/unsubscribe", "Remove push subscription"],
           ]}
         />
         <H4>Data Persistence</H4>
         <Ul>
-          <li><Code>/data/config.json</Code> — dashboard configuration</li>
+          <li><Code>/data/config.json</Code> — dashboard configuration (with automatic backups)</li>
           <li><Code>/data/chores.json</Code> — chores, kids, logs, badges, rewards</li>
           <li><Code>/data/photos/</Code> — uploaded photo files</li>
+          <li><Code>/data/vapid-keys.json</Code> — VAPID keys for push notifications</li>
+          <li><Code>/data/push-subscriptions.json</Code> — active push subscriptions</li>
         </Ul>
         <H4>WebSocket Connection</H4>
         <P>The dashboard connects to Home Assistant via WebSocket for real-time state updates. The connection indicator in the header shows: connecting (yellow), connected (green), or disconnected (red).</P>
