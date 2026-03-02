@@ -754,6 +754,51 @@ app.get("/{*splat}", (req, res) => {
   }
 });
 
+// ── Daily chore reminder scheduler ──
+function scheduleDailyReminder() {
+  const check = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    const isWeekend = day === 0 || day === 6;
+    const targetHour = isWeekend ? 10 : 16;
+
+    if (hour === targetHour && minute === 0) {
+      const data = readChores();
+      if (data.kids && data.kids.length > 0) {
+        const todayStr = now.toISOString().slice(0, 10);
+        // Check which chores are due today (daily or matching weekday)
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        const todayName = dayNames[day];
+        const activeChores = (data.chores || []).filter((c) => {
+          if (c.frequency === "daily") return true;
+          if (c.frequency === "weekly" && c.weekdays && c.weekdays.includes(todayName)) return true;
+          if (c.frequency === "specific_days" && c.weekdays && c.weekdays.includes(todayName)) return true;
+          return false;
+        });
+
+        if (activeChores.length > 0) {
+          const choreNames = activeChores.slice(0, 3).map((c) => c.title).join(", ");
+          const extra = activeChores.length > 3 ? ` +${activeChores.length - 3} more` : "";
+          console.log(`[PUSH] Sending daily chore reminder to kids (${activeChores.length} chores)`);
+          sendPush("kid", {
+            title: "⏰ Time for chores!",
+            body: `Today: ${choreNames}${extra}`,
+            tag: `chore-reminder-${todayStr}`,
+            url: "/kids",
+          });
+        }
+      }
+    }
+  };
+
+  // Check every 60 seconds
+  setInterval(check, 60_000);
+  console.log("[SCHEDULER] Daily chore reminder active (weekdays 16:00, weekends 10:00)");
+}
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  scheduleDailyReminder();
 });
