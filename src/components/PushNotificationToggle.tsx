@@ -29,8 +29,6 @@ export function PushNotificationToggle({ role, kidId, compact }: Props) {
     });
   }, []);
 
-  if (!supported) return null;
-
   const handleToggle = async () => {
     setLoading(true);
     if (subscribed) {
@@ -58,16 +56,18 @@ export function PushNotificationToggle({ role, kidId, compact }: Props) {
         size="icon"
         className="h-11 w-11"
         onClick={handleToggle}
-        disabled={loading || permission === "denied"}
+        disabled={loading || permission === "denied" || !supported}
         title={
-          permission === "denied"
+          !supported
+            ? "Push notifications not supported (needs HTTPS + PWA)"
+            : permission === "denied"
             ? "Notifications blocked in browser settings"
             : subscribed
             ? "Notifications on – tap to turn off"
             : "Turn on notifications"
         }
       >
-        {subscribed ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+        {!supported ? <BellOff className="w-5 h-5" /> : subscribed ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
       </Button>
     );
   }
