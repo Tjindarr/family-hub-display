@@ -392,6 +392,18 @@ app.post("/api/chores/chores", (req, res) => {
   const chore = { id: uid(), createdAt: new Date().toISOString(), ...req.body };
   data.chores.push(chore);
   writeChores(data);
+
+  // Notify kids about new chore if enabled
+  const settings = data.settings || {};
+  if (settings.notifyKidOnNewChore !== false) {
+    sendPush("kid", {
+      title: "📋 New Chore Added!",
+      body: `${chore.icon || "🧹"} ${chore.title} (${chore.points || 0}pts)`,
+      url: "/kids",
+      tag: `new-chore-${chore.id}`,
+    });
+  }
+
   res.json(chore);
 });
 
@@ -497,16 +509,26 @@ app.post("/api/chores/logs", (req, res) => {
   }
 
 
-  // Notify parent if chore requires approval
-  if (chore && chore.requireApproval) {
+  // Notify parent about chore completion (check setting)
+  const notifySettings = data.settings || {};
+  if (notifySettings.notifyParentOnComplete !== false) {
     const kid = (data.kids || []).find((k) => k.id === req.body.kidId);
     const kidName = kid ? kid.name : "A kid";
-    sendPush("parent", {
-      title: "📋 Needs Approval",
-      body: `${kidName} completed: ${chore.title}${log.photoUrl ? " (with photo)" : ""}`,
-      url: "/parent",
-      tag: `approval-${log.id}`,
-    });
+    if (chore && chore.requireApproval) {
+      sendPush("parent", {
+        title: "📋 Needs Approval",
+        body: `${kidName} completed: ${chore.title}${log.photoUrl ? " (with photo)" : ""}`,
+        url: "/parent",
+        tag: `approval-${log.id}`,
+      });
+    } else if (chore) {
+      sendPush("parent", {
+        title: "✅ Chore Done!",
+        body: `${kidName} completed: ${chore.title}`,
+        url: "/parent",
+        tag: `done-${log.id}`,
+      });
+    }
   }
 
   writeChores(data);
