@@ -153,7 +153,7 @@ export default function ChoreWidget({ config }: Props) {
             {data.kids.map((kid: Kid) => {
               const pts = getKidWeeklyPoints(kid.id, data.logs, data.chores);
               return (
-                <span key={kid.id} className="text-xs flex items-center gap-1" style={{ fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
+                <span key={kid.id} className="text-xs flex items-center gap-2" style={{ fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
                   <KidAvatar kid={kid} size={avatarSize - 2} />
                   <span style={{ color: ptsTextColor || kid.color }}>{pts}pts</span>
                 </span>
