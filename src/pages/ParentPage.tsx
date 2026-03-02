@@ -862,7 +862,6 @@ function ApprovalsTab({ data, refresh }: any) {
                         By {kid && <KidAvatar kid={kid} size={16} />} {kid?.name} • {new Date(sub.submittedAt).toLocaleString()}
                       </div>
                       {sub.note && <div className="text-xs text-muted-foreground mt-1">📝 {sub.note}</div>}
-                      <div className="text-xs mt-1">Requested: <span className="font-medium">{sub.points}pts</span></div>
                       {sub.photoUrl && (
                         <PhotoThumbnail src={sub.photoUrl} onClick={() => setLightboxPhoto(sub.photoUrl!)} />
                       )}
@@ -890,17 +889,33 @@ function ApprovalsTab({ data, refresh }: any) {
                       )}
                     </div>
                     {rejectingId !== sub.id && (
-                      <div className="flex gap-1 shrink-0">
-                        <Button size="sm" className="text-xs px-2 sm:px-3" onClick={async () => {
-                          await choresApi.approveSubmission(sub.id);
-                          refresh();
-                          toast.success(`Approved! +${sub.points}pts`);
-                        }}>
-                          <Check className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Approve</span>
-                        </Button>
-                        <Button size="sm" variant="outline" className="px-2" onClick={() => setRejectingId(sub.id)}>
-                          ✕
-                        </Button>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">Pts:</span>
+                          <select
+                            className="h-8 w-16 rounded-md border border-input bg-background px-1 text-sm"
+                            defaultValue={5}
+                            id={`pts-${sub.id}`}
+                          >
+                            {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                              <option key={n} value={n}>{n}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button size="sm" className="text-xs px-2 sm:px-3" onClick={async () => {
+                            const sel = document.getElementById(`pts-${sub.id}`) as HTMLSelectElement;
+                            const pts = parseInt(sel?.value) || 5;
+                            await choresApi.approveSubmission(sub.id, pts);
+                            refresh();
+                            toast.success(`Approved! +${pts}pts`);
+                          }}>
+                            <Check className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Approve</span>
+                          </Button>
+                          <Button size="sm" variant="outline" className="px-2" onClick={() => setRejectingId(sub.id)}>
+                            ✕
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>

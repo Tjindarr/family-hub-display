@@ -68,7 +68,7 @@ export const choresApi = {
   // Submissions
   submitChore: (submission: { kidId: string; title: string; note?: string; photoUrl?: string; points: number }) =>
     post<ChoreSubmission>("/submissions", submission),
-  approveSubmission: (id: string) => put<ChoreSubmission>(`/submissions/${id}/approve`, {}),
+  approveSubmission: (id: string, points: number) => put<ChoreSubmission>(`/submissions/${id}/approve`, { points }),
   rejectSubmission: (id: string, reason?: string) => put<ChoreSubmission>(`/submissions/${id}/reject`, { reason }),
 
   // Upload chore photo

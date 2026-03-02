@@ -522,20 +522,13 @@ const QUICK_CHORES = [
   { emoji: "✨", label: "Other" },
 ];
 
-const POINT_OPTIONS = [
-  { value: 3, label: "3", emoji: "⭐" },
-  { value: 5, label: "5", emoji: "⭐⭐" },
-  { value: 10, label: "10", emoji: "🌟" },
-  { value: 15, label: "15", emoji: "🌟🌟" },
-  { value: 20, label: "20", emoji: "💎" },
-];
 
 function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }: {
   kid: Kid; onBack: () => void; refresh: () => void; submitPhotoRef: React.RefObject<HTMLInputElement>; fireConfetti: () => void;
 }) {
   const [selectedQuick, setSelectedQuick] = useState<string | null>(null);
   const [customTitle, setCustomTitle] = useState("");
-  const [points, setPoints] = useState(5);
+  
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [uploading, setUploading] = useState(false);
@@ -571,7 +564,7 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }:
         kidId: kid.id,
         title: finalTitle,
         photoUrl: photoUrl || undefined,
-        points,
+        points: 0,
       });
       refresh();
       fireConfetti();
@@ -632,28 +625,6 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }:
           </div>
         )}
 
-        {/* Step 2: Points - only shown after selection */}
-        {selectedQuick && (
-          <div>
-            <p className="text-lg text-muted-foreground mb-3">How many points?</p>
-            <div className="flex gap-2 justify-center">
-              {POINT_OPTIONS.map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => setPoints(p.value)}
-                  className={`flex flex-col items-center gap-1 px-5 py-3 rounded-xl border-2 transition-all active:scale-95 min-w-[4rem] ${
-                    points === p.value
-                      ? "border-primary bg-primary/10 shadow-md"
-                      : "border-border bg-card hover:border-primary/30"
-                  }`}
-                >
-                  <span className="text-lg">{p.emoji}</span>
-                  <span className="text-lg font-bold text-foreground">{p.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Photo - optional, compact */}
         {selectedQuick && (

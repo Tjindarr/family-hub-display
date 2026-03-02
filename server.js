@@ -649,6 +649,9 @@ app.put("/api/chores/submissions/:id/approve", (req, res) => {
   data.submissions = data.submissions || [];
   const sub = data.submissions.find((s) => s.id === req.params.id);
   if (!sub) return res.status(404).json({ error: "Submission not found" });
+  // Parent assigns points on approval
+  const assignedPoints = parseInt(req.body.points) || sub.points || 5;
+  sub.points = assignedPoints;
   sub.status = "approved";
   sub.reviewedAt = new Date().toISOString();
 
