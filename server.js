@@ -110,7 +110,7 @@ function getVapidKeys() {
 }
 
 const vapidKeys = getVapidKeys();
-webpush.setVapidDetails("mailto:homedash@localhost", vapidKeys.publicKey, vapidKeys.privateKey);
+webpush.setVapidDetails("mailto:homedash@homedash.lundg.se", vapidKeys.publicKey, vapidKeys.privateKey);
 
 function readPushSubs() {
   try { return JSON.parse(fs.readFileSync(PUSH_SUBS_PATH, "utf-8")); }
