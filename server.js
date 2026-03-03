@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const webpush = require("web-push");
+const http = require("http");
+const WebSocket = require("ws");
 
 const app = express();
 const PORT = 80;
@@ -835,7 +837,265 @@ function scheduleDailyReminder() {
   console.log("[SCHEDULER] Daily chore reminder scheduler active");
 }
 
-app.listen(PORT, () => {
+// ── HA WebSocket Proxy ──
+// Server-side connection to Home Assistant, relaying state to browser clients
+
+let haWs = null;
+let haStatesCache = new Map(); // entity_id -> state object
+let haWsConnected = false;
+let haReconnectTimeout = null;
+let haReconnectAttempts = 0;
+let haCmdId = 1;
+const browserClients = new Set(); // connected browser WebSocket clients
+
+function getHAConfig() {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
+    return { haUrl: cfg.haUrl || "", haToken: cfg.haToken || "" };
+  } catch { return { haUrl: "", haToken: "" }; }
+}
+
+function getHAWsUrl(haUrl) {
+  const url = haUrl.replace(/\/$/, "");
+  if (url.startsWith("https://")) return url.replace("https://", "wss://") + "/api/websocket";
+  return url.replace("http://", "ws://") + "/api/websocket";
+}
+
+function broadcastToBrowsers(msg) {
+  const data = JSON.stringify(msg);
+  for (const client of browserClients) {
+    if (client.readyState === WebSocket.OPEN) {
+      try { client.send(data); } catch {}
+    }
+  }
+}
+
+function connectToHA() {
+  const { haUrl, haToken } = getHAConfig();
+  if (!haUrl || !haToken) {
+    console.log("[HA Proxy] No HA config, skipping connection");
+    haWsConnected = false;
+    broadcastToBrowsers({ type: "ha_connection", state: "unconfigured" });
+    return;
+  }
+
+  if (haWs) {
+    haWs.onclose = null;
+    haWs.onerror = null;
+    haWs.onmessage = null;
+    haWs.close();
+    haWs = null;
+  }
+
+  const wsUrl = getHAWsUrl(haUrl);
+  console.log("[HA Proxy] Connecting to", wsUrl);
+  broadcastToBrowsers({ type: "ha_connection", state: "connecting" });
+
+  try {
+    haWs = new WebSocket(wsUrl);
+
+    haWs.on("open", () => {
+      console.log("[HA Proxy] Connection opened");
+    });
+
+    haWs.on("message", (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+        handleHAMessage(msg, haToken);
+      } catch (err) {
+        console.warn("[HA Proxy] Failed to parse message:", err);
+      }
+    });
+
+    haWs.on("error", (err) => {
+      console.warn("[HA Proxy] WebSocket error:", err.message);
+    });
+
+    haWs.on("close", (code, reason) => {
+      console.log("[HA Proxy] Connection closed:", code, reason?.toString());
+      haWsConnected = false;
+      haWs = null;
+      broadcastToBrowsers({ type: "ha_connection", state: "disconnected" });
+      scheduleHAReconnect();
+    });
+  } catch (err) {
+    console.error("[HA Proxy] Failed to create WebSocket:", err);
+    haWsConnected = false;
+    scheduleHAReconnect();
+  }
+}
+
+function handleHAMessage(msg, token) {
+  switch (msg.type) {
+    case "auth_required":
+      haWs.send(JSON.stringify({ type: "auth", access_token: token }));
+      break;
+
+    case "auth_ok":
+      console.log("[HA Proxy] Authenticated, HA version:", msg.ha_version);
+      haWsConnected = true;
+      haReconnectAttempts = 0;
+      broadcastToBrowsers({ type: "ha_connection", state: "connected" });
+
+      // Fetch all states
+      const getStatesId = haCmdId++;
+      haWs.send(JSON.stringify({ id: getStatesId, type: "get_states" }));
+
+      // Subscribe to state changes
+      const subscribeId = haCmdId++;
+      haWs.send(JSON.stringify({ id: subscribeId, type: "subscribe_events", event_type: "state_changed" }));
+      break;
+
+    case "auth_invalid":
+      console.error("[HA Proxy] Authentication failed:", msg.message);
+      haWsConnected = false;
+      broadcastToBrowsers({ type: "ha_connection", state: "auth_invalid" });
+      break;
+
+    case "result":
+      if (msg.success && Array.isArray(msg.result)) {
+        haStatesCache = new Map();
+        for (const state of msg.result) {
+          haStatesCache.set(state.entity_id, state);
+        }
+        console.log(`[HA Proxy] Loaded ${haStatesCache.size} states`);
+        broadcastToBrowsers({ type: "ha_states_bulk", states: msg.result });
+      }
+      break;
+
+    case "event":
+      if (msg.event?.event_type === "state_changed") {
+        const { entity_id, new_state } = msg.event.data;
+        if (new_state) {
+          haStatesCache.set(entity_id, new_state);
+          broadcastToBrowsers({ type: "ha_state_changed", entity_id, state: new_state });
+        } else {
+          haStatesCache.delete(entity_id);
+          broadcastToBrowsers({ type: "ha_state_removed", entity_id });
+        }
+      }
+      break;
+
+    case "pong":
+      break;
+  }
+}
+
+function scheduleHAReconnect() {
+  if (haReconnectTimeout) clearTimeout(haReconnectTimeout);
+  const delay = Math.min(1000 * Math.pow(2, haReconnectAttempts), 30000);
+  haReconnectAttempts++;
+  console.log(`[HA Proxy] Reconnecting in ${delay}ms (attempt ${haReconnectAttempts})`);
+  haReconnectTimeout = setTimeout(connectToHA, delay);
+}
+
+// HA keepalive
+setInterval(() => {
+  if (haWs && haWs.readyState === WebSocket.OPEN) {
+    haWs.send(JSON.stringify({ id: haCmdId++, type: "ping" }));
+  }
+}, 30000);
+
+// ── HA REST Proxy ──
+// Proxies REST API calls to HA so the browser never talks to HA directly
+
+app.all("/api/ha/*", async (req, res) => {
+  const { haUrl, haToken } = getHAConfig();
+  if (!haUrl || !haToken) {
+    return res.status(503).json({ error: "Home Assistant not configured" });
+  }
+
+  // Strip /api/ha prefix, forward the rest to HA
+  const haPath = req.originalUrl.replace(/^\/api\/ha/, "");
+  const targetUrl = `${haUrl.replace(/\/$/, "")}/api${haPath}`;
+
+  try {
+    const fetchOptions = {
+      method: req.method,
+      headers: {
+        "Authorization": `Bearer ${haToken}`,
+        "Content-Type": "application/json",
+      },
+    };
+    if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
+      fetchOptions.body = JSON.stringify(req.body);
+    }
+
+    const haRes = await fetch(targetUrl, fetchOptions);
+
+    // Forward status and content type
+    const contentType = haRes.headers.get("content-type") || "application/json";
+    res.status(haRes.status).set("Content-Type", contentType);
+
+    if (contentType.includes("application/json")) {
+      const data = await haRes.json();
+      res.json(data);
+    } else {
+      const buffer = await haRes.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    }
+  } catch (err) {
+    console.error("[HA Proxy] REST proxy error:", err.message);
+    res.status(502).json({ error: "Failed to reach Home Assistant" });
+  }
+});
+
+// ── HA Cached States endpoint (for initial load without waiting for WS bulk) ──
+app.get("/api/ha-states", (_req, res) => {
+  res.json({
+    connected: haWsConnected,
+    states: Array.from(haStatesCache.values()),
+  });
+});
+
+// ── Start Server with WebSocket support ──
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server, path: "/ws" });
+
+wss.on("connection", (ws) => {
+  browserClients.add(ws);
+  console.log(`[WS Relay] Browser connected (${browserClients.size} total)`);
+
+  // Send current connection state
+  ws.send(JSON.stringify({
+    type: "ha_connection",
+    state: haWsConnected ? "connected" : "disconnected",
+  }));
+
+  // Send all cached states immediately
+  if (haStatesCache.size > 0) {
+    ws.send(JSON.stringify({
+      type: "ha_states_bulk",
+      states: Array.from(haStatesCache.values()),
+    }));
+  }
+
+  ws.on("close", () => {
+    browserClients.delete(ws);
+    console.log(`[WS Relay] Browser disconnected (${browserClients.size} total)`);
+  });
+
+  ws.on("error", () => {
+    browserClients.delete(ws);
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   scheduleDailyReminder();
+  connectToHA();
+
+  // Re-connect to HA when config changes
+  let lastHaUrl = "";
+  let lastHaToken = "";
+  setInterval(() => {
+    const { haUrl, haToken } = getHAConfig();
+    if (haUrl !== lastHaUrl || haToken !== lastHaToken) {
+      lastHaUrl = haUrl;
+      lastHaToken = haToken;
+      console.log("[HA Proxy] Config changed, reconnecting...");
+      haReconnectAttempts = 0;
+      connectToHA();
+    }
+  }, 5000);
 });
