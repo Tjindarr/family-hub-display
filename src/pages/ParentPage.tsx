@@ -87,7 +87,6 @@ export default function ParentPage() {
   const fabAction = tab === "chores" ? () => { setEditingChore(null); setShowAddChore(true); }
     : tab === "rewards" ? () => setShowAddReward(true)
     : tab === "grades" ? () => setShowAddGrade(true)
-    : tab === "settings" ? () => setShowAddKid(true)
     : null;
 
   return (
@@ -736,6 +735,12 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
           );
         })}
       </div>
+
+      {!showAdd && (
+        <Button variant="outline" className="w-full h-12 text-base" onClick={() => setShowAdd(true)}>
+          <Plus className="w-5 h-5 mr-2" /> New Kid
+        </Button>
+      )}
     </>
   );
 }
