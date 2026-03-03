@@ -1321,139 +1321,151 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <div>
                 <Label className="text-xs text-muted-foreground">Source</Label>
                 <select
-                  value={foodMenuConfig.source || "calendar"}
-                  onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, source: e.target.value as "calendar" | "skolmaten" }))}
+                  value={(!foodMenuConfig.calendarEntity && !foodMenuConfig.skolmatenEntity) ? "none" : foodMenuConfig.source || "calendar"}
+                  onChange={(e) => {
+                    const val = e.target.value as "none" | "calendar" | "skolmaten";
+                    if (val === "none") {
+                      setFoodMenuConfig((prev) => ({ ...prev, source: "calendar", calendarEntity: "", skolmatenEntity: "" }));
+                    } else {
+                      setFoodMenuConfig((prev) => ({ ...prev, source: val }));
+                    }
+                  }}
                   className="mt-1 w-full rounded-md bg-muted border border-border px-3 py-2 text-sm text-foreground"
                 >
+                  <option value="none">Disabled</option>
                   <option value="calendar">Calendar Entity</option>
                   <option value="skolmaten">Skolmaten Sensor</option>
                 </select>
               </div>
-              {(foodMenuConfig.source || "calendar") === "calendar" ? (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Calendar Entity</Label>
-                  <EntityAutocomplete
-                    value={foodMenuConfig.calendarEntity}
-                    onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, calendarEntity: val }))}
-                    config={config}
-                    domainFilter="calendar"
-                    placeholder="calendar.food_menu"
-                    className="mt-1 bg-muted border-border text-sm"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Skolmaten Sensor Entity</Label>
-                  <EntityAutocomplete
-                    value={foodMenuConfig.skolmatenEntity || ""}
-                    onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, skolmatenEntity: val }))}
-                    config={config}
-                    domainFilter="sensor"
-                    placeholder="sensor.schoolname"
-                    className="mt-1 bg-muted border-border text-sm"
-                  />
-                </div>
-              )}
-              <div>
-                <Label className="text-xs text-muted-foreground">Days to Show</Label>
-                <Input
-                  value={foodMenuConfig.days}
-                  onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, days: Number(e.target.value) || 5 }))}
-                  type="number"
-                  min={1}
-                  max={14}
-                  className="mt-1 bg-muted border-border"
-                />
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Checkbox
-                  id="skipWeekends"
-                  checked={foodMenuConfig.skipWeekends ?? false}
-                  onCheckedChange={(checked) => setFoodMenuConfig((prev) => ({ ...prev, skipWeekends: !!checked }))}
-                />
-                <Label htmlFor="skipWeekends" className="text-xs text-muted-foreground cursor-pointer">Skip weekends (Sat &amp; Sun)</Label>
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Checkbox
-                  id="showMenuTitle"
-                  checked={foodMenuConfig.showTitle !== false}
-                  onCheckedChange={(checked) => setFoodMenuConfig((prev) => ({ ...prev, showTitle: !!checked }))}
-                />
-                <Label htmlFor="showMenuTitle" className="text-xs text-muted-foreground cursor-pointer">Show "MENU" title and icon</Label>
-              </div>
+              {(foodMenuConfig.calendarEntity || foodMenuConfig.skolmatenEntity || foodMenuConfig.source === "skolmaten") ? (
+                <>
+                  {(foodMenuConfig.source || "calendar") === "calendar" ? (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Calendar Entity</Label>
+                      <EntityAutocomplete
+                        value={foodMenuConfig.calendarEntity}
+                        onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, calendarEntity: val }))}
+                        config={config}
+                        domainFilter="calendar"
+                        placeholder="calendar.food_menu"
+                        className="mt-1 bg-muted border-border text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Skolmaten Sensor Entity</Label>
+                      <EntityAutocomplete
+                        value={foodMenuConfig.skolmatenEntity || ""}
+                        onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, skolmatenEntity: val }))}
+                        config={config}
+                        domainFilter="sensor"
+                        placeholder="sensor.schoolname"
+                        className="mt-1 bg-muted border-border text-sm"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Days to Show</Label>
+                    <Input
+                      value={foodMenuConfig.days}
+                      onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, days: Number(e.target.value) || 5 }))}
+                      type="number"
+                      min={1}
+                      max={14}
+                      className="mt-1 bg-muted border-border"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Checkbox
+                      id="skipWeekends"
+                      checked={foodMenuConfig.skipWeekends ?? false}
+                      onCheckedChange={(checked) => setFoodMenuConfig((prev) => ({ ...prev, skipWeekends: !!checked }))}
+                    />
+                    <Label htmlFor="skipWeekends" className="text-xs text-muted-foreground cursor-pointer">Skip weekends (Sat &amp; Sun)</Label>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Checkbox
+                      id="showMenuTitle"
+                      checked={foodMenuConfig.showTitle !== false}
+                      onCheckedChange={(checked) => setFoodMenuConfig((prev) => ({ ...prev, showTitle: !!checked }))}
+                    />
+                    <Label htmlFor="showMenuTitle" className="text-xs text-muted-foreground cursor-pointer">Show "MENU" title and icon</Label>
+                  </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground">Display Mode</Label>
-                <select
-                  value={foodMenuConfig.displayMode || "compact"}
-                  onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, displayMode: e.target.value as "compact" | "menu" }))}
-                  className="mt-1 w-full rounded-md bg-muted border border-border px-3 py-2 text-sm text-foreground"
-                >
-                  <option value="compact">Compact (side-by-side)</option>
-                  <option value="menu">Menu Style (restaurant)</option>
-                </select>
-              </div>
-
-              {/* Styling */}
-              <div className="border-t border-border pt-2 mt-2 space-y-2">
-                <Label className="text-xs text-muted-foreground font-semibold">Styling</Label>
-                <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">Day Color</Label>
-                    <ColorPicker value={foodMenuConfig.style?.dayColor || ""} onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dayColor: val } }))} className="w-full" />
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Date Color</Label>
-                    <ColorPicker value={foodMenuConfig.style?.dateColor || ""} onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dateColor: val } }))} className="w-full" />
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Meal Color</Label>
-                    <ColorPicker value={foodMenuConfig.style?.mealColor || ""} onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, mealColor: val } }))} className="w-full" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Day Size (px)</Label>
-                    <Input value={foodMenuConfig.style?.dayFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dayFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Date Size (px)</Label>
-                    <Input value={foodMenuConfig.style?.dateFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dateFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="11 (default)" className="bg-muted border-border text-xs h-7" />
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Meal Size (px)</Label>
-                    <Input value={foodMenuConfig.style?.mealFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, mealFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="13 (default)" className="bg-muted border-border text-xs h-7" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Day Font</Label>
-                    <select value={foodMenuConfig.style?.dayFont || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dayFont: e.target.value } }))} className="mt-0.5 w-full rounded-md bg-muted border border-border px-2 py-1 text-xs text-foreground">
-                      <option value="">Default</option>
-                      <option value="Inter">Inter</option>
-                      <option value="Georgia">Georgia</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Courier New">Courier New</option>
-                      <option value="JetBrains Mono">JetBrains Mono</option>
-                      <option value="serif">Serif</option>
-                      <option value="cursive">Cursive</option>
+                    <Label className="text-xs text-muted-foreground">Display Mode</Label>
+                    <select
+                      value={foodMenuConfig.displayMode || "compact"}
+                      onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, displayMode: e.target.value as "compact" | "menu" }))}
+                      className="mt-1 w-full rounded-md bg-muted border border-border px-3 py-2 text-sm text-foreground"
+                    >
+                      <option value="compact">Compact (side-by-side)</option>
+                      <option value="menu">Menu Style (restaurant)</option>
                     </select>
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Meal Font</Label>
-                    <select value={foodMenuConfig.style?.mealFont || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, mealFont: e.target.value } }))} className="mt-0.5 w-full rounded-md bg-muted border border-border px-2 py-1 text-xs text-foreground">
-                      <option value="">Default</option>
-                      <option value="Inter">Inter</option>
-                      <option value="Georgia">Georgia</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Courier New">Courier New</option>
-                      <option value="JetBrains Mono">JetBrains Mono</option>
-                      <option value="serif">Serif</option>
-                      <option value="cursive">Cursive</option>
-                    </select>
+
+                  {/* Styling */}
+                  <div className="border-t border-border pt-2 mt-2 space-y-2">
+                    <Label className="text-xs text-muted-foreground font-semibold">Styling</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Day Color</Label>
+                        <ColorPicker value={foodMenuConfig.style?.dayColor || ""} onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dayColor: val } }))} className="w-full" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Date Color</Label>
+                        <ColorPicker value={foodMenuConfig.style?.dateColor || ""} onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dateColor: val } }))} className="w-full" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Meal Color</Label>
+                        <ColorPicker value={foodMenuConfig.style?.mealColor || ""} onChange={(val) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, mealColor: val } }))} className="w-full" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Day Size (px)</Label>
+                        <Input value={foodMenuConfig.style?.dayFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dayFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="14 (default)" className="bg-muted border-border text-xs h-7" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Date Size (px)</Label>
+                        <Input value={foodMenuConfig.style?.dateFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dateFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="11 (default)" className="bg-muted border-border text-xs h-7" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Meal Size (px)</Label>
+                        <Input value={foodMenuConfig.style?.mealFontSize || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, mealFontSize: Number(e.target.value) || 0 } }))} type="number" min={0} max={48} placeholder="13 (default)" className="bg-muted border-border text-xs h-7" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Day Font</Label>
+                        <select value={foodMenuConfig.style?.dayFont || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, dayFont: e.target.value } }))} className="mt-0.5 w-full rounded-md bg-muted border border-border px-2 py-1 text-xs text-foreground">
+                          <option value="">Default</option>
+                          <option value="Inter">Inter</option>
+                          <option value="Georgia">Georgia</option>
+                          <option value="Times New Roman">Times New Roman</option>
+                          <option value="Courier New">Courier New</option>
+                          <option value="JetBrains Mono">JetBrains Mono</option>
+                          <option value="serif">Serif</option>
+                          <option value="cursive">Cursive</option>
+                        </select>
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Meal Font</Label>
+                        <select value={foodMenuConfig.style?.mealFont || ""} onChange={(e) => setFoodMenuConfig((prev) => ({ ...prev, style: { ...defaultFoodStyle, ...prev.style, mealFont: e.target.value } }))} className="mt-0.5 w-full rounded-md bg-muted border border-border px-2 py-1 text-xs text-foreground">
+                          <option value="">Default</option>
+                          <option value="Inter">Inter</option>
+                          <option value="Georgia">Georgia</option>
+                          <option value="Times New Roman">Times New Roman</option>
+                          <option value="Courier New">Courier New</option>
+                          <option value="JetBrains Mono">JetBrains Mono</option>
+                          <option value="serif">Serif</option>
+                          <option value="cursive">Cursive</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </>
+              ) : null}
             </CollapsibleSection>
 
             {/* Electricity */}
