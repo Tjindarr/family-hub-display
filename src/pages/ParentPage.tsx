@@ -194,13 +194,14 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
   const categories = data.settings?.categories || DEFAULT_SETTINGS.categories;
   const [expandedChoreId, setExpandedChoreId] = useState<string | null>(null);
 
+  const realChores = data.chores.filter((c: Chore) => !c.id.startsWith("grade_"));
   const filteredChores = (!categoriesEnabled || filterCategory === "all")
-    ? data.chores
-    : data.chores.filter((c: Chore) => c.category === filterCategory);
+    ? realChores
+    : realChores.filter((c: Chore) => c.category === filterCategory);
 
   return (
     <>
-      <h2 className="text-xl font-semibold">Chores ({data.chores.length})</h2>
+      <h2 className="text-xl font-semibold">Chores ({realChores.length})</h2>
 
       {/* Category filter */}
       {categoriesEnabled && (
