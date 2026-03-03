@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useChoresData } from "@/hooks/useChoresData";
@@ -24,6 +24,22 @@ export default function KidsPage() {
   const [selectedKidId, setSelectedKidId] = useState<string | null>(
     () => localStorage.getItem("chores_selected_kid")
   );
+
+  useEffect(() => {
+    const manifest = document.querySelector('link[rel="manifest"]');
+    if (manifest) manifest.setAttribute('href', '/manifest-kids.json');
+    const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    const appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
+    if (favicon) favicon.href = '/icon-kids.png';
+    if (appleTouchIcon) appleTouchIcon.href = '/icon-kids.png';
+    document.title = 'HomeDash Kids';
+    return () => {
+      if (manifest) manifest.setAttribute('href', '/manifest-dashboard.json');
+      if (favicon) favicon.href = '/favicon.png';
+      if (appleTouchIcon) appleTouchIcon.href = '/favicon.png';
+      document.title = 'HomeDash';
+    };
+  }, []);
 
   const selectKid = (kid: Kid | null) => {
     setSelectedKidId(kid?.id ?? null);
