@@ -271,7 +271,7 @@ function GradeForm({ kids, gradeScale, subjects, onSave, onCancel }: {
 
         <div>
           <Label className="text-[15px]">Date</Label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 text-base mt-1" />
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 text-sm mt-1 w-full min-w-0 max-w-full" />
         </div>
 
         {type === "term" && (
