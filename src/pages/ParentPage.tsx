@@ -123,14 +123,14 @@ export default function ParentPage() {
       {fabAction && (
         <button
           onClick={fabAction}
-          className="fixed bottom-20 right-4 z-20 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+          className="fixed bottom-24 right-4 z-20 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
         >
           <Plus className="w-7 h-7" />
         </button>
       )}
 
       {/* Bottom Tab Navigation */}
-      <div className="fixed bottom-4 left-2 right-2 z-10 bg-background/95 backdrop-blur border border-border rounded-2xl shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border pb-6 pt-1">
         <div className="max-w-2xl mx-auto flex">
           {tabs.map((t) => (
             <button
@@ -400,9 +400,9 @@ function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled
           </div>
           <div>
             <Label className="text-sm font-medium">Difficulty</Label>
-            <div className="flex gap-1.5 mt-2">
+            <div className="flex gap-0.5 mt-2">
               {[1, 2, 3, 4, 5].map((d) => (
-                <button key={d} onClick={() => setDifficulty(d)} className="text-xl min-w-[36px] min-h-[36px] flex items-center justify-center">
+                <button key={d} onClick={() => setDifficulty(d)} className="text-lg min-w-[28px] min-h-[36px] flex items-center justify-center">
                   {d <= difficulty ? "⭐" : "☆"}
                 </button>
               ))}
