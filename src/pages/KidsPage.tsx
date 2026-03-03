@@ -385,7 +385,7 @@ export default function KidsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-lg">{chore.title}</span>
-                            {chore.category && (
+                            {data.settings.categoriesEnabled && chore.category && (
                               <span className="text-xs bg-secondary px-2 py-0.5 rounded">{chore.category}</span>
                             )}
                           </div>
