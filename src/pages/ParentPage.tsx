@@ -130,7 +130,7 @@ export default function ParentPage() {
       )}
 
       {/* Bottom Tab Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border safe-area-bottom">
+      <div className="fixed bottom-4 left-2 right-2 z-10 bg-background/95 backdrop-blur border border-border rounded-2xl shadow-lg">
         <div className="max-w-2xl mx-auto flex">
           {tabs.map((t) => (
             <button
