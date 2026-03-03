@@ -136,6 +136,7 @@ volumes:
           <li>Set row span for multi-row widgets</li>
           <li>Group widgets (A-H) to stack them in one card</li>
           <li>Set per-row column count and height overrides</li>
+          <li><strong>Lock Widget Heights</strong> — prevents widgets from expanding beyond their grid cell</li>
         </Ul>
         <H4>Mobile</H4>
         <P>On mobile devices, the grid collapses to a single column. Column spans, row spans, and fixed heights are ignored for natural stacking.</P>
@@ -156,7 +157,7 @@ volumes:
             ["🌤️ Weather", "Current weather, sun times, and multi-day forecast chart", "Entity, forecast days, precipitation, sunrise/sunset"],
             ["📅 Calendar", "Upcoming events from HA calendar entities", "Entities, prefix, color, forecast days, week number"],
             ["⚡ Electricity", "Real-time electricity prices with hourly chart (Nordpool)", "Price entity, forecast entity, surcharge"],
-            ["📷 Photos", "Rotating photo gallery from uploaded images", "Photos, interval, display mode (contain/cover/blur-fill)"],
+            ["📷 Photos", "Rotating photo gallery with transition effects", "Interval, display mode, transition (fade/slide/zoom/flip/blur)"],
             ["👤 Person", "Person tracking with location, battery, distance", "Entity, avatar size, custom sensors"],
             ["🍽️ Food Menu", "School/restaurant menu from calendar or Skolmaten", "Source, entity, days, display mode"],
             ["📊 General Sensor", "Flexible sensor card with chart and info rows", "Chart series, top/bottom info, history, aggregation"],
@@ -300,14 +301,25 @@ volumes:
       <>
         <P>A rotating photo gallery that displays uploaded images with configurable transitions.</P>
         <H4>Photo Management</H4>
-        <P>Go to the Photos tab in Settings to upload, sort, and delete photos. Photos are stored server-side in <Code>/data/photos/</Code>.</P>
+        <P>Go to the Photos tab in Settings to upload, sort, and delete photos. Photos are stored server-side in <Code>/data/photos/</Code>. Photos can be sorted by newest, oldest, largest, or smallest.</P>
         <H4>Display Modes</H4>
         <Ul>
           <li><strong>Contain</strong> — full image visible, letterboxed</li>
           <li><strong>Cover</strong> — fills the area, crops edges</li>
           <li><strong>Blur-fill</strong> — image centered with blurred version as background</li>
         </Ul>
-        <P>Photos can be sorted by newest, oldest, largest, or smallest in the management view.</P>
+        <H4>Transition Effects</H4>
+        <Table
+          headers={["Transition", "Description"]}
+          rows={[
+            ["None", "Instant switch, no animation"],
+            ["Fade", "Smooth opacity crossfade (default)"],
+            ["Slide", "Horizontal slide between photos"],
+            ["Zoom", "Zoom in/out transition"],
+            ["Flip", "3D card flip effect"],
+            ["Blur", "Blur out old photo, blur in new"],
+          ]}
+        />
       </>
     ),
   },
@@ -631,6 +643,52 @@ sudo certbot --nginx -d homedash.yourdomain.com`}
         <H4>Import</H4>
         <P>Click Import and select a previously exported JSON file. The configuration will be loaded and saved immediately.</P>
         <P>⚠️ Importing replaces your entire configuration. Export a backup first.</P>
+      </>
+    ),
+  },
+  {
+    id: "config-backups",
+    icon: "💾",
+    title: "Configuration Backups",
+    content: (
+      <>
+        <P>The server automatically creates timestamped backups of your configuration whenever it is saved.</P>
+        <H4>Automatic Backups</H4>
+        <P>Each save to <Code>/api/config</Code> creates a backup file in <Code>/data/</Code>. Use the API to list and restore backups:</P>
+        <Table
+          headers={["Action", "Endpoint"]}
+          rows={[
+            ["List backups", "GET /api/config/backups"],
+            ["Restore a backup", "POST /api/config/backups/restore/:filename"],
+          ]}
+        />
+        <H4>Manual Export / Import</H4>
+        <P>Go to Settings → General → Import/Export to download your full config as JSON, or upload a previously exported file.</P>
+        <P>⚠️ Importing replaces your entire configuration. Always export a backup first.</P>
+      </>
+    ),
+  },
+  {
+    id: "troubleshooting",
+    icon: "🔧",
+    title: "Troubleshooting",
+    content: (
+      <>
+        <P>Common issues and their solutions:</P>
+        <Table
+          headers={["Issue", "Solution"]}
+          rows={[
+            ["Blank dashboard / no data", "Verify HA URL and token in Settings → Connection. Check CORS config in HA."],
+            ["WebSocket disconnects", "Ensure HA is reachable. Check reverse proxy WebSocket support (Upgrade headers)."],
+            ["CORS errors in console", "Add dashboard origin to cors_allowed_origins in HA's configuration.yaml and restart HA."],
+            ["Photos not loading", "Ensure /data volume is mounted and writable. Check server logs."],
+            ["Push notifications not working", "HTTPS required. Verify SSL cert. On iOS, page must be installed as PWA."],
+            ["Calendar shows no events", "Check entity ID. Verify calendar has events within forecast range."],
+            ["Electricity prices missing", "Confirm Nordpool entity exists with raw_today/raw_tomorrow attributes."],
+            ["Chores not saving", "Ensure /data directory is writable by container process."],
+            ["Kiosk mode stuck", "Triple-click anywhere to exit kiosk mode."],
+          ]}
+        />
       </>
     ),
   },

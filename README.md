@@ -152,6 +152,7 @@ Layout is managed through the interactive **Edit Layout** mode (click the edit i
 - Each widget has a **row assignment**, **column span**, and **row span**
 - The last widget in each row auto-stretches to fill remaining space
 - Rows without a defined height default to 120px minimum
+- **Lock Widget Heights**: When enabled, prevents widgets from expanding beyond their grid cell height
 
 ### Edit Layout Mode
 
@@ -306,7 +307,10 @@ Two-column card with avatar, battery level (with charging indicator), location, 
 | Battery Entity | Battery level sensor |
 | Battery Charging Entity | Binary sensor for charging state |
 | Distance Entity | Distance from home sensor |
+| Distance Unit | `km`, `m`, `mi`, or `auto` (default: auto) |
 | Avatar Size | Avatar diameter in px (default: 80) |
+
+**Custom Sensors** (optional): Add extra entity readings below the main info. Each custom sensor has an entity ID, MDI icon, optional label, and optional attribute key.
 
 **Font sizes**: Location, Battery, Distance (independent px values).
 
@@ -450,14 +454,15 @@ Displays Home Assistant persistent notifications and custom sensor-based alert r
 
 ### 🖼️ Photo Gallery
 
-Rotating photo slideshow with configurable display modes. Photos stored server-side in `/data/photos/`.
+Rotating photo slideshow with configurable display modes and transition effects. Photos stored server-side in `/data/photos/`.
 
 | Setting | Description |
 |---|---|
-| Interval | Seconds between transitions |
-| Display Mode | `contain` (fit), `cover` (fill + crop), `blur-fill` (fit + blurred bg) |
+| Interval | Seconds between photo transitions |
+| Display Mode | `contain` (fit, letterboxed), `cover` (fill + crop), `blur-fill` (centered with blurred background) |
+| Transition | `none`, `fade`, `slide`, `zoom`, `flip`, `blur` |
 
-Manage photos in Settings → **Photos** tab (upload/delete).
+Manage photos in Settings → **Photos** tab (upload, sort, delete). Photos can be sorted by newest, oldest, largest, or smallest.
 
 ---
 
@@ -695,6 +700,18 @@ Days with no scheduled chores are automatically skipped.
 
 ---
 
+## 💾 Configuration Backups
+
+The server automatically creates timestamped backups of `config.json` when saving. You can:
+
+- **List backups**: `GET /api/config/backups`
+- **Restore a backup**: `POST /api/config/backups/restore/:filename`
+- **Import/Export**: Use Settings → General → Import/Export to download or upload configuration JSON files
+
+> ⚠️ Importing replaces your entire configuration. Always export a backup first.
+
+---
+
 ## 🐳 Docker
 
 ```yaml
@@ -710,6 +727,22 @@ services:
 ```
 
 The `/data` volume stores `config.json`, `chores.json`, `photos/`, `vapid-keys.json`, and `push-subscriptions.json`.
+
+---
+
+## 🔧 Troubleshooting
+
+| Issue | Solution |
+|---|---|
+| Blank dashboard / no data | Verify HA URL and token in Settings → Connection. Check CORS config in HA. |
+| WebSocket disconnects | Ensure HA is reachable. Check for reverse proxy WebSocket support (`Upgrade` headers). |
+| CORS errors in console | Add your dashboard origin to `cors_allowed_origins` in HA's `configuration.yaml` and restart HA. |
+| Photos not loading | Ensure the `/data` volume is mounted and writable. Check server logs. |
+| Push notifications not working | HTTPS is required. Verify SSL cert is valid. On iOS, the page must be installed as a PWA. |
+| Calendar shows no events | Check entity ID is correct. Verify the calendar has events within the forecast range. |
+| Electricity prices missing | Confirm the Nordpool entity exists and has `raw_today`/`raw_tomorrow` attributes. |
+| Chores not saving | Ensure the `/data` directory is writable by the container process. |
+| Kiosk mode stuck | Triple-click anywhere on the page to exit kiosk mode. |
 
 ---
 
