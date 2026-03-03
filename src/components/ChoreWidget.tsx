@@ -86,27 +86,22 @@ export default function ChoreWidget({ config }: Props) {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-3 pb-3">
-        {/* Today's chores */}
+      <CardContent className="px-3 pb-3 flex-1 flex flex-col">
+        {/* Today's chores (pending) */}
         <div className="space-y-1">
-          {visibleChores.map((chore) => {
+          {visibleChores.filter((c) => !isFullyCompleted(c)).map((chore) => {
             const log = isChoreCompletedToday(chore.id, data.logs);
             const kid = log ? data.kids.find((k: Kid) => k.id === log.kidId) : null;
             const fairKid = showFairness && !log ? suggestFairKid(chore.id, data.kids, data.logs, chore.rotationKids, data.settings?.rotationEnabled) : null;
 
-            // Per-kid: show avatars for each kid's completion
             const perKidStatus = chore.perKid
               ? data.kids.map((k: Kid) => ({ kid: k, done: !!isChoreCompletedToday(chore.id, data.logs, k.id) }))
               : null;
-            const allDone = perKidStatus ? perKidStatus.every((x) => x.done) : !!log;
 
             return (
               <div key={chore.id} className="flex items-center gap-2" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
                 <span className="text-base">{chore.icon}</span>
-                <span
-                  className={`flex-1 truncate ${allDone ? "line-through" : ""}`}
-                  style={{ color: allDone ? "hsl(var(--muted-foreground))" : (choreTextColor || undefined) }}
-                >
+                <span className="flex-1 truncate" style={{ color: choreTextColor || undefined }}>
                   {chore.title}
                 </span>
                 {perKidStatus ? (
@@ -144,6 +139,44 @@ export default function ChoreWidget({ config }: Props) {
                 <span className="text-xs">{days}d</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Spacer to push done + scoreboard to bottom */}
+        <div className="flex-1" />
+
+        {/* Completed chores */}
+        {showCompleted && visibleChores.filter((c) => isFullyCompleted(c)).length > 0 && (
+          <div className="space-y-1 mt-2 pt-2 border-t border-border">
+            {visibleChores.filter((c) => isFullyCompleted(c)).map((chore) => {
+              const log = isChoreCompletedToday(chore.id, data.logs);
+              const kid = log ? data.kids.find((k: Kid) => k.id === log.kidId) : null;
+              const perKidStatus = chore.perKid
+                ? data.kids.map((k: Kid) => ({ kid: k, done: !!isChoreCompletedToday(chore.id, data.logs, k.id) }))
+                : null;
+
+              return (
+                <div key={chore.id} className="flex items-center gap-2" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
+                  <span className="text-base">{chore.icon}</span>
+                  <span className="flex-1 truncate line-through" style={{ color: "hsl(var(--muted-foreground))" }}>
+                    {chore.title}
+                  </span>
+                  {perKidStatus ? (
+                    <span className="flex items-center gap-0.5">
+                      {perKidStatus.map((x) => (
+                        <span key={x.kid.id}>
+                          <KidAvatar kid={x.kid} size={avatarSize - 2} />
+                        </span>
+                      ))}
+                    </span>
+                  ) : kid ? (
+                    <span className="text-xs flex items-center gap-1" style={{ color: kid.color, fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
+                      <KidAvatar kid={kid} size={avatarSize} /> {kid.name}
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         )}
 
