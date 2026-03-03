@@ -29,10 +29,13 @@ export interface WidgetLayout {
   widgetGroup?: string; // optional group ID — widgets with same group stack in one card
 }
 
+export type PhotoTransition = "none" | "fade" | "slide" | "zoom" | "flip" | "blur";
+
 export interface PhotoWidgetConfig {
   photos: string[]; // base64 data URLs or remote URLs
   intervalSeconds: number; // rotation interval
   displayMode: "contain" | "cover" | "blur-fill"; // how to display photos
+  transition: PhotoTransition; // transition effect between photos
 }
 
 export interface CalendarEntityConfig {
@@ -483,7 +486,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   lockWidgetHeights: false,
   gridColumns: 4,
   configBackendUrl: "",
-  photoWidget: { photos: [], intervalSeconds: 10, displayMode: "contain" },
+  photoWidget: { photos: [], intervalSeconds: 10, displayMode: "contain", transition: "fade" },
   personEntities: [],
   weatherConfig: {
     entityId: "weather.home",

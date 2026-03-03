@@ -241,7 +241,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [rowColumns, setRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
   const [rowHeights, setRowHeights] = useState<Record<number, number>>(config.rowHeights || {});
   const [lockWidgetHeights, setLockWidgetHeights] = useState(config.lockWidgetHeights ?? false);
-  const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain" });
+  const [photoConfig, setPhotoConfig] = useState<PhotoWidgetConfig>(config.photoWidget || { photos: [], intervalSeconds: 10, displayMode: "contain", transition: "fade" });
   const [personEntities, setPersonEntities] = useState<PersonEntityConfig[]>(config.personEntities || []);
   const [theme, setTheme] = useState<ThemeId>(config.theme || "midnight-teal");
   const [blackout, setBlackout] = useState(config.blackout || { enabled: false, from: "23:00", to: "06:00" });
@@ -2858,6 +2858,25 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     <SelectItem value="contain">Contain (full image, may letterbox)</SelectItem>
                     <SelectItem value="cover">Cover (fill frame, may crop)</SelectItem>
                     <SelectItem value="blur-fill">Blur fill (full image, blurred bg)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Transition Effect</Label>
+                <Select
+                  value={photoConfig.transition || "fade"}
+                  onValueChange={(v) => setPhotoConfig((prev) => ({ ...prev, transition: v as any }))}
+                >
+                  <SelectTrigger className="mt-1 bg-muted border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="fade">Fade</SelectItem>
+                    <SelectItem value="slide">Slide</SelectItem>
+                    <SelectItem value="zoom">Zoom</SelectItem>
+                    <SelectItem value="flip">Flip</SelectItem>
+                    <SelectItem value="blur">Blur</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
