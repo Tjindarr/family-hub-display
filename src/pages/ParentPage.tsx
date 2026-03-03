@@ -61,16 +61,24 @@ export default function ParentPage() {
     };
   }, []);
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  // Bottom bar: primary navigation (4 items)
+  const bottomTabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "chores", label: "Chores", icon: <ClipboardList className="w-6 h-6" /> },
-    { id: "kids", label: "Kids", icon: <Users className="w-6 h-6" /> },
-    { id: "rewards", label: "Rewards", icon: <Gift className="w-6 h-6" /> },
-    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-6 h-6" /> },
     { id: "approvals", label: "Approve", icon: <Shield className="w-6 h-6" /> },
-    ...(gradesEnabled ? [{ id: "grades" as Tab, label: "Grades", icon: <GraduationCap className="w-6 h-6" /> }] : []),
+    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-6 h-6" /> },
     { id: "history", label: "History", icon: <History className="w-6 h-6" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="w-6 h-6" /> },
   ];
+
+  // Top segmented control: secondary navigation
+  const topTabs: { id: Tab; label: string }[] = [
+    { id: "kids", label: "Kids" },
+    { id: "rewards", label: "Rewards" },
+    ...(gradesEnabled ? [{ id: "grades" as Tab, label: "Grades" }] : []),
+    { id: "settings", label: "Settings" },
+  ];
+
+  const allTabs = [...bottomTabs, ...topTabs];
+  const isTopTab = topTabs.some((t) => t.id === tab);
 
   const pendingApprovals = [
     ...data.logs.filter(
@@ -80,7 +88,7 @@ export default function ParentPage() {
     ...(data.gradeSubmissions || []).filter((s: GradeSubmission) => s.status === "pending"),
   ];
 
-  const currentTabLabel = tabs.find((t) => t.id === tab)?.label || "Chores";
+  const currentTabLabel = allTabs.find((t) => t.id === tab)?.label || "Chores";
 
   // Determine if current tab supports FAB
   const fabAction = tab === "chores" ? () => { setEditingChore(null); setShowAddChore(true); }
@@ -91,9 +99,9 @@ export default function ParentPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">
-      {/* Header - simplified for mobile */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <h1 className="text-xl font-bold flex-1">{currentTabLabel}</h1>
           {pendingApprovals.length > 0 && tab !== "approvals" && (
             <button
@@ -104,6 +112,25 @@ export default function ParentPage() {
               <span>{pendingApprovals.length}</span>
             </button>
           )}
+        </div>
+
+        {/* Top segmented control - only show when a top tab is active OR always for quick access */}
+        <div className="max-w-2xl mx-auto px-4 pb-2">
+          <div className="flex rounded-lg bg-muted p-1 gap-1">
+            {topTabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-colors ${
+                  tab === t.id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -144,14 +171,14 @@ export default function ParentPage() {
         </button>
       )}
 
-      {/* Bottom Tab Navigation */}
+      {/* Bottom Tab Navigation - 4 items only */}
       <div className="fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border pb-6 pt-1">
         <div className="max-w-2xl mx-auto flex">
-          {tabs.map((t) => (
+          {bottomTabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-0.5 text-xs font-medium transition-colors relative ${
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-1 text-xs font-medium transition-colors relative ${
                 tab === t.id
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"
@@ -165,7 +192,7 @@ export default function ParentPage() {
                   </span>
                 )}
               </span>
-              <span className="truncate w-full text-center">{t.label}</span>
+              <span>{t.label}</span>
               {tab === t.id && (
                 <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
               )}
