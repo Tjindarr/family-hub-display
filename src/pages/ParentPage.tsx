@@ -496,7 +496,7 @@ function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label className="text-sm">Deadline (optional)</Label>
-            <Input type="time" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="mt-1 h-12 text-base" />
+            <Input type="time" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="mt-1 h-10 text-sm w-full min-w-0 max-w-full" />
           </div>
           <div>
             <Label className="text-sm">Early bonus pts</Label>
