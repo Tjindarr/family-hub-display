@@ -267,9 +267,6 @@ export default function KidsPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-lg" style={{ color: kid.color }}>{kid.name}</span>
-                <span className="text-sm bg-secondary px-2 py-0.5 rounded">
-                  {level.icon} {level.name}
-                </span>
               </div>
               <div className="text-base text-muted-foreground">{dueChores.length} chores today</div>
             </div>
