@@ -193,13 +193,13 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     "electricity",
     "calendar",
-    "food_menu",
+    ...(hasFoodMenu ? ["food_menu"] : []),
     "weather",
     "photos",
     ...generalSensorIds.map((id) => `general_${id}`),
@@ -278,7 +278,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const rsIds = (config.rssFeeds || []).map((s) => s.id);
     const vcIds = (config.vehicles || []).map((v) => v.id);
     const hn = (config.notificationConfig?.showHANotifications || (config.notificationConfig?.alertRules?.length > 0)) ?? false;
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0);
+    const hasFM = !!(config.foodMenuConfig?.calendarEntity || config.foodMenuConfig?.skolmatenEntity);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -311,7 +312,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const sgIds = sensorGrids.map((s) => s.id);
     const rsIds = rssFeeds.map((s) => s.id);
     const vcIds = vehicles.map((v) => v.id);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0);
+    const hasFM = !!(foodMenuConfig.calendarEntity || foodMenuConfig.skolmatenEntity);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));

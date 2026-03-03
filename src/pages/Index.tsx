@@ -54,13 +54,13 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications: boolean, vehicleIds: string[], hasPollen: boolean): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications: boolean, vehicleIds: string[], hasPollen: boolean, hasFoodMenu = false): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
     "electricity",
     "calendar",
-    "food_menu",
+    ...(hasFoodMenu ? ["food_menu"] : []),
     "weather",
     "photos",
     "chores",
@@ -303,7 +303,8 @@ const Index = () => {
   // Resolve ordered widget IDs
   const effectiveWidgetLayouts = demoLayout?.widgetLayouts || config.widgetLayouts || {};
   const allWidgetIds = useMemo(() => {
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, vehicleIds, hasPollen);
+    const hasFoodMenu = !!(config.foodMenuConfig?.calendarEntity || config.foodMenuConfig?.skolmatenEntity);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, vehicleIds, hasPollen, hasFoodMenu || isDemo);
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
       const validSet = new Set(defaults);
@@ -312,7 +313,7 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [demoLayout, config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, hasPollen]);
+  }, [demoLayout, config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, hasPollen, config.foodMenuConfig]);
 
   const getWidgetGroup = (id: string) => effectiveWidgetLayouts[id]?.widgetGroup || "";
 
