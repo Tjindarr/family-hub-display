@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, ChoreSubmission } from "@/lib/chores-types";
+import { GradesTab } from "@/components/GradesTab";
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { KidAvatar } from "@/components/KidAvatar";
@@ -10,7 +11,7 @@ import {
   getKidStreak, getKidAvailablePoints, getKidSpentPoints, suggestFairKid,
   WEEKDAY_LABELS, TIME_OF_DAY_LABELS, daysUntilDue, getKidLevel,
   getStreakBonusMultiplier,
-  DEFAULT_SETTINGS,
+  DEFAULT_SETTINGS, DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS,
 } from "@/lib/chores-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, BarChart3, Clock, Tag, Send, Menu, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit, Check, X, Pause, Play, Shield, Star, Trophy, Gift, Users, ClipboardList, History, Award, Settings, BarChart3, Clock, Tag, Send, Menu, ChevronDown, ChevronUp, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -30,7 +31,7 @@ const KID_COLORS = [
   "hsl(280 70% 55%)", "hsl(174 72% 50%)", "hsl(0 72% 55%)", "hsl(45 90% 50%)",
 ];
 
-type Tab = "chores" | "kids" | "rewards" | "history" | "approvals" | "leaderboard" | "settings";
+type Tab = "chores" | "kids" | "rewards" | "history" | "approvals" | "leaderboard" | "settings" | "grades";
 
 export default function ParentPage() {
   const { data, refresh } = useChoresData();
@@ -40,7 +41,9 @@ export default function ParentPage() {
   const [showAddKid, setShowAddKid] = useState(false);
   const [showAddReward, setShowAddReward] = useState(false);
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
+  const [showAddGrade, setShowAddGrade] = useState(false);
   const showSuggestions = data.settings?.showSuggestions ?? true;
+  const gradesEnabled = data.settings?.gradesEnabled ?? false;
 
   useEffect(() => {
     const manifest = document.querySelector('link[rel="manifest"]');
@@ -64,6 +67,7 @@ export default function ParentPage() {
     { id: "rewards", label: "Rewards", icon: <Gift className="w-6 h-6" /> },
     { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-6 h-6" /> },
     { id: "approvals", label: "Approve", icon: <Shield className="w-6 h-6" /> },
+    ...(gradesEnabled ? [{ id: "grades" as Tab, label: "Grades", icon: <GraduationCap className="w-6 h-6" /> }] : []),
     { id: "history", label: "History", icon: <History className="w-6 h-6" /> },
     { id: "settings", label: "Settings", icon: <Settings className="w-6 h-6" /> },
   ];
@@ -81,6 +85,7 @@ export default function ParentPage() {
   const fabAction = tab === "chores" ? () => { setEditingChore(null); setShowAddChore(true); }
     : tab === "kids" ? () => setShowAddKid(true)
     : tab === "rewards" ? () => setShowAddReward(true)
+    : tab === "grades" ? () => setShowAddGrade(true)
     : null;
 
   return (
@@ -122,6 +127,9 @@ export default function ParentPage() {
         {tab === "leaderboard" && <LeaderboardTab data={data} />}
         {tab === "approvals" && <ApprovalsTab data={data} refresh={refresh} />}
         {tab === "history" && <HistoryTab data={data} refresh={refresh} />}
+        {tab === "grades" && gradesEnabled && (
+          <GradesTab data={data} refresh={refresh} showAdd={showAddGrade} setShowAdd={setShowAddGrade} />
+        )}
         {tab === "settings" && <SettingsTab data={data} refresh={refresh} />}
       </div>
 
@@ -1158,6 +1166,12 @@ function SettingsTab({ data, refresh }: any) {
   const [newStreakMultiplier, setNewStreakMultiplier] = useState(2);
   const [notifyParentOnComplete, setNotifyParentOnComplete] = useState(settings.notifyParentOnComplete ?? true);
   const [notifyKidOnNewChore, setNotifyKidOnNewChore] = useState(settings.notifyKidOnNewChore ?? true);
+  const [gradesEnabled, setGradesEnabled] = useState(settings.gradesEnabled ?? false);
+  const [gradeScale, setGradeScale] = useState(settings.gradeScale || DEFAULT_GRADE_SCALE);
+  const [gradeSubjects, setGradeSubjects] = useState<string[]>(settings.gradeSubjects || DEFAULT_SUBJECTS);
+  const [newSubject, setNewSubject] = useState("");
+  const [newGradeLabel, setNewGradeLabel] = useState("");
+  const [newGradePoints, setNewGradePoints] = useState(0);
 
   const saveSettings = async (partial: any) => {
     const updated = { ...settings, ...partial };
@@ -1318,6 +1332,85 @@ function SettingsTab({ data, refresh }: any) {
           }}>
             <Plus className="w-5 h-5 mr-2" /> Add Streak Bonus
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Grades Settings */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between min-h-[52px] gap-3">
+            <div className="flex-1">
+              <Label className="text-[15px] font-semibold">📝 School Grades</Label>
+              <p className="text-[15px] text-muted-foreground">Track exam & term grades</p>
+            </div>
+            <Switch checked={gradesEnabled} onCheckedChange={(v) => {
+              setGradesEnabled(v);
+              saveSettings({ gradesEnabled: v, gradeScale, gradeSubjects });
+            }} />
+          </div>
+
+          {gradesEnabled && (
+            <>
+              {/* Grade Scale */}
+              <div className="space-y-2">
+                <Label className="text-[15px] font-semibold">📊 Grade Scale</Label>
+                {gradeScale.map((entry: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-2 bg-secondary/50 px-4 py-3 rounded-lg min-h-[48px]">
+                    <span className="font-bold text-base w-10">{entry.label}</span>
+                    <span className="flex-1 text-sm text-muted-foreground">→ {entry.pointsReward} pts</span>
+                    <button onClick={() => {
+                      const updated = gradeScale.filter((_: any, i: number) => i !== idx);
+                      setGradeScale(updated);
+                      saveSettings({ gradesEnabled, gradeScale: updated, gradeSubjects });
+                    }} className="text-destructive min-w-[44px] min-h-[44px] flex items-center justify-center">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+                <div className="grid grid-cols-3 gap-2">
+                  <Input value={newGradeLabel} onChange={(e) => setNewGradeLabel(e.target.value)} placeholder="Label" className="h-12 text-base" />
+                  <Input type="number" min={0} value={newGradePoints} onChange={(e) => setNewGradePoints(+e.target.value)} placeholder="Points" className="h-12 text-base" />
+                  <Button className="h-12 text-base" onClick={() => {
+                    if (!newGradeLabel.trim()) return;
+                    const updated = [...gradeScale, { label: newGradeLabel.trim(), pointsReward: newGradePoints }];
+                    setGradeScale(updated);
+                    setNewGradeLabel("");
+                    setNewGradePoints(0);
+                    saveSettings({ gradesEnabled, gradeScale: updated, gradeSubjects });
+                  }}>Add</Button>
+                </div>
+              </div>
+
+              {/* Subjects */}
+              <div className="space-y-2">
+                <Label className="text-[15px] font-semibold">📚 Subjects</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {gradeSubjects.map((subj: string) => (
+                    <div key={subj} className="flex items-center gap-1.5 bg-secondary px-3 py-2 rounded text-sm min-h-[40px]">
+                      <span>{subj}</span>
+                      <button onClick={() => {
+                        const updated = gradeSubjects.filter((s: string) => s !== subj);
+                        setGradeSubjects(updated);
+                        saveSettings({ gradesEnabled, gradeScale, gradeSubjects: updated });
+                      }} className="text-destructive hover:text-destructive/80">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input value={newSubject} onChange={(e) => setNewSubject(e.target.value)} placeholder="New subject" className="flex-1 h-12 text-base" />
+                  <Button className="h-12 px-4 text-base" onClick={() => {
+                    if (!newSubject.trim() || gradeSubjects.includes(newSubject.trim())) return;
+                    const updated = [...gradeSubjects, newSubject.trim()];
+                    setGradeSubjects(updated);
+                    setNewSubject("");
+                    saveSettings({ gradesEnabled, gradeScale, gradeSubjects: updated });
+                  }}>Add</Button>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </>

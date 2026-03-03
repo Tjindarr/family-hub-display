@@ -95,6 +95,27 @@ export interface ChoreSubmission {
   rejectionReason?: string;
 }
 
+// ── School Grades ──
+export type GradeType = "exam" | "term";
+
+export interface GradeScaleEntry {
+  label: string; // e.g. "A", "5", "MVG"
+  pointsReward: number; // auto-award points
+}
+
+export interface Grade {
+  id: string;
+  kidId: string;
+  type: GradeType;
+  subject: string;
+  grade: string; // the label from the scale
+  term?: string; // e.g. "Fall 2026", "Q1"
+  date: string; // ISO date
+  pointsAwarded: number; // actual points given (may differ from auto if overridden)
+  autoAwarded: boolean; // true if points were auto-awarded
+  createdAt: string;
+}
+
 export interface BulkTemplate {
   id: string;
   name: string;
@@ -148,6 +169,9 @@ export interface ChoreSettings {
   categoriesEnabled: boolean;
   categories: string[];
   streakBonuses: StreakBonus[];
+  gradesEnabled: boolean;
+  gradeScale: GradeScaleEntry[];
+  gradeSubjects: string[];
 }
 
 export interface ChoresData {
@@ -159,8 +183,8 @@ export interface ChoresData {
   rewards: Reward[];
   rewardClaims: RewardClaim[];
   settings: ChoreSettings;
-  
   submissions: ChoreSubmission[];
+  grades: Grade[];
 }
 
 // ── Helpers ──
@@ -177,12 +201,28 @@ export const DEFAULT_BADGES: Badge[] = [
   { id: "points-500", name: "Point Pro", icon: "🎯", description: "Earned 500 points total", condition: { type: "total_points", value: 500 } },
 ];
 
+export const DEFAULT_GRADE_SCALE: GradeScaleEntry[] = [
+  { label: "A", pointsReward: 50 },
+  { label: "B", pointsReward: 30 },
+  { label: "C", pointsReward: 15 },
+  { label: "D", pointsReward: 5 },
+  { label: "E", pointsReward: 0 },
+  { label: "F", pointsReward: 0 },
+];
+
+export const DEFAULT_SUBJECTS: string[] = [
+  "Math", "English", "Science", "History", "Geography", "Art", "Music", "PE", "Languages",
+];
+
 export const DEFAULT_SETTINGS: ChoreSettings = {
   rotationEnabled: false,
   showSuggestions: true,
   categoriesEnabled: false,
   categories: ["Kitchen", "Bedroom", "Bathroom", "Outdoor", "General"],
   streakBonuses: [],
+  gradesEnabled: false,
+  gradeScale: [...DEFAULT_GRADE_SCALE],
+  gradeSubjects: [...DEFAULT_SUBJECTS],
 };
 
 export const EMPTY_CHORES_DATA: ChoresData = {
@@ -195,6 +235,7 @@ export const EMPTY_CHORES_DATA: ChoresData = {
   rewardClaims: [],
   settings: { ...DEFAULT_SETTINGS },
   submissions: [],
+  grades: [],
 };
 
 export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {

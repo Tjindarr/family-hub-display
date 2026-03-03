@@ -3,7 +3,7 @@ import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, ChoreSubmission } from "@/lib/chores-types";
+import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, ChoreSubmission, Grade } from "@/lib/chores-types";
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
@@ -14,7 +14,7 @@ import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Clock, Send, Plus, X, ChevronDown } from "lucide-react";
+import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Clock, Send, Plus, X, ChevronDown, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -473,6 +473,39 @@ export default function KidsPage() {
             </div>
           </div>
         )}
+
+        {/* My Grades - read only */}
+        {(data.settings?.gradesEnabled) && (() => {
+          const myGrades = (data.grades || [])
+            .filter((g: Grade) => g.kidId === kid.id)
+            .sort((a: Grade, b: Grade) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 10);
+          if (myGrades.length === 0) return null;
+          return (
+            <details className="group">
+              <summary className="flex items-center gap-2 cursor-pointer list-none text-lg font-semibold text-muted-foreground mb-3 select-none">
+                <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
+                <GraduationCap className="w-5 h-5" /> My Grades ({myGrades.length})
+              </summary>
+              <div className="space-y-2 mt-2">
+                {myGrades.map((grade: Grade) => (
+                  <div key={grade.id} className="flex items-center gap-3 text-base py-2.5 px-3 rounded-lg bg-secondary/30">
+                    <span className="text-xl">{grade.type === "term" ? "📋" : "📄"}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium">{grade.subject}</span>
+                      {grade.term && <span className="text-sm text-muted-foreground ml-1.5">({grade.term})</span>}
+                      <div className="text-sm text-muted-foreground">{new Date(grade.date).toLocaleDateString()}</div>
+                    </div>
+                    <span className="text-lg font-bold text-primary">{grade.grade}</span>
+                    {grade.pointsAwarded > 0 && (
+                      <span className="text-sm font-medium text-primary">+{grade.pointsAwarded}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </details>
+          );
+        })()}
 
         {/* My submissions — collapsible */}
         {(() => {
