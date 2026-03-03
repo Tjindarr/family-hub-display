@@ -763,90 +763,16 @@ app.post("/api/push/test", (req, res) => {
   res.json({ success: true });
 });
 
-app.use(express.static("/usr/share/nginx/html"));
-
-// SPA fallback — inject correct manifest for parent vs kids PWA
-app.get("/{*splat}", (req, res) => {
-  const htmlPath = "/usr/share/nginx/html/index.html";
-  const isParent = req.path.startsWith("/parent");
-  
-  try {
-    let html = fs.readFileSync(htmlPath, "utf-8");
-    if (isParent) {
-      html = html.replace('href="/manifest.json"', 'href="/manifest-parent.json"');
-      html = html.replace('content="Chores"', 'content="Parent"');
-      html = html.replace('<title>HomeDash</title>', '<title>HomeDash Parent</title>');
-    }
-    res.set("Content-Type", "text/html");
-    res.send(html);
-  } catch {
-    res.sendFile(htmlPath);
-  }
-});
-
-// ── Daily chore reminder scheduler ──
-function scheduleDailyReminder() {
-  const check = () => {
-    // Read reminder config from dashboard config
-    let reminderConfig = { enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3 };
-    try {
-      const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
-      if (cfg.choreReminderConfig) reminderConfig = { ...reminderConfig, ...cfg.choreReminderConfig };
-    } catch {}
-
-    if (!reminderConfig.enabled) return;
-
-    const now = new Date();
-    const day = now.getDay(); // 0=Sun, 6=Sat
-    const hour = now.getHours();
-    const minute = now.getMinutes();
-    const isWeekend = day === 0 || day === 6;
-    const targetHour = isWeekend ? reminderConfig.weekendHour : reminderConfig.weekdayHour;
-
-    if (hour === targetHour && minute === 0) {
-      const data = readChores();
-      if (data.kids && data.kids.length > 0) {
-        const todayStr = now.toISOString().slice(0, 10);
-        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-        const todayName = dayNames[day];
-        const activeChores = (data.chores || []).filter((c) => {
-          if (c.frequency === "daily") return true;
-          if (c.frequency === "weekly" && c.weekdays && c.weekdays.includes(todayName)) return true;
-          if (c.frequency === "specific_days" && c.weekdays && c.weekdays.includes(todayName)) return true;
-          return false;
-        });
-
-        if (activeChores.length > 0) {
-          const maxShow = reminderConfig.maxChoresInNotification || 3;
-          const choreNames = activeChores.slice(0, maxShow).map((c) => c.title).join(", ");
-          const extra = activeChores.length > maxShow ? ` +${activeChores.length - maxShow} more` : "";
-          console.log(`[PUSH] Sending daily chore reminder to kids (${activeChores.length} chores)`);
-          sendPush("kid", {
-            title: "⏰ Time for chores!",
-            body: `Today: ${choreNames}${extra}`,
-            tag: `chore-reminder-${todayStr}`,
-            url: "/kids",
-          });
-        }
-      }
-    }
-  };
-
-  // Check every 60 seconds
-  setInterval(check, 60_000);
-  console.log("[SCHEDULER] Daily chore reminder scheduler active");
-}
-
 // ── HA WebSocket Proxy ──
 // Server-side connection to Home Assistant, relaying state to browser clients
 
 let haWs = null;
-let haStatesCache = new Map(); // entity_id -> state object
+let haStatesCache = new Map();
 let haWsConnected = false;
 let haReconnectTimeout = null;
 let haReconnectAttempts = 0;
 let haCmdId = 1;
-const browserClients = new Set(); // connected browser WebSocket clients
+const browserClients = new Set();
 
 function getHAConfig() {
   try {
@@ -936,12 +862,8 @@ function handleHAMessage(msg, token) {
       haWsConnected = true;
       haReconnectAttempts = 0;
       broadcastToBrowsers({ type: "ha_connection", state: "connected" });
-
-      // Fetch all states
       const getStatesId = haCmdId++;
       haWs.send(JSON.stringify({ id: getStatesId, type: "get_states" }));
-
-      // Subscribe to state changes
       const subscribeId = haCmdId++;
       haWs.send(JSON.stringify({ id: subscribeId, type: "subscribe_events", event_type: "state_changed" }));
       break;
@@ -996,16 +918,13 @@ setInterval(() => {
   }
 }, 30000);
 
-// ── HA REST Proxy ──
-// Proxies REST API calls to HA so the browser never talks to HA directly
-
+// ── HA REST Proxy (must be before static/SPA fallback) ──
 app.all("/api/ha/*", async (req, res) => {
   const { haUrl, haToken } = getHAConfig();
   if (!haUrl || !haToken) {
     return res.status(503).json({ error: "Home Assistant not configured" });
   }
 
-  // Strip /api/ha prefix, forward the rest to HA
   const haPath = req.originalUrl.replace(/^\/api\/ha/, "");
   const targetUrl = `${haUrl.replace(/\/$/, "")}/api${haPath}`;
 
@@ -1022,8 +941,6 @@ app.all("/api/ha/*", async (req, res) => {
     }
 
     const haRes = await fetch(targetUrl, fetchOptions);
-
-    // Forward status and content type
     const contentType = haRes.headers.get("content-type") || "application/json";
     res.status(haRes.status).set("Content-Type", contentType);
 
@@ -1040,13 +957,89 @@ app.all("/api/ha/*", async (req, res) => {
   }
 });
 
-// ── HA Cached States endpoint (for initial load without waiting for WS bulk) ──
 app.get("/api/ha-states", (_req, res) => {
   res.json({
     connected: haWsConnected,
     states: Array.from(haStatesCache.values()),
   });
 });
+
+app.use(express.static("/usr/share/nginx/html"));
+
+// SPA fallback — inject correct manifest for parent vs kids PWA
+app.get("/{*splat}", (req, res) => {
+  const htmlPath = "/usr/share/nginx/html/index.html";
+  const isParent = req.path.startsWith("/parent");
+  
+  try {
+    let html = fs.readFileSync(htmlPath, "utf-8");
+    if (isParent) {
+      html = html.replace('href="/manifest.json"', 'href="/manifest-parent.json"');
+      html = html.replace('content="Chores"', 'content="Parent"');
+      html = html.replace('<title>HomeDash</title>', '<title>HomeDash Parent</title>');
+    }
+    res.set("Content-Type", "text/html");
+    res.send(html);
+  } catch {
+    res.sendFile(htmlPath);
+  }
+});
+
+// ── Daily chore reminder scheduler ──
+function scheduleDailyReminder() {
+  const check = () => {
+    // Read reminder config from dashboard config
+    let reminderConfig = { enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3 };
+    try {
+      const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
+      if (cfg.choreReminderConfig) reminderConfig = { ...reminderConfig, ...cfg.choreReminderConfig };
+    } catch {}
+
+    if (!reminderConfig.enabled) return;
+
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    const isWeekend = day === 0 || day === 6;
+    const targetHour = isWeekend ? reminderConfig.weekendHour : reminderConfig.weekdayHour;
+
+    if (hour === targetHour && minute === 0) {
+      const data = readChores();
+      if (data.kids && data.kids.length > 0) {
+        const todayStr = now.toISOString().slice(0, 10);
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        const todayName = dayNames[day];
+        const activeChores = (data.chores || []).filter((c) => {
+          if (c.frequency === "daily") return true;
+          if (c.frequency === "weekly" && c.weekdays && c.weekdays.includes(todayName)) return true;
+          if (c.frequency === "specific_days" && c.weekdays && c.weekdays.includes(todayName)) return true;
+          return false;
+        });
+
+        if (activeChores.length > 0) {
+          const maxShow = reminderConfig.maxChoresInNotification || 3;
+          const choreNames = activeChores.slice(0, maxShow).map((c) => c.title).join(", ");
+          const extra = activeChores.length > maxShow ? ` +${activeChores.length - maxShow} more` : "";
+          console.log(`[PUSH] Sending daily chore reminder to kids (${activeChores.length} chores)`);
+          sendPush("kid", {
+            title: "⏰ Time for chores!",
+            body: `Today: ${choreNames}${extra}`,
+            tag: `chore-reminder-${todayStr}`,
+            url: "/kids",
+          });
+        }
+      }
+    }
+  };
+
+  // Check every 60 seconds
+  setInterval(check, 60_000);
+  console.log("[SCHEDULER] Daily chore reminder scheduler active");
+}
+
+
+
 
 // ── Start Server with WebSocket support ──
 const server = http.createServer(app);
