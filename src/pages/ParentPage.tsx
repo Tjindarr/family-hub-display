@@ -908,7 +908,7 @@ function LeaderboardTab({ data, refresh }: any) {
                     className="w-full text-left px-4 py-3 flex items-center gap-2 text-[15px] cursor-pointer min-h-[52px]"
                     onClick={() => setExpandedId(isExpanded ? null : log.id)}
                   >
-                    <span className="text-lg">{chore?.icon}</span>
+                    {!log.choreId?.startsWith("grade_") && <span className="text-lg">{chore?.icon}</span>}
                     <span className="flex-1 truncate font-medium text-base">{chore?.title}</span>
                     <span className="flex items-center gap-1 text-[15px] shrink-0" style={{ color: kid?.color }}>
                       {kid && <KidAvatar kid={kid} size={18} />}
