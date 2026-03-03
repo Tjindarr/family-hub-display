@@ -14,7 +14,7 @@ import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Clock, Send, Plus, X } from "lucide-react";
+import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Clock, Send, Plus, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -474,16 +474,24 @@ export default function KidsPage() {
           </div>
         )}
 
-        {/* My submissions */}
+        {/* My submissions — collapsible */}
         {(() => {
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
           const mySubmissions = (data.submissions || []).filter(
-            (s: ChoreSubmission) => s.kidId === kid.id && s.status !== "approved"
+            (s: ChoreSubmission) =>
+              s.kidId === kid.id &&
+              s.status !== "approved" &&
+              // Hide rejected submissions older than 7 days
+              !(s.status === "rejected" && new Date(s.reviewedAt || s.submittedAt).getTime() < sevenDaysAgo)
           ).sort((a: ChoreSubmission, b: ChoreSubmission) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
           if (mySubmissions.length === 0) return null;
           return (
-            <div>
-              <h3 className="text-lg font-semibold text-muted-foreground mb-3">📤 My Submissions</h3>
-              <div className="space-y-3">
+            <details className="group">
+              <summary className="flex items-center gap-2 cursor-pointer list-none text-lg font-semibold text-muted-foreground mb-3 select-none">
+                <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
+                📤 My Submissions ({mySubmissions.length})
+              </summary>
+              <div className="space-y-3 mt-2">
                 {mySubmissions.map((sub: ChoreSubmission) => (
                   <Card key={sub.id} className={sub.status === "rejected" ? "border-destructive/30" : "border-yellow-500/30"}>
                     <CardContent className="p-4">
@@ -512,7 +520,7 @@ export default function KidsPage() {
                   </Card>
                 ))}
               </div>
-            </div>
+            </details>
           );
         })()}
       </div>
