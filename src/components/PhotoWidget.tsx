@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ImageIcon } from "lucide-react";
-import type { PhotoWidgetConfig } from "@/lib/config";
+import type { PhotoWidgetConfig, PhotoTransition } from "@/lib/config";
 
 interface ServerPhoto {
   filename: string;
@@ -22,11 +22,79 @@ interface PhotoWidgetProps {
   isDemo?: boolean;
 }
 
+function getTransitionStyle(
+  transition: PhotoTransition,
+  role: "enter" | "exit",
+  animating: boolean
+): React.CSSProperties {
+  const duration = transition === "none" ? 0 : 900;
+  const base: React.CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    transition: `opacity ${duration}ms ease, transform ${duration}ms ease, filter ${duration}ms ease`,
+  };
+
+  if (transition === "none") {
+    return { ...base, opacity: role === "enter" ? 1 : 0 };
+  }
+  if (transition === "fade") {
+    return {
+      ...base,
+      opacity: role === "enter" ? (animating ? 0 : 1) : (animating ? 1 : 0),
+    };
+  }
+  if (transition === "slide") {
+    const entering = role === "enter";
+    return {
+      ...base,
+      opacity: 1,
+      transform: entering
+        ? animating ? "translateX(100%)" : "translateX(0)"
+        : animating ? "translateX(0)" : "translateX(-100%)",
+    };
+  }
+  if (transition === "zoom") {
+    const entering = role === "enter";
+    return {
+      ...base,
+      opacity: entering ? (animating ? 0 : 1) : (animating ? 1 : 0),
+      transform: entering
+        ? animating ? "scale(1.3)" : "scale(1)"
+        : animating ? "scale(1)" : "scale(0.7)",
+    };
+  }
+  if (transition === "flip") {
+    const entering = role === "enter";
+    return {
+      ...base,
+      opacity: entering ? (animating ? 0 : 1) : (animating ? 1 : 0),
+      transform: entering
+        ? animating ? "rotateY(90deg)" : "rotateY(0deg)"
+        : animating ? "rotateY(0deg)" : "rotateY(-90deg)",
+      backfaceVisibility: "hidden",
+    };
+  }
+  if (transition === "blur") {
+    const entering = role === "enter";
+    return {
+      ...base,
+      opacity: entering ? (animating ? 0 : 1) : (animating ? 1 : 0),
+      filter: entering
+        ? animating ? "blur(20px)" : "blur(0px)"
+        : animating ? "blur(0px)" : "blur(20px)",
+    };
+  }
+  return base;
+}
+
 export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
-  const { intervalSeconds, displayMode = "contain" } = config;
+  const { intervalSeconds, displayMode = "contain", transition = "fade" } = config;
   const [photos, setPhotos] = useState<ServerPhoto[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [fade, setFade] = useState(true);
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
+  const [animating, setAnimating] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
@@ -39,11 +107,8 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
         const res = await fetch("/api/photos");
         if (res.ok) {
           const data = await res.json();
-          if (data.length > 0) {
-            setPhotos(data);
-          } else if (isDemo) {
-            setPhotos(DEMO_PHOTOS);
-          }
+          if (data.length > 0) setPhotos(data);
+          else if (isDemo) setPhotos(DEMO_PHOTOS);
         }
       } catch (e) {
         console.error("Failed to fetch photos:", e);
@@ -56,13 +121,16 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
   }, [isDemo]);
 
   const advance = useCallback(() => {
-    if (photos.length <= 1) return;
-    setFade(false);
+    if (photos.length <= 1 || animating) return;
+    setAnimating(true);
+    setPrevIndex(currentIndex);
+    setCurrentIndex((prev) => (prev + 1) % photos.length);
+    const duration = transition === "none" ? 0 : 900;
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % photos.length);
-      setFade(true);
-    }, 500);
-  }, [photos.length]);
+      setPrevIndex(null);
+      setAnimating(false);
+    }, duration);
+  }, [photos.length, currentIndex, animating, transition]);
 
   useEffect(() => {
     if (photos.length <= 1) return;
@@ -88,30 +156,46 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
     );
   }
 
-  const src = photos[currentIndex]?.url || "";
+  const objFit = displayMode === "cover" ? "object-cover object-top" : "object-contain object-top";
 
   return (
-    <Card className="h-full max-h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur" style={{ minHeight: 0 }}>
+    <Card
+      className="h-full max-h-full overflow-hidden border-border/50 bg-card/80 backdrop-blur"
+      style={{ minHeight: 0, perspective: transition === "flip" ? 1200 : undefined }}
+    >
       <CardContent className="relative h-full max-h-full p-0 overflow-hidden" style={{ minHeight: 0 }}>
+        {/* Blur-fill background */}
         {displayMode === "blur-fill" && (
           <img
-            src={src}
+            src={photos[currentIndex]?.url || ""}
             alt=""
             aria-hidden
             className="absolute inset-0 h-full w-full object-cover blur-2xl scale-110 opacity-50"
           />
         )}
+
+        {/* Exiting image */}
+        {prevIndex !== null && (
+          <img
+            src={photos[prevIndex]?.url || ""}
+            alt=""
+            className={objFit}
+            style={getTransitionStyle(transition, "exit", animating)}
+          />
+        )}
+
+        {/* Current image */}
         <img
-          key={src}
-          src={src}
+          key={currentIndex}
+          src={photos[currentIndex]?.url || ""}
           alt={`Photo ${currentIndex + 1}`}
           loading="lazy"
           decoding="async"
-          className={`absolute inset-0 h-full w-full transition-opacity duration-500 ${
-            displayMode === "cover" ? "object-cover object-top" : "object-contain object-top"
-          }`}
-          style={{ opacity: fade ? 1 : 0 }}
+          className={objFit}
+          style={getTransitionStyle(transition, "enter", animating)}
         />
+
+        {/* Dots / counter */}
         {photos.length > 1 && (
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
             {photos.length <= 20 && photos.map((_, i) => (
