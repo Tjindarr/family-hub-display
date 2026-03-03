@@ -31,7 +31,7 @@ const KID_COLORS = [
   "hsl(280 70% 55%)", "hsl(174 72% 50%)", "hsl(0 72% 55%)", "hsl(45 90% 50%)",
 ];
 
-type Tab = "chores" | "kids" | "rewards" | "history" | "approvals" | "leaderboard" | "settings" | "grades";
+type Tab = "chores" | "kids" | "rewards" | "approvals" | "leaderboard" | "settings" | "grades";
 
 export default function ParentPage() {
   const { data, refresh } = useChoresData();
@@ -68,7 +68,6 @@ export default function ParentPage() {
     { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-5 h-5" /> },
     { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
     ...(gradesEnabled ? [{ id: "grades" as Tab, label: "Grades", icon: <GraduationCap className="w-5 h-5" /> }] : []),
-    { id: "history", label: "History", icon: <History className="w-5 h-5" /> },
   ];
 
   const allTabs = [...bottomTabs, { id: "settings" as Tab, label: "Settings" }, { id: "kids" as Tab, label: "Kids" }];
@@ -128,9 +127,8 @@ export default function ParentPage() {
         {tab === "rewards" && (
           <RewardsTab data={data} refresh={refresh} showAdd={showAddReward} setShowAdd={setShowAddReward} />
         )}
-        {tab === "leaderboard" && <LeaderboardTab data={data} />}
+        {tab === "leaderboard" && <LeaderboardTab data={data} refresh={refresh} />}
         {tab === "approvals" && <ApprovalsTab data={data} refresh={refresh} />}
-        {tab === "history" && <HistoryTab data={data} refresh={refresh} />}
         {tab === "grades" && gradesEnabled && (
           <GradesTab data={data} refresh={refresh} showAdd={showAddGrade} setShowAdd={setShowAddGrade} />
         )}
@@ -812,8 +810,12 @@ function RewardsTab({ data, refresh, showAdd, setShowAdd }: any) {
   );
 }
 
-// ── Leaderboard Tab ──
-function LeaderboardTab({ data }: any) {
+// ── Leaderboard & History Tab ──
+function LeaderboardTab({ data, refresh }: any) {
+  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   const kidStats = data.kids.map((kid: Kid) => {
     const total = getKidTotalPoints(kid.id, data.logs, data.chores);
     const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
@@ -824,6 +826,11 @@ function LeaderboardTab({ data }: any) {
   }).sort((a: any, b: any) => b.total - a.total);
 
   const trophies = ["🥇", "🥈", "🥉"];
+
+  const logs = [...data.logs]
+    .filter((l: any) => !l.undoneAt)
+    .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+    .slice(0, 50);
 
   return (
     <>
@@ -876,6 +883,123 @@ function LeaderboardTab({ data }: any) {
           ))}
         </CardContent>
       </Card>
+
+      {/* History section */}
+      <button
+        className="w-full flex items-center justify-between py-3 text-lg font-semibold"
+        onClick={() => setHistoryExpanded(!historyExpanded)}
+      >
+        <span>📜 Recent Activity</span>
+        <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${historyExpanded ? "rotate-180" : ""}`} />
+      </button>
+
+      {historyExpanded && (
+        <>
+          <div className="space-y-1">
+            {logs.map((log: any) => {
+              const chore = data.chores.find((c: Chore) => c.id === log.choreId);
+              const kid = data.kids.find((k: Kid) => k.id === log.kidId);
+              const isExpanded = expandedId === log.id;
+              const completedDate = new Date(log.completedAt);
+
+              return (
+                <Card key={log.id} className={`transition-colors ${isExpanded ? "border-primary/30" : ""}`}>
+                  <button
+                    className="w-full text-left px-4 py-3 flex items-center gap-2 text-[15px] cursor-pointer min-h-[52px]"
+                    onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                  >
+                    <span className="text-lg">{chore?.icon}</span>
+                    <span className="flex-1 truncate font-medium text-base">{chore?.title}</span>
+                    <span className="flex items-center gap-1 text-[15px] shrink-0" style={{ color: kid?.color }}>
+                      {kid && <KidAvatar kid={kid} size={18} />}
+                      <span className="hidden sm:inline">{kid?.name}</span>
+                    </span>
+                    <span className="text-sm text-muted-foreground shrink-0">
+                      {completedDate.toLocaleDateString([], { month: "short", day: "numeric" })}
+                    </span>
+                    {log.photoUrl && <span className="text-sm shrink-0">📷</span>}
+                    <ChevronDown
+                      className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {isExpanded && (
+                    <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[15px]">
+                        <div>
+                          <span className="text-muted-foreground text-sm">Completed</span>
+                          <div className="font-medium">
+                            {completedDate.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+                            {" "}
+                            {completedDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-sm">Points</span>
+                          <div className="font-medium">
+                            +{chore?.points || 0}pts
+                            {log.bonusMultiplier && log.bonusMultiplier > 1 && (
+                              <span className="ml-1 text-yellow-400">({log.bonusMultiplier}x)</span>
+                            )}
+                            {log.earlyBonusEarned && (
+                              <span className="ml-1 text-primary">+{log.earlyBonusEarned}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-sm">Difficulty</span>
+                          <div className="font-medium">{"⭐".repeat(chore?.difficulty || 1)}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-sm">Category</span>
+                          <div className="font-medium">{chore?.category || "—"}</div>
+                        </div>
+                        {chore?.requireApproval && (
+                          <div>
+                            <span className="text-muted-foreground text-sm">Approval</span>
+                            <div className="font-medium">{log.approved ? "✅ Approved" : "⏳ Pending"}</div>
+                          </div>
+                        )}
+                        {chore?.requirePhoto && !log.photoUrl && (
+                          <div>
+                            <span className="text-muted-foreground text-sm">Photo</span>
+                            <div className="font-medium">❌ Missing</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {log.photoUrl && (
+                        <div>
+                          <span className="text-sm text-muted-foreground block mb-1">📷 Photo proof</span>
+                          <img
+                            src={log.photoUrl}
+                            alt="Chore proof"
+                            className="w-32 h-32 rounded-lg object-cover cursor-pointer border border-border hover:border-primary/50 transition-colors"
+                            onClick={() => setLightboxPhoto(log.photoUrl)}
+                          />
+                        </div>
+                      )}
+
+                      <Button
+                        variant="outline"
+                        className="w-full h-12 text-sm text-destructive"
+                        onClick={async () => {
+                          await choresApi.deleteLog(log.id);
+                          refresh();
+                          toast.success("Log entry removed");
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Remove Entry
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+          <PhotoLightbox src={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
+        </>
+      )}
     </>
   );
 }
@@ -1116,145 +1240,6 @@ function ApprovalsTab({ data, refresh }: any) {
   );
 }
 
-// ── History Tab ──
-function HistoryTab({ data, refresh }: any) {
-  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const logs = [...data.logs]
-    .filter((l: any) => !l.undoneAt)
-    .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
-    .slice(0, 50);
-
-  return (
-    <>
-      <h2 className="text-xl font-semibold">Recent Activity</h2>
-
-      <Card>
-        <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-base font-medium">📊 This Week</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <div className="flex flex-wrap gap-3">
-            {data.kids.map((kid: Kid) => {
-              const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
-              return (
-                <div key={kid.id} className="flex items-center gap-1.5 text-[15px]">
-                  <KidAvatar kid={kid} size={20} />
-                  <span style={{ color: kid.color }}>{kid.name}</span>
-                  <span className="text-muted-foreground">{weekly}pts</span>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="space-y-1">
-        {logs.map((log: any) => {
-          const chore = data.chores.find((c: Chore) => c.id === log.choreId);
-          const kid = data.kids.find((k: Kid) => k.id === log.kidId);
-          const isExpanded = expandedId === log.id;
-          const completedDate = new Date(log.completedAt);
-
-          return (
-            <Card key={log.id} className={`transition-colors ${isExpanded ? "border-primary/30" : ""}`}>
-              <button
-                className="w-full text-left px-4 py-3 flex items-center gap-2 text-[15px] cursor-pointer min-h-[52px]"
-                onClick={() => setExpandedId(isExpanded ? null : log.id)}
-              >
-                <span className="text-lg">{chore?.icon}</span>
-                <span className="flex-1 truncate font-medium text-base">{chore?.title}</span>
-                <span className="flex items-center gap-1 text-[15px] shrink-0" style={{ color: kid?.color }}>
-                  {kid && <KidAvatar kid={kid} size={18} />}
-                  <span className="hidden sm:inline">{kid?.name}</span>
-                </span>
-                <span className="text-sm text-muted-foreground shrink-0">
-                  {completedDate.toLocaleDateString([], { month: "short", day: "numeric" })}
-                </span>
-                {log.photoUrl && <span className="text-sm shrink-0">📷</span>}
-                <ChevronDown
-                  className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {isExpanded && (
-                <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[15px]">
-                    <div>
-                      <span className="text-muted-foreground text-sm">Completed</span>
-                      <div className="font-medium">
-                        {completedDate.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
-                        {" "}
-                        {completedDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-sm">Points</span>
-                      <div className="font-medium">
-                        +{chore?.points || 0}pts
-                        {log.bonusMultiplier && log.bonusMultiplier > 1 && (
-                          <span className="ml-1 text-yellow-400">({log.bonusMultiplier}x)</span>
-                        )}
-                        {log.earlyBonusEarned && (
-                          <span className="ml-1 text-primary">+{log.earlyBonusEarned}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-sm">Difficulty</span>
-                      <div className="font-medium">{"⭐".repeat(chore?.difficulty || 1)}</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-sm">Category</span>
-                      <div className="font-medium">{chore?.category || "—"}</div>
-                    </div>
-                    {chore?.requireApproval && (
-                      <div>
-                        <span className="text-muted-foreground text-sm">Approval</span>
-                        <div className="font-medium">{log.approved ? "✅ Approved" : "⏳ Pending"}</div>
-                      </div>
-                    )}
-                    {chore?.requirePhoto && !log.photoUrl && (
-                      <div>
-                        <span className="text-muted-foreground text-sm">Photo</span>
-                        <div className="font-medium">❌ Missing</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {log.photoUrl && (
-                    <div>
-                      <span className="text-sm text-muted-foreground block mb-1">📷 Photo proof</span>
-                      <img
-                        src={log.photoUrl}
-                        alt="Chore proof"
-                        className="w-32 h-32 rounded-lg object-cover cursor-pointer border border-border hover:border-primary/50 transition-colors"
-                        onClick={() => setLightboxPhoto(log.photoUrl)}
-                      />
-                    </div>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 text-sm text-destructive"
-                    onClick={async () => {
-                      await choresApi.deleteLog(log.id);
-                      refresh();
-                      toast.success("Log entry removed");
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" /> Remove Entry
-                  </Button>
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
-      <PhotoLightbox src={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
-    </>
-  );
-}
 
 // ── Settings Tab ──
 function SettingsTab({ data, refresh, showAddKid, setShowAddKid }: any) {
