@@ -61,24 +61,17 @@ export default function ParentPage() {
     };
   }, []);
 
-  // Bottom bar: primary navigation (4 items)
+  // Bottom bar: primary navigation
   const bottomTabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "chores", label: "Chores", icon: <ClipboardList className="w-6 h-6" /> },
-    { id: "approvals", label: "Approve", icon: <Shield className="w-6 h-6" /> },
-    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-6 h-6" /> },
-    { id: "history", label: "History", icon: <History className="w-6 h-6" /> },
+    { id: "chores", label: "Chores", icon: <ClipboardList className="w-5 h-5" /> },
+    { id: "approvals", label: "Approve", icon: <Shield className="w-5 h-5" /> },
+    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-5 h-5" /> },
+    { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
+    ...(gradesEnabled ? [{ id: "grades" as Tab, label: "Grades", icon: <GraduationCap className="w-5 h-5" /> }] : []),
+    { id: "history", label: "History", icon: <History className="w-5 h-5" /> },
   ];
 
-  // Top segmented control: secondary navigation
-  const topTabs: { id: Tab; label: string }[] = [
-    { id: "kids", label: "Kids" },
-    { id: "rewards", label: "Rewards" },
-    ...(gradesEnabled ? [{ id: "grades" as Tab, label: "Grades" }] : []),
-    { id: "settings", label: "Settings" },
-  ];
-
-  const allTabs = [...bottomTabs, ...topTabs];
-  const isTopTab = topTabs.some((t) => t.id === tab);
+  const allTabs = [...bottomTabs, { id: "settings" as Tab, label: "Settings" }, { id: "kids" as Tab, label: "Kids" }];
 
   const pendingApprovals = [
     ...data.logs.filter(
@@ -92,9 +85,9 @@ export default function ParentPage() {
 
   // Determine if current tab supports FAB
   const fabAction = tab === "chores" ? () => { setEditingChore(null); setShowAddChore(true); }
-    : tab === "kids" ? () => setShowAddKid(true)
     : tab === "rewards" ? () => setShowAddReward(true)
     : tab === "grades" ? () => setShowAddGrade(true)
+    : tab === "settings" ? () => setShowAddKid(true)
     : null;
 
   return (
@@ -112,25 +105,12 @@ export default function ParentPage() {
               <span>{pendingApprovals.length}</span>
             </button>
           )}
-        </div>
-
-        {/* Top segmented control - only show when a top tab is active OR always for quick access */}
-        <div className="max-w-2xl mx-auto px-4 pb-2">
-          <div className="flex rounded-lg bg-muted p-1 gap-1">
-            {topTabs.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-colors ${
-                  tab === t.id
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => setTab("settings")}
+            className={`p-2 rounded-full transition-colors ${tab === "settings" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground active:bg-muted"}`}
+          >
+            <Settings className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -146,9 +126,6 @@ export default function ParentPage() {
             showSuggestions={showSuggestions}
           />
         )}
-        {tab === "kids" && (
-          <KidsTab data={data} refresh={refresh} showAdd={showAddKid} setShowAdd={setShowAddKid} />
-        )}
         {tab === "rewards" && (
           <RewardsTab data={data} refresh={refresh} showAdd={showAddReward} setShowAdd={setShowAddReward} />
         )}
@@ -158,7 +135,7 @@ export default function ParentPage() {
         {tab === "grades" && gradesEnabled && (
           <GradesTab data={data} refresh={refresh} showAdd={showAddGrade} setShowAdd={setShowAddGrade} />
         )}
-        {tab === "settings" && <SettingsTab data={data} refresh={refresh} />}
+        {tab === "settings" && <SettingsTab data={data} refresh={refresh} showAddKid={showAddKid} setShowAddKid={setShowAddKid} />}
       </div>
 
       {/* FAB - Floating Action Button */}
@@ -178,7 +155,7 @@ export default function ParentPage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-1 text-xs font-medium transition-colors relative ${
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-0.5 text-[10px] font-medium transition-colors relative ${
                 tab === t.id
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"
@@ -1274,7 +1251,7 @@ function HistoryTab({ data, refresh }: any) {
 }
 
 // ── Settings Tab ──
-function SettingsTab({ data, refresh }: any) {
+function SettingsTab({ data, refresh, showAddKid, setShowAddKid }: any) {
   const settings = data.settings || DEFAULT_SETTINGS;
   const [rotationEnabled, setRotationEnabled] = useState(settings.rotationEnabled ?? false);
   const [showSuggestions, setShowSuggestions] = useState(settings.showSuggestions ?? true);
@@ -1303,6 +1280,9 @@ function SettingsTab({ data, refresh }: any) {
   return (
     <>
       <h2 className="text-xl font-semibold">⚙️ Settings</h2>
+
+      {/* Kids Management Section */}
+      <KidsTab data={data} refresh={refresh} showAdd={showAddKid} setShowAdd={setShowAddKid} />
 
       <Card>
         <CardContent className="p-4 space-y-4">
