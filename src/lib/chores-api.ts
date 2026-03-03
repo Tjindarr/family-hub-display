@@ -1,4 +1,4 @@
-import type { ChoresData, Kid, Chore, ChoreLog, Reward, RewardClaim, KidBadge, ChoreSettings, ChoreSubmission } from "./chores-types";
+import type { ChoresData, Kid, Chore, ChoreLog, Reward, RewardClaim, KidBadge, ChoreSettings, ChoreSubmission, Grade, GradeType } from "./chores-types";
 
 const BASE = "/api/chores";
 
@@ -70,6 +70,12 @@ export const choresApi = {
     post<ChoreSubmission>("/submissions", submission),
   approveSubmission: (id: string, points: number) => put<ChoreSubmission>(`/submissions/${id}/approve`, { points }),
   rejectSubmission: (id: string, reason?: string) => put<ChoreSubmission>(`/submissions/${id}/reject`, { reason }),
+
+  // Grades
+  addGrade: (grade: { kidId: string; type: GradeType; subject: string; grade: string; term?: string; date: string; pointsAwarded: number; autoAwarded: boolean }) =>
+    post<Grade>("/grades", grade),
+  updateGrade: (id: string, grade: Partial<Grade>) => put<Grade>(`/grades/${id}`, grade),
+  deleteGrade: (id: string) => del(`/grades/${id}`),
 
   // Upload chore photo
   uploadPhoto: async (file: File): Promise<string> => {

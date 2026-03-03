@@ -729,6 +729,90 @@ app.put("/api/chores/submissions/:id/reject", (req, res) => {
 });
 
 
+// --- Grades API ---
+app.post("/api/chores/grades", (req, res) => {
+  const data = readChores();
+  data.grades = data.grades || [];
+  const grade = {
+    id: uid(),
+    kidId: req.body.kidId,
+    type: req.body.type || "exam",
+    subject: (req.body.subject || "").trim(),
+    grade: (req.body.grade || "").trim(),
+    term: (req.body.term || "").trim() || undefined,
+    date: req.body.date || new Date().toISOString().split("T")[0],
+    pointsAwarded: Number(req.body.pointsAwarded) || 0,
+    autoAwarded: !!req.body.autoAwarded,
+    createdAt: new Date().toISOString(),
+  };
+  data.grades.push(grade);
+
+  // If points awarded, create a log entry for point tracking
+  if (grade.pointsAwarded > 0) {
+    const log = {
+      id: uid(),
+      choreId: `grade_${grade.id}`,
+      kidId: grade.kidId,
+      completedAt: grade.createdAt,
+      photoUrl: null,
+      approved: true,
+      approvedAt: grade.createdAt,
+      undoneAt: null,
+    };
+    data.logs.push(log);
+    // Also create a virtual chore entry so points resolve
+    data.chores.push({
+      id: `grade_${grade.id}`,
+      title: `📝 ${grade.type === "term" ? "Term" : "Exam"}: ${grade.subject} (${grade.grade})`,
+      icon: "📝",
+      points: grade.pointsAwarded,
+      difficulty: 0,
+      timeOfDay: "anytime",
+      recurrence: { type: "once" },
+      requirePhoto: false,
+      requireApproval: false,
+      paused: true, // hidden from chore lists
+      createdAt: grade.createdAt,
+    });
+  }
+
+  writeChores(data);
+
+  const kid = (data.kids || []).find((k) => k.id === grade.kidId);
+  const kidName = kid ? kid.name : "A kid";
+  if (grade.pointsAwarded > 0) {
+    sendPush("kid", {
+      title: "📝 Grade Recorded!",
+      body: `${grade.subject}: ${grade.grade} (+${grade.pointsAwarded}pts)`,
+      url: "/kids",
+      tag: `grade-${grade.id}`,
+    }, grade.kidId);
+  }
+
+  res.json(grade);
+});
+
+app.put("/api/chores/grades/:id", (req, res) => {
+  const data = readChores();
+  data.grades = data.grades || [];
+  const idx = data.grades.findIndex((g) => g.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Grade not found" });
+  data.grades[idx] = { ...data.grades[idx], ...req.body };
+  writeChores(data);
+  res.json(data.grades[idx]);
+});
+
+app.delete("/api/chores/grades/:id", (req, res) => {
+  const data = readChores();
+  data.grades = (data.grades || []).filter((g) => g.id !== req.params.id);
+  // Also remove associated virtual chore and log
+  const gradeChoreId = `grade_${req.params.id}`;
+  data.chores = data.chores.filter((c) => c.id !== gradeChoreId);
+  data.logs = data.logs.filter((l) => l.choreId !== gradeChoreId);
+  writeChores(data);
+  res.json({ success: true });
+});
+
 // --- Push Notification API ---
 app.get("/api/push/vapid-public-key", (_req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });
