@@ -926,7 +926,9 @@ app.all("/api/ha/*", async (req, res) => {
   }
 
   const haPath = req.originalUrl.replace(/^\/api\/ha/, "");
-  const targetUrl = `${haUrl.replace(/\/$/, "")}/api${haPath}`;
+  // If the path already starts with /api (e.g. /api/image/serve/...), don't double it
+  const apiPrefix = haPath.startsWith("/api") ? "" : "/api";
+  const targetUrl = `${haUrl.replace(/\/$/, "")}${apiPrefix}${haPath}`;
 
   try {
     const fetchOptions = {
