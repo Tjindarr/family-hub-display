@@ -550,7 +550,6 @@ const Index = () => {
 
                 // Normal ungrouped widget
                 const widget = renderWidget(id);
-                if (!widget) return null;
                 return (
                   <div
                     key={id}
@@ -562,6 +561,7 @@ const Index = () => {
                         ? (id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined))
                         : undefined,
                       ...(lockHeights ? { overflow: 'hidden' } : {}),
+                      ...(!widget ? { visibility: 'hidden' as const } : {}),
                     }}
                   >
                     {widget}
