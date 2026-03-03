@@ -8,7 +8,7 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 COPY server.js .
-RUN npm install express web-push ws
+RUN npm install express@4 web-push ws
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["node", "server.js"]
