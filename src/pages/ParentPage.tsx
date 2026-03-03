@@ -88,7 +88,7 @@ export default function ParentPage() {
       {/* Header - simplified for mobile */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <h1 className="text-lg font-bold flex-1">{currentTabLabel}</h1>
+          <h1 className="text-xl font-bold flex-1">{currentTabLabel}</h1>
           {pendingApprovals.length > 0 && tab !== "approvals" && (
             <button
               onClick={() => setTab("approvals")}
@@ -142,7 +142,7 @@ export default function ParentPage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-0.5 text-[10px] font-medium transition-colors relative ${
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-0.5 text-xs font-medium transition-colors relative ${
                 tab === t.id
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"
@@ -187,7 +187,7 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
 
   return (
     <>
-      <h2 className="text-lg font-semibold">Chores ({data.chores.length})</h2>
+      <h2 className="text-xl font-semibold">Chores ({data.chores.length})</h2>
 
       {/* Category filter */}
       {categoriesEnabled && (
@@ -253,11 +253,11 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                   <span className="text-2xl">{chore.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-[15px] truncate">{chore.title}</span>
+                      <span className="font-semibold text-base truncate">{chore.title}</span>
                       {chore.requirePhoto && <span className="text-sm">📸</span>}
                       {chore.paused && <Pause className="w-4 h-4 text-muted-foreground" />}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5 flex-wrap">
+                    <div className="flex items-center gap-2 text-[15px] text-muted-foreground mt-0.5 flex-wrap">
                       <span>{chore.points}pts</span>
                       <span>{"⭐".repeat(chore.difficulty)}</span>
                       {due && !completed && !chore.perKid && (
@@ -274,7 +274,7 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                 {/* Expanded details */}
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-0 border-t border-border space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap pt-3">
+                    <div className="flex items-center gap-2 text-[15px] text-muted-foreground flex-wrap pt-3">
                       {chore.requireApproval && <span className="flex items-center gap-1"><Shield className="w-4 h-4" /> Approval</span>}
                       {chore.perKid && <span className="flex items-center gap-1"><Users className="w-4 h-4" /> Per kid</span>}
                       <span>{TIME_OF_DAY_LABELS[chore.timeOfDay]}</span>
@@ -290,7 +290,7 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                     </div>
 
                     {chore.perKid && due && (
-                      <div className="flex items-center gap-2 text-sm flex-wrap">
+                      <div className="flex items-center gap-2 text-[15px] flex-wrap">
                         {perKidCompletions.map((x: any) => (
                           <span key={x.kid.id} className={`flex items-center gap-0.5 ${x.log ? "" : "opacity-50"}`} style={{ color: x.kid.color }}>
                             <KidAvatar kid={x.kid} size={20} />
@@ -302,7 +302,7 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                     )}
 
                     {showSuggestions && fairKid && !completed && due && (
-                      <div className="flex items-center gap-1 text-sm" style={{ color: fairKid.color }}>
+                      <div className="flex items-center gap-1 text-[15px]" style={{ color: fairKid.color }}>
                         {data.settings?.rotationEnabled && chore.rotationKids?.length ? "Rotation:" : "Suggestion:"}{" "}
                         <KidAvatar kid={fairKid} size={20} /> {fairKid.name}'s turn
                       </div>
@@ -567,7 +567,7 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
   return (
     <>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-      <h2 className="text-lg font-semibold">Kids ({data.kids.length})</h2>
+      <h2 className="text-xl font-semibold">Kids ({data.kids.length})</h2>
 
       {showAdd && (
         <Card>
@@ -654,12 +654,12 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-[15px]" style={{ color: kid.color }}>{kid.name}</span>
-                      <span className="text-xs bg-secondary px-1.5 py-0.5 rounded">
+                     <span className="font-semibold text-base" style={{ color: kid.color }}>{kid.name}</span>
+                      <span className="text-sm bg-secondary px-1.5 py-0.5 rounded">
                         {level.icon} {level.name}
                       </span>
                     </div>
-                    <div className="text-sm text-muted-foreground mt-0.5">
+                    <div className="text-[15px] text-muted-foreground mt-0.5">
                       🏆 {total}pts • 🔥 {streak}d • 💰 {available}
                     </div>
                   </div>
@@ -669,28 +669,28 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
                 {/* Expanded details */}
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-0 border-t border-border space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <div className="grid grid-cols-2 gap-3 text-sm pt-3">
+                    <div className="grid grid-cols-2 gap-3 text-[15px] pt-3">
                       <div className="bg-secondary/50 rounded-lg p-3">
-                        <div className="text-muted-foreground text-xs">Total Points</div>
+                        <div className="text-muted-foreground text-sm">Total Points</div>
                         <div className="font-bold text-lg">{total}</div>
                       </div>
                       <div className="bg-secondary/50 rounded-lg p-3">
-                        <div className="text-muted-foreground text-xs">This Week</div>
+                        <div className="text-muted-foreground text-sm">This Week</div>
                         <div className="font-bold text-lg">{weekly}</div>
                       </div>
                       <div className="bg-secondary/50 rounded-lg p-3">
-                        <div className="text-muted-foreground text-xs">Streak</div>
+                        <div className="text-muted-foreground text-sm">Streak</div>
                         <div className="font-bold text-lg">🔥 {streak}d</div>
                       </div>
                       <div className="bg-secondary/50 rounded-lg p-3">
-                        <div className="text-muted-foreground text-xs">Available</div>
+                        <div className="text-muted-foreground text-sm">Available</div>
                         <div className="font-bold text-lg">💰 {available}</div>
                       </div>
                     </div>
 
                     {level.nextLevel && (
                       <div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
                           <span>Next: {level.nextLevel.icon} {level.nextLevel.name} ({level.nextLevel.minPoints}pts)</span>
                         </div>
                         <Progress value={level.progress} className="h-2" />
@@ -735,7 +735,7 @@ function RewardsTab({ data, refresh, showAdd, setShowAdd }: any) {
 
   return (
     <>
-      <h2 className="text-lg font-semibold">Rewards ({(data.rewards || []).length})</h2>
+      <h2 className="text-xl font-semibold">Rewards ({(data.rewards || []).length})</h2>
 
       {showAdd && (
         <Card>
@@ -775,8 +775,8 @@ function RewardsTab({ data, refresh, showAdd, setShowAdd }: any) {
             <CardContent className="p-4 flex items-center gap-3 min-h-[64px]">
               <span className="text-2xl">{reward.icon}</span>
               <div className="flex-1">
-                <div className="font-semibold text-[15px]">{reward.title}</div>
-                <div className="text-sm text-muted-foreground">{reward.pointsCost} points</div>
+                <div className="font-semibold text-base">{reward.title}</div>
+                <div className="text-[15px] text-muted-foreground">{reward.pointsCost} points</div>
               </div>
               <Button variant="outline" size="icon" className="h-11 w-11 text-destructive" onClick={async () => {
                 await choresApi.deleteReward(reward.id);
@@ -808,11 +808,11 @@ function LeaderboardTab({ data }: any) {
 
   return (
     <>
-      <h2 className="text-lg font-semibold">🏆 Leaderboard</h2>
+      <h2 className="text-xl font-semibold">🏆 Leaderboard</h2>
 
       <Card>
         <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-sm font-medium">📅 This Week</CardTitle>
+          <CardTitle className="text-base font-medium">📅 This Week</CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-3">
           {[...kidStats].sort((a: any, b: any) => b.weekly - a.weekly).map((stat: any, i: number) => (
@@ -820,9 +820,9 @@ function LeaderboardTab({ data }: any) {
               <span className="text-xl w-8 text-center">{trophies[i] || `${i + 1}.`}</span>
               <KidAvatar kid={stat.kid} size={36} />
               <div className="flex-1">
-                <span className="font-semibold text-[15px]" style={{ color: stat.kid.color }}>{stat.kid.name}</span>
+               <span className="font-semibold text-base" style={{ color: stat.kid.color }}>{stat.kid.name}</span>
               </div>
-              <span className="font-bold text-[15px]">{stat.weekly} pts</span>
+              <span className="font-bold text-base">{stat.weekly} pts</span>
             </div>
           ))}
         </CardContent>
@@ -830,7 +830,7 @@ function LeaderboardTab({ data }: any) {
 
       <Card>
         <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-sm font-medium">🏅 All-Time</CardTitle>
+          <CardTitle className="text-base font-medium">🏅 All-Time</CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-4">
           {kidStats.map((stat: any, i: number) => (
@@ -839,12 +839,12 @@ function LeaderboardTab({ data }: any) {
               <KidAvatar kid={stat.kid} size={40} />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[15px]" style={{ color: stat.kid.color }}>{stat.kid.name}</span>
-                  <span className="text-xs bg-secondary px-1.5 py-0.5 rounded">
+                   <span className="font-semibold text-base" style={{ color: stat.kid.color }}>{stat.kid.name}</span>
+                  <span className="text-sm bg-secondary px-1.5 py-0.5 rounded">
                     {stat.level.icon} {stat.level.name}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                <div className="flex items-center gap-3 text-[15px] text-muted-foreground mt-0.5">
                   <span>🏆 {stat.total}</span>
                   <span>✅ {stat.choresDone}</span>
                   <span>🔥 {stat.streak}d</span>
@@ -879,14 +879,14 @@ function ApprovalsTab({ data, refresh }: any) {
 
   return (
     <>
-      <h2 className="text-lg font-semibold">Pending Approvals ({totalPending})</h2>
+      <h2 className="text-xl font-semibold">Pending Approvals ({totalPending})</h2>
       {totalPending === 0 && (
-        <p className="text-[15px] text-muted-foreground">No pending approvals 🎉</p>
+        <p className="text-base text-muted-foreground">No pending approvals 🎉</p>
       )}
 
       {pendingSubmissions.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">📤 Kid Submissions</h3>
+          <h3 className="text-base font-medium text-muted-foreground">📤 Kid Submissions</h3>
           {pendingSubmissions.map((sub: ChoreSubmission) => {
             const kid = data.kids.find((k: Kid) => k.id === sub.kidId);
             return (
@@ -895,11 +895,11 @@ function ApprovalsTab({ data, refresh }: any) {
                   <div className="flex items-start gap-3">
                     <Send className="w-5 h-5 mt-1 text-muted-foreground shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-[15px]">{sub.title}</div>
-                      <div className="text-sm text-muted-foreground mt-0.5">
+                      <div className="font-semibold text-base">{sub.title}</div>
+                      <div className="text-[15px] text-muted-foreground mt-0.5">
                         By {kid && <KidAvatar kid={kid} size={18} />} {kid?.name} • {new Date(sub.submittedAt).toLocaleString()}
                       </div>
-                      {sub.note && <div className="text-sm text-muted-foreground mt-1">📝 {sub.note}</div>}
+                      {sub.note && <div className="text-[15px] text-muted-foreground mt-1">📝 {sub.note}</div>}
                       {sub.photoUrl && (
                         <PhotoThumbnail src={sub.photoUrl} onClick={() => setLightboxPhoto(sub.photoUrl!)} />
                       )}
@@ -932,7 +932,7 @@ function ApprovalsTab({ data, refresh }: any) {
                   {rejectingId !== sub.id && (
                     <div className="mt-3 space-y-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Points:</span>
+                        <span className="text-[15px] text-muted-foreground">Points:</span>
                         <select
                           className="h-12 w-20 rounded-md border border-input bg-background px-2 text-base"
                           defaultValue={5}
@@ -968,7 +968,7 @@ function ApprovalsTab({ data, refresh }: any) {
 
       {pendingLogs.length > 0 && (
         <div className="space-y-2">
-          {pendingSubmissions.length > 0 && <h3 className="text-sm font-medium text-muted-foreground">📋 Chore Completions</h3>}
+          {pendingSubmissions.length > 0 && <h3 className="text-base font-medium text-muted-foreground">📋 Chore Completions</h3>}
           {pendingLogs.map((log: any) => {
             const chore = data.chores.find((c: Chore) => c.id === log.choreId);
             const kid = data.kids.find((k: Kid) => k.id === log.kidId);
@@ -978,8 +978,8 @@ function ApprovalsTab({ data, refresh }: any) {
                   <div className="flex items-center gap-3 min-h-[56px]">
                     <span className="text-2xl">{chore?.icon}</span>
                     <div className="flex-1">
-                      <div className="font-semibold text-[15px]">{chore?.title}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="font-semibold text-base">{chore?.title}</div>
+                      <div className="text-[15px] text-muted-foreground">
                         By {kid && <KidAvatar kid={kid} size={18} />} {kid?.name} • {new Date(log.completedAt).toLocaleString()}
                       </div>
                       {log.photoUrl && (
@@ -1016,18 +1016,18 @@ function HistoryTab({ data, refresh }: any) {
 
   return (
     <>
-      <h2 className="text-lg font-semibold">Recent Activity</h2>
+      <h2 className="text-xl font-semibold">Recent Activity</h2>
 
       <Card>
         <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-sm font-medium">📊 This Week</CardTitle>
+          <CardTitle className="text-base font-medium">📊 This Week</CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           <div className="flex flex-wrap gap-3">
             {data.kids.map((kid: Kid) => {
               const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
               return (
-                <div key={kid.id} className="flex items-center gap-1.5 text-sm">
+                <div key={kid.id} className="flex items-center gap-1.5 text-[15px]">
                   <KidAvatar kid={kid} size={20} />
                   <span style={{ color: kid.color }}>{kid.name}</span>
                   <span className="text-muted-foreground">{weekly}pts</span>
@@ -1048,16 +1048,16 @@ function HistoryTab({ data, refresh }: any) {
           return (
             <Card key={log.id} className={`transition-colors ${isExpanded ? "border-primary/30" : ""}`}>
               <button
-                className="w-full text-left px-4 py-3 flex items-center gap-2 text-sm cursor-pointer min-h-[52px]"
+                className="w-full text-left px-4 py-3 flex items-center gap-2 text-[15px] cursor-pointer min-h-[52px]"
                 onClick={() => setExpandedId(isExpanded ? null : log.id)}
               >
                 <span className="text-lg">{chore?.icon}</span>
-                <span className="flex-1 truncate font-medium text-[15px]">{chore?.title}</span>
-                <span className="flex items-center gap-1 text-sm shrink-0" style={{ color: kid?.color }}>
+                <span className="flex-1 truncate font-medium text-base">{chore?.title}</span>
+                <span className="flex items-center gap-1 text-[15px] shrink-0" style={{ color: kid?.color }}>
                   {kid && <KidAvatar kid={kid} size={18} />}
                   <span className="hidden sm:inline">{kid?.name}</span>
                 </span>
-                <span className="text-xs text-muted-foreground shrink-0">
+                <span className="text-sm text-muted-foreground shrink-0">
                   {completedDate.toLocaleDateString([], { month: "short", day: "numeric" })}
                 </span>
                 {log.photoUrl && <span className="text-sm shrink-0">📷</span>}
@@ -1068,9 +1068,9 @@ function HistoryTab({ data, refresh }: any) {
 
               {isExpanded && (
                 <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[15px]">
                     <div>
-                      <span className="text-muted-foreground text-xs">Completed</span>
+                      <span className="text-muted-foreground text-sm">Completed</span>
                       <div className="font-medium">
                         {completedDate.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
                         {" "}
@@ -1078,7 +1078,7 @@ function HistoryTab({ data, refresh }: any) {
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Points</span>
+                      <span className="text-muted-foreground text-sm">Points</span>
                       <div className="font-medium">
                         +{chore?.points || 0}pts
                         {log.bonusMultiplier && log.bonusMultiplier > 1 && (
@@ -1090,22 +1090,22 @@ function HistoryTab({ data, refresh }: any) {
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Difficulty</span>
+                      <span className="text-muted-foreground text-sm">Difficulty</span>
                       <div className="font-medium">{"⭐".repeat(chore?.difficulty || 1)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Category</span>
+                      <span className="text-muted-foreground text-sm">Category</span>
                       <div className="font-medium">{chore?.category || "—"}</div>
                     </div>
                     {chore?.requireApproval && (
                       <div>
-                        <span className="text-muted-foreground text-xs">Approval</span>
+                        <span className="text-muted-foreground text-sm">Approval</span>
                         <div className="font-medium">{log.approved ? "✅ Approved" : "⏳ Pending"}</div>
                       </div>
                     )}
                     {chore?.requirePhoto && !log.photoUrl && (
                       <div>
-                        <span className="text-muted-foreground text-xs">Photo</span>
+                        <span className="text-muted-foreground text-sm">Photo</span>
                         <div className="font-medium">❌ Missing</div>
                       </div>
                     )}
@@ -1113,7 +1113,7 @@ function HistoryTab({ data, refresh }: any) {
 
                   {log.photoUrl && (
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-1">📷 Photo proof</span>
+                      <span className="text-sm text-muted-foreground block mb-1">📷 Photo proof</span>
                       <img
                         src={log.photoUrl}
                         alt="Chore proof"
@@ -1168,7 +1168,7 @@ function SettingsTab({ data, refresh }: any) {
 
   return (
     <>
-      <h2 className="text-lg font-semibold">⚙️ Settings</h2>
+      <h2 className="text-xl font-semibold">⚙️ Settings</h2>
 
       <Card>
         <CardContent className="p-4 space-y-4">
@@ -1181,7 +1181,7 @@ function SettingsTab({ data, refresh }: any) {
           <div className="flex items-center justify-between min-h-[52px] gap-3">
             <div className="flex-1">
               <Label className="text-[15px]">Notify me when kid completes</Label>
-              <p className="text-sm text-muted-foreground">Push when a chore is done</p>
+              <p className="text-[15px] text-muted-foreground">Push when a chore is done</p>
             </div>
             <Switch checked={notifyParentOnComplete} onCheckedChange={(v) => {
               setNotifyParentOnComplete(v);
@@ -1192,7 +1192,7 @@ function SettingsTab({ data, refresh }: any) {
           <div className="flex items-center justify-between min-h-[52px] gap-3">
             <div className="flex-1">
               <Label className="text-[15px]">Notify kids on new chore</Label>
-              <p className="text-sm text-muted-foreground">Kids get a push for new chores</p>
+              <p className="text-[15px] text-muted-foreground">Kids get a push for new chores</p>
             </div>
             <Switch checked={notifyKidOnNewChore} onCheckedChange={(v) => {
               setNotifyKidOnNewChore(v);
@@ -1207,7 +1207,7 @@ function SettingsTab({ data, refresh }: any) {
           <div className="flex items-center justify-between min-h-[52px] gap-3">
             <div className="flex-1">
               <Label className="text-[15px] font-semibold">🔄 Chore Rotation</Label>
-              <p className="text-sm text-muted-foreground">Auto-assign in rotating order</p>
+              <p className="text-[15px] text-muted-foreground">Auto-assign in rotating order</p>
             </div>
             <Switch checked={rotationEnabled} onCheckedChange={(v) => {
               setRotationEnabled(v);
@@ -1222,7 +1222,7 @@ function SettingsTab({ data, refresh }: any) {
           <div className="flex items-center justify-between min-h-[52px] gap-3">
             <div className="flex-1">
               <Label className="text-[15px] font-semibold">💡 Kid Suggestions</Label>
-              <p className="text-sm text-muted-foreground">Show suggested assignments</p>
+              <p className="text-[15px] text-muted-foreground">Show suggested assignments</p>
             </div>
             <Switch checked={showSuggestions} onCheckedChange={(v) => {
               setShowSuggestions(v);
@@ -1237,7 +1237,7 @@ function SettingsTab({ data, refresh }: any) {
           <div className="flex items-center justify-between min-h-[52px] gap-3">
             <div className="flex-1">
               <Label className="text-[15px] font-semibold">🏷️ Categories</Label>
-              <p className="text-sm text-muted-foreground">Tag and filter chores</p>
+              <p className="text-[15px] text-muted-foreground">Tag and filter chores</p>
             </div>
             <Switch checked={categoriesEnabled} onCheckedChange={(v) => {
               setCategoriesEnabled(v);
@@ -1278,10 +1278,10 @@ function SettingsTab({ data, refresh }: any) {
       <Card>
         <CardContent className="p-4 space-y-3">
           <Label className="text-[15px] font-semibold">🔥 Streak Bonuses</Label>
-          <p className="text-sm text-muted-foreground">Multiply points after consecutive days</p>
+          <p className="text-[15px] text-muted-foreground">Multiply points after consecutive days</p>
 
           {streakBonuses.sort((a, b) => a.daysRequired - b.daysRequired).map((sb) => (
-            <div key={sb.id} className="flex items-center gap-2 text-sm bg-secondary/50 px-4 py-3 rounded-lg min-h-[48px]">
+            <div key={sb.id} className="flex items-center gap-2 text-[15px] bg-secondary/50 px-4 py-3 rounded-lg min-h-[48px]">
               <span className="flex-1">
                 After {sb.daysRequired} days → {sb.multiplier}x points
               </span>
