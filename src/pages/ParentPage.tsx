@@ -53,13 +53,13 @@ export default function ParentPage() {
   }, []);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "chores", label: "Chores", icon: <ClipboardList className="w-5 h-5" /> },
-    { id: "kids", label: "Kids", icon: <Users className="w-5 h-5" /> },
-    { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
-    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-5 h-5" /> },
-    { id: "approvals", label: "Approve", icon: <Shield className="w-5 h-5" /> },
-    { id: "history", label: "History", icon: <History className="w-5 h-5" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
+    { id: "chores", label: "Chores", icon: <ClipboardList className="w-6 h-6" /> },
+    { id: "kids", label: "Kids", icon: <Users className="w-6 h-6" /> },
+    { id: "rewards", label: "Rewards", icon: <Gift className="w-6 h-6" /> },
+    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-6 h-6" /> },
+    { id: "approvals", label: "Approve", icon: <Shield className="w-6 h-6" /> },
+    { id: "history", label: "History", icon: <History className="w-6 h-6" /> },
+    { id: "settings", label: "Settings", icon: <Settings className="w-6 h-6" /> },
   ];
 
   const pendingApprovals = [
@@ -136,7 +136,7 @@ export default function ParentPage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-1 text-[10px] font-medium transition-colors relative ${
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-0.5 text-[10px] font-medium transition-colors relative ${
                 tab === t.id
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"
