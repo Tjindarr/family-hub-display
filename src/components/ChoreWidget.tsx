@@ -65,7 +65,7 @@ export default function ChoreWidget({ config }: Props) {
 
   return (
     <Card
-      className="widget-card cursor-pointer hover:border-primary/40 transition-all"
+      className="widget-card cursor-pointer hover:border-primary/40 transition-all h-full flex flex-col"
       onClick={() => navigate("/parent")}
     >
       <CardHeader className="pb-1 pt-3 px-3">
