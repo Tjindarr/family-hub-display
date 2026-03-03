@@ -125,7 +125,7 @@ export default function PollenWidget({ data, loading, pollenConfig }: PollenWidg
   }
 
   return (
-    <div className="h-full flex flex-col gap-1.5 p-1">
+    <div className="widget-card h-full flex flex-col gap-1.5 p-1">
       {showLabel && (
         <div className="flex items-center gap-1.5 mb-0.5">
           <Flower2 className="h-3.5 w-3.5 text-primary shrink-0" />
