@@ -54,9 +54,11 @@ export default function ChoreWidget({ config }: Props) {
   }
   if (maxVisible > 0) visibleChores = visibleChores.slice(0, maxVisible);
 
-  // Upcoming chores (not due today)
+  // Upcoming chores (not due today) — exclude any chore already in dueToday
+  const dueTodayIds = new Set(dueToday.map((c) => c.id));
   const upcoming = showUpcoming
     ? activeChores
+        .filter((c) => !dueTodayIds.has(c.id))
         .map((c) => ({ chore: c, days: daysUntilDue(c, data.logs) }))
         .filter((x) => x.days !== null && x.days > 0)
         .sort((a, b) => (a.days ?? 99) - (b.days ?? 99))
