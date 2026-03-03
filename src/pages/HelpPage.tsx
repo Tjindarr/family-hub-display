@@ -32,23 +32,23 @@ function HelpSection({ section, open, onToggle }: { section: Section; open: bool
 }
 
 function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm text-muted-foreground leading-relaxed mb-3">{children}</p>;
+  return <p className="text-base text-muted-foreground leading-relaxed mb-3">{children}</p>;
 }
 function H4({ children }: { children: React.ReactNode }) {
-  return <h4 className="text-sm font-semibold text-foreground mt-4 mb-2">{children}</h4>;
+  return <h4 className="text-base font-semibold text-foreground mt-4 mb-2">{children}</h4>;
 }
 function Code({ children }: { children: React.ReactNode }) {
-  return <code className="text-xs bg-secondary px-1.5 py-0.5 rounded text-primary">{children}</code>;
+  return <code className="text-sm bg-secondary px-1.5 py-0.5 rounded text-primary">{children}</code>;
 }
 function Ul({ children }: { children: React.ReactNode }) {
-  return <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc mb-3">{children}</ul>;
+  return <ul className="text-base text-muted-foreground space-y-1 ml-4 list-disc mb-3">{children}</ul>;
 }
 function Table({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return (
     <div className="overflow-x-auto mb-3">
-      <table className="text-xs w-full border border-border rounded">
-        <thead><tr className="bg-secondary/50">{headers.map((h, i) => <th key={i} className="px-3 py-1.5 text-left font-medium text-foreground">{h}</th>)}</tr></thead>
-        <tbody>{rows.map((row, i) => <tr key={i} className="border-t border-border">{row.map((cell, j) => <td key={j} className="px-3 py-1.5 text-muted-foreground">{cell}</td>)}</tr>)}</tbody>
+      <table className="text-sm w-full border border-border rounded">
+        <thead><tr className="bg-secondary/50">{headers.map((h, i) => <th key={i} className="px-3 py-2 text-left font-medium text-foreground">{h}</th>)}</tr></thead>
+        <tbody>{rows.map((row, i) => <tr key={i} className="border-t border-border">{row.map((cell, j) => <td key={j} className="px-3 py-2 text-muted-foreground">{cell}</td>)}</tr>)}</tbody>
       </table>
     </div>
   );
@@ -77,7 +77,7 @@ const sections: Section[] = [
         </Ul>
         <H4>CORS Configuration</H4>
         <P>Add this to your Home Assistant <Code>configuration.yaml</Code>:</P>
-        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+        <pre className="text-sm bg-secondary p-3 rounded mb-3 overflow-x-auto">
 {`http:
   cors_allowed_origins:
     - "http://YOUR_DASHBOARD_IP:3000"
@@ -93,7 +93,7 @@ const sections: Section[] = [
     content: (
       <>
         <H4>Docker Compose</H4>
-        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+        <pre className="text-sm bg-secondary p-3 rounded mb-3 overflow-x-auto">
 {`version: "3.8"
 services:
   homedash:
@@ -331,7 +331,7 @@ volumes:
       <>
         <P>All entity ID fields support dot-notation attribute access for reading specific attributes from an entity instead of its main state.</P>
         <H4>Format</H4>
-        <pre className="text-xs bg-secondary p-3 rounded mb-3">
+        <pre className="text-sm bg-secondary p-3 rounded mb-3">
 {`domain.object_id                → main state value
 domain.object_id.attribute_name  → specific attribute
 
@@ -486,7 +486,7 @@ climate.living_room.current_temperature → "22.0"`}
         
         <H4>Option 1: Nginx + Let's Encrypt (Recommended)</H4>
         <P>Set up Nginx as a reverse proxy with free Let's Encrypt SSL certificates:</P>
-        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+        <pre className="text-sm bg-secondary p-3 rounded mb-3 overflow-x-auto">
 {`server {
     listen 80;
     server_name homedash.yourdomain.com;
@@ -513,7 +513,7 @@ server {
 }`}
         </pre>
         <P>Generate certificates with Certbot:</P>
-        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+        <pre className="text-sm bg-secondary p-3 rounded mb-3 overflow-x-auto">
 {`sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d homedash.yourdomain.com`}
         </pre>
@@ -529,7 +529,7 @@ sudo certbot --nginx -d homedash.yourdomain.com`}
 
         <H4>Option 3: Caddy (Automatic HTTPS)</H4>
         <P>Caddy automatically provisions Let's Encrypt certificates with zero configuration:</P>
-        <pre className="text-xs bg-secondary p-3 rounded mb-3 overflow-x-auto">
+        <pre className="text-sm bg-secondary p-3 rounded mb-3 overflow-x-auto">
 {`homedash.yourdomain.com {
     reverse_proxy localhost:3000
 }`}
@@ -728,8 +728,8 @@ export default function HelpPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold">📖 HomeDash Documentation</h1>
-            <p className="text-xs text-muted-foreground">Complete guide to setup and configuration</p>
+            <h1 className="text-xl font-semibold">📖 HomeDash Documentation</h1>
+            <p className="text-sm text-muted-foreground">Complete guide to setup and configuration</p>
           </div>
         </div>
       </div>
@@ -752,13 +752,13 @@ export default function HelpPage() {
 
         {/* Table of contents */}
         <div className="border border-border rounded-lg p-3">
-          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Contents</h3>
+          <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-2">Contents</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
             {sections.map((s) => (
               <button
                 key={s.id}
                 onClick={() => { setOpenSections((prev) => new Set(prev).add(s.id)); document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: "smooth" }); }}
-                className="text-xs text-left text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-secondary/50 transition-colors truncate"
+                className="text-sm text-left text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-secondary/50 transition-colors truncate"
               >
                 {s.icon} {s.title}
               </button>
@@ -783,7 +783,7 @@ export default function HelpPage() {
           <p className="text-center text-muted-foreground py-8">No sections match your search.</p>
         )}
 
-        <div className="text-center text-xs text-muted-foreground py-8 border-t border-border">
+        <div className="text-center text-sm text-muted-foreground py-8 border-t border-border">
           HomeDash — Smart Home Dashboard
         </div>
       </div>
