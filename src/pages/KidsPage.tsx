@@ -323,8 +323,21 @@ export default function KidsPage() {
           </Card>
         </div>
 
+        {/* Level progress */}
+        {level.nextLevel && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-base mb-2">
+                <span className="font-medium">{level.icon} {level.name}</span>
+                <span className="text-muted-foreground">→</span>
+                <span className="font-medium">{level.nextLevel.icon} {level.nextLevel.name}</span>
+                <span className="ml-auto text-sm text-muted-foreground">{totalPoints}/{level.nextLevel.minPoints}</span>
+              </div>
+              <Progress value={level.progress} className="h-2.5" />
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Badges */}
         {badges.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {badges.map((kb: any) => {
