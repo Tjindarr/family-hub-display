@@ -51,7 +51,7 @@ export default function ParentPage() {
     if (appleTouchIcon) appleTouchIcon.href = '/icon-parent.png';
     document.title = 'HomeDash Parent';
     return () => {
-      if (manifest) manifest.setAttribute('href', '/manifest.json');
+      if (manifest) manifest.setAttribute('href', '/manifest-dashboard.json');
       if (favicon) favicon.href = '/favicon.png';
       if (appleTouchIcon) appleTouchIcon.href = '/favicon.png';
       document.title = 'HomeDash';

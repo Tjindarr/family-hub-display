@@ -1,16 +1,16 @@
 {
-  "name": "HomeDash",
-  "short_name": "HomeDash",
-  "description": "Smart home dashboard",
-  "start_url": "/",
-  "scope": "/",
+  "name": "HomeDash Kids",
+  "short_name": "Chores",
+  "description": "Kid-friendly chore tracker",
+  "start_url": "/kids",
+  "scope": "/kids",
   "display": "standalone",
   "background_color": "#1a1a2e",
   "theme_color": "#1a1a2e",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "/icon-kids.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
