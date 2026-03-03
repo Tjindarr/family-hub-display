@@ -813,6 +813,124 @@ app.delete("/api/chores/grades/:id", (req, res) => {
   res.json({ success: true });
 });
 
+// --- Grade Submissions API ---
+app.post("/api/chores/grade-submissions", (req, res) => {
+  const data = readChores();
+  data.gradeSubmissions = data.gradeSubmissions || [];
+  const sub = {
+    id: uid(),
+    kidId: req.body.kidId,
+    type: req.body.type || "exam",
+    subject: (req.body.subject || "").trim().slice(0, 100),
+    grade: (req.body.grade || "").trim().slice(0, 20),
+    term: (req.body.term || "").trim().slice(0, 50) || undefined,
+    date: req.body.date || new Date().toISOString().split("T")[0],
+    photoUrl: req.body.photoUrl || undefined,
+    submittedAt: new Date().toISOString(),
+    status: "pending",
+  };
+  data.gradeSubmissions.push(sub);
+  writeChores(data);
+
+  const kid = (data.kids || []).find((k) => k.id === sub.kidId);
+  const kidName = kid ? kid.name : "A kid";
+  sendPush("parent", {
+    title: "📝 Grade Submitted",
+    body: `${kidName} submitted: ${sub.subject} - ${sub.grade}`,
+    url: "/parent",
+    tag: `grade-sub-${sub.id}`,
+  });
+
+  res.json(sub);
+});
+
+app.put("/api/chores/grade-submissions/:id/approve", (req, res) => {
+  const data = readChores();
+  data.gradeSubmissions = data.gradeSubmissions || [];
+  const sub = data.gradeSubmissions.find((s) => s.id === req.params.id);
+  if (!sub) return res.status(404).json({ error: "Grade submission not found" });
+
+  const pointsAwarded = Number(req.body.pointsAwarded) || 0;
+  sub.status = "approved";
+  sub.reviewedAt = new Date().toISOString();
+  sub.pointsAwarded = pointsAwarded;
+
+  // Create an actual grade entry
+  data.grades = data.grades || [];
+  const grade = {
+    id: uid(),
+    kidId: sub.kidId,
+    type: sub.type,
+    subject: sub.subject,
+    grade: sub.grade,
+    term: sub.term,
+    date: sub.date,
+    pointsAwarded: pointsAwarded,
+    autoAwarded: false,
+    createdAt: new Date().toISOString(),
+  };
+  data.grades.push(grade);
+
+  // Create point log if points awarded
+  if (pointsAwarded > 0) {
+    const log = {
+      id: uid(),
+      choreId: `grade_${grade.id}`,
+      kidId: sub.kidId,
+      completedAt: grade.createdAt,
+      photoUrl: sub.photoUrl || null,
+      approved: true,
+      approvedAt: grade.createdAt,
+      undoneAt: null,
+    };
+    data.logs.push(log);
+    data.chores.push({
+      id: `grade_${grade.id}`,
+      title: `📝 ${sub.type === "term" ? "Term" : "Exam"}: ${sub.subject} (${sub.grade})`,
+      icon: "📝",
+      points: pointsAwarded,
+      difficulty: 0,
+      timeOfDay: "anytime",
+      recurrence: { type: "once" },
+      requirePhoto: false,
+      requireApproval: false,
+      paused: true,
+      createdAt: grade.createdAt,
+    });
+  }
+
+  writeChores(data);
+
+  sendPush("kid", {
+    title: "📝 Grade Approved!",
+    body: `${sub.subject}: ${sub.grade}${pointsAwarded > 0 ? ` (+${pointsAwarded}pts)` : ""}`,
+    url: "/kids",
+    tag: `grade-approved-${sub.id}`,
+  }, sub.kidId);
+
+  res.json(sub);
+});
+
+app.put("/api/chores/grade-submissions/:id/reject", (req, res) => {
+  const data = readChores();
+  data.gradeSubmissions = data.gradeSubmissions || [];
+  const sub = data.gradeSubmissions.find((s) => s.id === req.params.id);
+  if (!sub) return res.status(404).json({ error: "Grade submission not found" });
+  sub.status = "rejected";
+  sub.reviewedAt = new Date().toISOString();
+  sub.rejectionReason = (req.body.reason || "").trim().slice(0, 300) || undefined;
+  writeChores(data);
+
+  sendPush("kid", {
+    title: "❌ Grade Not Approved",
+    body: `${sub.subject}: ${sub.grade}${sub.rejectionReason ? ` - ${sub.rejectionReason}` : ""}`,
+    url: "/kids",
+    tag: `grade-rejected-${sub.id}`,
+  }, sub.kidId);
+
+  res.json(sub);
+});
+
 // --- Push Notification API ---
 app.get("/api/push/vapid-public-key", (_req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });

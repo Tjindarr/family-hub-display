@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, ChoreSubmission } from "@/lib/chores-types";
+import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, ChoreSubmission, GradeSubmission, GradeScaleEntry } from "@/lib/chores-types";
 import { GradesTab } from "@/components/GradesTab";
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
@@ -77,6 +77,7 @@ export default function ParentPage() {
       (l) => !l.undoneAt && !l.approved && data.chores.find((c) => c.id === l.choreId)?.requireApproval
     ),
     ...(data.submissions || []).filter((s: ChoreSubmission) => s.status === "pending"),
+    ...(data.gradeSubmissions || []).filter((s: GradeSubmission) => s.status === "pending"),
   ];
 
   const currentTabLabel = tabs.find((t) => t.id === tab)?.label || "Chores";
@@ -882,8 +883,12 @@ function ApprovalsTab({ data, refresh }: any) {
   const pendingSubmissions: ChoreSubmission[] = (data.submissions || []).filter(
     (s: ChoreSubmission) => s.status === "pending"
   );
+  const pendingGradeSubs: GradeSubmission[] = (data.gradeSubmissions || []).filter(
+    (s: GradeSubmission) => s.status === "pending"
+  );
+  const gradeScale: GradeScaleEntry[] = data.settings?.gradeScale || [];
 
-  const totalPending = pendingLogs.length + pendingSubmissions.length;
+  const totalPending = pendingLogs.length + pendingSubmissions.length + pendingGradeSubs.length;
 
   return (
     <>
@@ -958,6 +963,94 @@ function ApprovalsTab({ data, refresh }: any) {
                           await choresApi.approveSubmission(sub.id, pts);
                           refresh();
                           toast.success(`Approved! +${pts}pts`);
+                        }}>
+                          <Check className="w-5 h-5 mr-2" /> Approve
+                        </Button>
+                        <Button className="h-12 text-base" variant="outline" onClick={() => setRejectingId(sub.id)}>
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Grade Submissions */}
+      {pendingGradeSubs.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-base font-medium text-muted-foreground">📝 Grade Submissions</h3>
+          {pendingGradeSubs.map((sub: GradeSubmission) => {
+            const kid = data.kids.find((k: Kid) => k.id === sub.kidId);
+            const scaleEntry = gradeScale.find((s: GradeScaleEntry) => s.label === sub.grade);
+            const suggestedPoints = scaleEntry?.pointsReward ?? 0;
+            return (
+              <Card key={sub.id} className="border-yellow-500/30">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <GraduationCap className="w-5 h-5 mt-1 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-base">{sub.subject} — <span className="text-primary">{sub.grade}</span></div>
+                      <div className="text-[15px] text-muted-foreground mt-0.5">
+                        {sub.type === "term" ? "📋 Term" : "📄 Exam"} • By {kid && <KidAvatar kid={kid} size={18} />} {kid?.name} • {new Date(sub.submittedAt).toLocaleString()}
+                      </div>
+                      {sub.term && <div className="text-[15px] text-muted-foreground">Term: {sub.term}</div>}
+                      {sub.photoUrl && (
+                        <PhotoThumbnail src={sub.photoUrl} onClick={() => setLightboxPhoto(sub.photoUrl!)} />
+                      )}
+                      {rejectingId === sub.id && (
+                        <div className="mt-3 space-y-2">
+                          <Input
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            placeholder="Reason (optional)..."
+                            className="h-12 text-base"
+                          />
+                          <div className="flex gap-2">
+                            <Button className="flex-1 h-12" variant="destructive" onClick={async () => {
+                              await choresApi.rejectGradeSubmission(sub.id, rejectReason);
+                              refresh();
+                              setRejectingId(null);
+                              setRejectReason("");
+                              toast.success("Rejected");
+                            }}>
+                              Confirm Reject
+                            </Button>
+                            <Button className="h-12" variant="ghost" onClick={() => { setRejectingId(null); setRejectReason(""); }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {rejectingId !== sub.id && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[15px] text-muted-foreground">Points:</span>
+                        <select
+                          className="h-12 w-24 rounded-md border border-input bg-background px-2 text-base"
+                          defaultValue={suggestedPoints}
+                          id={`grade-pts-${sub.id}`}
+                        >
+                          {[0,5,10,15,20,25,30,40,50].map(n => (
+                            <option key={n} value={n}>{n}</option>
+                          ))}
+                        </select>
+                        {suggestedPoints > 0 && (
+                          <span className="text-xs text-muted-foreground">(scale: {suggestedPoints})</span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button className="flex-1 h-12 text-base" onClick={async () => {
+                          const sel = document.getElementById(`grade-pts-${sub.id}`) as HTMLSelectElement;
+                          const pts = parseInt(sel?.value) || 0;
+                          await choresApi.approveGradeSubmission(sub.id, pts);
+                          refresh();
+                          toast.success(`Grade approved!${pts > 0 ? ` +${pts}pts` : ""}`);
                         }}>
                           <Check className="w-5 h-5 mr-2" /> Approve
                         </Button>

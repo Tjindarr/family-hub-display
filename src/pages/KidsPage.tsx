@@ -3,12 +3,12 @@ import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
-import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, ChoreSubmission, Grade } from "@/lib/chores-types";
+import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, ChoreSubmission, Grade, GradeSubmission, GradeScaleEntry } from "@/lib/chores-types";
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS, getKidLevel,
-  getStreakBonusMultiplier,
+  getStreakBonusMultiplier, DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS,
 } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,7 @@ export default function KidsPage() {
   const [showRewards, setShowRewards] = useState(false);
   
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showSubmitGrade, setShowSubmitGrade] = useState(false);
   const [captureLogId, setCaptureLogId] = useState<string | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
@@ -190,6 +191,23 @@ export default function KidsPage() {
     );
   }
 
+  // Submit grade view
+  if (showSubmitGrade) {
+    return (
+      <>
+        <ConfettiBurst trigger={confettiTrigger} />
+        <SubmitGradeView
+          kid={kid}
+          gradeScale={data.settings?.gradeScale || DEFAULT_GRADE_SCALE}
+          subjects={data.settings?.gradeSubjects || DEFAULT_SUBJECTS}
+          onBack={() => setShowSubmitGrade(false)}
+          refresh={refresh}
+          submitPhotoRef={submitPhotoRef}
+          fireConfetti={fireConfetti}
+        />
+      </>
+    );
+  }
 
   // Rewards view
   if (showRewards) {
@@ -257,6 +275,11 @@ export default function KidsPage() {
             </div>
             <div className="flex gap-2">
               <PushNotificationToggle role="kid" kidId={kid.id} compact />
+              {data.settings?.gradesEnabled && (
+                <Button variant="outline" size="icon" className="h-11 w-11" onClick={() => setShowSubmitGrade(true)}>
+                  <GraduationCap className="w-5 h-5" />
+                </Button>
+              )}
               <Button variant="outline" size="icon" className="h-11 w-11" onClick={() => setShowSubmit(true)}>
                 <Send className="w-5 h-5" />
               </Button>
@@ -556,6 +579,55 @@ export default function KidsPage() {
             </details>
           );
         })()}
+
+        {/* Grade submissions — collapsible */}
+        {data.settings?.gradesEnabled && (() => {
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const myGradeSubs = (data.gradeSubmissions || []).filter(
+            (s: GradeSubmission) =>
+              s.kidId === kid.id &&
+              s.status !== "approved" &&
+              !(s.status === "rejected" && new Date(s.reviewedAt || s.submittedAt).getTime() < sevenDaysAgo)
+          ).sort((a: GradeSubmission, b: GradeSubmission) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+          if (myGradeSubs.length === 0) return null;
+          return (
+            <details className="group">
+              <summary className="flex items-center gap-2 cursor-pointer list-none text-lg font-semibold text-muted-foreground mb-3 select-none">
+                <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
+                📝 Grade Submissions ({myGradeSubs.length})
+              </summary>
+              <div className="space-y-3 mt-2">
+                {myGradeSubs.map((sub: GradeSubmission) => (
+                  <Card key={sub.id} className={sub.status === "rejected" ? "border-destructive/30" : "border-yellow-500/30"}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <GraduationCap className="w-6 h-6 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-lg">{sub.subject} — {sub.grade}</div>
+                          <div className="text-base text-muted-foreground mt-0.5">
+                            {sub.type === "term" ? "📋 Term" : "📄 Exam"} • {new Date(sub.date).toLocaleDateString()}
+                            {sub.term && ` • ${sub.term}`}
+                          </div>
+                          {sub.status === "rejected" && (
+                            <div className="text-base text-destructive mt-1">
+                              ❌ Rejected{sub.rejectionReason ? `: ${sub.rejectionReason}` : ""}
+                            </div>
+                          )}
+                        </div>
+                        {sub.photoUrl && (
+                          <PhotoThumbnail src={sub.photoUrl} size="sm" onClick={() => setLightboxPhoto(sub.photoUrl!)} />
+                        )}
+                        <span className={`text-sm px-2.5 py-1 rounded font-medium ${sub.status === "pending" ? "bg-yellow-500/20 text-yellow-500" : "bg-destructive/20 text-destructive"}`}>
+                          {sub.status === "pending" ? "⏳ Pending" : "Rejected"}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </details>
+          );
+        })()}
       </div>
       <PhotoLightbox src={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
     </div>
@@ -724,6 +796,227 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }:
 
         <p className="text-sm text-center text-muted-foreground">
           A parent will check and give you the points ✨
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Submit Grade View ──
+function SubmitGradeView({ kid, gradeScale, subjects, onBack, refresh, submitPhotoRef, fireConfetti }: {
+  kid: Kid;
+  gradeScale: GradeScaleEntry[];
+  subjects: string[];
+  onBack: () => void;
+  refresh: () => void;
+  submitPhotoRef: React.RefObject<HTMLInputElement>;
+  fireConfetti: () => void;
+}) {
+  const [type, setType] = useState<"exam" | "term">("exam");
+  const [subject, setSubject] = useState("");
+  const [customSubject, setCustomSubject] = useState("");
+  const [grade, setGrade] = useState("");
+  const [term, setTerm] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isCustomSubject = subject === "__custom__";
+  const finalSubject = isCustomSubject ? customSubject.trim() : subject;
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoPreview(URL.createObjectURL(file));
+    setUploading(true);
+    try {
+      const url = await choresApi.uploadPhoto(file);
+      setPhotoUrl(url);
+    } catch {
+      toast.error("Photo upload failed");
+      setPhotoPreview("");
+    }
+    setUploading(false);
+  };
+
+  const handleSubmit = async () => {
+    if (!finalSubject || !grade) {
+      toast.error("Pick a subject and grade!");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await choresApi.submitGrade({
+        kidId: kid.id,
+        type,
+        subject: finalSubject,
+        grade,
+        term: term.trim() || undefined,
+        date,
+        photoUrl: photoUrl || undefined,
+      });
+      refresh();
+      fireConfetti();
+      toast.success("📝 Grade sent! Waiting for parent to confirm");
+      onBack();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <input ref={submitPhotoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
+        <div className="max-w-lg mx-auto flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={onBack}>
+            <ArrowLeft className="w-6 h-6" />
+          </Button>
+          <h1 className="text-2xl font-bold">📝 Submit a grade</h1>
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto p-4 space-y-6">
+        {/* Type */}
+        <div>
+          <p className="text-lg text-muted-foreground mb-3">What kind?</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setType("exam")}
+              className={`flex-1 flex flex-col items-center gap-2 p-5 rounded-2xl border-2 transition-all active:scale-95 ${
+                type === "exam" ? "border-primary bg-primary/10" : "border-border bg-card"
+              }`}
+            >
+              <span className="text-4xl">📄</span>
+              <span className="text-base font-medium">Exam</span>
+            </button>
+            <button
+              onClick={() => setType("term")}
+              className={`flex-1 flex flex-col items-center gap-2 p-5 rounded-2xl border-2 transition-all active:scale-95 ${
+                type === "term" ? "border-primary bg-primary/10" : "border-border bg-card"
+              }`}
+            >
+              <span className="text-4xl">📋</span>
+              <span className="text-base font-medium">Term grade</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Subject */}
+        <div>
+          <p className="text-lg text-muted-foreground mb-3">Which subject?</p>
+          <div className="grid grid-cols-3 gap-3">
+            {subjects.map((s) => (
+              <button
+                key={s}
+                onClick={() => { setSubject(s); setCustomSubject(""); }}
+                className={`p-4 rounded-2xl border-2 text-base font-medium transition-all active:scale-95 ${
+                  subject === s ? "border-primary bg-primary/10" : "border-border bg-card"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+            <button
+              onClick={() => setSubject("__custom__")}
+              className={`p-4 rounded-2xl border-2 text-base font-medium transition-all active:scale-95 ${
+                isCustomSubject ? "border-primary bg-primary/10" : "border-border bg-card"
+              }`}
+            >
+              Other...
+            </button>
+          </div>
+          {isCustomSubject && (
+            <Input
+              value={customSubject}
+              onChange={(e) => setCustomSubject(e.target.value)}
+              placeholder="Subject name..."
+              maxLength={100}
+              className="h-14 text-lg rounded-xl mt-3"
+              autoFocus
+            />
+          )}
+        </div>
+
+        {/* Grade */}
+        {finalSubject && (
+          <div>
+            <p className="text-lg text-muted-foreground mb-3">What grade?</p>
+            <div className="flex gap-3 flex-wrap">
+              {gradeScale.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => setGrade(s.label)}
+                  className={`px-6 py-4 rounded-2xl border-2 text-xl font-bold min-w-[56px] transition-all active:scale-95 ${
+                    grade === s.label ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Term (for term grades) */}
+        {type === "term" && grade && (
+          <div>
+            <p className="text-lg text-muted-foreground mb-2">Which term?</p>
+            <Input
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder="e.g. Fall 2026"
+              maxLength={50}
+              className="h-14 text-lg rounded-xl"
+            />
+          </div>
+        )}
+
+        {/* Photo proof - optional */}
+        {grade && (
+          <div className="flex items-center gap-3">
+            {photoPreview ? (
+              <div className="relative">
+                <img src={photoPreview} alt="Preview" className="w-20 h-20 rounded-xl object-cover" />
+                {uploading && (
+                  <div className="absolute inset-0 bg-background/50 rounded-xl flex items-center justify-center">
+                    <span className="text-xs">...</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => { setPhotoPreview(""); setPhotoUrl(""); }}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <Button variant="outline" className="h-12 text-base rounded-xl" onClick={() => submitPhotoRef.current?.click()}>
+                <Camera className="w-5 h-5 mr-2" /> Add photo proof
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Submit */}
+        {grade && (
+          <Button
+            className="w-full text-xl h-14 rounded-xl"
+            size="lg"
+            disabled={!finalSubject || !grade || submitting || uploading}
+            onClick={handleSubmit}
+          >
+            <Send className="w-6 h-6 mr-2" />
+            {submitting ? "Sending..." : "Send to parent! 🚀"}
+          </Button>
+        )}
+
+        <p className="text-sm text-center text-muted-foreground">
+          A parent will verify and record your grade ✨
         </p>
       </div>
     </div>
