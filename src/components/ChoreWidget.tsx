@@ -35,7 +35,15 @@ export default function ChoreWidget({ config }: Props) {
   if (loading || data.chores.length === 0) return null;
 
   const activeChores = data.chores.filter((c) => !c.paused);
-  const dueToday = activeChores.filter((c) => isChoreDueToday(c, data.logs));
+  const dueToday = activeChores.filter((c) => {
+    if (isChoreDueToday(c, data.logs)) return true;
+    // For per-kid chores, a partial completion marks the chore as "not due" globally
+    // but it should stay due until ALL kids complete it
+    if (c.perKid) {
+      return data.kids.some((k: Kid) => !!isChoreCompletedToday(c.id, data.logs, k.id));
+    }
+    return false;
+  });
   const completedToday = dueToday.filter((c) => {
     if (c.perKid) return data.kids.every((k: Kid) => isChoreCompletedToday(c.id, data.logs, k.id));
     return isChoreCompletedToday(c.id, data.logs);
