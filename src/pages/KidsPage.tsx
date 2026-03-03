@@ -326,20 +326,6 @@ export default function KidsPage() {
           </Card>
         </div>
 
-        {/* Level progress */}
-        {level.nextLevel && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-base mb-2">
-                <span className="font-medium">{level.icon} {level.name}</span>
-                <span className="text-muted-foreground">→</span>
-                <span className="font-medium">{level.nextLevel.icon} {level.nextLevel.name}</span>
-                <span className="ml-auto text-sm text-muted-foreground">{totalPoints}/{level.nextLevel.minPoints}</span>
-              </div>
-              <Progress value={level.progress} className="h-2.5" />
-            </CardContent>
-          </Card>
-        )}
 
         {/* Badges */}
         {badges.length > 0 && (
@@ -601,11 +587,11 @@ export default function KidsPage() {
                   <Card key={sub.id} className={sub.status === "rejected" ? "border-destructive/30" : "border-yellow-500/30"}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <GraduationCap className="w-6 h-6 text-muted-foreground flex-shrink-0" />
+                        <span className="text-2xl flex-shrink-0">{sub.type === "term" ? "📋" : "📄"}</span>
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-lg">{sub.subject} — {sub.grade}</div>
                           <div className="text-base text-muted-foreground mt-0.5">
-                            {sub.type === "term" ? "📋 Term" : "📄 Exam"} • {new Date(sub.date).toLocaleDateString()}
+                            {sub.type === "term" ? "Term" : "Exam"} • {new Date(sub.date).toLocaleDateString()}
                             {sub.term && ` • ${sub.term}`}
                           </div>
                           {sub.status === "rejected" && (
