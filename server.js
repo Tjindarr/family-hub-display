@@ -967,7 +967,7 @@ app.get("/api/ha-states", (_req, res) => {
 app.use(express.static("/usr/share/nginx/html"));
 
 // SPA fallback — inject correct manifest for parent vs kids PWA
-app.get("/{*splat}", (req, res) => {
+app.get("*", (req, res) => {
   const htmlPath = "/usr/share/nginx/html/index.html";
   const isParent = req.path.startsWith("/parent");
   
