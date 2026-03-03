@@ -456,7 +456,7 @@ app.post("/api/chores/logs", (req, res) => {
   if (chore && chore.deadline && chore.earlyBonus) {
     const [dh, dm] = chore.deadline.split(":").map(Number);
     const deadlineMinutes = dh * 60 + dm;
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const nowMinutes = todayDate.getHours() * 60 + todayDate.getMinutes();
     if (nowMinutes <= deadlineMinutes) {
       earlyBonusEarned = chore.earlyBonus;
     }
@@ -466,7 +466,7 @@ app.post("/api/chores/logs", (req, res) => {
     id: uid(),
     choreId: req.body.choreId,
     kidId: req.body.kidId,
-    completedAt: now.toISOString(),
+    completedAt: todayDate.toISOString(),
     photoUrl: req.body.photoUrl || null,
     approved: false,
     approvedAt: null,
