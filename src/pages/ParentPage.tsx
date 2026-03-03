@@ -43,11 +43,17 @@ export default function ParentPage() {
   const showSuggestions = data.settings?.showSuggestions ?? true;
 
   useEffect(() => {
-    const link = document.querySelector('link[rel="manifest"]');
-    if (link) link.setAttribute('href', '/manifest-parent.json');
+    const manifest = document.querySelector('link[rel="manifest"]');
+    if (manifest) manifest.setAttribute('href', '/manifest-parent.json');
+    const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    const appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
+    if (favicon) favicon.href = '/icon-parent.png';
+    if (appleTouchIcon) appleTouchIcon.href = '/icon-parent.png';
     document.title = 'HomeDash Parent';
     return () => {
-      if (link) link.setAttribute('href', '/manifest.json');
+      if (manifest) manifest.setAttribute('href', '/manifest.json');
+      if (favicon) favicon.href = '/icon-kids.png';
+      if (appleTouchIcon) appleTouchIcon.href = '/icon-kids.png';
       document.title = 'HomeDash';
     };
   }, []);
