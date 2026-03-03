@@ -116,6 +116,22 @@ export interface Grade {
   createdAt: string;
 }
 
+export interface GradeSubmission {
+  id: string;
+  kidId: string;
+  type: GradeType;
+  subject: string;
+  grade: string;
+  term?: string;
+  date: string;
+  photoUrl?: string;
+  submittedAt: string;
+  status: "pending" | "approved" | "rejected";
+  reviewedAt?: string;
+  rejectionReason?: string;
+  pointsAwarded?: number;
+}
+
 export interface BulkTemplate {
   id: string;
   name: string;
@@ -185,6 +201,7 @@ export interface ChoresData {
   settings: ChoreSettings;
   submissions: ChoreSubmission[];
   grades: Grade[];
+  gradeSubmissions: GradeSubmission[];
 }
 
 // ── Helpers ──
@@ -236,6 +253,7 @@ export const EMPTY_CHORES_DATA: ChoresData = {
   settings: { ...DEFAULT_SETTINGS },
   submissions: [],
   grades: [],
+  gradeSubmissions: [],
 };
 
 export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
