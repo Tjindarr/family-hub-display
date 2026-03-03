@@ -516,7 +516,20 @@ export function usePersonData(
         const picResolved = resolveEntityValue(pe.entityPicture, getCachedState);
         if (picResolved.state) {
           const pic = picResolved.state.attributes?.entity_picture;
-          if (pic) pictureUrl = pic.startsWith("http") ? pic : `/api/ha${pic.startsWith("/") ? "" : "/"}${pic}`;
+          if (pic) {
+            if (pic.startsWith("http")) {
+              // Absolute HA URL — extract the path and proxy it
+              try {
+                const picUrl = new URL(pic);
+                const haPath = picUrl.pathname;
+                pictureUrl = `/api/ha${haPath.startsWith("/api") ? haPath.replace(/^\/api/, "") : haPath}`;
+              } catch {
+                pictureUrl = pic;
+              }
+            } else {
+              pictureUrl = `/api/ha${pic.startsWith("/") ? "" : "/"}${pic}`;
+            }
+          }
         }
       }
 
