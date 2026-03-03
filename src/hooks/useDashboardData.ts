@@ -516,7 +516,7 @@ export function usePersonData(
         const picResolved = resolveEntityValue(pe.entityPicture, getCachedState);
         if (picResolved.state) {
           const pic = picResolved.state.attributes?.entity_picture;
-          if (pic) pictureUrl = pic.startsWith("http") ? pic : `${config.haUrl}${pic}`;
+          if (pic) pictureUrl = pic.startsWith("http") ? pic : `/api/ha${pic.startsWith("/") ? "" : "/"}${pic}`;
         }
       }
 

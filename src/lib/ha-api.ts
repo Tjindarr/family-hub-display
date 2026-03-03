@@ -2,21 +2,18 @@ import { DashboardConfig, HAState, HACalendarEvent } from "./config";
 import type { NordpoolData } from "@/hooks/useDashboardData";
 import type { WeatherData } from "@/components/WeatherWidget";
 
+/**
+ * HA API client that proxies all requests through the server.
+ * The server adds the HA token and forwards to the HA instance,
+ * so the browser never needs the HA URL or token directly.
+ */
 class HomeAssistantAPI {
-  private baseUrl: string;
-  private token: string;
-
-  constructor(config: DashboardConfig) {
-    this.baseUrl = config.haUrl.replace(/\/$/, "");
-    this.token = config.haToken;
-  }
-
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
-    const url = `${this.baseUrl}/api${path}`;
+    // Proxy through server: /api/ha/... -> server -> HA /api/...
+    const url = `/api/ha${path}`;
     const res = await fetch(url, {
       ...options,
       headers: {
-        Authorization: `Bearer ${this.token}`,
         "Content-Type": "application/json",
         ...options?.headers,
       },
@@ -55,7 +52,6 @@ class HomeAssistantAPI {
     return this.request<HAState[][]>(path);
   }
 
-
   async getWeatherForecast(entityId: string, type: "daily" | "hourly" | "twice_daily" = "daily"): Promise<any[]> {
     try {
       const result = await this.request<any>("/services/weather/get_forecasts?return_response", {
@@ -65,11 +61,9 @@ class HomeAssistantAPI {
           type,
         }),
       });
-      
-      
-      // The REST API may wrap in service_response
+
       const data = result?.service_response || result;
-      
+
       if (data && typeof data === "object") {
         const key = Object.keys(data).find((k) => k === entityId) || Object.keys(data)[0];
         return data[key]?.forecast || [];
@@ -82,8 +76,11 @@ class HomeAssistantAPI {
   }
 }
 
-export function createHAClient(config: DashboardConfig): HomeAssistantAPI {
-  return new HomeAssistantAPI(config);
+// Singleton — no config needed since server handles auth
+const apiInstance = new HomeAssistantAPI();
+
+export function createHAClient(_config?: DashboardConfig): HomeAssistantAPI {
+  return apiInstance;
 }
 
 // Mock data for demo/unconfigured state
