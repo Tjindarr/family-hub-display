@@ -52,8 +52,8 @@ export default function ParentPage() {
     document.title = 'HomeDash Parent';
     return () => {
       if (manifest) manifest.setAttribute('href', '/manifest.json');
-      if (favicon) favicon.href = '/icon-kids.png';
-      if (appleTouchIcon) appleTouchIcon.href = '/icon-kids.png';
+      if (favicon) favicon.href = '/favicon.png';
+      if (appleTouchIcon) appleTouchIcon.href = '/favicon.png';
       document.title = 'HomeDash';
     };
   }, []);
