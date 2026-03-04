@@ -75,6 +75,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
 }
 
 const Index = () => {
+  useManifest("/manifest-dashboard.json");
   const { config, updateConfig, isConfigured } = useDashboardConfig();
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isDemo = !isConfigured;

@@ -35,6 +35,7 @@ const KID_COLORS = [
 type Tab = "chores" | "kids" | "rewards" | "approvals" | "leaderboard" | "settings" | "grades";
 
 export default function ParentPage() {
+  useManifest("/manifest-parent.json");
   const { data, refresh } = useChoresData();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("chores");
