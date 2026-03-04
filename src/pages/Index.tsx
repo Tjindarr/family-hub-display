@@ -1,6 +1,5 @@
 import { useMemo, useEffect, useState, lazy, Suspense } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useManifest } from "@/hooks/useManifest";
 
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
@@ -55,7 +54,17 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications: boolean, vehicleIds: string[], hasPollen: boolean, hasFoodMenu = false): string[] {
+function getDefaultWidgetIds(
+  tempEntities: { group?: number }[],
+  personCount: number,
+  generalSensorIds: string[],
+  sensorGridIds: string[],
+  rssIds: string[],
+  hasNotifications: boolean,
+  vehicleIds: string[],
+  hasPollen: boolean,
+  hasFoodMenu = false,
+): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -75,20 +84,27 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
 }
 
 const Index = () => {
-  useManifest("/manifest-dashboard.json", "/favicon.png", "HomeDash");
   const { config, updateConfig, isConfigured } = useDashboardConfig();
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isDemo = !isConfigured;
   const effectiveSensorGrids = useMemo(() => {
     if (!isKiosk && isDemo && (config.sensorGrids || []).length === 0) {
-      return [{ id: "demo_grid", label: "Sensors", rows: 2, columns: 3, cells: [
-        { entityId: "sensor.demo_1", label: "Humidity", icon: "droplets", unit: "%", color: "hsl(200, 70%, 55%)" },
-        { entityId: "sensor.demo_2", label: "Pressure", icon: "gauge", unit: "hPa", color: "hsl(32, 95%, 55%)" },
-        { entityId: "sensor.demo_3", label: "Wind", icon: "wind", unit: "m/s", color: "hsl(174, 72%, 50%)" },
-        { entityId: "sensor.demo_4", label: "UV Index", icon: "sun", unit: "", color: "hsl(45, 90%, 55%)" },
-        { entityId: "sensor.demo_5", label: "CO₂", icon: "cloud", unit: "ppm", color: "hsl(258, 60%, 60%)" },
-        { entityId: "sensor.demo_6", label: "Noise", icon: "volume-2", unit: "dB", color: "hsl(0, 72%, 55%)" },
-      ]}];
+      return [
+        {
+          id: "demo_grid",
+          label: "Sensors",
+          rows: 2,
+          columns: 3,
+          cells: [
+            { entityId: "sensor.demo_1", label: "Humidity", icon: "droplets", unit: "%", color: "hsl(200, 70%, 55%)" },
+            { entityId: "sensor.demo_2", label: "Pressure", icon: "gauge", unit: "hPa", color: "hsl(32, 95%, 55%)" },
+            { entityId: "sensor.demo_3", label: "Wind", icon: "wind", unit: "m/s", color: "hsl(174, 72%, 50%)" },
+            { entityId: "sensor.demo_4", label: "UV Index", icon: "sun", unit: "", color: "hsl(45, 90%, 55%)" },
+            { entityId: "sensor.demo_5", label: "CO₂", icon: "cloud", unit: "ppm", color: "hsl(258, 60%, 60%)" },
+            { entityId: "sensor.demo_6", label: "Noise", icon: "volume-2", unit: "dB", color: "hsl(0, 72%, 55%)" },
+          ],
+        },
+      ];
     }
     return config.sensorGrids || [];
   }, [isKiosk, isDemo, config.sensorGrids]);
@@ -104,23 +120,64 @@ const Index = () => {
   // Inject demo vehicle
   const effectiveVehicles = useMemo(() => {
     if (!isKiosk && isDemo && (config.vehicles || []).length === 0) {
-      return [{
-        id: "demo_vehicle",
-        name: "Tesla Model 3",
-        icon: "mdi:car-electric",
-        sections: [
-          { id: "bat", type: "battery" as const, label: "Battery", entities: [
-            { entityId: "sensor.demo_bat", label: "Battery", icon: "mdi:battery-charging-70", unit: "%", color: "hsl(120, 50%, 50%)" },
-            { entityId: "sensor.demo_range", label: "Range", icon: "mdi:map-marker-distance", unit: "km", color: "hsl(210, 80%, 55%)" },
-          ]},
-          { id: "climate", type: "climate" as const, label: "Climate", entities: [
-            { entityId: "sensor.demo_temp", label: "Interior", icon: "mdi:thermometer", unit: "°C", color: "hsl(32, 95%, 55%)" },
-          ]},
-          { id: "doors", type: "doors" as const, label: "Doors", entities: [
-            { entityId: "sensor.demo_lock", label: "Lock", icon: "mdi:car-door-lock", unit: "", color: "hsl(174, 72%, 50%)" },
-          ]},
-        ],
-      }];
+      return [
+        {
+          id: "demo_vehicle",
+          name: "Tesla Model 3",
+          icon: "mdi:car-electric",
+          sections: [
+            {
+              id: "bat",
+              type: "battery" as const,
+              label: "Battery",
+              entities: [
+                {
+                  entityId: "sensor.demo_bat",
+                  label: "Battery",
+                  icon: "mdi:battery-charging-70",
+                  unit: "%",
+                  color: "hsl(120, 50%, 50%)",
+                },
+                {
+                  entityId: "sensor.demo_range",
+                  label: "Range",
+                  icon: "mdi:map-marker-distance",
+                  unit: "km",
+                  color: "hsl(210, 80%, 55%)",
+                },
+              ],
+            },
+            {
+              id: "climate",
+              type: "climate" as const,
+              label: "Climate",
+              entities: [
+                {
+                  entityId: "sensor.demo_temp",
+                  label: "Interior",
+                  icon: "mdi:thermometer",
+                  unit: "°C",
+                  color: "hsl(32, 95%, 55%)",
+                },
+              ],
+            },
+            {
+              id: "doors",
+              type: "doors" as const,
+              label: "Doors",
+              entities: [
+                {
+                  entityId: "sensor.demo_lock",
+                  label: "Lock",
+                  icon: "mdi:car-door-lock",
+                  unit: "",
+                  color: "hsl(174, 72%, 50%)",
+                },
+              ],
+            },
+          ],
+        },
+      ];
     }
     return config.vehicles || [];
   }, [isKiosk, isDemo, config.vehicles]);
@@ -128,26 +185,28 @@ const Index = () => {
   // Inject demo general sensor
   const effectiveGeneralSensors = useMemo(() => {
     if (!isKiosk && isDemo && (config.generalSensors || []).length === 0) {
-      return [{
-        id: "demo_power",
-        label: "Power Usage",
-        showLabel: true,
-        icon: "zap",
-        showGraph: true,
-        historyHours: 24,
-        chartGrouping: "hour" as const,
-        chartSeries: [
-          { entityId: "sensor.demo_power", label: "Power", color: "hsl(45, 90%, 55%)", chartType: "area" as const },
-        ],
-        topInfo: [
-          { entityId: "sensor.demo_power_now", label: "Now", unit: "W", color: "hsl(45, 90%, 55%)" },
-          { entityId: "sensor.demo_power_today", label: "Today", unit: "kWh", color: "hsl(174, 72%, 50%)" },
-        ],
-        bottomInfo: [
-          { entityId: "sensor.demo_power_avg", label: "Avg", unit: "W", color: "hsl(215, 12%, 55%)" },
-          { entityId: "sensor.demo_power_peak", label: "Peak", unit: "W", color: "hsl(0, 72%, 55%)" },
-        ],
-      }];
+      return [
+        {
+          id: "demo_power",
+          label: "Power Usage",
+          showLabel: true,
+          icon: "zap",
+          showGraph: true,
+          historyHours: 24,
+          chartGrouping: "hour" as const,
+          chartSeries: [
+            { entityId: "sensor.demo_power", label: "Power", color: "hsl(45, 90%, 55%)", chartType: "area" as const },
+          ],
+          topInfo: [
+            { entityId: "sensor.demo_power_now", label: "Now", unit: "W", color: "hsl(45, 90%, 55%)" },
+            { entityId: "sensor.demo_power_today", label: "Today", unit: "kWh", color: "hsl(174, 72%, 50%)" },
+          ],
+          bottomInfo: [
+            { entityId: "sensor.demo_power_avg", label: "Avg", unit: "W", color: "hsl(215, 12%, 55%)" },
+            { entityId: "sensor.demo_power_peak", label: "Peak", unit: "W", color: "hsl(0, 72%, 55%)" },
+          ],
+        },
+      ];
     }
     return config.generalSensors || [];
   }, [isKiosk, isDemo, config.generalSensors]);
@@ -177,15 +236,26 @@ const Index = () => {
     return config.pollenConfig;
   }, [isKiosk, isDemo, config.pollenConfig]);
 
-  const effectiveConfig = useMemo(() => ({
-    ...config,
-    sensorGrids: effectiveSensorGrids,
-    rssFeeds: effectiveRssFeeds,
-    vehicles: effectiveVehicles,
-    generalSensors: effectiveGeneralSensors,
-    notificationConfig: effectiveNotificationConfig,
-    pollenConfig: effectivePollenConfig,
-  }), [config, effectiveSensorGrids, effectiveRssFeeds, effectiveVehicles, effectiveGeneralSensors, effectiveNotificationConfig, effectivePollenConfig]);
+  const effectiveConfig = useMemo(
+    () => ({
+      ...config,
+      sensorGrids: effectiveSensorGrids,
+      rssFeeds: effectiveRssFeeds,
+      vehicles: effectiveVehicles,
+      generalSensors: effectiveGeneralSensors,
+      notificationConfig: effectiveNotificationConfig,
+      pollenConfig: effectivePollenConfig,
+    }),
+    [
+      config,
+      effectiveSensorGrids,
+      effectiveRssFeeds,
+      effectiveVehicles,
+      effectiveGeneralSensors,
+      effectiveNotificationConfig,
+      effectivePollenConfig,
+    ],
+  );
 
   // WebSocket connection for real-time state updates
   const { getState: getCachedState, getAllStates, onStateChange, isConnected, wsState } = useHAWebSocket(config);
@@ -196,17 +266,39 @@ const Index = () => {
   const { persons, loading: personLoading } = usePersonData(config, getCachedState, onStateChange, getAllStates);
   const { weather, loading: weatherLoading } = useWeatherData(config, getCachedState, onStateChange);
   const { menuDays, loading: menuLoading } = useFoodMenuData(config);
-  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(effectiveConfig, getCachedState, onStateChange);
-  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(effectiveConfig, getCachedState, onStateChange);
+  const { dataMap: generalSensorData, loading: generalSensorLoading } = useGeneralSensorData(
+    effectiveConfig,
+    getCachedState,
+    onStateChange,
+  );
+  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(
+    effectiveConfig,
+    getCachedState,
+    onStateChange,
+  );
   const rssFeeds = effectiveRssFeeds;
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
-  const { notifications, loading: notifLoading } = useNotificationData(effectiveConfig, getCachedState, onStateChange, getAllStates);
+  const { notifications, loading: notifLoading } = useNotificationData(
+    effectiveConfig,
+    getCachedState,
+    onStateChange,
+    getAllStates,
+  );
   const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(effectiveConfig, getCachedState, onStateChange);
-  const { pollenData: rawPollenData, loading: pollenLoading } = usePollenData(effectivePollenConfig, getCachedState, onStateChange);
+  const { pollenData: rawPollenData, loading: pollenLoading } = usePollenData(
+    effectivePollenConfig,
+    getCachedState,
+    onStateChange,
+  );
 
   // Provide mock pollen data in demo mode
   const pollenData = useMemo(() => {
-    if (!isKiosk && isDemo && (effectivePollenConfig?.sensors?.length ?? 0) > 0 && rawPollenData.sensors.every(s => s.state === "unknown" || s.numericState < 0)) {
+    if (
+      !isKiosk &&
+      isDemo &&
+      (effectivePollenConfig?.sensors?.length ?? 0) > 0 &&
+      rawPollenData.sensors.every((s) => s.state === "unknown" || s.numericState < 0)
+    ) {
       const mockLevels = [1, 3, 5];
       return {
         sensors: effectivePollenConfig!.sensors.map((s, idx) => ({
@@ -232,10 +324,13 @@ const Index = () => {
   const [isBlackout, setIsBlackout] = useState(false);
   useEffect(() => {
     const blackout = config.blackout;
-    if (!blackout?.enabled || !isKiosk) { setIsBlackout(false); return; }
+    if (!blackout?.enabled || !isKiosk) {
+      setIsBlackout(false);
+      return;
+    }
     const check = () => {
       const now = new Date();
-      const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
       const { from, to } = blackout;
       if (from <= to) {
         setIsBlackout(hhmm >= from && hhmm < to);
@@ -265,32 +360,40 @@ const Index = () => {
     if (!isDemo || (config.widgetOrder && config.widgetOrder.length > 0)) return null;
     return {
       widgetOrder: [
-        "weather", "temp_group_0", "person_0",
-        "electricity", "calendar",
-        "photos", "food_menu", "notifications", "pollen",
-        "general_demo_power", "sensorgrid_demo_grid",
-        "vehicle_demo_vehicle", "rss_demo_rss",
+        "weather",
+        "temp_group_0",
+        "person_0",
+        "electricity",
+        "calendar",
+        "photos",
+        "food_menu",
+        "notifications",
+        "pollen",
+        "general_demo_power",
+        "sensorgrid_demo_grid",
+        "vehicle_demo_vehicle",
+        "rss_demo_rss",
       ],
       widgetLayouts: {
-        weather:              { colSpan: 2, row: 1, rowSpan: 1 },
-        temp_group_0:         { colSpan: 1, row: 1, rowSpan: 1 },
-        person_0:             { colSpan: 1, row: 1, rowSpan: 1 },
-        electricity:          { colSpan: 2, row: 2, rowSpan: 1 },
-        calendar:             { colSpan: 2, row: 2, rowSpan: 1 },
-        photos:               { colSpan: 2, row: 3, rowSpan: 1 },
-        food_menu:            { colSpan: 1, row: 3, rowSpan: 1 },
-        notifications:        { colSpan: 1, row: 3, rowSpan: 1, widgetGroup: "notif_pollen" },
-        pollen:               { colSpan: 1, row: 3, rowSpan: 1, widgetGroup: "notif_pollen" },
-        general_demo_power:   { colSpan: 2, row: 4, rowSpan: 1 },
+        weather: { colSpan: 2, row: 1, rowSpan: 1 },
+        temp_group_0: { colSpan: 1, row: 1, rowSpan: 1 },
+        person_0: { colSpan: 1, row: 1, rowSpan: 1 },
+        electricity: { colSpan: 2, row: 2, rowSpan: 1 },
+        calendar: { colSpan: 2, row: 2, rowSpan: 1 },
+        photos: { colSpan: 2, row: 3, rowSpan: 1 },
+        food_menu: { colSpan: 1, row: 3, rowSpan: 1 },
+        notifications: { colSpan: 1, row: 3, rowSpan: 1, widgetGroup: "notif_pollen" },
+        pollen: { colSpan: 1, row: 3, rowSpan: 1, widgetGroup: "notif_pollen" },
+        general_demo_power: { colSpan: 2, row: 4, rowSpan: 1 },
         sensorgrid_demo_grid: { colSpan: 2, row: 4, rowSpan: 1 },
         vehicle_demo_vehicle: { colSpan: 2, row: 5, rowSpan: 1 },
-        rss_demo_rss:         { colSpan: 2, row: 5, rowSpan: 1 },
+        rss_demo_rss: { colSpan: 2, row: 5, rowSpan: 1 },
       } as Record<string, any>,
       rowHeights: { 1: 220, 2: 240, 3: 280, 4: 220, 5: 200 } as Record<number, number>,
     };
   }, [isDemo, config.widgetOrder]);
 
-  const gridColumns = isMobile ? 1 : (config.gridColumns || 4);
+  const gridColumns = isMobile ? 1 : config.gridColumns || 4;
   const rowColumns = config.rowColumns || {};
   const rowHeights = demoLayout?.rowHeights || config.rowHeights || {};
   const lockHeights = config.lockWidgetHeights ?? false;
@@ -299,14 +402,28 @@ const Index = () => {
   const getFontSizes = (widgetId: string) =>
     resolveFontSizes(config.globalFontSizes, config.widgetFontSizes?.[widgetId]);
 
-  const hasNotifications = isDemo || (effectiveNotificationConfig?.showHANotifications || (effectiveNotificationConfig?.alertRules?.length > 0)) || false;
+  const hasNotifications =
+    isDemo ||
+    effectiveNotificationConfig?.showHANotifications ||
+    effectiveNotificationConfig?.alertRules?.length > 0 ||
+    false;
   const hasPollen = (effectivePollenConfig?.sensors?.length ?? 0) > 0;
 
   // Resolve ordered widget IDs
   const effectiveWidgetLayouts = demoLayout?.widgetLayouts || config.widgetLayouts || {};
   const allWidgetIds = useMemo(() => {
     const hasFoodMenu = !!(config.foodMenuConfig?.calendarEntity || config.foodMenuConfig?.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, vehicleIds, hasPollen, hasFoodMenu || isDemo);
+    const defaults = getDefaultWidgetIds(
+      config.temperatureEntities,
+      personCount,
+      generalSensorIds,
+      sensorGridIds,
+      rssIds,
+      hasNotifications,
+      vehicleIds,
+      hasPollen,
+      hasFoodMenu || isDemo,
+    );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
       const validSet = new Set(defaults);
@@ -315,7 +432,18 @@ const Index = () => {
       return [...ordered, ...missing];
     }
     return defaults;
-  }, [demoLayout, config.widgetOrder, config.temperatureEntities, personCount, generalSensorIds, sensorGridIds, rssIds, hasNotifications, hasPollen, config.foodMenuConfig]);
+  }, [
+    demoLayout,
+    config.widgetOrder,
+    config.temperatureEntities,
+    personCount,
+    generalSensorIds,
+    sensorGridIds,
+    rssIds,
+    hasNotifications,
+    hasPollen,
+    config.foodMenuConfig,
+  ]);
 
   const getWidgetGroup = (id: string) => effectiveWidgetLayouts[id]?.widgetGroup || "";
 
@@ -323,18 +451,34 @@ const Index = () => {
     const fs = getFontSizes(id);
     const ws = config.widgetStyles || {};
 
-    if (id === "electricity") return <ElectricityWidget nordpool={nordpool} loading={priceLoading} electricityStyle={config.electricityStyle} />;
-    if (id === "calendar") return <CalendarWidget events={events} loading={calLoading} fontSizes={fs} dayColor={config.calendarDayColor} timeColor={config.calendarTimeColor} display={config.calendarDisplay} timeFormat={config.globalFormat?.timeFormat} widgetStyle={ws.calendar} />;
-    if (id === "weather") return (
-      <WeatherWidget
-        weather={weather}
-        loading={weatherLoading}
-        showPrecipitation={config.weatherConfig?.showPrecipitation ?? true}
-        showSunrise={config.weatherConfig?.showSunrise ?? true}
-        showSunset={config.weatherConfig?.showSunset ?? true}
-        weatherConfig={config.weatherConfig}
-      />
-    );
+    if (id === "electricity")
+      return (
+        <ElectricityWidget nordpool={nordpool} loading={priceLoading} electricityStyle={config.electricityStyle} />
+      );
+    if (id === "calendar")
+      return (
+        <CalendarWidget
+          events={events}
+          loading={calLoading}
+          fontSizes={fs}
+          dayColor={config.calendarDayColor}
+          timeColor={config.calendarTimeColor}
+          display={config.calendarDisplay}
+          timeFormat={config.globalFormat?.timeFormat}
+          widgetStyle={ws.calendar}
+        />
+      );
+    if (id === "weather")
+      return (
+        <WeatherWidget
+          weather={weather}
+          loading={weatherLoading}
+          showPrecipitation={config.weatherConfig?.showPrecipitation ?? true}
+          showSunrise={config.weatherConfig?.showSunrise ?? true}
+          showSunset={config.weatherConfig?.showSunset ?? true}
+          weatherConfig={config.weatherConfig}
+        />
+      );
     if (id === "photos") return <PhotoWidget config={config.photoWidget} isDemo={isDemo} />;
     if (id.startsWith("temp_group_")) {
       const groupNum = parseInt(id.split("_")[2], 10);
@@ -346,9 +490,27 @@ const Index = () => {
       const idx = parseInt(id.split("_")[1], 10);
       const person = persons[idx];
       if (!person) return null;
-      return <PersonWidget person={person} loading={personLoading} fontSizes={fs} personFontSizes={config.personCardFontSizes} widgetStyle={ws.person} />;
+      return (
+        <PersonWidget
+          person={person}
+          loading={personLoading}
+          fontSizes={fs}
+          personFontSizes={config.personCardFontSizes}
+          widgetStyle={ws.person}
+        />
+      );
     }
-    if (id === "food_menu") return <FoodMenuWidget days={menuDays} loading={menuLoading} fontSizes={fs} displayMode={config.foodMenuConfig?.displayMode} style={config.foodMenuConfig?.style} showTitle={config.foodMenuConfig?.showTitle !== false} />;
+    if (id === "food_menu")
+      return (
+        <FoodMenuWidget
+          days={menuDays}
+          loading={menuLoading}
+          fontSizes={fs}
+          displayMode={config.foodMenuConfig?.displayMode}
+          style={config.foodMenuConfig?.style}
+          showTitle={config.foodMenuConfig?.showTitle !== false}
+        />
+      );
     if (id.startsWith("general_")) {
       const sensorId = id.replace("general_", "");
       const sensorConfig = effectiveGeneralSensors.find((s) => s.id === sensorId);
@@ -357,7 +519,14 @@ const Index = () => {
       const sensorFs = sensorConfig.fontSize
         ? resolveFontSizes(config.globalFontSizes, { ...config.widgetFontSizes?.[id], ...sensorConfig.fontSize })
         : fs;
-      return <GeneralSensorWidget config={sensorConfig} data={sensorData} loading={generalSensorLoading} fontSizes={sensorFs} />;
+      return (
+        <GeneralSensorWidget
+          config={sensorConfig}
+          data={sensorData}
+          loading={generalSensorLoading}
+          fontSizes={sensorFs}
+        />
+      );
     }
     if (id.startsWith("sensorgrid_")) {
       const gridId = id.replace("sensorgrid_", "");
@@ -370,7 +539,15 @@ const Index = () => {
       const rssId = id.replace("rss_", "");
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
       if (!rssCfg) return null;
-      return <RssNewsWidget items={rssData[rssId] || []} loading={rssLoading} label={rssCfg.label} fontSizes={fs} widgetStyle={ws.rss} />;
+      return (
+        <RssNewsWidget
+          items={rssData[rssId] || []}
+          loading={rssLoading}
+          label={rssCfg.label}
+          fontSizes={fs}
+          widgetStyle={ws.rss}
+        />
+      );
     }
     if (id === "notifications") {
       return <NotificationWidget notifications={notifications} loading={notifLoading} />;
@@ -379,7 +556,8 @@ const Index = () => {
       const vehicleId = id.replace("vehicle_", "");
       const vData = vehicleDataMap[vehicleId];
       if (!vData) return null;
-      const vConfig = effectiveVehicles.find(v => v.id === vehicleId) || config.vehicles?.find(v => v.id === vehicleId);
+      const vConfig =
+        effectiveVehicles.find((v) => v.id === vehicleId) || config.vehicles?.find((v) => v.id === vehicleId);
       return <VehicleWidget data={vData} loading={vehicleLoading} fontSizes={fs} vehicleConfig={vConfig} />;
     }
     if (id === "pollen") {
@@ -415,7 +593,7 @@ const Index = () => {
 
     for (const id of allWidgetIds) {
       const row = getRow(id);
-      const rowCols = isMobile ? 1 : (rowColumns[row] || gridColumns);
+      const rowCols = isMobile ? 1 : rowColumns[row] || gridColumns;
       const span = Math.min(getColSpan(id), rowCols);
       const rSpan = getRowSpan(id);
       if (!rowMap.has(row)) rowMap.set(row, []);
@@ -425,7 +603,7 @@ const Index = () => {
     const sortedRows = [...rowMap.entries()].sort((a, b) => a[0] - b[0]);
 
     return sortedRows.map(([rowNum, widgets]) => {
-      const rowCols = isMobile ? 1 : (rowColumns[rowNum] || gridColumns);
+      const rowCols = isMobile ? 1 : rowColumns[rowNum] || gridColumns;
       const totalSpan = widgets.reduce((s, w) => s + w.span, 0);
       const remaining = rowCols - totalSpan;
       let finalWidgets = widgets;
@@ -480,14 +658,12 @@ const Index = () => {
       {!isKiosk && (
         <header className="mb-4 sm:mb-6 flex items-end justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Home Dashboard
-            </h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Home Dashboard</h1>
             <div className="flex items-center gap-3">
               <Suspense fallback={null}>
                 <ConnectionStatus isConfigured={isConfigured} wsState={wsState} />
               </Suspense>
-              <span className="text-xs text-muted-foreground">v1.0.0</span>
+              <span className="text-xs text-muted-foreground">v1.2.0</span>
             </div>
           </div>
         </header>
@@ -514,21 +690,25 @@ const Index = () => {
               style={{
                 gap: "5px",
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                ...(!isMobile && heightPx ? { minHeight: `${heightPx}px`, height: `${heightPx}px` } : !isMobile ? { minHeight: '120px' } : {}),
-                ...(!isMobile && (heightPx || lockHeights) ? { overflow: 'hidden' } : {}),
+                ...(!isMobile && heightPx
+                  ? { minHeight: `${heightPx}px`, height: `${heightPx}px` }
+                  : !isMobile
+                    ? { minHeight: "120px" }
+                    : {}),
+                ...(!isMobile && (heightPx || lockHeights) ? { overflow: "hidden" } : {}),
               }}
             >
               {rendered.map(({ id, span, rSpan, groupId }) => {
                 const mobileSpan = isMobile ? 1 : span;
                 const mobileRowSpan = isMobile ? 1 : rSpan;
-                const widgetHeight = heightPx && mobileRowSpan > 1
-                  ? `${heightPx * mobileRowSpan}px`
-                  : undefined;
+                const widgetHeight = heightPx && mobileRowSpan > 1 ? `${heightPx * mobileRowSpan}px` : undefined;
 
                 // If this widget is the lead of a group, stack all group members
                 if (groupId) {
                   const groupMembers = widgets.filter((w) => getWidgetGroup(w.id) === groupId);
-                  const groupWidgets = groupMembers.map((w) => ({ id: w.id, node: renderWidget(w.id) })).filter((w) => w.node);
+                  const groupWidgets = groupMembers
+                    .map((w) => ({ id: w.id, node: renderWidget(w.id) }))
+                    .filter((w) => w.node);
                   if (groupWidgets.length === 0) return null;
                   return (
                     <div
@@ -538,13 +718,13 @@ const Index = () => {
                         gridColumn: `span ${mobileSpan}`,
                         gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
                         height: widgetHeight,
-                        minHeight: !heightPx
-                          ? (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined)
-                          : undefined,
+                        minHeight: !heightPx ? (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined) : undefined,
                       }}
                     >
                       {groupWidgets.map(({ id: wId, node }) => (
-                        <div key={wId} className="flex-1 min-h-0">{node}</div>
+                        <div key={wId} className="flex-1 min-h-0">
+                          {node}
+                        </div>
                       ))}
                     </div>
                   );
@@ -560,10 +740,14 @@ const Index = () => {
                       gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
                       height: widgetHeight,
                       minHeight: !heightPx
-                        ? (id === "photos" && isMobile ? "250px" : (mobileRowSpan > 1 ? `${mobileRowSpan * 200}px` : undefined))
+                        ? id === "photos" && isMobile
+                          ? "250px"
+                          : mobileRowSpan > 1
+                            ? `${mobileRowSpan * 200}px`
+                            : undefined
                         : undefined,
-                      ...(lockHeights ? { overflow: 'hidden' } : {}),
-                      ...(!widget ? { visibility: 'hidden' as const } : {}),
+                      ...(lockHeights ? { overflow: "hidden" } : {}),
+                      ...(!widget ? { visibility: "hidden" as const } : {}),
                     }}
                   >
                     {widget}
