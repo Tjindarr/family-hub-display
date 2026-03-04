@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useManifest } from "@/hooks/useManifest";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useChoresData } from "@/hooks/useChoresData";
@@ -20,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function KidsPage() {
+  useManifest("/manifest-kids.json", "/icon-kids.png", "HomeDash Kids");
   const { data, refresh } = useChoresData(3000);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(
     () => localStorage.getItem("chores_selected_kid")

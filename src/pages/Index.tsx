@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState, lazy, Suspense } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useManifest } from "@/hooks/useManifest";
 
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
@@ -74,6 +75,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
 }
 
 const Index = () => {
+  useManifest("/manifest-dashboard.json", "/favicon.png", "HomeDash");
   const { config, updateConfig, isConfigured } = useDashboardConfig();
   const { isKiosk, enterKiosk, exitKiosk } = useKioskMode();
   const isDemo = !isConfigured;
