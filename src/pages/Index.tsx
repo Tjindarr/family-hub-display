@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState, lazy, Suspense } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useManifest } from "@/hooks/useManifest";
 
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";

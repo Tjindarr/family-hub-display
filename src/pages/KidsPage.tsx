@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useManifest } from "@/hooks/useManifest";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { useChoresData } from "@/hooks/useChoresData";

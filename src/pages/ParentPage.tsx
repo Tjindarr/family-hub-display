@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useManifest } from "@/hooks/useManifest";
 import { useChoresData } from "@/hooks/useChoresData";
 import { choresApi } from "@/lib/chores-api";
 import type { Chore, Kid, Reward, ChoreRecurrence, TimeOfDay, RecurrenceType, ChoreSubmission, GradeSubmission, GradeScaleEntry } from "@/lib/chores-types";
