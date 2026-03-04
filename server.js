@@ -1174,13 +1174,20 @@ app.use(express.static("/usr/share/nginx/html"));
 app.get("*", (req, res) => {
   const htmlPath = "/usr/share/nginx/html/index.html";
   const isParent = req.path.startsWith("/parent");
+  const isKids = req.path.startsWith("/kids");
   
   try {
     let html = fs.readFileSync(htmlPath, "utf-8");
     if (isParent) {
-      html = html.replace('href="/manifest.json"', 'href="/manifest-parent.json"');
-      html = html.replace('content="Chores"', 'content="Parent"');
+      html = html.replace('href="/manifest-dashboard.json"', 'href="/manifest-parent.json"');
+      html = html.replace('href="/favicon.png"', 'href="/icon-parent.png"');
+      html = html.replace('content="HomeDash"', 'content="HomeDash Parent"');
       html = html.replace('<title>HomeDash</title>', '<title>HomeDash Parent</title>');
+    } else if (isKids) {
+      html = html.replace('href="/manifest-dashboard.json"', 'href="/manifest-kids.json"');
+      html = html.replace('href="/favicon.png"', 'href="/icon-kids.png"');
+      html = html.replace('content="HomeDash"', 'content="HomeDash Kids"');
+      html = html.replace('<title>HomeDash</title>', '<title>HomeDash Kids</title>');
     }
     res.set("Content-Type", "text/html");
     res.send(html);
