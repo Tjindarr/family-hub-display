@@ -65,11 +65,11 @@ export default function ParentPage() {
 
   // Bottom bar: primary navigation
   const bottomTabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "chores", label: "Chores", icon: <ClipboardList className="w-5 h-5" /> },
-    { id: "approvals", label: "Approve", icon: <Shield className="w-5 h-5" /> },
-    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-5 h-5" /> },
-    { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" /> },
-    ...(gradesEnabled ? [{ id: "grades" as Tab, label: "Grades", icon: <GraduationCap className="w-5 h-5" /> }] : []),
+    { id: "chores", label: "Chores", icon: <ClipboardList className="w-7 h-7" /> },
+    { id: "approvals", label: "Approve", icon: <Shield className="w-7 h-7" /> },
+    { id: "leaderboard", label: "Board", icon: <BarChart3 className="w-7 h-7" /> },
+    { id: "rewards", label: "Rewards", icon: <Gift className="w-7 h-7" /> },
+    ...(gradesEnabled ? [{ id: "grades" as Tab, label: "Grades", icon: <GraduationCap className="w-7 h-7" /> }] : []),
   ];
 
   const allTabs = [...bottomTabs, { id: "settings" as Tab, label: "Settings" }, { id: "kids" as Tab, label: "Kids" }];
@@ -148,13 +148,13 @@ export default function ParentPage() {
       )}
 
       {/* Bottom Tab Navigation - 4 items only */}
-      <div className="fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border pb-6 pt-1">
+      <div className="fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border pb-6 pt-1 px-4">
         <div className="max-w-2xl mx-auto flex">
           {bottomTabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2 px-0.5 text-[10px] font-medium transition-colors relative ${
+              className={`flex-1 flex flex-col items-center gap-1 py-2 px-1 text-[11px] font-medium transition-colors relative ${
                 tab === t.id
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"
