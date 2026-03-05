@@ -59,7 +59,9 @@ export interface Badge {
 export type BadgeCondition =
   | { type: "total_chores"; value: number }
   | { type: "streak_days"; value: number }
-  | { type: "total_points"; value: number };
+  | { type: "total_points"; value: number }
+  | { type: "total_grades"; value: number }
+  | { type: "grade_points"; value: number };
 
 export interface KidBadge {
   kidId: string;
@@ -224,8 +226,15 @@ export const DEFAULT_BADGES: Badge[] = [
   { id: "streak-3", name: "3-Day Streak", icon: "🔥", description: "Did chores 3 days in a row", condition: { type: "streak_days", value: 3 } },
   { id: "streak-7", name: "Weekly Warrior", icon: "💪", description: "Did chores 7 days in a row", condition: { type: "streak_days", value: 7 } },
   { id: "streak-30", name: "Monthly Master", icon: "🌟", description: "Did chores 30 days in a row", condition: { type: "streak_days", value: 30 } },
-  { id: "points-100", name: "100 Points!", icon: "💯", description: "Earned 100 points total", condition: { type: "total_points", value: 100 } },
-  { id: "points-500", name: "Point Pro", icon: "🎯", description: "Earned 500 points total", condition: { type: "total_points", value: 500 } },
+  { id: "points-100", name: "100 Points!", icon: "💯", description: "Earned 100 chore points", condition: { type: "total_points", value: 100 } },
+  { id: "points-500", name: "Point Pro", icon: "🎯", description: "Earned 500 chore points", condition: { type: "total_points", value: 500 } },
+  // Grade badges
+  { id: "first-grade", name: "First Grade!", icon: "📝", description: "Received your first grade", condition: { type: "total_grades", value: 1 } },
+  { id: "ten-grades", name: "Study Buddy", icon: "📚", description: "Received 10 grades", condition: { type: "total_grades", value: 10 } },
+  { id: "twenty-grades", name: "Bookworm", icon: "🐛", description: "Received 20 grades", condition: { type: "total_grades", value: 20 } },
+  { id: "grade-pts-50", name: "Smart Cookie", icon: "🍪", description: "Earned 50 grade points", condition: { type: "grade_points", value: 50 } },
+  { id: "grade-pts-200", name: "Academic Star", icon: "🌟", description: "Earned 200 grade points", condition: { type: "grade_points", value: 200 } },
+  { id: "grade-pts-500", name: "Scholar Elite", icon: "🎓", description: "Earned 500 grade points", condition: { type: "grade_points", value: 500 } },
 ];
 
 export const DEFAULT_GRADE_SCALE: GradeScaleEntry[] = [
