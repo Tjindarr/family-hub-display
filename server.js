@@ -915,6 +915,22 @@ app.put("/api/chores/grade-submissions/:id/approve", (req, res) => {
     });
   }
 
+  // Check grade badges
+  const allKidGrades2 = (data.grades || []).filter((g) => g.kidId === sub.kidId);
+  const totalGrades2 = allKidGrades2.length;
+  const totalGradePoints2 = allKidGrades2.reduce((s, g) => s + (g.pointsAwarded || 0), 0);
+  const existingBadgeIds2 = new Set((data.kidBadges || []).filter((kb) => kb.kidId === sub.kidId).map((kb) => kb.badgeId));
+  for (const badge of data.badges || []) {
+    if (existingBadgeIds2.has(badge.id)) continue;
+    let earned = false;
+    if (badge.condition.type === "total_grades" && totalGrades2 >= badge.condition.value) earned = true;
+    if (badge.condition.type === "grade_points" && totalGradePoints2 >= badge.condition.value) earned = true;
+    if (earned) {
+      data.kidBadges = data.kidBadges || [];
+      data.kidBadges.push({ kidId: sub.kidId, badgeId: badge.id, earnedAt: new Date().toISOString() });
+    }
+  }
+
   writeChores(data);
 
   sendPush("kid", {
