@@ -21,6 +21,10 @@ import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Clock, Send
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function KidsPage() {
   useManifest("/manifest-kids.json", "/icon-kids.png", "HomeDash Kids");
@@ -65,6 +69,7 @@ export default function KidsPage() {
   const fireConfetti = useCallback(() => setConfettiTrigger((t) => t + 1), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const submitPhotoRef = useRef<HTMLInputElement>(null);
+  const [pendingNoteChore, setPendingNoteChore] = useState<Chore | null>(null);
 
   // If no kid selected, show kid picker
   if (!selectedKid) {
@@ -128,6 +133,11 @@ export default function KidsPage() {
   })).filter((g) => g.chores.length > 0);
 
   const handleComplete = async (chore: Chore) => {
+    // Show completion note popup if configured
+    if (chore.completionNote && !pendingNoteChore) {
+      setPendingNoteChore(chore);
+      return;
+    }
     if (chore.requirePhoto) {
       setCaptureLogId(chore.id);
       fileInputRef.current?.click();
