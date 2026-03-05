@@ -544,6 +544,8 @@ const DEFAULT_CONFIG: DashboardConfig = {
     weekdayHour: 16,
     weekendHour: 10,
     maxChoresInNotification: 3,
+    streakReminderEnabled: false,
+    streakReminderHour: 18,
   },
 };
 
