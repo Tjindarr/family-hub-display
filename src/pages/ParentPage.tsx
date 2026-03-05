@@ -856,7 +856,17 @@ function LeaderboardTab({ data, refresh }: any) {
               <div className="flex-1">
                <span className="font-semibold text-base" style={{ color: stat.kid.color }}>{stat.kid.name}</span>
               </div>
-              <span className="font-bold text-base">{stat.weekly} pts</span>
+              <div className="text-right">
+                <span className="font-bold text-base">{stat.weeklyChore}</span>
+                <span className="text-sm text-muted-foreground"> chore</span>
+                {gradesEnabled && (
+                  <>
+                    <span className="text-sm text-muted-foreground"> + </span>
+                    <span className="font-bold text-sm">{stat.weekly - stat.weeklyChore}</span>
+                    <span className="text-sm text-muted-foreground"> grade</span>
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </CardContent>
