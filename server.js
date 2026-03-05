@@ -1274,6 +1274,47 @@ function scheduleDailyReminder() {
         }
       }
     }
+
+    // ── Streak reminder ──
+    const streakEnabled = reminderConfig.streakReminderEnabled || false;
+    const streakHour = reminderConfig.streakReminderHour ?? 18;
+    if (streakEnabled && hour === streakHour && minute === 0) {
+      const data = readChores();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (const kid of (data.kids || [])) {
+        // Check if kid has a streak (at least 2 days)
+        const kidLogs = (data.logs || []).filter((l) => l.kidId === kid.id && !l.undoneAt && !l.choreId.startsWith("grade_"));
+        const dates = new Set(kidLogs.map((l) => {
+          const d = new Date(l.completedAt);
+          return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        }));
+
+        // Calculate streak (excluding today)
+        let streak = 0;
+        for (let i = 1; i < 365; i++) {
+          const checkDate = new Date(today.getTime() - i * 86400000);
+          const key = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
+          if (dates.has(key)) streak++;
+          else break;
+        }
+
+        if (streak < 2) continue; // Only remind if they have a real streak
+
+        // Check if they've done anything today
+        const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+        if (dates.has(todayKey)) continue; // Already did a chore today
+
+        console.log(`[PUSH] Streak reminder for ${kid.name} (${streak}-day streak)`);
+        sendPush("kid", {
+          title: `🔥 Don't break your ${streak}-day streak!`,
+          body: `You haven't done any chores today. Keep it going, ${kid.name}!`,
+          tag: `streak-reminder-${kid.id}-${now.toISOString().slice(0, 10)}`,
+          url: "/kids",
+        }, kid.id);
+      }
+    }
   };
 
   // Check every 60 seconds

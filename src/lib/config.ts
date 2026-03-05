@@ -295,6 +295,8 @@ export interface ChoreReminderConfig {
   weekdayHour: number; // 0-23
   weekendHour: number; // 0-23
   maxChoresInNotification: number; // how many chore names to include
+  streakReminderEnabled: boolean;
+  streakReminderHour: number; // 0-23
 }
 
 export interface ChoreWidgetConfig {
@@ -542,6 +544,8 @@ const DEFAULT_CONFIG: DashboardConfig = {
     weekdayHour: 16,
     weekendHour: 10,
     maxChoresInNotification: 3,
+    streakReminderEnabled: false,
+    streakReminderHour: 18,
   },
 };
 

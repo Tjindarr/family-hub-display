@@ -268,7 +268,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     showScoreboard: true, showUpcoming: true, showFairness: true, showCompleted: true, showAllChores: false, maxVisible: 0,
   });
   const [choreReminderConfig, setChoreReminderConfig] = useState<ChoreReminderConfig>(config.choreReminderConfig || {
-    enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3,
+    enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3, streakReminderEnabled: false, streakReminderHour: 18,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
@@ -673,6 +673,31 @@ function WidgetStyleControls({ style, onChange, fields }: {
                             className="mt-1 bg-muted border-border text-sm"
                           />
                         </div>
+                      </div>
+                    )}
+
+                    {/* Streak Reminder */}
+                    <div className="flex items-center gap-3 mt-3">
+                      <Switch
+                        checked={choreReminderConfig.streakReminderEnabled}
+                        onCheckedChange={(checked) => setChoreReminderConfig((prev) => ({ ...prev, streakReminderEnabled: checked }))}
+                      />
+                      <Label className="text-sm text-foreground">Streak reminder</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Remind kids with an active streak to do a chore before they lose it.
+                    </p>
+                    {choreReminderConfig.streakReminderEnabled && (
+                      <div className="w-1/3">
+                        <Label className="text-xs text-muted-foreground">Reminder hour</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={23}
+                          value={choreReminderConfig.streakReminderHour}
+                          onChange={(e) => setChoreReminderConfig((prev) => ({ ...prev, streakReminderHour: parseInt(e.target.value) || 18 }))}
+                          className="mt-1 bg-muted border-border text-sm"
+                        />
                       </div>
                     )}
                   </div>
