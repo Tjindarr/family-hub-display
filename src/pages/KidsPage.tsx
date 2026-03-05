@@ -667,6 +667,45 @@ export default function KidsPage() {
         })()}
       </div>
       <PhotoLightbox src={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
+
+      {/* Completion note confirmation dialog */}
+      <AlertDialog open={!!pendingNoteChore} onOpenChange={(open) => { if (!open) setPendingNoteChore(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">{pendingNoteChore?.icon} {pendingNoteChore?.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {pendingNoteChore?.completionNote}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-12 text-base">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="h-12 text-base" onClick={() => {
+              if (pendingNoteChore) {
+                const chore = pendingNoteChore;
+                setPendingNoteChore(null);
+                // Re-call handleComplete, now pendingNoteChore is cleared so it proceeds
+                if (chore.requirePhoto) {
+                  setCaptureLogId(chore.id);
+                  fileInputRef.current?.click();
+                } else {
+                  (async () => {
+                    try {
+                      await choresApi.completeChore(chore.id, kid.id);
+                      refresh();
+                      fireConfetti();
+                      toast.success(`✅ ${chore.title} done! +${chore.points}pts`);
+                    } catch (e: any) {
+                      toast.error(e.message);
+                    }
+                  })();
+                }
+              }
+            }}>
+              Done! ✅
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
