@@ -647,12 +647,14 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
 
       <div className="space-y-2">
         {data.kids.map((kid: Kid) => {
-          const total = getKidTotalPoints(kid.id, data.logs, data.chores, data.grades);
+          const chorePoints = getKidChorePoints(kid.id, data.logs, data.chores);
+          const gradePoints = getKidGradePoints(kid.id, data.grades);
+          const total = chorePoints + gradePoints;
           const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores, data.grades);
           const streak = getKidStreak(kid.id, data.logs);
           const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards, data.grades);
           const badges = (data.kidBadges || []).filter((kb: any) => kb.kidId === kid.id);
-          const level = getKidLevel(total);
+          const level = getKidLevel(chorePoints);
           const isExpanded = expandedKidId === kid.id;
 
           return (
