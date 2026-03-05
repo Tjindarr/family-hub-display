@@ -11,6 +11,7 @@ import {
   getKidChorePoints, getKidGradePoints, getKidWeeklyChorePoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS, getKidLevel,
   getStreakBonusMultiplier, DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS,
+  GRADE_LEVEL_DEFINITIONS,
 } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,7 @@ export default function KidsPage() {
           <p className="text-muted-foreground text-xl mb-8">Tap your name to see your chores</p>
           <div className="grid grid-cols-2 gap-5 w-full max-w-md">
             {data.kids.map((kid) => {
-              const total = getKidTotalPoints(kid.id, data.logs, data.chores, data.grades);
+              const total = getKidChorePoints(kid.id, data.logs, data.chores);
               const level = getKidLevel(total);
               return (
                 <button
@@ -105,7 +106,8 @@ export default function KidsPage() {
   const streak = getKidStreak(kid.id, data.logs);
   const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards, data.grades);
   const badges = (data.kidBadges || []).filter((kb: any) => kb.kidId === kid.id);
-  const level = getKidLevel(totalPoints);
+  const level = getKidLevel(chorePoints);
+  const gradeLevel = data.settings?.gradesEnabled ? getKidLevel(gradePoints, GRADE_LEVEL_DEFINITIONS) : null;
   const streakBonus = getStreakBonusMultiplier(streak, data.settings?.streakBonuses || []);
 
   // Get due chores grouped by time of day
@@ -338,19 +340,34 @@ export default function KidsPage() {
         </div>
 
         {/* Level progress */}
-        {level.nextLevel && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-base mb-2">
-                <span className="font-medium">{level.icon} {level.name}</span>
-                <span className="text-muted-foreground">→</span>
-                <span className="font-medium">{level.nextLevel.icon} {level.nextLevel.name}</span>
-                <span className="ml-auto text-sm text-muted-foreground">{totalPoints}/{level.nextLevel.minPoints}</span>
-              </div>
-              <Progress value={level.progress} className="h-2.5" />
-            </CardContent>
-          </Card>
-        )}
+        <div className="space-y-3">
+          {level.nextLevel && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-base mb-2">
+                  <span className="font-medium">{level.icon} {level.name}</span>
+                  <span className="text-muted-foreground">→</span>
+                  <span className="font-medium">{level.nextLevel.icon} {level.nextLevel.name}</span>
+                  <span className="ml-auto text-sm text-muted-foreground">{chorePoints}/{level.nextLevel.minPoints}</span>
+                </div>
+                <Progress value={level.progress} className="h-2.5" />
+              </CardContent>
+            </Card>
+          )}
+          {gradeLevel?.nextLevel && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-base mb-2">
+                  <span className="font-medium">{gradeLevel.icon} {gradeLevel.name}</span>
+                  <span className="text-muted-foreground">→</span>
+                  <span className="font-medium">{gradeLevel.nextLevel.icon} {gradeLevel.nextLevel.name}</span>
+                  <span className="ml-auto text-sm text-muted-foreground">{gradePoints}/{gradeLevel.nextLevel.minPoints}</span>
+                </div>
+                <Progress value={gradeLevel.progress} className="h-2.5" />
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {badges.length > 0 && (
           <div className="flex flex-wrap gap-2">

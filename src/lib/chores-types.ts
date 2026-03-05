@@ -162,16 +162,26 @@ export const LEVEL_DEFINITIONS: LevelDefinition[] = [
   { name: "Legend", icon: "🏆", minPoints: 3000 },
 ];
 
-export function getKidLevel(totalPoints: number): LevelDefinition & { level: number; nextLevel?: LevelDefinition; progress: number } {
-  let current = LEVEL_DEFINITIONS[0];
+export const GRADE_LEVEL_DEFINITIONS: LevelDefinition[] = [
+  { name: "Student", icon: "📖", minPoints: 0 },
+  { name: "Learner", icon: "📝", minPoints: 30 },
+  { name: "Scholar", icon: "🎓", minPoints: 100 },
+  { name: "Honor Roll", icon: "📜", minPoints: 250 },
+  { name: "Dean's List", icon: "🌟", minPoints: 500 },
+  { name: "Valedictorian", icon: "🏅", minPoints: 1000 },
+  { name: "Genius", icon: "🧠", minPoints: 2000 },
+];
+
+export function getKidLevel(totalPoints: number, levels: LevelDefinition[] = LEVEL_DEFINITIONS): LevelDefinition & { level: number; nextLevel?: LevelDefinition; progress: number } {
+  let current = levels[0];
   let level = 1;
-  for (let i = 1; i < LEVEL_DEFINITIONS.length; i++) {
-    if (totalPoints >= LEVEL_DEFINITIONS[i].minPoints) {
-      current = LEVEL_DEFINITIONS[i];
+  for (let i = 1; i < levels.length; i++) {
+    if (totalPoints >= levels[i].minPoints) {
+      current = levels[i];
       level = i + 1;
     }
   }
-  const nextLevel = level < LEVEL_DEFINITIONS.length ? LEVEL_DEFINITIONS[level] : undefined;
+  const nextLevel = level < levels.length ? levels[level] : undefined;
   const progress = nextLevel
     ? ((totalPoints - current.minPoints) / (nextLevel.minPoints - current.minPoints)) * 100
     : 100;
