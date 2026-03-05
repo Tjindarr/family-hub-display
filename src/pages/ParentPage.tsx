@@ -12,7 +12,7 @@ import {
   getKidChorePoints, getKidGradePoints, getKidWeeklyChorePoints,
   getKidStreak, getKidAvailablePoints, getKidSpentPoints, suggestFairKid,
   WEEKDAY_LABELS, TIME_OF_DAY_LABELS, daysUntilDue, getKidLevel,
-  getStreakBonusMultiplier,
+  getStreakBonusMultiplier, GRADE_LEVEL_DEFINITIONS,
   DEFAULT_SETTINGS, DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS,
 } from "@/lib/chores-types";
 import { Button } from "@/components/ui/button";
@@ -828,9 +828,10 @@ function LeaderboardTab({ data, refresh }: any) {
     const weeklyChore = getKidWeeklyChorePoints(kid.id, data.logs, data.chores);
     const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores, data.grades);
     const streak = getKidStreak(kid.id, data.logs);
-    const level = getKidLevel(total);
+    const level = getKidLevel(chorePoints);
+    const gradeLevel = gradesEnabled ? getKidLevel(gradePoints, GRADE_LEVEL_DEFINITIONS) : null;
     const choresDone = data.logs.filter((l: any) => l.kidId === kid.id && !l.undoneAt && !l.choreId.startsWith("grade_")).length;
-    return { kid, total, weekly, weeklyChore, streak, level, choresDone, chorePoints, gradePoints };
+    return { kid, total, weekly, weeklyChore, streak, level, gradeLevel, choresDone, chorePoints, gradePoints };
   }).sort((a: any, b: any) => b.total - a.total);
 
   const trophies = ["🥇", "🥈", "🥉"];
@@ -882,11 +883,16 @@ function LeaderboardTab({ data, refresh }: any) {
               <span className="text-xl w-8 text-center">{trophies[i] || `${i + 1}.`}</span>
               <KidAvatar kid={stat.kid} size={40} />
               <div className="flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                    <span className="font-semibold text-base" style={{ color: stat.kid.color }}>{stat.kid.name}</span>
                   <span className="text-sm bg-secondary px-1.5 py-0.5 rounded">
                     {stat.level.icon} {stat.level.name}
                   </span>
+                  {gradesEnabled && stat.gradeLevel && (
+                    <span className="text-sm bg-secondary px-1.5 py-0.5 rounded">
+                      {stat.gradeLevel.icon} {stat.gradeLevel.name}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 text-[15px] text-muted-foreground mt-0.5">
                   <span>🏆 {stat.chorePoints}</span>
@@ -896,6 +902,9 @@ function LeaderboardTab({ data, refresh }: any) {
                 </div>
                 {stat.level.nextLevel && (
                   <Progress value={stat.level.progress} className="h-1.5 mt-1.5" />
+                )}
+                {gradesEnabled && stat.gradeLevel?.nextLevel && (
+                  <Progress value={stat.gradeLevel.progress} className="h-1.5 mt-1" />
                 )}
               </div>
             </div>
