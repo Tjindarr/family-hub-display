@@ -33,6 +33,7 @@ export interface Chore {
   earlyBonus?: number; // bonus points for completing before deadline
   rotationKids?: string[]; // kid IDs for auto-rotation assignment
   perKid?: boolean; // if true, each kid can complete independently
+  completionNote?: string; // optional popup message shown when completing
 }
 
 export interface ChoreLog {

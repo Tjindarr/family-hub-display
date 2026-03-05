@@ -374,6 +374,7 @@ function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled
   const [deadline, setDeadline] = useState(chore?.deadline ?? "");
   const [earlyBonus, setEarlyBonus] = useState(chore?.earlyBonus ?? 0);
   const [rotationKids, setRotationKids] = useState<string[]>(chore?.rotationKids ?? []);
+  const [completionNote, setCompletionNote] = useState(chore?.completionNote ?? "");
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -388,6 +389,7 @@ function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled
       deadline: deadline || undefined,
       earlyBonus: earlyBonus > 0 ? earlyBonus : undefined,
       rotationKids: rotationKids.length > 0 ? rotationKids : undefined,
+      completionNote: completionNote.trim() || undefined,
     });
   };
 
@@ -541,6 +543,12 @@ function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled
             <Label className="text-[15px]">Each kid completes</Label>
             <Switch checked={perKid} onCheckedChange={setPerKid} />
           </div>
+        </div>
+
+        <div>
+          <Label className="text-sm font-medium">Completion popup (optional)</Label>
+          <Input value={completionNote} onChange={(e) => setCompletionNote(e.target.value)} placeholder="e.g. Also wipe the stove!" className="mt-1 h-12 text-base" />
+          <p className="text-xs text-muted-foreground mt-1">Shows a confirmation popup when a kid marks this done</p>
         </div>
 
         <div className="flex gap-2">

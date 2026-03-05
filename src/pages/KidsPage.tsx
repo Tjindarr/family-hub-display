@@ -21,6 +21,10 @@ import { Check, Undo2, Camera, Trophy, Gift, Flame, Star, ArrowLeft, Clock, Send
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function KidsPage() {
   useManifest("/manifest-kids.json", "/icon-kids.png", "HomeDash Kids");
@@ -65,6 +69,7 @@ export default function KidsPage() {
   const fireConfetti = useCallback(() => setConfettiTrigger((t) => t + 1), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const submitPhotoRef = useRef<HTMLInputElement>(null);
+  const [pendingNoteChore, setPendingNoteChore] = useState<Chore | null>(null);
 
   // If no kid selected, show kid picker
   if (!selectedKid) {
@@ -128,6 +133,11 @@ export default function KidsPage() {
   })).filter((g) => g.chores.length > 0);
 
   const handleComplete = async (chore: Chore) => {
+    // Show completion note popup if configured
+    if (chore.completionNote && !pendingNoteChore) {
+      setPendingNoteChore(chore);
+      return;
+    }
     if (chore.requirePhoto) {
       setCaptureLogId(chore.id);
       fileInputRef.current?.click();
@@ -657,6 +667,45 @@ export default function KidsPage() {
         })()}
       </div>
       <PhotoLightbox src={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
+
+      {/* Completion note confirmation dialog */}
+      <AlertDialog open={!!pendingNoteChore} onOpenChange={(open) => { if (!open) setPendingNoteChore(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">{pendingNoteChore?.icon} {pendingNoteChore?.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {pendingNoteChore?.completionNote}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-12 text-base">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="h-12 text-base" onClick={() => {
+              if (pendingNoteChore) {
+                const chore = pendingNoteChore;
+                setPendingNoteChore(null);
+                // Re-call handleComplete, now pendingNoteChore is cleared so it proceeds
+                if (chore.requirePhoto) {
+                  setCaptureLogId(chore.id);
+                  fileInputRef.current?.click();
+                } else {
+                  (async () => {
+                    try {
+                      await choresApi.completeChore(chore.id, kid.id);
+                      refresh();
+                      fireConfetti();
+                      toast.success(`✅ ${chore.title} done! +${chore.points}pts`);
+                    } catch (e: any) {
+                      toast.error(e.message);
+                    }
+                  })();
+                }
+              }
+            }}>
+              Done! ✅
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
