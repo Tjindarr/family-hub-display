@@ -11,6 +11,7 @@ import {
   getKidChorePoints, getKidGradePoints, getKidWeeklyChorePoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS, getKidLevel,
   getStreakBonusMultiplier, DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS,
+  GRADE_LEVEL_DEFINITIONS,
 } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Button } from "@/components/ui/button";
