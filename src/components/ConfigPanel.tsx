@@ -193,7 +193,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -202,6 +202,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...(hasFoodMenu ? ["food_menu"] : []),
     "weather",
     "photos",
+    ...(hasChores ? ["chores"] : []),
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
