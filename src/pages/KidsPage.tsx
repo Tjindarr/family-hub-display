@@ -304,42 +304,38 @@ export default function KidsPage() {
         )}
 
         {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className={`grid gap-3 ${data.settings?.gradesEnabled ? "grid-cols-4" : "grid-cols-3"}`}>
           <Card>
-            <CardContent className="p-4 text-center">
-              <Trophy className="w-6 h-6 mx-auto mb-1.5 text-yellow-500" />
-              <div className="text-2xl font-bold">{chorePoints}</div>
-              <div className="text-sm text-muted-foreground">Chore pts</div>
+            <CardContent className="p-3 text-center">
+              <Trophy className="w-5 h-5 mx-auto mb-1 text-yellow-500" />
+              <div className="text-xl font-bold">{chorePoints}</div>
+              <div className="text-[11px] text-muted-foreground">Chore pts</div>
+            </CardContent>
+          </Card>
+          {data.settings?.gradesEnabled && (
+            <Card>
+              <CardContent className="p-3 text-center">
+                <GraduationCap className="w-5 h-5 mx-auto mb-1 text-primary" />
+                <div className="text-xl font-bold">{gradePoints}</div>
+                <div className="text-[11px] text-muted-foreground">Grade pts</div>
+              </CardContent>
+            </Card>
+          )}
+          <Card>
+            <CardContent className="p-3 text-center">
+              <Flame className="w-5 h-5 mx-auto mb-1 text-orange-500" />
+              <div className="text-xl font-bold">{streak}</div>
+              <div className="text-[11px] text-muted-foreground">Day streak</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <Flame className="w-6 h-6 mx-auto mb-1.5 text-orange-500" />
-              <div className="text-2xl font-bold">{streak}</div>
-              <div className="text-sm text-muted-foreground">Day streak</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Star className="w-6 h-6 mx-auto mb-1.5 text-primary" />
-              <div className="text-2xl font-bold">{weeklyChorePoints}</div>
-              <div className="text-sm text-muted-foreground">This week</div>
+            <CardContent className="p-3 text-center">
+              <Star className="w-5 h-5 mx-auto mb-1 text-primary" />
+              <div className="text-xl font-bold">{weeklyChorePoints}</div>
+              <div className="text-[11px] text-muted-foreground">This week</div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Grade points (if grades enabled) */}
-        {data.settings?.gradesEnabled && gradePoints > 0 && (
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <GraduationCap className="w-6 h-6 text-primary" />
-              <div className="flex-1">
-                <span className="font-medium text-base">Grade points</span>
-              </div>
-              <span className="text-2xl font-bold text-primary">{gradePoints}</span>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Level progress */}
         {level.nextLevel && (
