@@ -8,6 +8,7 @@ import type { Kid, Chore, ChoreLog, Reward, TimeOfDay, ChoreSubmission, Grade, G
 import { PhotoLightbox, PhotoThumbnail, PhotoIndicator } from "@/components/PhotoLightbox";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
+  getKidChorePoints, getKidGradePoints, getKidWeeklyChorePoints,
   getKidStreak, getKidAvailablePoints, TIME_OF_DAY_LABELS, getKidLevel,
   getStreakBonusMultiplier, DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS,
 } from "@/lib/chores-types";
