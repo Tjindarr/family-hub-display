@@ -75,7 +75,7 @@ export default function KidsPage() {
           <p className="text-muted-foreground text-xl mb-8">Tap your name to see your chores</p>
           <div className="grid grid-cols-2 gap-5 w-full max-w-md">
             {data.kids.map((kid) => {
-              const total = getKidTotalPoints(kid.id, data.logs, data.chores, data.grades);
+              const total = getKidChorePoints(kid.id, data.logs, data.chores);
               const level = getKidLevel(total);
               return (
                 <button
