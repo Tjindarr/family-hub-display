@@ -74,7 +74,7 @@ export default function KidsPage() {
           <p className="text-muted-foreground text-xl mb-8">Tap your name to see your chores</p>
           <div className="grid grid-cols-2 gap-5 w-full max-w-md">
             {data.kids.map((kid) => {
-              const total = getKidTotalPoints(kid.id, data.logs, data.chores);
+              const total = getKidTotalPoints(kid.id, data.logs, data.chores, data.grades);
               const level = getKidLevel(total);
               return (
                 <button
@@ -98,10 +98,12 @@ export default function KidsPage() {
   }
 
   const kid = selectedKid;
-  const totalPoints = getKidTotalPoints(kid.id, data.logs, data.chores);
-  const weeklyPoints = getKidWeeklyPoints(kid.id, data.logs, data.chores);
+  const chorePoints = getKidChorePoints(kid.id, data.logs, data.chores);
+  const gradePoints = getKidGradePoints(kid.id, data.grades);
+  const totalPoints = chorePoints + gradePoints;
+  const weeklyChorePoints = getKidWeeklyChorePoints(kid.id, data.logs, data.chores);
   const streak = getKidStreak(kid.id, data.logs);
-  const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards);
+  const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards, data.grades);
   const badges = (data.kidBadges || []).filter((kb: any) => kb.kidId === kid.id);
   const level = getKidLevel(totalPoints);
   const streakBonus = getStreakBonusMultiplier(streak, data.settings?.streakBonuses || []);
@@ -306,8 +308,8 @@ export default function KidsPage() {
           <Card>
             <CardContent className="p-4 text-center">
               <Trophy className="w-6 h-6 mx-auto mb-1.5 text-yellow-500" />
-              <div className="text-2xl font-bold">{totalPoints}</div>
-              <div className="text-sm text-muted-foreground">Total pts</div>
+              <div className="text-2xl font-bold">{chorePoints}</div>
+              <div className="text-sm text-muted-foreground">Chore pts</div>
             </CardContent>
           </Card>
           <Card>
@@ -320,11 +322,24 @@ export default function KidsPage() {
           <Card>
             <CardContent className="p-4 text-center">
               <Star className="w-6 h-6 mx-auto mb-1.5 text-primary" />
-              <div className="text-2xl font-bold">{weeklyPoints}</div>
+              <div className="text-2xl font-bold">{weeklyChorePoints}</div>
               <div className="text-sm text-muted-foreground">This week</div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Grade points (if grades enabled) */}
+        {data.settings?.gradesEnabled && gradePoints > 0 && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <GraduationCap className="w-6 h-6 text-primary" />
+              <div className="flex-1">
+                <span className="font-medium text-base">Grade points</span>
+              </div>
+              <span className="text-2xl font-bold text-primary">{gradePoints}</span>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Level progress */}
         {level.nextLevel && (
