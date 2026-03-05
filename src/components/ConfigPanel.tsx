@@ -268,7 +268,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     showScoreboard: true, showUpcoming: true, showFairness: true, showCompleted: true, showAllChores: false, maxVisible: 0,
   });
   const [choreReminderConfig, setChoreReminderConfig] = useState<ChoreReminderConfig>(config.choreReminderConfig || {
-    enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3,
+    enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3, streakReminderEnabled: false, streakReminderHour: 18,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
