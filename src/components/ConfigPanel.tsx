@@ -280,7 +280,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const vcIds = (config.vehicles || []).map((v) => v.id);
     const hn = (config.notificationConfig?.showHANotifications || (config.notificationConfig?.alertRules?.length > 0)) ?? false;
     const hasFM = !!(config.foodMenuConfig?.calendarEntity || config.foodMenuConfig?.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -314,7 +314,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const rsIds = rssFeeds.map((s) => s.id);
     const vcIds = vehicles.map((v) => v.id);
     const hasFM = !!(foodMenuConfig.calendarEntity || foodMenuConfig.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
