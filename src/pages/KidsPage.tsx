@@ -348,7 +348,7 @@ export default function KidsPage() {
                   <span className="font-medium">{level.icon} {level.name}</span>
                   <span className="text-muted-foreground">→</span>
                   <span className="font-medium">{level.nextLevel.icon} {level.nextLevel.name}</span>
-                  <span className="ml-auto text-sm text-muted-foreground">{chorePoints}/{level.nextLevel.minPoints}</span>
+                  <span className="ml-auto text-sm text-muted-foreground">{chorePoints - level.minPoints}/{level.nextLevel.minPoints - level.minPoints}</span>
                 </div>
                 <Progress value={level.progress} className="h-2.5" />
               </CardContent>
@@ -361,7 +361,7 @@ export default function KidsPage() {
                   <span className="font-medium">{gradeLevel.icon} {gradeLevel.name}</span>
                   <span className="text-muted-foreground">→</span>
                   <span className="font-medium">{gradeLevel.nextLevel.icon} {gradeLevel.nextLevel.name}</span>
-                  <span className="ml-auto text-sm text-muted-foreground">{gradePoints}/{gradeLevel.nextLevel.minPoints}</span>
+                  <span className="ml-auto text-sm text-muted-foreground">{gradePoints - gradeLevel.minPoints}/{gradeLevel.nextLevel.minPoints - gradeLevel.minPoints}</span>
                 </div>
                 <Progress value={gradeLevel.progress} className="h-2.5" />
               </CardContent>
