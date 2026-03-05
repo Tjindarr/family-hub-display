@@ -1,7 +1,7 @@
 import { useChoresData } from "@/hooks/useChoresData";
 import type { Kid, Chore } from "@/lib/chores-types";
 import type { ChoreWidgetConfig } from "@/lib/config";
-import { isChoreDueToday, isChoreCompletedToday, daysUntilDue, getKidWeeklyPoints, suggestFairKid } from "@/lib/chores-types";
+import { isChoreDueToday, isChoreCompletedToday, daysUntilDue, getKidWeeklyChorePoints, suggestFairKid } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@iconify/react";
@@ -197,7 +197,7 @@ export default function ChoreWidget({ config }: Props) {
         {showScoreboard && data.kids.length > 0 && (
           <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-x-3 gap-y-1">
             {data.kids.map((kid: Kid) => {
-              const pts = getKidWeeklyPoints(kid.id, data.logs, data.chores);
+              const pts = getKidWeeklyChorePoints(kid.id, data.logs, data.chores);
               return (
                 <span key={kid.id} className="text-xs flex items-center gap-2" style={{ fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
                   <KidAvatar kid={kid} size={avatarSize - 2} />
