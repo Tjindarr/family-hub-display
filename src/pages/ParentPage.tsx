@@ -647,10 +647,10 @@ function KidsTab({ data, refresh, showAdd, setShowAdd }: any) {
 
       <div className="space-y-2">
         {data.kids.map((kid: Kid) => {
-          const total = getKidTotalPoints(kid.id, data.logs, data.chores);
-          const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
+          const total = getKidTotalPoints(kid.id, data.logs, data.chores, data.grades);
+          const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores, data.grades);
           const streak = getKidStreak(kid.id, data.logs);
-          const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards);
+          const available = getKidAvailablePoints(kid.id, data.logs, data.chores, data.rewardClaims, data.rewards, data.grades);
           const badges = (data.kidBadges || []).filter((kb: any) => kb.kidId === kid.id);
           const level = getKidLevel(total);
           const isExpanded = expandedKidId === kid.id;
@@ -819,13 +819,18 @@ function LeaderboardTab({ data, refresh }: any) {
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const gradesEnabled = data.settings?.gradesEnabled ?? false;
+
   const kidStats = data.kids.map((kid: Kid) => {
-    const total = getKidTotalPoints(kid.id, data.logs, data.chores);
-    const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores);
+    const chorePoints = getKidChorePoints(kid.id, data.logs, data.chores);
+    const gradePoints = getKidGradePoints(kid.id, data.grades);
+    const total = chorePoints + gradePoints;
+    const weeklyChore = getKidWeeklyChorePoints(kid.id, data.logs, data.chores);
+    const weekly = getKidWeeklyPoints(kid.id, data.logs, data.chores, data.grades);
     const streak = getKidStreak(kid.id, data.logs);
     const level = getKidLevel(total);
-    const choresDone = data.logs.filter((l: any) => l.kidId === kid.id && !l.undoneAt).length;
-    return { kid, total, weekly, streak, level, choresDone };
+    const choresDone = data.logs.filter((l: any) => l.kidId === kid.id && !l.undoneAt && !l.choreId.startsWith("grade_")).length;
+    return { kid, total, weekly, weeklyChore, streak, level, choresDone, chorePoints, gradePoints };
   }).sort((a: any, b: any) => b.total - a.total);
 
   const trophies = ["🥇", "🥈", "🥉"];
@@ -874,7 +879,8 @@ function LeaderboardTab({ data, refresh }: any) {
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-[15px] text-muted-foreground mt-0.5">
-                  <span>🏆 {stat.total}</span>
+                  <span>🏆 {stat.chorePoints}</span>
+                  {gradesEnabled && stat.gradePoints > 0 && <span>📝 {stat.gradePoints}</span>}
                   <span>✅ {stat.choresDone}</span>
                   <span>🔥 {stat.streak}d</span>
                 </div>
