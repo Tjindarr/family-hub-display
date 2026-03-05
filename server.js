@@ -776,6 +776,22 @@ app.post("/api/chores/grades", (req, res) => {
     });
   }
 
+  // Check grade badges
+  const allKidGrades = (data.grades || []).filter((g) => g.kidId === grade.kidId);
+  const totalGrades = allKidGrades.length;
+  const totalGradePoints = allKidGrades.reduce((s, g) => s + (g.pointsAwarded || 0), 0);
+  const existingBadgeIds = new Set((data.kidBadges || []).filter((kb) => kb.kidId === grade.kidId).map((kb) => kb.badgeId));
+  for (const badge of data.badges || []) {
+    if (existingBadgeIds.has(badge.id)) continue;
+    let earned = false;
+    if (badge.condition.type === "total_grades" && totalGrades >= badge.condition.value) earned = true;
+    if (badge.condition.type === "grade_points" && totalGradePoints >= badge.condition.value) earned = true;
+    if (earned) {
+      data.kidBadges = data.kidBadges || [];
+      data.kidBadges.push({ kidId: grade.kidId, badgeId: badge.id, earnedAt: new Date().toISOString() });
+    }
+  }
+
   writeChores(data);
 
   const kid = (data.kids || []).find((k) => k.id === grade.kidId);
