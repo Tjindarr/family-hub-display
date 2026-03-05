@@ -407,11 +407,16 @@ export function getKidStreak(kidId: string, logs: ChoreLog[]): number {
   return streak;
 }
 
-/** Get total points for a kid (including bonuses) */
-export function getKidTotalPoints(kidId: string, logs: ChoreLog[], chores: Chore[]): number {
+/** Get total points for a kid (including bonuses) — chores + grades combined */
+export function getKidTotalPoints(kidId: string, logs: ChoreLog[], chores: Chore[], grades?: Grade[]): number {
+  return getKidChorePoints(kidId, logs, chores) + getKidGradePoints(kidId, grades);
+}
+
+/** Get chore-only points for a kid (excludes grade_ virtual chores) */
+export function getKidChorePoints(kidId: string, logs: ChoreLog[], chores: Chore[]): number {
   const choreMap = new Map(chores.map((c) => [c.id, c]));
   return logs
-    .filter((l) => l.kidId === kidId && !l.undoneAt)
+    .filter((l) => l.kidId === kidId && !l.undoneAt && !l.choreId.startsWith("grade_"))
     .reduce((sum, l) => {
       const basePoints = choreMap.get(l.choreId)?.points ?? 0;
       const multiplier = l.bonusMultiplier || 1;
@@ -420,19 +425,38 @@ export function getKidTotalPoints(kidId: string, logs: ChoreLog[], chores: Chore
     }, 0);
 }
 
-/** Get weekly points for a kid */
-export function getKidWeeklyPoints(kidId: string, logs: ChoreLog[], chores: Chore[]): number {
+/** Get grade-only points for a kid */
+export function getKidGradePoints(kidId: string, grades?: Grade[]): number {
+  if (!grades) return 0;
+  return grades
+    .filter((g) => g.kidId === kidId)
+    .reduce((sum, g) => sum + (g.pointsAwarded || 0), 0);
+}
+
+/** Get weekly chore-only points for a kid */
+export function getKidWeeklyChorePoints(kidId: string, logs: ChoreLog[], chores: Chore[]): number {
   const choreMap = new Map(chores.map((c) => [c.id, c]));
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
   return logs
-    .filter((l) => l.kidId === kidId && !l.undoneAt && new Date(l.completedAt) >= weekAgo)
+    .filter((l) => l.kidId === kidId && !l.undoneAt && !l.choreId.startsWith("grade_") && new Date(l.completedAt) >= weekAgo)
     .reduce((sum, l) => {
       const basePoints = choreMap.get(l.choreId)?.points ?? 0;
       const multiplier = l.bonusMultiplier || 1;
       const earlyBonus = l.earlyBonusEarned || 0;
       return sum + (basePoints * multiplier) + earlyBonus;
     }, 0);
+}
+
+/** Get weekly points for a kid (chores + grades combined) */
+export function getKidWeeklyPoints(kidId: string, logs: ChoreLog[], chores: Chore[], grades?: Grade[]): number {
+  const choreWeekly = getKidWeeklyChorePoints(kidId, logs, chores);
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const gradeWeekly = (grades || [])
+    .filter((g) => g.kidId === kidId && new Date(g.date) >= weekAgo)
+    .reduce((sum, g) => sum + (g.pointsAwarded || 0), 0);
+  return choreWeekly + gradeWeekly;
 }
 
 /** Get spent points (redeemed rewards) */
@@ -443,9 +467,9 @@ export function getKidSpentPoints(kidId: string, claims: RewardClaim[], rewards:
     .reduce((sum, c) => sum + (rewardMap.get(c.rewardId)?.pointsCost ?? 0), 0);
 }
 
-/** Get available points (total - spent) */
-export function getKidAvailablePoints(kidId: string, logs: ChoreLog[], chores: Chore[], claims: RewardClaim[], rewards: Reward[]): number {
-  return getKidTotalPoints(kidId, logs, chores) - getKidSpentPoints(kidId, claims, rewards);
+/** Get available points (total - spent) — uses combined chore + grade points */
+export function getKidAvailablePoints(kidId: string, logs: ChoreLog[], chores: Chore[], claims: RewardClaim[], rewards: Reward[], grades?: Grade[]): number {
+  return getKidTotalPoints(kidId, logs, chores, grades) - getKidSpentPoints(kidId, claims, rewards);
 }
 
 /** Suggest which kid should do a chore based on fairness or rotation */
