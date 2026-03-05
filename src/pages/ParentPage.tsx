@@ -9,6 +9,7 @@ import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { KidAvatar } from "@/components/KidAvatar";
 import {
   isChoreDueToday, isChoreCompletedToday, getKidTotalPoints, getKidWeeklyPoints,
+  getKidChorePoints, getKidGradePoints, getKidWeeklyChorePoints,
   getKidStreak, getKidAvailablePoints, getKidSpentPoints, suggestFairKid,
   WEEKDAY_LABELS, TIME_OF_DAY_LABELS, daysUntilDue, getKidLevel,
   getStreakBonusMultiplier,
