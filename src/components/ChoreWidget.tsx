@@ -150,14 +150,36 @@ export default function ChoreWidget({ config }: Props) {
         {/* Upcoming */}
         {upcoming.length > 0 && (
           <div className="mt-2 pt-2 border-t border-border">
-            {upcoming.map(({ chore, days }) => (
-              <div key={chore.id} className="flex items-center gap-2 text-muted-foreground" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
-                <span className="text-base">{chore.icon}</span>
-                <span className="flex-1 truncate">{chore.title}</span>
-                <UrgencyDot days={days ?? 99} size={urgencyDotSize} />
-                <span className="text-xs">{days}d</span>
-              </div>
-            ))}
+            {upcoming.map(({ chore, days }) => {
+              const doneKids = chore.perKid
+                ? data.kids.filter((k: Kid) => !!isChoreCompletedToday(chore.id, data.logs, k.id))
+                : null;
+              const singleLog = !chore.perKid ? isChoreCompletedToday(chore.id, data.logs) : null;
+              const singleKid = singleLog ? data.kids.find((k: Kid) => k.id === singleLog.kidId) : null;
+
+              return (
+                <div key={chore.id} className="flex items-center gap-2 text-muted-foreground" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
+                  <span className="text-base">{chore.icon}</span>
+                  <span className="flex-1 truncate">{chore.title}</span>
+                  {doneKids && doneKids.length > 0 && (
+                    <span className="flex items-center gap-0.5">
+                      {doneKids.map((k) => (
+                        <span key={k.id} className="opacity-60">
+                          <KidAvatar kid={k} size={avatarSize - 2} />
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                  {singleKid && (
+                    <span className="text-xs flex items-center gap-1 opacity-60" style={{ color: singleKid.color }}>
+                      <KidAvatar kid={singleKid} size={avatarSize - 2} />
+                    </span>
+                  )}
+                  <UrgencyDot days={days ?? 99} size={urgencyDotSize} />
+                  <span className="text-xs">{days}d</span>
+                </div>
+              );
+            })}
           </div>
         )}
 
