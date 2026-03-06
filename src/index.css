@@ -253,7 +253,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', 'Noto Color Emoji', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
 
   .font-mono {
