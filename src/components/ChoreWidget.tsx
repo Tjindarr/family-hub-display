@@ -1,11 +1,15 @@
 import { useChoresData } from "@/hooks/useChoresData";
 import type { Kid, Chore } from "@/lib/chores-types";
 import type { ChoreWidgetConfig } from "@/lib/config";
-import { isChoreDueToday, isChoreCompletedToday, isChoreCompletedInCycle, daysUntilDue, getKidWeeklyChorePoints, suggestFairKid } from "@/lib/chores-types";
+import { isChoreDueToday, isChoreCompletedToday, isChoreCompletedInCycle, daysUntilDue, suggestFairKid } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
+import { UrgencyDot } from "@/components/chores/UrgencyDot";
+import { ChoreWidgetUpcoming } from "@/components/chores/ChoreWidgetUpcoming";
+import { ChoreWidgetCompletedEntry } from "@/components/chores/ChoreWidgetCompletedEntry";
+import { ChoreWidgetScoreboard } from "@/components/chores/ChoreWidgetScoreboard";
 
 interface Props {
   config?: ChoreWidgetConfig;
@@ -37,8 +41,6 @@ export default function ChoreWidget({ config }: Props) {
   const activeChores = data.chores.filter((c) => !c.paused);
   const dueToday = activeChores.filter((c) => {
     if (isChoreDueToday(c, data.logs)) return true;
-    // For per-kid chores, a partial completion marks the chore as "not due" globally
-    // but it should stay due until ALL kids complete it
     if (c.perKid) {
       return data.kids.some((k: Kid) => !!isChoreCompletedInCycle(c, data.logs, k.id));
     }
@@ -54,6 +56,7 @@ export default function ChoreWidget({ config }: Props) {
     if (c.perKid) return data.kids.every((k: Kid) => isChoreCompletedInCycle(c, data.logs, k.id));
     return !!isChoreCompletedToday(c.id, data.logs);
   };
+
   let visibleChores: Chore[];
   if (showAllChores) {
     visibleChores = showCompleted ? activeChores : activeChores.filter((c) => !isFullyCompleted(c));
@@ -62,7 +65,6 @@ export default function ChoreWidget({ config }: Props) {
   }
   if (maxVisible > 0) visibleChores = visibleChores.slice(0, maxVisible);
 
-  // Upcoming chores (not due today) — exclude any chore already in dueToday
   const dueTodayIds = new Set(dueToday.map((c) => c.id));
   const upcoming = showUpcoming
     ? activeChores
@@ -70,7 +72,7 @@ export default function ChoreWidget({ config }: Props) {
         .map((c) => ({ chore: c, days: daysUntilDue(c, data.logs) }))
         .filter((x) => x.days !== null && x.days > 0)
         .sort((a, b) => (a.days ?? 99) - (b.days ?? 99))
-        .slice(0, 3)
+        .slice(0, 3) as { chore: Chore; days: number }[]
     : [];
 
   return (
@@ -97,7 +99,7 @@ export default function ChoreWidget({ config }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="px-3 pb-3 flex-1 flex flex-col">
-        {/* Today's chores (pending) */}
+        {/* Pending chores */}
         <div className="space-y-1">
           {visibleChores.filter((c) => !isFullyCompleted(c)).map((chore) => {
             const log = isChoreCompletedToday(chore.id, data.logs);
@@ -148,127 +150,54 @@ export default function ChoreWidget({ config }: Props) {
         </div>
 
         {/* Upcoming */}
-        {upcoming.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-border">
-            {upcoming.map(({ chore, days }) => {
-              // Find who last completed this chore (not just today — it's upcoming so completion may be days ago)
-              const choreLogs = data.logs
-                .filter((l: any) => l.choreId === chore.id && !l.undoneAt)
-                .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+        <ChoreWidgetUpcoming
+          upcoming={upcoming}
+          kids={data.kids}
+          logs={data.logs}
+          avatarSize={avatarSize}
+          choreTextSize={choreTextSize}
+          urgencyDotSize={urgencyDotSize}
+        />
 
-              let lastKids: Kid[] = [];
-              if (chore.perKid) {
-                // Find unique kids from the most recent completion cycle
-                const seen = new Set<string>();
-                for (const log of choreLogs) {
-                  if (!seen.has(log.kidId)) {
-                    seen.add(log.kidId);
-                    const kid = data.kids.find((k: Kid) => k.id === log.kidId);
-                    if (kid) lastKids.push(kid);
-                  }
-                  if (seen.size >= data.kids.length) break;
-                }
-              } else {
-                const lastLog = choreLogs[0];
-                if (lastLog) {
-                  const kid = data.kids.find((k: Kid) => k.id === lastLog.kidId);
-                  if (kid) lastKids = [kid];
-                }
-              }
-
-              return (
-                <div key={chore.id} className="flex items-center gap-2 text-muted-foreground" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
-                  <span className="text-base">{chore.icon}</span>
-                  <span className="flex-1 truncate">{chore.title}</span>
-                  {lastKids.length > 0 && (
-                    <span className="flex items-center gap-0.5">
-                      {lastKids.map((k) => (
-                        <span key={k.id} className="opacity-60">
-                          <KidAvatar kid={k} size={avatarSize - 2} />
-                        </span>
-                      ))}
-                    </span>
-                  )}
-                  <UrgencyDot days={days ?? 99} size={urgencyDotSize} />
-                  <span className="text-xs">{days}d</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Spacer to push done + scoreboard to bottom */}
+        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Completed chores */}
+        {/* Completed */}
         {showCompleted && (() => {
-          // Collect completed entries: fully done chores + per-kid partial completions
-          const completedEntries: { chore: Chore; doneKids: Kid[] }[] = [];
-          for (const chore of visibleChores) {
-            if (chore.perKid) {
-              const done = data.kids.filter((k: Kid) => !!isChoreCompletedInCycle(chore, data.logs, k.id));
-              if (done.length > 0) completedEntries.push({ chore, doneKids: done });
-            } else if (isFullyCompleted(chore)) {
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const todayLogs = data.logs.filter(
-                (l: any) => l.choreId === chore.id && !l.undoneAt && new Date(l.completedAt).getTime() >= today.getTime()
-              );
-              const doneKids = todayLogs
-                .map((l: any) => data.kids.find((k: Kid) => k.id === l.kidId))
-                .filter((k: Kid | undefined): k is Kid => !!k)
-                .filter((k: Kid, i: number, arr: Kid[]) => arr.findIndex((x) => x.id === k.id) === i);
-              completedEntries.push({ chore, doneKids });
-            }
-          }
-          if (completedEntries.length === 0) return null;
+          const completedChores = visibleChores.filter((c) => {
+            if (c.perKid) return data.kids.some((k: Kid) => !!isChoreCompletedInCycle(c, data.logs, k.id));
+            return isFullyCompleted(c);
+          });
+          if (completedChores.length === 0) return null;
           return (
             <div className="space-y-1 mt-2 pt-2 border-t border-border">
-              {completedEntries.map(({ chore, doneKids }) => (
-                <div key={chore.id} className="flex items-center gap-2" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
-                  <span className="text-base">{chore.icon}</span>
-                  <span className="flex-1 truncate line-through" style={{ color: "hsl(var(--muted-foreground))" }}>
-                    {chore.title}
-                  </span>
-                  {doneKids.length > 0 && (
-                    <span className="flex items-center gap-0.5">
-                      {doneKids.map((k) => (
-                        <span key={k.id} className="flex items-center gap-1" style={{ color: k.color }}>
-                          <KidAvatar kid={k} size={avatarSize - 2} />
-                        </span>
-                      ))}
-                    </span>
-                  )}
-                </div>
+              {completedChores.map((chore) => (
+                <ChoreWidgetCompletedEntry
+                  key={chore.id}
+                  chore={chore}
+                  kids={data.kids}
+                  logs={data.logs}
+                  avatarSize={avatarSize}
+                  choreTextSize={choreTextSize}
+                  choreTextColor={choreTextColor}
+                />
               ))}
             </div>
           );
         })()}
 
-        {/* Weekly scoreboard */}
-        {showScoreboard && data.kids.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-x-3 gap-y-1">
-            {data.kids.map((kid: Kid) => {
-              const pts = getKidWeeklyChorePoints(kid.id, data.logs, data.chores);
-              return (
-                <span key={kid.id} className="text-xs flex items-center gap-2" style={{ fontSize: ptsTextSize ? `${ptsTextSize}px` : undefined }}>
-                  <KidAvatar kid={kid} size={avatarSize - 2} />
-                  <span style={{ color: ptsTextColor || kid.color }}>{pts}pts</span>
-                </span>
-              );
-            })}
-          </div>
+        {/* Scoreboard */}
+        {showScoreboard && (
+          <ChoreWidgetScoreboard
+            kids={data.kids}
+            logs={data.logs}
+            chores={data.chores}
+            avatarSize={avatarSize}
+            ptsTextSize={ptsTextSize}
+            ptsTextColor={ptsTextColor}
+          />
         )}
       </CardContent>
     </Card>
   );
-}
-
-function UrgencyDot({ days, size = 8 }: { days: number; size?: number }) {
-  const color = days === 0
-    ? "hsl(0 72% 55%)"
-    : days <= 1
-    ? "hsl(45 90% 50%)"
-    : "hsl(120 50% 50%)";
-  return <span className="rounded-full inline-block" style={{ backgroundColor: color, width: size, height: size }} />;
 }
