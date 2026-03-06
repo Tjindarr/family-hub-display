@@ -133,7 +133,7 @@ export function useSensorGridData(
 
   // WS listener
   useEffect(() => {
-    if (!onStateChange || !checkConfigured(config)) return;
+    if (!onStateChange) return;
     const entityIds = new Set<string>();
     for (const grid of (config.sensorGrids || [])) {
       for (const cell of grid.cells) {
