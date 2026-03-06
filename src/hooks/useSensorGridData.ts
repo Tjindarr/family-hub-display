@@ -40,7 +40,6 @@ export function useSensorGridData(
   }, [config, getCachedState]);
 
   const fetchHistory = useCallback(async () => {
-    if (!checkConfigured(config)) return;
     const grids = config.sensorGrids || [];
     const chartEntities = new Set<string>();
     for (const grid of grids) {
