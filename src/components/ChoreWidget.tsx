@@ -40,18 +40,18 @@ export default function ChoreWidget({ config }: Props) {
     // For per-kid chores, a partial completion marks the chore as "not due" globally
     // but it should stay due until ALL kids complete it
     if (c.perKid) {
-      return data.kids.some((k: Kid) => !!isChoreCompletedToday(c.id, data.logs, k.id));
+      return data.kids.some((k: Kid) => !!isChoreCompletedInCycle(c, data.logs, k.id));
     }
     return false;
   });
   const completedToday = dueToday.filter((c) => {
-    if (c.perKid) return data.kids.every((k: Kid) => isChoreCompletedToday(c.id, data.logs, k.id));
+    if (c.perKid) return data.kids.every((k: Kid) => isChoreCompletedInCycle(c, data.logs, k.id));
     return isChoreCompletedToday(c.id, data.logs);
   });
   const pendingToday = dueToday.length - completedToday.length;
 
   const isFullyCompleted = (c: Chore) => {
-    if (c.perKid) return data.kids.every((k: Kid) => isChoreCompletedToday(c.id, data.logs, k.id));
+    if (c.perKid) return data.kids.every((k: Kid) => isChoreCompletedInCycle(c, data.logs, k.id));
     return !!isChoreCompletedToday(c.id, data.logs);
   };
   let visibleChores: Chore[];
@@ -105,10 +105,10 @@ export default function ChoreWidget({ config }: Props) {
             const fairKid = showFairness && !log ? suggestFairKid(chore.id, data.kids, data.logs, chore.rotationKids, data.settings?.rotationEnabled) : null;
 
             const pendingKids = chore.perKid
-              ? data.kids.filter((k: Kid) => !isChoreCompletedToday(chore.id, data.logs, k.id))
+              ? data.kids.filter((k: Kid) => !isChoreCompletedInCycle(chore, data.logs, k.id))
               : null;
             const doneKids = chore.perKid
-              ? data.kids.filter((k: Kid) => !!isChoreCompletedToday(chore.id, data.logs, k.id))
+              ? data.kids.filter((k: Kid) => !!isChoreCompletedInCycle(chore, data.logs, k.id))
               : null;
 
             return (
@@ -206,7 +206,7 @@ export default function ChoreWidget({ config }: Props) {
           const completedEntries: { chore: Chore; doneKids: Kid[] }[] = [];
           for (const chore of visibleChores) {
             if (chore.perKid) {
-              const done = data.kids.filter((k: Kid) => !!isChoreCompletedToday(chore.id, data.logs, k.id));
+              const done = data.kids.filter((k: Kid) => !!isChoreCompletedInCycle(chore, data.logs, k.id));
               if (done.length > 0) completedEntries.push({ chore, doneKids: done });
             } else if (isFullyCompleted(chore)) {
               const today = new Date();
