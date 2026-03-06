@@ -352,6 +352,31 @@ export function isChoreCompletedToday(choreId: string, logs: ChoreLog[], kidId?:
   );
 }
 
+/** Check if a kid completed a chore within the current recurrence cycle.
+ *  For daily/weekly chores this is equivalent to isChoreCompletedToday.
+ *  For interval-based chores, it looks back `intervalDays` instead of just today. */
+export function isChoreCompletedInCycle(chore: Chore, logs: ChoreLog[], kidId: string): ChoreLog | null {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  let windowStart: Date;
+  if (chore.recurrence.type === "interval" && chore.recurrence.intervalDays) {
+    windowStart = new Date(today.getTime() - (chore.recurrence.intervalDays - 1) * 86400000);
+  } else {
+    windowStart = today;
+  }
+
+  return (
+    logs.find(
+      (l) =>
+        l.choreId === chore.id &&
+        l.kidId === kidId &&
+        !l.undoneAt &&
+        new Date(l.completedAt).getTime() >= windowStart.getTime()
+    ) ?? null
+  );
+}
+
 /** Calculate days until a chore is due */
 export function daysUntilDue(chore: Chore, logs: ChoreLog[]): number | null {
   if (chore.paused) return null;
