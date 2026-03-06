@@ -17,7 +17,7 @@ export function useSensorGridData(
   const updateFromCache = useCallback(() => {
     const grids = config.sensorGrids || [];
     if (grids.length === 0) { setDataMap({}); setLoading(false); return; }
-    if (!checkConfigured(config) || !getCachedState) return;
+    if (!getCachedState) return;
 
     const result: Record<string, SensorGridLiveData> = {};
     for (const grid of grids) {
