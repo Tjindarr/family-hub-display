@@ -151,11 +151,30 @@ export default function ChoreWidget({ config }: Props) {
         {upcoming.length > 0 && (
           <div className="mt-2 pt-2 border-t border-border">
             {upcoming.map(({ chore, days }) => {
-              const doneKids = chore.perKid
-                ? data.kids.filter((k: Kid) => !!isChoreCompletedToday(chore.id, data.logs, k.id))
-                : null;
-              const singleLog = !chore.perKid ? isChoreCompletedToday(chore.id, data.logs) : null;
-              const singleKid = singleLog ? data.kids.find((k: Kid) => k.id === singleLog.kidId) : null;
+              // Find who last completed this chore (not just today — it's upcoming so completion may be days ago)
+              const choreLogs = data.logs
+                .filter((l: any) => l.choreId === chore.id && !l.undoneAt)
+                .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+
+              let lastKids: Kid[] = [];
+              if (chore.perKid) {
+                // Find unique kids from the most recent completion cycle
+                const seen = new Set<string>();
+                for (const log of choreLogs) {
+                  if (!seen.has(log.kidId)) {
+                    seen.add(log.kidId);
+                    const kid = data.kids.find((k: Kid) => k.id === log.kidId);
+                    if (kid) lastKids.push(kid);
+                  }
+                  if (seen.size >= data.kids.length) break;
+                }
+              } else {
+                const lastLog = choreLogs[0];
+                if (lastLog) {
+                  const kid = data.kids.find((k: Kid) => k.id === lastLog.kidId);
+                  if (kid) lastKids = [kid];
+                }
+              }
 
               return (
                 <div key={chore.id} className="flex items-center gap-2 text-muted-foreground" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
