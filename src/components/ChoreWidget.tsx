@@ -209,9 +209,16 @@ export default function ChoreWidget({ config }: Props) {
               const done = data.kids.filter((k: Kid) => !!isChoreCompletedToday(chore.id, data.logs, k.id));
               if (done.length > 0) completedEntries.push({ chore, doneKids: done });
             } else if (isFullyCompleted(chore)) {
-              const log = isChoreCompletedToday(chore.id, data.logs);
-              const kid = log ? data.kids.find((k: Kid) => k.id === log.kidId) : null;
-              completedEntries.push({ chore, doneKids: kid ? [kid] : [] });
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const todayLogs = data.logs.filter(
+                (l: any) => l.choreId === chore.id && !l.undoneAt && new Date(l.completedAt).getTime() >= today.getTime()
+              );
+              const doneKids = todayLogs
+                .map((l: any) => data.kids.find((k: Kid) => k.id === l.kidId))
+                .filter((k: Kid | undefined): k is Kid => !!k)
+                .filter((k: Kid, i: number, arr: Kid[]) => arr.findIndex((x) => x.id === k.id) === i);
+              completedEntries.push({ chore, doneKids });
             }
           }
           if (completedEntries.length === 0) return null;
