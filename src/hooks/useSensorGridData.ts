@@ -17,7 +17,7 @@ export function useSensorGridData(
   const updateFromCache = useCallback(() => {
     const grids = config.sensorGrids || [];
     if (grids.length === 0) { setDataMap({}); setLoading(false); return; }
-    if (!checkConfigured(config) || !getCachedState) return;
+    if (!getCachedState) return;
 
     const result: Record<string, SensorGridLiveData> = {};
     for (const grid of grids) {
@@ -40,7 +40,6 @@ export function useSensorGridData(
   }, [config, getCachedState]);
 
   const fetchHistory = useCallback(async () => {
-    if (!checkConfigured(config)) return;
     const grids = config.sensorGrids || [];
     const chartEntities = new Set<string>();
     for (const grid of grids) {
@@ -75,7 +74,7 @@ export function useSensorGridData(
     const grids = config.sensorGrids || [];
     if (grids.length === 0) { setDataMap({}); setLoading(false); return; }
 
-    if (!checkConfigured(config)) {
+    if (!checkConfigured(config) && !getCachedState) {
       const mock: Record<string, SensorGridLiveData> = {};
       for (const grid of grids) {
         mock[grid.id] = {
@@ -98,42 +97,11 @@ export function useSensorGridData(
 
     updateFromCache();
     await fetchHistory();
-
-    // Fallback: fetch individually if cache is empty
-    if (!getCachedState) {
-      try {
-        const client = createHAClient(config);
-        const result: Record<string, SensorGridLiveData> = {};
-        for (const grid of grids) {
-          const values = await Promise.all(
-            grid.cells.map(async (cell) => {
-              if (!cell.entityId) return { value: "", unit: cell.unit };
-              try {
-                const state = await client.getState(cell.entityId);
-                return {
-                  value: state.state,
-                  unit: cell.unit || state.attributes?.unit_of_measurement || "",
-                  history: cell.showChart ? historyRef.current[cell.entityId] : undefined,
-                };
-              } catch {
-                return { value: "—", unit: cell.unit };
-              }
-            })
-          );
-          result[grid.id] = { values };
-        }
-        setDataMap(result);
-      } catch (err) {
-        console.error("Failed to fetch sensor grid data:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
   }, [config, getCachedState, updateFromCache, fetchHistory]);
 
   // WS listener
   useEffect(() => {
-    if (!onStateChange || !checkConfigured(config)) return;
+    if (!onStateChange) return;
     const entityIds = new Set<string>();
     for (const grid of (config.sensorGrids || [])) {
       for (const cell of grid.cells) {
@@ -151,7 +119,6 @@ export function useSensorGridData(
 
   // History refresh every 5 min
   useEffect(() => {
-    if (!checkConfigured(config)) return;
     const hasCharts = (config.sensorGrids || []).some((g) => g.cells.some((c) => c.showChart));
     if (!hasCharts) return;
     const interval = setInterval(fetchHistory, 300000);
