@@ -107,6 +107,9 @@ export default function ChoreWidget({ config }: Props) {
             const pendingKids = chore.perKid
               ? data.kids.filter((k: Kid) => !isChoreCompletedToday(chore.id, data.logs, k.id))
               : null;
+            const doneKids = chore.perKid
+              ? data.kids.filter((k: Kid) => !!isChoreCompletedToday(chore.id, data.logs, k.id))
+              : null;
 
             return (
               <div key={chore.id} className="flex items-center gap-2" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
@@ -114,9 +117,15 @@ export default function ChoreWidget({ config }: Props) {
                 <span className="flex-1 truncate" style={{ color: choreTextColor || undefined }}>
                   {chore.title}
                 </span>
-                {pendingKids ? (
+                {chore.perKid ? (
                   <span className="flex items-center gap-0.5">
-                    {pendingKids.map((k) => (
+                    {doneKids?.map((k) => (
+                      <span key={k.id} className="relative opacity-50">
+                        <KidAvatar kid={k} size={avatarSize - 2} />
+                        <span className="absolute -bottom-0.5 -right-0.5 text-primary" style={{ fontSize: `${Math.max(8, (avatarSize - 2) * 0.6)}px`, lineHeight: 1 }}>✓</span>
+                      </span>
+                    ))}
+                    {pendingKids?.map((k) => (
                       <span key={k.id}>
                         <KidAvatar kid={k} size={avatarSize - 2} />
                       </span>
