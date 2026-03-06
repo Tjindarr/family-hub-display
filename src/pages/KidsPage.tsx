@@ -712,35 +712,14 @@ export default function KidsPage() {
 
 // ── Submit Chore View ──
 
-const QUICK_CHORES = [
-  { emoji: "🧹", label: "Swept" },
-  { emoji: "🧽", label: "Cleaned" },
-  { emoji: "🗑️", label: "Trash" },
-  { emoji: "🐕", label: "Pet care" },
-  { emoji: "📚", label: "Tidied up" },
-  { emoji: "🌱", label: "Gardening" },
-  { emoji: "🍽️", label: "Dishes" },
-  { emoji: "🧺", label: "Laundry" },
-  { emoji: "🛏️", label: "Made bed" },
-  { emoji: "🚗", label: "Car help" },
-  { emoji: "📦", label: "Organized" },
-  { emoji: "✨", label: "Other" },
-];
-
-
 function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }: {
   kid: Kid; onBack: () => void; refresh: () => void; submitPhotoRef: React.RefObject<HTMLInputElement>; fireConfetti: () => void;
 }) {
-  const [selectedQuick, setSelectedQuick] = useState<string | null>(null);
-  const [customTitle, setCustomTitle] = useState("");
-  
+  const [description, setDescription] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  const title = selectedQuick === "✨" ? customTitle : selectedQuick ? QUICK_CHORES.find(q => q.emoji === selectedQuick)?.label || "" : "";
-  const isCustom = selectedQuick === "✨";
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -758,16 +737,15 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }:
   };
 
   const handleSubmit = async () => {
-    const finalTitle = isCustom ? customTitle.trim() : title;
-    if (!finalTitle) {
-      toast.error("Pick what you did!");
+    if (!description.trim()) {
+      toast.error("Tell us what you did!");
       return;
     }
     setSubmitting(true);
     try {
       await choresApi.submitChore({
         kidId: kid.id,
-        title: finalTitle,
+        title: description.trim(),
         photoUrl: photoUrl || undefined,
         points: 0,
       });
@@ -783,7 +761,7 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }:
 
   return (
     <div className="min-h-screen bg-background">
-      <input ref={submitPhotoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+      <input ref={submitPhotoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
 
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
         <div className="max-w-lg mx-auto flex items-center gap-3">
@@ -795,80 +773,54 @@ function SubmitChoreView({ kid, onBack, refresh, submitPhotoRef, fireConfetti }:
       </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-6">
-        {/* Step 1: Pick what you did */}
+        {/* Description */}
         <div>
-          <p className="text-lg text-muted-foreground mb-3">Tap one:</p>
-          <div className="grid grid-cols-3 gap-3">
-            {QUICK_CHORES.map((q) => (
-              <button
-                key={q.emoji}
-                onClick={() => { setSelectedQuick(q.emoji); if (q.emoji !== "✨") setCustomTitle(""); }}
-                className={`flex flex-col items-center gap-1.5 p-4 rounded-2xl border-2 transition-all active:scale-95 ${
-                  selectedQuick === q.emoji
-                    ? "border-primary bg-primary/10 shadow-md"
-                    : "border-border bg-card hover:border-primary/30"
-                }`}
-              >
-                <span className="text-4xl">{q.emoji}</span>
-                <span className="text-sm font-medium text-foreground">{q.label}</span>
-              </button>
-            ))}
-          </div>
+          <p className="text-lg text-muted-foreground mb-2">Tell us what you did:</p>
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="e.g. Cleaned the kitchen, took out trash..."
+            maxLength={200}
+            className="h-14 text-lg rounded-xl"
+            autoFocus
+          />
         </div>
 
-        {/* Custom title input - only shown for "Other" */}
-        {isCustom && (
-          <div>
-            <Input
-              value={customTitle}
-              onChange={(e) => setCustomTitle(e.target.value)}
-              placeholder="Tell us what you did..."
-              maxLength={200}
-              className="h-14 text-lg rounded-xl"
-              autoFocus
-            />
-          </div>
-        )}
-
-
-        {/* Photo - optional, compact */}
-        {selectedQuick && (
-          <div className="flex items-center gap-3">
-            {photoPreview ? (
-              <div className="relative">
-                <img src={photoPreview} alt="Preview" className="w-20 h-20 rounded-xl object-cover" />
-                {uploading && (
-                  <div className="absolute inset-0 bg-background/50 rounded-xl flex items-center justify-center">
-                    <span className="text-xs">...</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => { setPhotoPreview(""); setPhotoUrl(""); }}
-                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ) : (
-              <Button variant="outline" className="h-12 text-base rounded-xl" onClick={() => submitPhotoRef.current?.click()}>
-                <Camera className="w-5 h-5 mr-2" /> Add photo
-              </Button>
-            )}
-          </div>
-        )}
+        {/* Photo */}
+        <div>
+          <p className="text-lg text-muted-foreground mb-2">Add a photo:</p>
+          {photoPreview ? (
+            <div className="relative inline-block">
+              <img src={photoPreview} alt="Preview" className="w-32 h-32 rounded-xl object-cover" />
+              {uploading && (
+                <div className="absolute inset-0 bg-background/50 rounded-xl flex items-center justify-center">
+                  <span className="text-xs">...</span>
+                </div>
+              )}
+              <button
+                onClick={() => { setPhotoPreview(""); setPhotoUrl(""); }}
+                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <Button variant="outline" className="h-14 text-lg rounded-xl w-full" onClick={() => submitPhotoRef.current?.click()}>
+              <Camera className="w-6 h-6 mr-2" /> 📸 Take a photo
+            </Button>
+          )}
+        </div>
 
         {/* Submit */}
-        {selectedQuick && (
-          <Button
-            className="w-full text-xl h-14 rounded-xl"
-            size="lg"
-            disabled={(!title && !customTitle.trim()) || submitting || uploading}
-            onClick={handleSubmit}
-          >
-            <Send className="w-6 h-6 mr-2" />
-            {submitting ? "Sending..." : "Send to parent! 🚀"}
-          </Button>
-        )}
+        <Button
+          className="w-full text-xl h-14 rounded-xl"
+          size="lg"
+          disabled={!description.trim() || submitting || uploading}
+          onClick={handleSubmit}
+        >
+          <Send className="w-6 h-6 mr-2" />
+          {submitting ? "Sending..." : "Send to parent! 🚀"}
+        </Button>
 
         <p className="text-sm text-center text-muted-foreground">
           A parent will check and give you the points ✨
