@@ -1,7 +1,7 @@
 import { useChoresData } from "@/hooks/useChoresData";
 import type { Kid, Chore } from "@/lib/chores-types";
 import type { ChoreWidgetConfig } from "@/lib/config";
-import { isChoreDueToday, isChoreCompletedToday, daysUntilDue, getKidWeeklyChorePoints, suggestFairKid } from "@/lib/chores-types";
+import { isChoreDueToday, isChoreCompletedToday, isChoreCompletedInCycle, daysUntilDue, getKidWeeklyChorePoints, suggestFairKid } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@iconify/react";
