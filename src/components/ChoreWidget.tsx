@@ -150,14 +150,50 @@ export default function ChoreWidget({ config }: Props) {
         {/* Upcoming */}
         {upcoming.length > 0 && (
           <div className="mt-2 pt-2 border-t border-border">
-            {upcoming.map(({ chore, days }) => (
-              <div key={chore.id} className="flex items-center gap-2 text-muted-foreground" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
-                <span className="text-base">{chore.icon}</span>
-                <span className="flex-1 truncate">{chore.title}</span>
-                <UrgencyDot days={days ?? 99} size={urgencyDotSize} />
-                <span className="text-xs">{days}d</span>
-              </div>
-            ))}
+            {upcoming.map(({ chore, days }) => {
+              // Find who last completed this chore (not just today — it's upcoming so completion may be days ago)
+              const choreLogs = data.logs
+                .filter((l: any) => l.choreId === chore.id && !l.undoneAt)
+                .sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+
+              let lastKids: Kid[] = [];
+              if (chore.perKid) {
+                // Find unique kids from the most recent completion cycle
+                const seen = new Set<string>();
+                for (const log of choreLogs) {
+                  if (!seen.has(log.kidId)) {
+                    seen.add(log.kidId);
+                    const kid = data.kids.find((k: Kid) => k.id === log.kidId);
+                    if (kid) lastKids.push(kid);
+                  }
+                  if (seen.size >= data.kids.length) break;
+                }
+              } else {
+                const lastLog = choreLogs[0];
+                if (lastLog) {
+                  const kid = data.kids.find((k: Kid) => k.id === lastLog.kidId);
+                  if (kid) lastKids = [kid];
+                }
+              }
+
+              return (
+                <div key={chore.id} className="flex items-center gap-2 text-muted-foreground" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
+                  <span className="text-base">{chore.icon}</span>
+                  <span className="flex-1 truncate">{chore.title}</span>
+                  {lastKids.length > 0 && (
+                    <span className="flex items-center gap-0.5">
+                      {lastKids.map((k) => (
+                        <span key={k.id} className="opacity-60">
+                          <KidAvatar kid={k} size={avatarSize - 2} />
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                  <UrgencyDot days={days ?? 99} size={urgencyDotSize} />
+                  <span className="text-xs">{days}d</span>
+                </div>
+              );
+            })}
           </div>
         )}
 
