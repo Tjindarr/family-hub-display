@@ -180,18 +180,13 @@ export default function ChoreWidget({ config }: Props) {
                 <div key={chore.id} className="flex items-center gap-2 text-muted-foreground" style={{ fontSize: choreTextSize ? `${choreTextSize}px` : "0.875rem" }}>
                   <span className="text-base">{chore.icon}</span>
                   <span className="flex-1 truncate">{chore.title}</span>
-                  {doneKids && doneKids.length > 0 && (
+                  {lastKids.length > 0 && (
                     <span className="flex items-center gap-0.5">
-                      {doneKids.map((k) => (
+                      {lastKids.map((k) => (
                         <span key={k.id} className="opacity-60">
                           <KidAvatar kid={k} size={avatarSize - 2} />
                         </span>
                       ))}
-                    </span>
-                  )}
-                  {singleKid && (
-                    <span className="text-xs flex items-center gap-1 opacity-60" style={{ color: singleKid.color }}>
-                      <KidAvatar kid={singleKid} size={avatarSize - 2} />
                     </span>
                   )}
                   <UrgencyDot days={days ?? 99} size={urgencyDotSize} />
