@@ -273,7 +273,6 @@ function ChoresTab({ data, refresh, showAdd, setShowAdd, editingChore, setEditin
                     </div>
                     <div className="flex items-center gap-2 text-[15px] text-muted-foreground mt-0.5 flex-wrap">
                       <span>{chore.points}pts</span>
-                      <span>{"⭐".repeat(chore.difficulty)}</span>
                       {due && !completed && !chore.perKid && (
                         <span className="text-yellow-500 font-medium">Due today</span>
                       )}
@@ -362,7 +361,6 @@ function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled
   const [title, setTitle] = useState(chore?.title ?? "");
   const [icon, setIcon] = useState(chore?.icon ?? "🧹");
   const [points, setPoints] = useState(chore?.points ?? 1);
-  const [difficulty, setDifficulty] = useState(chore?.difficulty ?? 1);
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(chore?.timeOfDay ?? "anytime");
   const [recType, setRecType] = useState<RecurrenceType>(chore?.recurrence.type ?? "daily");
   const [intervalDays, setIntervalDays] = useState(chore?.recurrence.intervalDays ?? 3);
@@ -382,7 +380,7 @@ function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled
     if (recType === "interval") recurrence.intervalDays = intervalDays;
     if (recType === "weekly") recurrence.weekdays = weekdays;
     onSave({
-      title: title.trim(), icon, points, difficulty, timeOfDay,
+      title: title.trim(), icon, points, difficulty: 1, timeOfDay,
       recurrence, requirePhoto, requireApproval, paused: chore?.paused ?? false,
       perKid: perKid || undefined,
       category: category || undefined,
@@ -419,16 +417,6 @@ function ChoreForm({ chore, categories, categoriesEnabled, kids, rotationEnabled
           <div>
             <Label className="text-sm font-medium">Points</Label>
             <Input type="number" min={1} value={points} onChange={(e) => setPoints(+e.target.value)} className="mt-1 h-12 text-base" />
-          </div>
-          <div>
-            <Label className="text-sm font-medium">Difficulty</Label>
-            <div className="flex gap-0.5 mt-2">
-              {[1, 2, 3, 4, 5].map((d) => (
-                <button key={d} onClick={() => setDifficulty(d)} className="text-lg min-w-[28px] min-h-[36px] flex items-center justify-center">
-                  {d <= difficulty ? "⭐" : "☆"}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -983,10 +971,6 @@ function LeaderboardTab({ data, refresh }: any) {
                               <span className="ml-1 text-primary">+{log.earlyBonusEarned}</span>
                             )}
                           </div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground text-sm">Difficulty</span>
-                          <div className="font-medium">{"⭐".repeat(chore?.difficulty || 1)}</div>
                         </div>
                         <div>
                           <span className="text-muted-foreground text-sm">Category</span>
