@@ -119,7 +119,6 @@ export function useSensorGridData(
 
   // History refresh every 5 min
   useEffect(() => {
-    if (!checkConfigured(config)) return;
     const hasCharts = (config.sensorGrids || []).some((g) => g.cells.some((c) => c.showChart));
     if (!hasCharts) return;
     const interval = setInterval(fetchHistory, 300000);
