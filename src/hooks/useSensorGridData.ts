@@ -74,7 +74,7 @@ export function useSensorGridData(
     const grids = config.sensorGrids || [];
     if (grids.length === 0) { setDataMap({}); setLoading(false); return; }
 
-    if (!checkConfigured(config)) {
+    if (!checkConfigured(config) && !getCachedState) {
       const mock: Record<string, SensorGridLiveData> = {};
       for (const grid of grids) {
         mock[grid.id] = {
@@ -97,37 +97,6 @@ export function useSensorGridData(
 
     updateFromCache();
     await fetchHistory();
-
-    // Fallback: fetch individually if cache is empty
-    if (!getCachedState) {
-      try {
-        const client = createHAClient(config);
-        const result: Record<string, SensorGridLiveData> = {};
-        for (const grid of grids) {
-          const values = await Promise.all(
-            grid.cells.map(async (cell) => {
-              if (!cell.entityId) return { value: "", unit: cell.unit };
-              try {
-                const state = await client.getState(cell.entityId);
-                return {
-                  value: state.state,
-                  unit: cell.unit || state.attributes?.unit_of_measurement || "",
-                  history: cell.showChart ? historyRef.current[cell.entityId] : undefined,
-                };
-              } catch {
-                return { value: "—", unit: cell.unit };
-              }
-            })
-          );
-          result[grid.id] = { values };
-        }
-        setDataMap(result);
-      } catch (err) {
-        console.error("Failed to fetch sensor grid data:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
   }, [config, getCachedState, updateFromCache, fetchHistory]);
 
   // WS listener
