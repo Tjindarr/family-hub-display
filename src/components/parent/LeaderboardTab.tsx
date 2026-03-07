@@ -8,6 +8,11 @@ import {
 import { KidAvatar } from "@/components/KidAvatar";
 import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Trash2, ChevronDown } from "lucide-react";
@@ -204,17 +209,37 @@ export function LeaderboardTab({ data, refresh }: any) {
                         </div>
                       )}
 
-                      <Button
-                        variant="outline"
-                        className="w-full h-12 text-sm text-destructive"
-                        onClick={async () => {
-                          await choresApi.deleteLog(log.id);
-                          refresh();
-                          toast.success("Log entry removed");
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Remove Entry
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full h-12 text-sm text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Remove Entry
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently remove this log entry. The points will be deducted from the kid's total.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={async () => {
+                                await choresApi.deleteLog(log.id);
+                                refresh();
+                                toast.success("Log entry removed");
+                              }}
+                            >
+                              Yes, remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   )}
                 </Card>
