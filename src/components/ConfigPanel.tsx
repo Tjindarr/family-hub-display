@@ -1067,7 +1067,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                       checked={calendarDisplay.limitEvents ?? false}
                       onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, limitEvents: !!v, maxEvents: calendarDisplay.maxEvents || 20 })}
                     />
-                    Limit number of events
+                   Limit number of events
                   </label>
                   {calendarDisplay.limitEvents && (
                     <div className="ml-6 mt-1">
@@ -1083,6 +1083,18 @@ function WidgetStyleControls({ style, onChange, fields }: {
                       />
                     </div>
                   )}
+                  <div className="mt-2">
+                    <Label className="text-xs text-muted-foreground">Max characters for event title (0 = no limit)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={500}
+                      value={calendarDisplay.maxTitleChars ?? 0}
+                      onChange={(e) => setCalendarDisplay({ ...calendarDisplay, maxTitleChars: Number(e.target.value) || 0 })}
+                      placeholder="0"
+                      className="bg-muted border-border text-sm w-24 mt-1"
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-3">

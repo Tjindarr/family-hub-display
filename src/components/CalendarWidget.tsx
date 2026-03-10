@@ -149,7 +149,9 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
                           style={{ color: ws.valueColor || event._color || undefined, fontSize: fTitle }}
                         >
                           {event._prefix ? `${event._prefix} ` : ""}
-                          {event.summary}
+                          {display?.maxTitleChars && display.maxTitleChars > 0 && event.summary.length > display.maxTitleChars
+                            ? event.summary.slice(0, display.maxTitleChars) + "…"
+                            : event.summary}
                         </span>
                         {display?.showEventBody && event.description && (
                           <span className="text-muted-foreground mt-0.5 line-clamp-2" style={{ fontSize: fBody }}>
