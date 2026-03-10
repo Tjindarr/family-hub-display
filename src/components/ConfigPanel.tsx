@@ -14,6 +14,7 @@ import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import ColorPicker from "@/components/ColorPicker";
+import { Slider } from "@/components/ui/slider";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
