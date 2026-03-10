@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { choresApi } from "@/lib/chores-api";
 import { DEFAULT_SETTINGS, DEFAULT_GRADE_SCALE, DEFAULT_SUBJECTS } from "@/lib/chores-types";
 import type { GradeScaleEntry } from "@/lib/chores-types";
+import type { ChoreReminderConfig } from "@/lib/config";
 import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 import { KidsTab } from "./KidsTab";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Send } from "lucide-react";
 import { toast } from "sonner";
 
 export function SettingsTab({ data, refresh, showAddKid, setShowAddKid }: any) {
@@ -30,6 +31,50 @@ export function SettingsTab({ data, refresh, showAddKid, setShowAddKid }: any) {
   const [newSubject, setNewSubject] = useState("");
   const [newGradeLabel, setNewGradeLabel] = useState("");
   const [newGradePoints, setNewGradePoints] = useState(0);
+
+  // Reminder config (stored in dashboard config)
+  const [reminderConfig, setReminderConfig] = useState<ChoreReminderConfig>({
+    enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3,
+    streakReminderEnabled: false, streakReminderHour: 18,
+  });
+  const [testingPush, setTestingPush] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/config").then(r => r.json()).then(cfg => {
+      if (cfg.choreReminderConfig) setReminderConfig(prev => ({ ...prev, ...cfg.choreReminderConfig }));
+    }).catch(() => {});
+  }, []);
+
+  const saveReminderConfig = async (updated: ChoreReminderConfig) => {
+    setReminderConfig(updated);
+    try {
+      const cfg = await fetch("/api/config").then(r => r.json());
+      await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...cfg, choreReminderConfig: updated }),
+      });
+      toast.success("Reminder settings saved");
+    } catch {
+      toast.error("Failed to save reminder settings");
+    }
+  };
+
+  const sendTestPush = async () => {
+    setTestingPush(true);
+    try {
+      const res = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "parent" }),
+      });
+      if (res.ok) toast.success("Test notification sent!");
+      else toast.error("Failed to send test notification");
+    } catch {
+      toast.error("Failed to send test notification");
+    }
+    setTestingPush(false);
+  };
 
   const saveSettings = async (partial: any) => {
     const updated = { ...settings, ...partial };
@@ -73,6 +118,74 @@ export function SettingsTab({ data, refresh, showAddKid, setShowAddKid }: any) {
               saveSettings({ rotationEnabled, showSuggestions, categoriesEnabled, categories, streakBonuses, notifyParentOnComplete, notifyKidOnNewChore: v });
             }} />
           </div>
+
+          <Button
+            variant="outline"
+            className="w-full h-12 text-base gap-2"
+            onClick={sendTestPush}
+            disabled={testingPush}
+          >
+            <Send className="w-4 h-4" />
+            {testingPush ? "Sending..." : "Send Test Notification"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Daily Reminder */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between min-h-[52px] gap-3">
+            <div className="flex-1">
+              <Label className="text-[15px] font-semibold">⏰ Daily Chore Reminder</Label>
+              <p className="text-[15px] text-muted-foreground">Push notification to kids listing today's chores</p>
+            </div>
+            <Switch checked={reminderConfig.enabled} onCheckedChange={(v) => saveReminderConfig({ ...reminderConfig, enabled: v })} />
+          </div>
+
+          {reminderConfig.enabled && (
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-sm text-muted-foreground">Weekday hour</Label>
+                <Input type="number" min={0} max={23} value={reminderConfig.weekdayHour}
+                  onChange={(e) => saveReminderConfig({ ...reminderConfig, weekdayHour: parseInt(e.target.value) || 0 })}
+                  className="mt-1 h-12 text-base" />
+              </div>
+              <div>
+                <Label className="text-sm text-muted-foreground">Weekend hour</Label>
+                <Input type="number" min={0} max={23} value={reminderConfig.weekendHour}
+                  onChange={(e) => saveReminderConfig({ ...reminderConfig, weekendHour: parseInt(e.target.value) || 0 })}
+                  className="mt-1 h-12 text-base" />
+              </div>
+              <div>
+                <Label className="text-sm text-muted-foreground">Max shown</Label>
+                <Input type="number" min={1} max={10} value={reminderConfig.maxChoresInNotification}
+                  onChange={(e) => saveReminderConfig({ ...reminderConfig, maxChoresInNotification: parseInt(e.target.value) || 3 })}
+                  className="mt-1 h-12 text-base" />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Streak Reminder */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between min-h-[52px] gap-3">
+            <div className="flex-1">
+              <Label className="text-[15px] font-semibold">🔥 Streak Reminder</Label>
+              <p className="text-[15px] text-muted-foreground">Remind kids to keep their streak alive</p>
+            </div>
+            <Switch checked={reminderConfig.streakReminderEnabled} onCheckedChange={(v) => saveReminderConfig({ ...reminderConfig, streakReminderEnabled: v })} />
+          </div>
+
+          {reminderConfig.streakReminderEnabled && (
+            <div className="w-1/2">
+              <Label className="text-sm text-muted-foreground">Reminder hour</Label>
+              <Input type="number" min={0} max={23} value={reminderConfig.streakReminderHour}
+                onChange={(e) => saveReminderConfig({ ...reminderConfig, streakReminderHour: parseInt(e.target.value) || 18 })}
+                className="mt-1 h-12 text-base" />
+            </div>
+          )}
         </CardContent>
       </Card>
 
