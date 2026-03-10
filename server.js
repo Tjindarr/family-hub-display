@@ -1317,9 +1317,14 @@ function scheduleDailyReminder() {
     }
   };
 
-  // Check every 60 seconds
-  setInterval(check, 60_000);
-  console.log("[SCHEDULER] Daily chore reminder scheduler active");
+  // Align to the start of each minute to avoid drift-based misses
+  const nowMs = Date.now();
+  const msUntilNextMinute = 60_000 - (nowMs % 60_000) + 500; // +500ms buffer into the new minute
+  setTimeout(() => {
+    check(); // Run at the first aligned minute
+    setInterval(check, 60_000); // Then every 60s
+  }, msUntilNextMinute);
+  console.log(`[SCHEDULER] Daily chore reminder scheduler active (first check in ${Math.round(msUntilNextMinute / 1000)}s)`);
 }
 
 
