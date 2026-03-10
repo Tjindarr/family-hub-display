@@ -61,6 +61,7 @@ export interface CalendarDisplayConfig {
   fontSizeTime: number;
   fontSizeTitle: number;
   fontSizeBody: number;
+  maxTitleChars?: number;
 }
 
 export type DateFormatStyle = "yyyy-MM-dd" | "dd/MM/yyyy" | "MM/dd/yyyy" | "dd.MM.yyyy";
