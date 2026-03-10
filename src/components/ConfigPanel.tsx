@@ -14,6 +14,7 @@ import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import ColorPicker from "@/components/ColorPicker";
+import { Slider } from "@/components/ui/slider";
 import { THEMES } from "@/lib/config";
 import {
   DndContext,
@@ -2905,6 +2906,20 @@ function WidgetStyleControls({ style, onChange, fields }: {
                     <SelectItem value="blur">Blur</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Widget Height (px, desktop only)</Label>
+                <div className="flex items-center gap-3 mt-1">
+                  <Slider
+                    value={[photoConfig.heightPx || 400]}
+                    onValueChange={([v]) => setPhotoConfig((prev) => ({ ...prev, heightPx: v }))}
+                    min={200}
+                    max={1000}
+                    step={10}
+                    className="flex-1"
+                  />
+                  <span className="text-xs text-muted-foreground w-12 text-right">{photoConfig.heightPx || 400}px</span>
+                </div>
               </div>
               <PhotoManager />
             </section>

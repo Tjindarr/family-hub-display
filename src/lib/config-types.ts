@@ -38,6 +38,7 @@ export interface PhotoWidgetConfig {
   intervalSeconds: number;
   displayMode: "contain" | "cover" | "blur-fill";
   transition: PhotoTransition;
+  heightPx?: number;
 }
 
 export interface CalendarEntityConfig {

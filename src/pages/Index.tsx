@@ -738,7 +738,11 @@ const Index = () => {
                     style={{
                       gridColumn: `span ${mobileSpan}`,
                       gridRow: mobileRowSpan > 1 ? `span ${mobileRowSpan}` : undefined,
-                      height: widgetHeight,
+                      height: widgetHeight
+                        ? widgetHeight
+                        : !isMobile && id === "photos" && config.photoWidget.heightPx
+                          ? `${config.photoWidget.heightPx}px`
+                          : undefined,
                       minHeight: !heightPx
                         ? id === "photos" && isMobile
                           ? "250px"
