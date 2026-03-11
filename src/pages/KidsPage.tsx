@@ -616,49 +616,55 @@ export default function KidsPage() {
           );
         })()}
 
-        {/* Grade submissions — collapsible */}
-        {data.settings?.gradesEnabled && (() => {
-          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-          const myGradeSubs = (data.gradeSubmissions || []).filter(
-            (s: GradeSubmission) =>
-              s.kidId === kid.id &&
-              s.status !== "approved" &&
-              !(s.status === "rejected" && new Date(s.reviewedAt || s.submittedAt).getTime() < sevenDaysAgo)
-          ).sort((a: GradeSubmission, b: GradeSubmission) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
-          if (myGradeSubs.length === 0) return null;
+        {/* Chore History — collapsible, collapsed by default */}
+        {(() => {
+          const myLogs = (data.logs || [])
+            .filter((l: ChoreLog) => l.kidId === kid.id && !l.undoneAt && !l.choreId.startsWith("grade_"))
+            .sort((a: ChoreLog, b: ChoreLog) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+            .slice(0, 30);
+          if (myLogs.length === 0) return null;
+
+          // Group by date
+          const choreMap = new Map(data.chores.map((c: Chore) => [c.id, c]));
+          const grouped: Record<string, { log: ChoreLog; chore: Chore | undefined }[]> = {};
+          for (const log of myLogs) {
+            const dateKey = new Date(log.completedAt).toLocaleDateString();
+            if (!grouped[dateKey]) grouped[dateKey] = [];
+            grouped[dateKey].push({ log, chore: choreMap.get(log.choreId) });
+          }
+
           return (
             <details className="group">
               <summary className="flex items-center gap-2 cursor-pointer list-none text-lg font-semibold text-muted-foreground mb-3 select-none">
                 <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
-                📝 Grade Submissions ({myGradeSubs.length})
+                📜 Chore History
               </summary>
-              <div className="space-y-3 mt-2">
-                {myGradeSubs.map((sub: GradeSubmission) => (
-                  <Card key={sub.id} className={sub.status === "rejected" ? "border-destructive/30" : "border-yellow-500/30"}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl flex-shrink-0">{sub.type === "term" ? "📋" : "📄"}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-lg">{sub.subject} — {sub.grade}</div>
-                          <div className="text-base text-muted-foreground mt-0.5">
-                            {sub.type === "term" ? "Term" : "Exam"} • {new Date(sub.date).toLocaleDateString()}
-                            {sub.term && ` • ${sub.term}`}
+              <div className="space-y-4 mt-2">
+                {Object.entries(grouped).map(([date, entries]) => (
+                  <div key={date}>
+                    <div className="text-sm font-medium text-muted-foreground mb-1.5">{date}</div>
+                    <div className="space-y-1.5">
+                      {entries.map(({ log, chore }) => (
+                        <div key={log.id} className="flex items-center gap-3 text-base py-2.5 px-3 rounded-lg bg-secondary/30">
+                          <span className="text-xl">{chore?.icon || "✅"}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium">{chore?.title || "Unknown chore"}</span>
                           </div>
-                          {sub.status === "rejected" && (
-                            <div className="text-base text-destructive mt-1">
-                              ❌ Rejected{sub.rejectionReason ? `: ${sub.rejectionReason}` : ""}
-                            </div>
+                          {log.bonusMultiplier && log.bonusMultiplier > 1 && (
+                            <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">{log.bonusMultiplier}x</span>
                           )}
+                          {log.earlyBonusEarned && (
+                            <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">+{log.earlyBonusEarned}</span>
+                          )}
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(log.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          {log.photoUrl && <PhotoIndicator onClick={() => setLightboxPhoto(log.photoUrl!)} />}
+                          <span className="text-sm font-medium text-primary">+{chore?.points || 0}</span>
                         </div>
-                        {sub.photoUrl && (
-                          <PhotoThumbnail src={sub.photoUrl} size="sm" onClick={() => setLightboxPhoto(sub.photoUrl!)} />
-                        )}
-                        <span className={`text-sm px-2.5 py-1 rounded font-medium ${sub.status === "pending" ? "bg-yellow-500/20 text-yellow-500" : "bg-destructive/20 text-destructive"}`}>
-                          {sub.status === "pending" ? "⏳ Pending" : "Rejected"}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </details>
