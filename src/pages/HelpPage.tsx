@@ -714,6 +714,7 @@ sudo certbot --nginx -d homedash.yourdomain.com`}
             ["CORS errors in console", "Add dashboard origin to cors_allowed_origins in HA's configuration.yaml and restart HA."],
             ["Photos not loading", "Ensure /data volume is mounted and writable. Check server logs."],
             ["Push notifications not working", "HTTPS required. Verify SSL cert. On iOS, page must be installed as PWA."],
+            ["Daily reminders not firing", "Check timezone in Parent → Settings. Docker defaults to UTC; set your IANA timezone."],
             ["Calendar shows no events", "Check entity ID. Verify calendar has events within forecast range."],
             ["Electricity prices missing", "Confirm Nordpool entity exists with raw_today/raw_tomorrow attributes."],
             ["Chores not saving", "Ensure /data directory is writable by container process."],
