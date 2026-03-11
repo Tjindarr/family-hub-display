@@ -36,6 +36,7 @@ export function SettingsTab({ data, refresh, showAddKid, setShowAddKid }: any) {
   const [reminderConfig, setReminderConfig] = useState<ChoreReminderConfig>({
     enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3,
     streakReminderEnabled: false, streakReminderHour: 18,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   });
   const [testingPush, setTestingPush] = useState(false);
 

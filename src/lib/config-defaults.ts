@@ -108,5 +108,6 @@ export const DEFAULT_CONFIG: DashboardConfig = {
     maxChoresInNotification: 3,
     streakReminderEnabled: false,
     streakReminderHour: 18,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   },
 };
