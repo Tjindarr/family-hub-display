@@ -600,11 +600,13 @@ app.post("/api/chores/rewards/claim", (req, res) => {
   const reward = (data.rewards || []).find((r) => r.id === req.body.rewardId);
   if (!reward) return res.status(404).json({ error: "Reward not found" });
 
-  // Check points
+  // Check points (chore points + grade points)
   const choreMap = {};
   (data.chores || []).forEach((c) => { choreMap[c.id] = c; });
   const kidLogs = data.logs.filter((l) => l.kidId === req.body.kidId && !l.undoneAt);
-  const totalPoints = kidLogs.reduce((s, l) => s + (choreMap[l.choreId]?.points || 0), 0);
+  const chorePoints = kidLogs.reduce((s, l) => s + (choreMap[l.choreId]?.points || 0), 0);
+  const gradePoints = (data.grades || []).filter((g) => g.kidId === req.body.kidId).reduce((s, g) => s + (g.pointsAwarded || 0), 0);
+  const totalPoints = chorePoints + gradePoints;
   data.rewardClaims = data.rewardClaims || [];
   const rewardMap = {};
   (data.rewards || []).forEach((r) => { rewardMap[r.id] = r; });
