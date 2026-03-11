@@ -1265,12 +1265,12 @@ function scheduleDailyReminder() {
     const isWeekend = localDay === 0 || localDay === 6;
     const targetHour = isWeekend ? reminderConfig.weekendHour : reminderConfig.weekdayHour;
 
-    if (hour === targetHour && minute === 0) {
+    if (localHour === targetHour && localMinute === 0) {
       const data = readChores();
       if (data.kids && data.kids.length > 0) {
         const todayStr = now.toISOString().slice(0, 10);
         const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-        const todayName = dayNames[day];
+        const todayName = dayNames[localDay];
         const activeChores = (data.chores || []).filter((c) => {
           if (c.frequency === "daily") return true;
           if (c.frequency === "weekly" && c.weekdays && c.weekdays.includes(todayName)) return true;
@@ -1282,7 +1282,7 @@ function scheduleDailyReminder() {
           const maxShow = reminderConfig.maxChoresInNotification || 3;
           const choreNames = activeChores.slice(0, maxShow).map((c) => c.title).join(", ");
           const extra = activeChores.length > maxShow ? ` +${activeChores.length - maxShow} more` : "";
-          console.log(`[PUSH] Sending daily chore reminder to kids (${activeChores.length} chores)`);
+          console.log(`[PUSH] Sending daily chore reminder to kids (${activeChores.length} chores, tz=${tz}, localHour=${localHour})`);
           sendPush("kid", {
             title: "⏰ Time for chores!",
             body: `Today: ${choreNames}${extra}`,
@@ -1296,7 +1296,7 @@ function scheduleDailyReminder() {
     // ── Streak reminder ──
     const streakEnabled = reminderConfig.streakReminderEnabled || false;
     const streakHour = reminderConfig.streakReminderHour ?? 18;
-    if (streakEnabled && hour === streakHour && minute === 0) {
+    if (streakEnabled && localHour === streakHour && localMinute === 0) {
       const data = readChores();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
