@@ -289,6 +289,7 @@ export interface ChoreReminderConfig {
   maxChoresInNotification: number;
   streakReminderEnabled: boolean;
   streakReminderHour: number;
+  timezone: string;
 }
 
 export interface ChoreWidgetConfig {

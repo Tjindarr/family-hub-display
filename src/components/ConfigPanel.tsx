@@ -271,6 +271,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   });
   const [choreReminderConfig, setChoreReminderConfig] = useState<ChoreReminderConfig>(config.choreReminderConfig || {
     enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3, streakReminderEnabled: false, streakReminderHour: 18,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
