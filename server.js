@@ -1234,7 +1234,7 @@ app.get("*", (req, res) => {
 function scheduleDailyReminder() {
   const check = () => {
     // Read reminder config from dashboard config
-    let reminderConfig = { enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3 };
+    let reminderConfig = { enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3, timezone: "Europe/Stockholm" };
     try {
       const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
       if (cfg.choreReminderConfig) reminderConfig = { ...reminderConfig, ...cfg.choreReminderConfig };
@@ -1242,11 +1242,27 @@ function scheduleDailyReminder() {
 
     if (!reminderConfig.enabled) return;
 
+    // Use configured timezone to get local time
+    const tz = reminderConfig.timezone || "Europe/Stockholm";
     const now = new Date();
-    const day = now.getDay(); // 0=Sun, 6=Sat
-    const hour = now.getHours();
-    const minute = now.getMinutes();
-    const isWeekend = day === 0 || day === 6;
+    let localHour, localMinute, localDay;
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz, hour: "numeric", minute: "numeric", weekday: "short", hour12: false,
+      }).formatToParts(now);
+      localHour = parseInt(parts.find(p => p.type === "hour")?.value || "0");
+      localMinute = parseInt(parts.find(p => p.type === "minute")?.value || "0");
+      const dayName = parts.find(p => p.type === "weekday")?.value || "";
+      // Map short weekday to day number (0=Sun)
+      const dayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      localDay = dayMap[dayName] ?? now.getDay();
+    } catch {
+      // Fallback to UTC if timezone is invalid
+      localHour = now.getHours();
+      localMinute = now.getMinutes();
+      localDay = now.getDay();
+    }
+    const isWeekend = localDay === 0 || localDay === 6;
     const targetHour = isWeekend ? reminderConfig.weekendHour : reminderConfig.weekdayHour;
 
     if (hour === targetHour && minute === 0) {
