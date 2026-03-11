@@ -144,24 +144,34 @@ export function SettingsTab({ data, refresh, showAddKid, setShowAddKid }: any) {
           </div>
 
           {reminderConfig.enabled && (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-3">
               <div>
-                <Label className="text-sm text-muted-foreground">Weekday hour</Label>
-                <Input type="number" min={0} max={23} value={reminderConfig.weekdayHour}
-                  onChange={(e) => saveReminderConfig({ ...reminderConfig, weekdayHour: parseInt(e.target.value) || 0 })}
+                <Label className="text-sm text-muted-foreground">Timezone</Label>
+                <Input value={reminderConfig.timezone}
+                  onChange={(e) => saveReminderConfig({ ...reminderConfig, timezone: e.target.value })}
+                  placeholder="Europe/Stockholm"
                   className="mt-1 h-12 text-base" />
+                <p className="text-xs text-muted-foreground mt-1">IANA timezone (e.g. Europe/Stockholm, America/New_York)</p>
               </div>
-              <div>
-                <Label className="text-sm text-muted-foreground">Weekend hour</Label>
-                <Input type="number" min={0} max={23} value={reminderConfig.weekendHour}
-                  onChange={(e) => saveReminderConfig({ ...reminderConfig, weekendHour: parseInt(e.target.value) || 0 })}
-                  className="mt-1 h-12 text-base" />
-              </div>
-              <div>
-                <Label className="text-sm text-muted-foreground">Max shown</Label>
-                <Input type="number" min={1} max={10} value={reminderConfig.maxChoresInNotification}
-                  onChange={(e) => saveReminderConfig({ ...reminderConfig, maxChoresInNotification: parseInt(e.target.value) || 3 })}
-                  className="mt-1 h-12 text-base" />
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Weekday hour</Label>
+                  <Input type="number" min={0} max={23} value={reminderConfig.weekdayHour}
+                    onChange={(e) => saveReminderConfig({ ...reminderConfig, weekdayHour: parseInt(e.target.value) || 0 })}
+                    className="mt-1 h-12 text-base" />
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Weekend hour</Label>
+                  <Input type="number" min={0} max={23} value={reminderConfig.weekendHour}
+                    onChange={(e) => saveReminderConfig({ ...reminderConfig, weekendHour: parseInt(e.target.value) || 0 })}
+                    className="mt-1 h-12 text-base" />
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Max shown</Label>
+                  <Input type="number" min={1} max={10} value={reminderConfig.maxChoresInNotification}
+                    onChange={(e) => saveReminderConfig({ ...reminderConfig, maxChoresInNotification: parseInt(e.target.value) || 3 })}
+                    className="mt-1 h-12 text-base" />
+                </div>
               </div>
             </div>
           )}
