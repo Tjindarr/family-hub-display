@@ -133,6 +133,7 @@ The built-in Express server (port 80 in Docker) provides:
 | `/api/push/vapid-public-key` | GET | Get VAPID public key for push subscriptions |
 | `/api/push/subscribe` | POST | Register push notification subscription |
 | `/api/push/unsubscribe` | POST | Remove push notification subscription |
+| `/api/push/test` | POST | Send a test push notification |
 
 ### Configuration Persistence
 
@@ -496,17 +497,18 @@ A gamified chore management system for families with separate **Parent** (`/pare
 
 ### Parent Page (`/parent`)
 
-Manage kids, chores, rewards, approvals, and settings via a hamburger-menu navigation with the following tabs:
+Manage kids, chores, rewards, approvals, grades, and settings via a hamburger-menu navigation with the following tabs:
 
 | Tab | Description |
 |---|---|
 | **Chores** | Create, edit, pause, and delete chores. Assign difficulty, points, recurrence, deadlines, and photo/approval requirements |
-| **Kids** | Add/remove kids with custom avatars (emoji or uploaded image) and colors |
-| **Rewards** | Define rewards kids can redeem with earned points |
-| **Leaderboard** | View streaks, weekly/total points, and levels for all kids |
-| **Approvals** | Review pending chore completions and custom chore submissions from kids |
+| **Kids** | Add/remove kids with custom avatars (emoji or uploaded image) and colors. View points, streaks, levels, and badges |
+| **Rewards** | Define rewards kids can redeem with earned points (combined chore + grade points) |
+| **Leaderboard** | View streaks, weekly/total points, chore/academic levels, and progress bars for all kids |
+| **Approvals** | Review pending chore completions, custom chore submissions, and grade submissions from kids |
+| **Grades** | Add and manage school grades with configurable point rewards per grade level |
 | **History** | Browse all completed chores with filters by kid and date |
-| **Settings** | Configure rotation, categories, streak bonuses, and suggestions |
+| **Settings** | Configure rotation, categories, streak bonuses, notifications, daily/streak reminders, grades, and timezone |
 
 ### Kids Page (`/kids`)
 
@@ -514,10 +516,12 @@ Kid-facing interface optimized for simplicity:
 
 - **Kid picker** on launch — each kid sees only their chores
 - **Today's chores** grouped by time of day (Morning, Afternoon, Evening, Anytime)
-- **One-tap completion** with optional photo capture
-- **Custom chore submissions** — kids can suggest chores for parent approval
-- **Rewards shop** — redeem earned points for configured rewards
-- **Progress tracking** — streaks, levels, badges, and XP progress bar
+- **One-tap completion** with optional photo capture and completion popup messages
+- **Custom chore submissions** — kids can suggest chores with text description and mandatory photo proof for parent approval
+- **Grade submissions** — kids can submit exam/term grades with subject, grade, and optional photo proof
+- **Rewards shop** — redeem earned points (combined chore + grade points) for configured rewards
+- **Progress tracking** — 4-column stats bar (Chore pts, Grade pts, Day streak, Weekly), dual progress bars for Chore and Academic levels, badge collection
+- **My Submissions** section showing pending/approved/rejected submissions (rejected auto-hidden after 7 days)
 
 ### Chore Configuration
 
@@ -534,10 +538,25 @@ Kid-facing interface optimized for simplicity:
 | Per Kid | Each kid can complete independently |
 | Rotation | Auto-rotate assignment among selected kids |
 | Category | Optional tag (when categories are enabled) |
+| Completion Popup | Optional custom message shown when kid marks task as done, requiring acknowledgment |
 
 ### Categories
 
-Categories (e.g. Kitchen, Bedroom, Outdoor) are **optional and off by default**. Enable in Settings → Categories toggle. When enabled, chores can be tagged and filtered by category.
+Categories (e.g. Kitchen, Bedroom, Outdoor) are **optional and off by default**. Enable in Settings → Categories toggle. When enabled, chores can be tagged and filtered by category. Categories are only visible on the kids page when enabled.
+
+### School Grades
+
+Optional school grades tracking integrated with the points system. Enable in Parent → Settings → School Grades.
+
+- **Grade Scale**: Parent-configurable grading scale with point rewards per grade level (e.g. A → 10pts, B → 7pts)
+- **Subjects**: Configurable list of school subjects
+- **Grade Types**: Exam grades and term grades
+- **Academic Leveling**: Separate 7-tier progression (Student → Genius) with 6 academic-specific badges (e.g. Scholar Elite)
+- **Privacy**: Grades and academic levels are only visible to parents and the specific child they belong to
+- **Kid Submissions**: Kids can submit grades with subject, grade level, and optional photo proof for parent approval
+- **Approved grades** automatically award points by generating virtual `grade_` chore entries (filtered from the Chores tab)
+
+Grade points are tracked separately for leveling but **combined with chore points** for reward purchasing power.
 
 ### Streak Bonuses
 
@@ -548,11 +567,11 @@ Configurable point multipliers that activate when a kid maintains a daily streak
 | 7 days → 2x | After 7 consecutive days, all points are doubled |
 | 14 days → 3x | After 14 consecutive days, all points are tripled |
 
-The highest qualifying tier applies. Streak bonuses are configured in Settings → Streak Bonuses. Multipliers are applied automatically on chore completion.
+The highest qualifying tier applies. Streak bonuses are configured in Parent → Settings → Streak Bonuses. Multipliers are applied automatically on chore completion.
 
 ### Leveling System
 
-Kids level up based on total points earned:
+Kids level up based on total chore points earned:
 
 | Level | Icon | Points Required |
 |---|---|---|
@@ -571,6 +590,7 @@ Automatic achievements awarded for milestones:
 - **Chore count**: 1, 10, 50, 100 chores completed
 - **Streak days**: 3, 7, 30 consecutive days
 - **Total points**: 100, 500 points earned
+- **Grade milestones**: Total grades logged, grade points earned (e.g. Scholar Elite)
 
 ### Data Storage
 
@@ -587,19 +607,26 @@ Chore data is stored server-side at `/data/chores.json` via the Express API:
 | `/api/chores/chores/:id` | DELETE | Delete a chore |
 | `/api/chores/logs` | POST | Complete a chore |
 | `/api/chores/logs/:id/approve` | PUT | Approve a completion |
-| `/api/chores/logs/:id/reject` | PUT | Reject a completion |
 | `/api/chores/logs/:id/undo` | PUT | Undo a completion |
 | `/api/chores/logs/:id` | DELETE | Delete a log entry |
 | `/api/chores/rewards` | POST | Add a reward |
 | `/api/chores/rewards/:id` | PUT | Update a reward |
 | `/api/chores/rewards/:id` | DELETE | Delete a reward |
 | `/api/chores/rewards/claim` | POST | Claim a reward |
-| `/api/chores/rewards/claims/:id/approve` | PUT | Approve a claim |
-| `/api/chores/rewards/claims/:id/reject` | PUT | Reject a claim |
+| `/api/chores/submissions` | POST | Submit a custom chore (kid) |
+| `/api/chores/submissions/:id/approve` | PUT | Approve a submission |
+| `/api/chores/submissions/:id/reject` | PUT | Reject a submission |
+| `/api/chores/grades` | POST | Add a grade |
+| `/api/chores/grades/:id` | PUT | Update a grade |
+| `/api/chores/grades/:id` | DELETE | Delete a grade |
+| `/api/chores/grade-submissions` | POST | Submit a grade (kid) |
+| `/api/chores/grade-submissions/:id/approve` | PUT | Approve a grade submission |
+| `/api/chores/grade-submissions/:id/reject` | PUT | Reject a grade submission |
+| `/api/chores/settings` | PUT | Update chore settings |
 
 ### Push Notifications
 
-HomeChores supports real-time push notifications via the Web Push API. Notifications are sent to parents when kids complete or submit chores, and to kids when their submissions are approved or rejected.
+HomeChores supports real-time push notifications via the Web Push API. Notifications are sent to parents when kids complete or submit chores/grades, and to kids when their submissions are approved or rejected.
 
 #### Requirements
 
@@ -680,16 +707,28 @@ If you don't want to open ports, use a Cloudflare Tunnel:
 
 #### Daily Chore Reminders
 
-A configurable daily push notification can be sent to all kid subscribers listing today's scheduled chores. Configure in Settings → General → HomeChores:
+A configurable daily push notification sent to all kid subscribers listing today's scheduled chores. Configure in Parent → Settings:
 
 | Setting | Default | Description |
 |---|---|---|
 | Enable reminder | Off | Master toggle for daily reminders |
+| Timezone | Auto-detected | IANA timezone for hour calculations (e.g. `Europe/Stockholm`) |
 | Weekday hour | 16 | Hour (0–23) to send on Mon–Fri |
 | Weekend hour | 10 | Hour (0–23) to send on Sat–Sun |
 | Max chores shown | 3 | Number of chore names in notification body |
 
-Days with no scheduled chores are automatically skipped.
+Days with no scheduled chores are automatically skipped. The timezone setting ensures reminder hours match your local time regardless of server timezone (Docker defaults to UTC).
+
+#### Streak Reminders
+
+An optional push notification sent to kids who have a streak of 2+ days but haven't completed any chores yet today. Configure in Parent → Settings:
+
+| Setting | Default | Description |
+|---|---|---|
+| Enable streak reminder | Off | Master toggle |
+| Reminder hour | 18 | Hour (0–23) to send the reminder |
+
+Uses the same timezone setting as daily reminders.
 
 #### Data Files
 
@@ -739,6 +778,7 @@ The `/data` volume stores `config.json`, `chores.json`, `photos/`, `vapid-keys.j
 | CORS errors in console | Add your dashboard origin to `cors_allowed_origins` in HA's `configuration.yaml` and restart HA. |
 | Photos not loading | Ensure the `/data` volume is mounted and writable. Check server logs. |
 | Push notifications not working | HTTPS is required. Verify SSL cert is valid. On iOS, the page must be installed as a PWA. |
+| Daily reminders not firing | Check timezone setting in Parent → Settings. Docker defaults to UTC; set your local IANA timezone. |
 | Calendar shows no events | Check entity ID is correct. Verify the calendar has events within the forecast range. |
 | Electricity prices missing | Confirm the Nordpool entity exists and has `raw_today`/`raw_tomorrow` attributes. |
 | Chores not saving | Ensure the `/data` directory is writable by the container process. |
