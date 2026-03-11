@@ -377,32 +377,35 @@ climate.living_room.current_temperature → "22.0"`}
       <>
         <P>HomeChores is a family chore tracking system built into HomeDash. Enable it in Settings → General → HomeChores.</P>
         <H4>Parent Page (/parent)</H4>
-        <P>The parent dashboard uses a mobile-friendly hamburger menu with 7 tabs. A persistent badge on the menu icon shows pending approvals.</P>
+        <P>The parent dashboard uses a mobile-friendly hamburger menu with 8 tabs. A persistent badge on the menu icon shows pending approvals.</P>
         <Ul>
-          <li><strong>Chores</strong> — Create, edit, pause, and delete chores. Set recurrence, points, difficulty, time of day, deadlines with early bonuses, photo requirements, and approval mode.</li>
+          <li><strong>Chores</strong> — Create, edit, pause, and delete chores. Set recurrence, points, difficulty, time of day, deadlines with early bonuses, photo requirements, approval mode, and completion popup messages.</li>
           <li><strong>Kids</strong> — Add kids with emoji or photo avatars and colors. View their points, streaks, levels, and earned badges.</li>
-          <li><strong>Rewards</strong> — Define rewards with point costs. Kids can claim rewards when they have enough points.</li>
-          <li><strong>Leaderboard</strong> — Compare streaks, weekly/total points, and levels across all kids.</li>
-          <li><strong>Approvals</strong> — Review pending chore completions and custom chore submissions from kids. Reject with optional reason.</li>
+          <li><strong>Rewards</strong> — Define rewards with point costs. Kids can claim rewards using combined chore + grade points.</li>
+          <li><strong>Leaderboard</strong> — Compare streaks, weekly/total points, chore/academic levels, and progress bars across all kids.</li>
+          <li><strong>Approvals</strong> — Review pending chore completions, custom chore submissions, and grade submissions from kids. Approve to award points or reject with optional reason.</li>
+          <li><strong>Grades</strong> — Add and manage school grades with configurable point rewards per grade level.</li>
           <li><strong>History</strong> — Browse completed chores with expandable detail cards, proof photos, and filters by kid/date.</li>
-          <li><strong>Settings</strong> — Configure rotation, categories (optional), streak bonuses, and suggestions.</li>
+          <li><strong>Settings</strong> — Configure rotation, categories (optional), streak bonuses, notifications, daily/streak reminders, timezone, grades, and subjects.</li>
         </Ul>
         <H4>Kids Page (/kids)</H4>
         <P>A mobile-first page designed for kids. Features:</P>
         <Ul>
           <li>Kid selection screen with large avatar buttons</li>
           <li>Chores grouped by time of day (Morning, Afternoon, Evening, Anytime)</li>
-          <li>One-tap completion with 5-minute undo window</li>
+          <li>One-tap completion with 5-minute undo window and optional completion popup messages</li>
           <li>Photo capture for chores that require proof</li>
-          <li>Custom chore submissions — kids can suggest their own tasks for parent approval</li>
-          <li>Stats: total points, day streak, weekly points, level progress</li>
+          <li>Custom chore submissions — kids describe a task and attach mandatory photo proof for parent approval</li>
+          <li>Grade submissions — kids submit exam/term grades with subject, grade, and optional photo</li>
+          <li>Stats: 4-column bar (Chore pts, Grade pts, Day streak, Weekly), dual progress bars for Chore and Academic levels</li>
           <li>Badge collection display</li>
-          <li>Reward shop with progress bars</li>
+          <li>Reward shop with progress bars (uses combined chore + grade points)</li>
+          <li>My Submissions section (rejected entries auto-hidden after 7 days)</li>
         </Ul>
         <H4>Installing as iPhone App</H4>
         <P>Both the Kids and Parent pages are PWAs. To install on iPhone:</P>
         <Ul>
-          <li>Open <Code>http://YOUR_IP:3000/kids</Code> (or <Code>/parent</Code>) in Safari</li>
+          <li>Open <Code>https://YOUR_DOMAIN/kids</Code> (or <Code>/parent</Code>) in Safari</li>
           <li>Tap the Share button → "Add to Home Screen" → "Add"</li>
         </Ul>
         <H4>Recurrence</H4>
@@ -415,8 +418,17 @@ climate.living_room.current_temperature → "22.0"`}
             ["Weekly", "Appears on selected weekdays, resets each occurrence"],
           ]}
         />
+        <H4>School Grades</H4>
+        <P>Optional school grades tracking, enabled in Settings → School Grades. Features a parent-configurable grading scale with point rewards per grade level.</P>
+        <Ul>
+          <li>Supports exam and term grade types</li>
+          <li>Academic leveling: separate 7-tier progression (Student → Genius) with 6 academic badges</li>
+          <li>Privacy: grades and academic levels are only visible to parents and the specific child</li>
+          <li>Kids can submit grades for parent approval with optional photo proof</li>
+          <li>Grade points tracked separately for leveling, but combined with chore points for rewards</li>
+        </Ul>
         <H4>Categories</H4>
-        <P>Chore categories (e.g. Kitchen, Bedroom, Outdoor) are <strong>optional and off by default</strong>. Enable in Settings → Categories toggle. When enabled, chores can be tagged and filtered by category.</P>
+        <P>Chore categories (e.g. Kitchen, Bedroom, Outdoor) are <strong>optional and off by default</strong>. Enable in Settings → Categories toggle. When enabled, chores can be tagged and filtered by category. Only visible on the kids page when enabled.</P>
         <H4>Streak Bonuses</H4>
         <P>Configure milestone-based point multipliers in Settings → Streak Bonuses. When a kid maintains a consecutive daily streak, the highest qualifying multiplier applies automatically.</P>
         <Table
@@ -445,12 +457,13 @@ climate.living_room.current_temperature → "22.0"`}
           <li><strong>Streaks</strong> — consecutive days with at least one chore completed</li>
           <li><strong>Streak Bonuses</strong> — configurable multipliers at streak milestones</li>
           <li><strong>Deadlines</strong> — optional deadline with early completion bonus points</li>
-          <li><strong>Badges</strong> — auto-awarded for chore count, streak, and point milestones</li>
-          <li><strong>Levels</strong> — 7 tiers from Beginner to Legend based on total points</li>
-          <li><strong>Rewards</strong> — parent-defined prizes, kids see progress and can claim</li>
+          <li><strong>Badges</strong> — auto-awarded for chore count, streak, point, and grade milestones</li>
+          <li><strong>Levels</strong> — 7 chore tiers (Beginner → Legend) + 7 academic tiers (Student → Genius)</li>
+          <li><strong>Rewards</strong> — parent-defined prizes, kids see progress and can claim using combined points</li>
           <li><strong>Per-kid mode</strong> — each kid completes independently</li>
           <li><strong>Rotation</strong> — auto-rotate assignment among selected kids</li>
           <li><strong>Fairness suggestions</strong> — suggests whose turn based on history</li>
+          <li><strong>Completion popups</strong> — optional custom message shown on task completion</li>
         </Ul>
         <H4>Dashboard Widget</H4>
         <P>When enabled, a Chores widget appears on the main dashboard showing today's due chores with color-coded urgency dots, completions, countdowns, and weekly scoreboard.</P>
@@ -462,17 +475,27 @@ climate.living_room.current_temperature → "22.0"`}
           <li>Toggle the 🔔 bell icon on the Parent or Kids page to subscribe</li>
         </Ul>
         <H4>Daily Chore Reminders</H4>
-        <P>An optional daily push notification sent to kids listing today's scheduled chores. Enable in Settings → General → HomeChores.</P>
+        <P>An optional daily push notification sent to kids listing today's scheduled chores. Configure in Parent → Settings.</P>
         <Table
           headers={["Setting", "Default", "Description"]}
           rows={[
             ["Enable reminder", "Off", "Master toggle for daily reminders"],
+            ["Timezone", "Auto-detected", "IANA timezone (e.g. Europe/Stockholm) — ensures hours match your local time"],
             ["Weekday hour", "16", "Hour (0–23) to send on Mon–Fri"],
             ["Weekend hour", "10", "Hour (0–23) to send on Sat–Sun"],
             ["Max chores shown", "3", "Chore names included in the notification"],
           ]}
         />
-        <P>Days with no scheduled chores are automatically skipped.</P>
+        <P>Days with no scheduled chores are automatically skipped. The timezone setting is important because Docker containers default to UTC.</P>
+        <H4>Streak Reminders</H4>
+        <P>An optional push notification sent to kids who have a streak of 2+ days but haven't completed any chores yet today. Uses the same timezone setting as daily reminders.</P>
+        <Table
+          headers={["Setting", "Default", "Description"]}
+          rows={[
+            ["Enable streak reminder", "Off", "Master toggle"],
+            ["Reminder hour", "18", "Hour (0–23) to send the reminder"],
+          ]}
+        />
       </>
     ),
   },
