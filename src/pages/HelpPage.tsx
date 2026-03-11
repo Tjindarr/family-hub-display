@@ -632,13 +632,21 @@ sudo certbot --nginx -d homedash.yourdomain.com`}
             ["POST", "/api/chores/logs", "Complete a chore"],
             ["PUT", "/api/chores/logs/:id/undo", "Undo a completion"],
             ["PUT", "/api/chores/logs/:id/approve", "Approve a completion"],
-            ["PUT", "/api/chores/logs/:id/reject", "Reject a completion"],
             ["DELETE", "/api/chores/logs/:id", "Delete a log entry"],
             ["POST", "/api/chores/rewards", "Add a reward"],
             ["POST", "/api/chores/rewards/claim", "Claim a reward"],
+            ["POST", "/api/chores/submissions", "Submit custom chore (kid)"],
+            ["PUT", "/api/chores/submissions/:id/approve", "Approve submission"],
+            ["PUT", "/api/chores/submissions/:id/reject", "Reject submission"],
+            ["POST", "/api/chores/grades", "Add a grade"],
+            ["POST", "/api/chores/grade-submissions", "Submit grade (kid)"],
+            ["PUT", "/api/chores/grade-submissions/:id/approve", "Approve grade submission"],
+            ["PUT", "/api/chores/grade-submissions/:id/reject", "Reject grade submission"],
+            ["PUT", "/api/chores/settings", "Update chore settings"],
             ["GET", "/api/push/vapid-public-key", "Get VAPID public key"],
             ["POST", "/api/push/subscribe", "Register push subscription"],
             ["POST", "/api/push/unsubscribe", "Remove push subscription"],
+            ["POST", "/api/push/test", "Send test push notification"],
           ]}
         />
         <H4>Data Persistence</H4>
