@@ -131,7 +131,11 @@ export function LeaderboardTab({ data, refresh }: any) {
           <div className="space-y-1">
             {logs.map((log: any) => {
               const chore = data.chores.find((c: Chore) => c.id === log.choreId);
+              const submission = log.choreId?.startsWith("submission_") ? (data.submissions || []).find((s: any) => `submission_${s.id}` === log.choreId) : null;
               const kid = data.kids.find((k: Kid) => k.id === log.kidId);
+              const displayTitle = chore?.title || submission?.title || "Unknown chore";
+              const displayIcon = chore?.icon || (submission ? "📤" : "✅");
+              const displayPoints = chore?.points || submission?.points || 0;
               const isExpanded = expandedId === log.id;
               const completedDate = new Date(log.completedAt);
 
