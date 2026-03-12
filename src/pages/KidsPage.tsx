@@ -626,11 +626,12 @@ export default function KidsPage() {
 
           // Group by date
           const choreMap = new Map(data.chores.map((c: Chore) => [c.id, c]));
-          const grouped: Record<string, { log: ChoreLog; chore: Chore | undefined }[]> = {};
+          const subMap = new Map((data.submissions || []).map((s: any) => [`submission_${s.id}`, s]));
+          const grouped: Record<string, { log: ChoreLog; chore: Chore | undefined; submission: any }[]> = {};
           for (const log of myLogs) {
             const dateKey = new Date(log.completedAt).toLocaleDateString();
             if (!grouped[dateKey]) grouped[dateKey] = [];
-            grouped[dateKey].push({ log, chore: choreMap.get(log.choreId) });
+            grouped[dateKey].push({ log, chore: choreMap.get(log.choreId), submission: subMap.get(log.choreId) });
           }
 
           return (
