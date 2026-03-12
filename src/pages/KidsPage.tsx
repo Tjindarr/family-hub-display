@@ -645,11 +645,11 @@ export default function KidsPage() {
                   <div key={date}>
                     <div className="text-sm font-medium text-muted-foreground mb-1.5">{date}</div>
                     <div className="space-y-1.5">
-                      {entries.map(({ log, chore }) => (
+                      {entries.map(({ log, chore, submission }) => (
                         <div key={log.id} className="flex items-center gap-3 text-base py-2.5 px-3 rounded-lg bg-secondary/30">
-                          <span className="text-xl">{chore?.icon || "✅"}</span>
+                          <span className="text-xl">{chore?.icon || (submission ? "📤" : "✅")}</span>
                           <div className="flex-1 min-w-0">
-                            <span className="font-medium">{chore?.title || "Unknown chore"}</span>
+                            <span className="font-medium">{chore?.title || submission?.title || "Unknown chore"}</span>
                           </div>
                           {log.bonusMultiplier && log.bonusMultiplier > 1 && (
                             <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">{log.bonusMultiplier}x</span>
