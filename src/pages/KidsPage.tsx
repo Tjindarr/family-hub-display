@@ -124,6 +124,21 @@ export default function KidsPage() {
     .map((c) => ({ chore: c, log: isChoreCompletedToday(c.id, data.logs, kid.id) }))
     .filter((x) => x.log && x.log.kidId === kid.id);
 
+  // Also include approved submissions completed today
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const submissionLogsToday = (data.logs || [])
+    .filter((l: ChoreLog) =>
+      l.kidId === kid.id &&
+      !l.undoneAt &&
+      l.choreId?.startsWith("submission_") &&
+      new Date(l.completedAt) >= todayStart
+    )
+    .map((log: ChoreLog) => {
+      const sub = (data.submissions || []).find((s: any) => `submission_${s.id}` === log.choreId);
+      return { chore: { id: log.choreId, icon: "📤", title: sub?.title || "Custom chore", points: sub?.points || 0 } as any, log };
+    });
+  const allCompletedToday = [...completedToday, ...submissionLogsToday];
+
   const now = new Date();
   const groupOrder: TimeOfDay[] = ["morning", "afternoon", "evening", "anytime"];
   const grouped = groupOrder.map((tod) => ({
