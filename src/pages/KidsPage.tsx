@@ -523,7 +523,7 @@ export default function KidsPage() {
         )}
 
         {/* Completed by me today */}
-        {completedToday.length > 0 && (
+        {allCompletedToday.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-muted-foreground mb-3">✅ Completed today</h3>
             <div className="space-y-2">
