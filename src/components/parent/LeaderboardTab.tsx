@@ -131,7 +131,11 @@ export function LeaderboardTab({ data, refresh }: any) {
           <div className="space-y-1">
             {logs.map((log: any) => {
               const chore = data.chores.find((c: Chore) => c.id === log.choreId);
+              const submission = log.choreId?.startsWith("submission_") ? (data.submissions || []).find((s: any) => `submission_${s.id}` === log.choreId) : null;
               const kid = data.kids.find((k: Kid) => k.id === log.kidId);
+              const displayTitle = chore?.title || submission?.title || "Unknown chore";
+              const displayIcon = chore?.icon || (submission ? "📤" : "✅");
+              const displayPoints = chore?.points || submission?.points || 0;
               const isExpanded = expandedId === log.id;
               const completedDate = new Date(log.completedAt);
 
@@ -141,8 +145,8 @@ export function LeaderboardTab({ data, refresh }: any) {
                     className="w-full text-left px-4 py-3 flex items-center gap-2 text-[15px] cursor-pointer min-h-[52px]"
                     onClick={() => setExpandedId(isExpanded ? null : log.id)}
                   >
-                    {!log.choreId?.startsWith("grade_") && <span className="text-lg">{chore?.icon}</span>}
-                    <span className="flex-1 truncate font-medium text-base">{chore?.title}</span>
+                    {!log.choreId?.startsWith("grade_") && <span className="text-lg">{displayIcon}</span>}
+                    <span className="flex-1 truncate font-medium text-base">{displayTitle}</span>
                     <span className="flex items-center gap-1 text-[15px] shrink-0" style={{ color: kid?.color }}>
                       {kid && <KidAvatar kid={kid} size={18} />}
                       <span className="hidden sm:inline">{kid?.name}</span>
@@ -170,7 +174,7 @@ export function LeaderboardTab({ data, refresh }: any) {
                         <div>
                           <span className="text-muted-foreground text-sm">Points</span>
                           <div className="font-medium">
-                            +{chore?.points || 0}pts
+                            +{displayPoints}pts
                             {log.bonusMultiplier && log.bonusMultiplier > 1 && (
                               <span className="ml-1 text-yellow-400">({log.bonusMultiplier}x)</span>
                             )}

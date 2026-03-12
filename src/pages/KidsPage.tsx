@@ -626,11 +626,12 @@ export default function KidsPage() {
 
           // Group by date
           const choreMap = new Map(data.chores.map((c: Chore) => [c.id, c]));
-          const grouped: Record<string, { log: ChoreLog; chore: Chore | undefined }[]> = {};
+          const subMap = new Map((data.submissions || []).map((s: any) => [`submission_${s.id}`, s]));
+          const grouped: Record<string, { log: ChoreLog; chore: Chore | undefined; submission: any }[]> = {};
           for (const log of myLogs) {
             const dateKey = new Date(log.completedAt).toLocaleDateString();
             if (!grouped[dateKey]) grouped[dateKey] = [];
-            grouped[dateKey].push({ log, chore: choreMap.get(log.choreId) });
+            grouped[dateKey].push({ log, chore: choreMap.get(log.choreId), submission: subMap.get(log.choreId) });
           }
 
           return (
@@ -644,11 +645,11 @@ export default function KidsPage() {
                   <div key={date}>
                     <div className="text-sm font-medium text-muted-foreground mb-1.5">{date}</div>
                     <div className="space-y-1.5">
-                      {entries.map(({ log, chore }) => (
+                      {entries.map(({ log, chore, submission }) => (
                         <div key={log.id} className="flex items-center gap-3 text-base py-2.5 px-3 rounded-lg bg-secondary/30">
-                          <span className="text-xl">{chore?.icon || "✅"}</span>
+                          <span className="text-xl">{chore?.icon || (submission ? "📤" : "✅")}</span>
                           <div className="flex-1 min-w-0">
-                            <span className="font-medium">{chore?.title || "Unknown chore"}</span>
+                            <span className="font-medium">{chore?.title || submission?.title || "Unknown chore"}</span>
                           </div>
                           {log.bonusMultiplier && log.bonusMultiplier > 1 && (
                             <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">{log.bonusMultiplier}x</span>
@@ -660,7 +661,7 @@ export default function KidsPage() {
                             {new Date(log.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>
                           {log.photoUrl && <PhotoIndicator onClick={() => setLightboxPhoto(log.photoUrl!)} />}
-                          <span className="text-sm font-medium text-primary">+{chore?.points || 0}</span>
+                          <span className="text-sm font-medium text-primary">+{chore?.points || submission?.points || 0}</span>
                         </div>
                       ))}
                     </div>
