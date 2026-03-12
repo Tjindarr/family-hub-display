@@ -661,7 +661,7 @@ export default function KidsPage() {
                             {new Date(log.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </span>
                           {log.photoUrl && <PhotoIndicator onClick={() => setLightboxPhoto(log.photoUrl!)} />}
-                          <span className="text-sm font-medium text-primary">+{chore?.points || 0}</span>
+                          <span className="text-sm font-medium text-primary">+{chore?.points || submission?.points || 0}</span>
                         </div>
                       ))}
                     </div>

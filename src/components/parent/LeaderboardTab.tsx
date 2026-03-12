@@ -174,7 +174,7 @@ export function LeaderboardTab({ data, refresh }: any) {
                         <div>
                           <span className="text-muted-foreground text-sm">Points</span>
                           <div className="font-medium">
-                            +{chore?.points || 0}pts
+                            +{displayPoints}pts
                             {log.bonusMultiplier && log.bonusMultiplier > 1 && (
                               <span className="ml-1 text-yellow-400">({log.bonusMultiplier}x)</span>
                             )}
