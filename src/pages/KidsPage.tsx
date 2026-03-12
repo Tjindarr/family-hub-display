@@ -527,7 +527,7 @@ export default function KidsPage() {
           <div>
             <h3 className="text-lg font-semibold text-muted-foreground mb-3">✅ Completed today</h3>
             <div className="space-y-2">
-              {completedToday.map(({ chore, log }) => (
+              {allCompletedToday.map(({ chore, log }) => (
                 <div key={log!.id} className="flex items-center gap-3 text-base py-2.5 px-3 rounded-lg bg-primary/5">
                   <span className="text-xl">{chore.icon}</span>
                   <span className="flex-1 font-medium">{chore.title}</span>
