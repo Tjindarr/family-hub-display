@@ -124,6 +124,21 @@ export default function KidsPage() {
     .map((c) => ({ chore: c, log: isChoreCompletedToday(c.id, data.logs, kid.id) }))
     .filter((x) => x.log && x.log.kidId === kid.id);
 
+  // Also include approved submissions completed today
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const submissionLogsToday = (data.logs || [])
+    .filter((l: ChoreLog) =>
+      l.kidId === kid.id &&
+      !l.undoneAt &&
+      l.choreId?.startsWith("submission_") &&
+      new Date(l.completedAt) >= todayStart
+    )
+    .map((log: ChoreLog) => {
+      const sub = (data.submissions || []).find((s: any) => `submission_${s.id}` === log.choreId);
+      return { chore: { id: log.choreId, icon: "📤", title: sub?.title || "Custom chore", points: sub?.points || 0 } as any, log };
+    });
+  const allCompletedToday = [...completedToday, ...submissionLogsToday];
+
   const now = new Date();
   const groupOrder: TimeOfDay[] = ["morning", "afternoon", "evening", "anytime"];
   const grouped = groupOrder.map((tod) => ({
@@ -508,11 +523,11 @@ export default function KidsPage() {
         )}
 
         {/* Completed by me today */}
-        {completedToday.length > 0 && (
+        {allCompletedToday.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-muted-foreground mb-3">✅ Completed today</h3>
             <div className="space-y-2">
-              {completedToday.map(({ chore, log }) => (
+              {allCompletedToday.map(({ chore, log }) => (
                 <div key={log!.id} className="flex items-center gap-3 text-base py-2.5 px-3 rounded-lg bg-primary/5">
                   <span className="text-xl">{chore.icon}</span>
                   <span className="flex-1 font-medium">{chore.title}</span>
