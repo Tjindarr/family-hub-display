@@ -1292,7 +1292,7 @@ function scheduleDailyReminder() {
           sendPush("kid", {
             title: "⏰ Time for chores!",
             body: `Today: ${choreNames}${extra}`,
-            tag: `chore-reminder-${todayStr}`,
+            tag: `chore-reminder-${now.toISOString().slice(0, 10)}`,
             url: "/kids",
           });
         }
