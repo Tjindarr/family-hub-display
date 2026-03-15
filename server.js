@@ -1268,13 +1268,19 @@ function scheduleDailyReminder() {
     if (localHour === targetHour && localMinute === 0) {
       const data = readChores();
       if (data.kids && data.kids.length > 0) {
-        const todayStr = now.toISOString().slice(0, 10);
-        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-        const todayName = dayNames[localDay];
+        const todayDay = localDay; // 0=Sun, 1=Mon, …6=Sat
         const activeChores = (data.chores || []).filter((c) => {
-          if (c.frequency === "daily") return true;
-          if (c.frequency === "weekly" && c.weekdays && c.weekdays.includes(todayName)) return true;
-          if (c.frequency === "specific_days" && c.weekdays && c.weekdays.includes(todayName)) return true;
+          if (c.paused) return false;
+          const rec = c.recurrence || {};
+          const type = rec.type || c.frequency || "";
+          if (type === "daily") return true;
+          if (type === "weekly" && rec.weekdays && rec.weekdays.includes(todayDay)) return true;
+          if (type === "interval") return true; // interval chores are always relevant
+          if (type === "once") {
+            // Only include if not yet completed
+            const done = (data.logs || []).some((l) => l.choreId === c.id && !l.undoneAt);
+            return !done;
+          }
           return false;
         });
 
@@ -1286,7 +1292,7 @@ function scheduleDailyReminder() {
           sendPush("kid", {
             title: "⏰ Time for chores!",
             body: `Today: ${choreNames}${extra}`,
-            tag: `chore-reminder-${todayStr}`,
+            tag: `chore-reminder-${now.toISOString().slice(0, 10)}`,
             url: "/kids",
           });
         }
