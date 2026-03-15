@@ -106,8 +106,9 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
       try {
         const res = await fetch("/api/photos");
         if (res.ok) {
-          const data = await res.json();
-          if (data.length > 0) setPhotos(data);
+        const data = await res.json();
+          const filtered = data.filter((p: ServerPhoto) => !p.filename.startsWith("chore_"));
+          if (filtered.length > 0) setPhotos(filtered);
           else if (isDemo) setPhotos(DEMO_PHOTOS);
         }
       } catch (e) {
