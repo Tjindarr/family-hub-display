@@ -68,9 +68,12 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
 
   const firstDayOfWeek = display?.firstDayOfWeek ?? 1;
 
-  // Expand multi-day all-day events so they appear on each day they cover
-  const expandedEvents: EnrichedCalendarEvent[] = display?.expandMultiDayEvents
-    ? events.flatMap((event) => {
+  // Expand multi-day all-day events so they appear on each day they cover,
+  // then merge back with all other events, sort, and apply limits
+  const limitedEvents: EnrichedCalendarEvent[] = (() => {
+    let result: EnrichedCalendarEvent[];
+    if (display?.expandMultiDayEvents) {
+      result = events.flatMap((event) => {
         const isAllDay = event.start.date && !event.start.dateTime;
         if (!isAllDay) return [event];
         const startDate = startOfDay(parseISO(event.start.date!));
@@ -81,13 +84,18 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
           const d = addDays(startDate, i);
           return { ...event, start: { date: format(d, "yyyy-MM-dd") }, end: { date: format(addDays(d, 1), "yyyy-MM-dd") } };
         });
-      })
-    : events;
-
-  // Apply max events limit
-  const limitedEvents = display?.limitEvents && display.maxEvents
-    ? expandedEvents.slice(0, display.maxEvents)
-    : expandedEvents;
+      });
+    } else {
+      result = [...events];
+    }
+    // Sort all events (expanded + regular) by start time
+    result.sort((a, b) => getEventTime(a).getTime() - getEventTime(b).getTime());
+    // Apply max events limit after expansion and sorting
+    if (display?.limitEvents && display.maxEvents) {
+      result = result.slice(0, display.maxEvents);
+    }
+    return result;
+  })();
 
   // Group by day
   const grouped = limitedEvents.reduce<Record<string, EnrichedCalendarEvent[]>>((acc, event) => {
