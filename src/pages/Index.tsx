@@ -663,7 +663,7 @@ const Index = () => {
               <Suspense fallback={null}>
                 <ConnectionStatus isConfigured={isConfigured} wsState={wsState} />
               </Suspense>
-              <span className="text-xs text-muted-foreground">v1.2.0</span>
+              <span className="text-xs text-muted-foreground">v1.3.2</span>
             </div>
           </div>
         </header>
