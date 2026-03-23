@@ -33,6 +33,7 @@ export const DEFAULT_CONFIG: DashboardConfig = {
     fontSizeTime: 10,
     fontSizeTitle: 14,
     fontSizeBody: 12,
+    expandMultiDayEvents: false,
   },
   temperatureEntities: [
     { entityId: "sensor.living_room_temperature", label: "Living Room", color: "hsl(174, 72%, 50%)" },
