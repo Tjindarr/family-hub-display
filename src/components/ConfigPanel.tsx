@@ -1065,6 +1065,13 @@ function WidgetStyleControls({ style, onChange, fields }: {
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <Checkbox
+                      checked={calendarDisplay.expandMultiDayEvents ?? false}
+                      onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, expandMultiDayEvents: !!v })}
+                    />
+                    Show multi-day events on each day
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
                       checked={calendarDisplay.limitEvents ?? false}
                       onCheckedChange={(v) => setCalendarDisplay({ ...calendarDisplay, limitEvents: !!v, maxEvents: calendarDisplay.maxEvents || 20 })}
                     />
