@@ -1,4 +1,4 @@
-import { format, isToday, isTomorrow, parseISO, getISOWeek, getWeek } from "date-fns";
+import { format, isToday, isTomorrow, parseISO, getISOWeek, getWeek, addDays, startOfDay, differenceInCalendarDays } from "date-fns";
 import { Clock } from "lucide-react";
 import type { HACalendarEvent, CalendarDisplayConfig, WidgetStyleConfig } from "@/lib/config";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
