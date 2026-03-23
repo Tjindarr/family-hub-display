@@ -68,10 +68,26 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
 
   const firstDayOfWeek = display?.firstDayOfWeek ?? 1;
 
+  // Expand multi-day all-day events so they appear on each day they cover
+  const expandedEvents: EnrichedCalendarEvent[] = display?.expandMultiDayEvents
+    ? events.flatMap((event) => {
+        const isAllDay = event.start.date && !event.start.dateTime;
+        if (!isAllDay) return [event];
+        const startDate = startOfDay(parseISO(event.start.date!));
+        const endDate = startOfDay(parseISO(event.end.date || event.start.date!));
+        const days = differenceInCalendarDays(endDate, startDate);
+        if (days <= 1) return [event];
+        return Array.from({ length: days }, (_, i) => {
+          const d = addDays(startDate, i);
+          return { ...event, start: { date: format(d, "yyyy-MM-dd") }, end: { date: format(addDays(d, 1), "yyyy-MM-dd") } };
+        });
+      })
+    : events;
+
   // Apply max events limit
   const limitedEvents = display?.limitEvents && display.maxEvents
-    ? events.slice(0, display.maxEvents)
-    : events;
+    ? expandedEvents.slice(0, display.maxEvents)
+    : expandedEvents;
 
   // Group by day
   const grouped = limitedEvents.reduce<Record<string, EnrichedCalendarEvent[]>>((acc, event) => {
