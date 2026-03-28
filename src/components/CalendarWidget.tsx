@@ -80,10 +80,11 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
         const endDate = startOfDay(parseISO(event.end.date || event.start.date!));
         const days = differenceInCalendarDays(endDate, startDate);
         if (days <= 1) return [event];
+        const today = startOfDay(new Date());
         return Array.from({ length: days }, (_, i) => {
           const d = addDays(startDate, i);
           return { ...event, start: { date: format(d, "yyyy-MM-dd") }, end: { date: format(addDays(d, 1), "yyyy-MM-dd") } };
-        });
+        }).filter(e => startOfDay(parseISO(e.start.date!)) >= today);
       });
     } else {
       result = [...events];
