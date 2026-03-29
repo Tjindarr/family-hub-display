@@ -91,9 +91,25 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
     }
     // Sort all events (expanded + regular) by start time
     result.sort((a, b) => getEventTime(a).getTime() - getEventTime(b).getTime());
-    // Apply max events limit after expansion and sorting
+    // Apply max events limit, counting multi-day all-day events by their day span
     if (display?.limitEvents && display.maxEvents) {
-      result = result.slice(0, display.maxEvents);
+      const max = display.maxEvents;
+      const limited: EnrichedCalendarEvent[] = [];
+      let count = 0;
+      for (const event of result) {
+        const isAllDay = event.start.date && !event.start.dateTime;
+        let span = 1;
+        if (isAllDay) {
+          const s = startOfDay(parseISO(event.start.date!));
+          const e = startOfDay(parseISO(event.end.date || event.start.date!));
+          span = Math.max(1, differenceInCalendarDays(e, s));
+        }
+        if (count + span > max && limited.length > 0) break;
+        limited.push(event);
+        count += span;
+        if (count >= max) break;
+      }
+      result = limited;
     }
     return result;
   })();
