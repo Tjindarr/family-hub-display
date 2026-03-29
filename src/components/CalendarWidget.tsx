@@ -96,13 +96,15 @@ export default function CalendarWidget({ events, loading, fontSizes, dayColor, t
       const max = display.maxEvents;
       const limited: EnrichedCalendarEvent[] = [];
       let count = 0;
+      const today = startOfDay(new Date());
       for (const event of result) {
         const isAllDay = event.start.date && !event.start.dateTime;
         let span = 1;
         if (isAllDay) {
           const s = startOfDay(parseISO(event.start.date!));
           const e = startOfDay(parseISO(event.end.date || event.start.date!));
-          span = Math.max(1, differenceInCalendarDays(e, s));
+          const effectiveStart = s < today ? today : s;
+          span = Math.max(1, differenceInCalendarDays(e, effectiveStart));
         }
         if (count + span > max && limited.length > 0) break;
         limited.push(event);
