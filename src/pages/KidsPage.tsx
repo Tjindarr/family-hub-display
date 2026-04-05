@@ -217,7 +217,7 @@ export default function KidsPage() {
   if (showSubmit) {
     return (
       <>
-        <ConfettiBurst trigger={confettiTrigger} />
+        <ConfettiBurst trigger={confettiTrigger} key="confetti-global" />
         <SubmitChoreView kid={kid} onBack={() => setShowSubmit(false)} refresh={refresh} submitPhotoRef={submitPhotoRef} fireConfetti={fireConfetti} />
       </>
     );
@@ -227,7 +227,7 @@ export default function KidsPage() {
   if (showSubmitGrade) {
     return (
       <>
-        <ConfettiBurst trigger={confettiTrigger} />
+        <ConfettiBurst trigger={confettiTrigger} key="confetti-global" />
         <SubmitGradeView
           kid={kid}
           gradeScale={data.settings?.gradeScale || DEFAULT_GRADE_SCALE}
