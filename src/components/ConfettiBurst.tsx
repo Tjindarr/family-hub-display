@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface Particle {
   id: number;
@@ -44,7 +45,7 @@ export function ConfettiBurst({ trigger }: { trigger: number }) {
 
   if (particles.length === 0) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
       {particles.map((p) => {
         const rad = (p.angle * Math.PI) / 180;
@@ -69,6 +70,7 @@ export function ConfettiBurst({ trigger }: { trigger: number }) {
           />
         );
       })}
-    </div>
+    </div>,
+    document.body
   );
 }
