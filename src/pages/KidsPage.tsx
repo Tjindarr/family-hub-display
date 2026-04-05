@@ -213,11 +213,14 @@ export default function KidsPage() {
 
   const nextReward = (data.rewards || []).sort((a: Reward, b: Reward) => a.pointsCost - b.pointsCost).find((r: Reward) => r.pointsCost > available) || null;
 
+  // Single ConfettiBurst that never unmounts across view switches
+  const confettiOverlay = <ConfettiBurst trigger={confettiTrigger} />;
+
   // Submit chore view
   if (showSubmit) {
     return (
       <>
-        <ConfettiBurst trigger={confettiTrigger} key="confetti-global" />
+        {confettiOverlay}
         <SubmitChoreView kid={kid} onBack={() => setShowSubmit(false)} refresh={refresh} submitPhotoRef={submitPhotoRef} fireConfetti={fireConfetti} />
       </>
     );
@@ -227,7 +230,7 @@ export default function KidsPage() {
   if (showSubmitGrade) {
     return (
       <>
-        <ConfettiBurst trigger={confettiTrigger} key="confetti-global" />
+        {confettiOverlay}
         <SubmitGradeView
           kid={kid}
           gradeScale={data.settings?.gradeScale || DEFAULT_GRADE_SCALE}
@@ -244,48 +247,51 @@ export default function KidsPage() {
   // Rewards view
   if (showRewards) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
-          <div className="max-w-lg mx-auto flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setShowRewards(false)}>
-              <ArrowLeft className="w-6 h-6" />
-            </Button>
-            <h1 className="text-xl font-semibold">🎁 Rewards</h1>
-            <div className="ml-auto text-base font-medium text-primary">{available} pts available</div>
+      <>
+        {confettiOverlay}
+        <div className="min-h-screen bg-background">
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-4">
+            <div className="max-w-lg mx-auto flex items-center gap-3">
+              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setShowRewards(false)}>
+                <ArrowLeft className="w-6 h-6" />
+              </Button>
+              <h1 className="text-xl font-semibold">🎁 Rewards</h1>
+              <div className="ml-auto text-base font-medium text-primary">{available} pts available</div>
+            </div>
+          </div>
+          <div className="max-w-lg mx-auto p-4 space-y-3">
+            {(data.rewards || []).map((reward: Reward) => {
+              const canAfford = available >= reward.pointsCost;
+              return (
+                <Card key={reward.id} className={!canAfford ? "opacity-50" : ""}>
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <span className="text-4xl">{reward.icon}</span>
+                    <div className="flex-1">
+                      <div className="font-semibold text-lg">{reward.title}</div>
+                      <div className="text-base text-muted-foreground">{reward.pointsCost} points</div>
+                      {!canAfford && (
+                        <Progress value={(available / reward.pointsCost) * 100} className="mt-2 h-2.5" />
+                      )}
+                    </div>
+                    <Button disabled={!canAfford} onClick={() => handleClaimReward(reward)} className="text-base px-5 h-11">
+                      Claim
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {(data.rewards || []).length === 0 && (
+              <p className="text-center text-muted-foreground text-base">No rewards set up yet</p>
+            )}
           </div>
         </div>
-        <div className="max-w-lg mx-auto p-4 space-y-3">
-          {(data.rewards || []).map((reward: Reward) => {
-            const canAfford = available >= reward.pointsCost;
-            return (
-              <Card key={reward.id} className={!canAfford ? "opacity-50" : ""}>
-                <CardContent className="p-5 flex items-center gap-4">
-                  <span className="text-4xl">{reward.icon}</span>
-                  <div className="flex-1">
-                    <div className="font-semibold text-lg">{reward.title}</div>
-                    <div className="text-base text-muted-foreground">{reward.pointsCost} points</div>
-                    {!canAfford && (
-                      <Progress value={(available / reward.pointsCost) * 100} className="mt-2 h-2.5" />
-                    )}
-                  </div>
-                  <Button disabled={!canAfford} onClick={() => handleClaimReward(reward)} className="text-base px-5 h-11">
-                    Claim
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-          {(data.rewards || []).length === 0 && (
-            <p className="text-center text-muted-foreground text-base">No rewards set up yet</p>
-          )}
-        </div>
-      </div>
+      </>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <ConfettiBurst trigger={confettiTrigger} />
+      {confettiOverlay}
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoCapture} />
 
       {/* Header */}
