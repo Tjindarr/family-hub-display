@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface Particle {
@@ -14,13 +14,49 @@ interface Particle {
 }
 
 const COLORS = [
-  "hsl(45, 100%, 60%)",   // gold
-  "hsl(330, 90%, 60%)",   // pink
-  "hsl(200, 90%, 60%)",   // blue
-  "hsl(120, 70%, 55%)",   // green
-  "hsl(280, 80%, 65%)",   // purple
-  "hsl(15, 95%, 60%)",    // orange
+  "hsl(45, 100%, 60%)",
+  "hsl(330, 90%, 60%)",
+  "hsl(200, 90%, 60%)",
+  "hsl(120, 70%, 55%)",
+  "hsl(280, 80%, 65%)",
+  "hsl(15, 95%, 60%)",
 ];
+
+function ParticleDot({ p }: { p: Particle }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const rad = (p.angle * Math.PI) / 180;
+    const dx = Math.cos(rad) * p.velocity * 15;
+    const dy = Math.sin(rad) * p.velocity * 15 - 40;
+
+    el.animate(
+      [
+        { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
+        { transform: `translate(${dx}px, ${dy + 120}px) rotate(${p.spin}deg)`, opacity: 0 },
+      ],
+      { duration: 1300, easing: "cubic-bezier(0.25,0,0.5,1)", fill: "forwards" }
+    );
+  }, [p]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute"
+      style={{
+        left: `${p.x}%`,
+        top: `${p.y}%`,
+        width: p.size,
+        height: p.shape === "rect" ? p.size * 0.6 : p.size,
+        backgroundColor: p.color,
+        borderRadius: p.shape === "circle" ? "50%" : p.shape === "star" ? "2px" : "1px",
+      }}
+    />
+  );
+}
 
 export function ConfettiBurst({ trigger }: { trigger: number }) {
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -47,29 +83,9 @@ export function ConfettiBurst({ trigger }: { trigger: number }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-      {particles.map((p) => {
-        const rad = (p.angle * Math.PI) / 180;
-        const dx = Math.cos(rad) * p.velocity * 15;
-        const dy = Math.sin(rad) * p.velocity * 15 - 40;
-        return (
-          <div
-            key={p.id}
-            className="absolute"
-            style={{
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              width: p.size,
-              height: p.shape === "rect" ? p.size * 0.6 : p.size,
-              backgroundColor: p.color,
-              borderRadius: p.shape === "circle" ? "50%" : p.shape === "star" ? "2px" : "1px",
-              animation: `confetti-fall 1.3s cubic-bezier(0.25, 0, 0.5, 1) forwards`,
-              "--dx": `${dx}px`,
-              "--dy": `${dy}px`,
-              "--spin": `${p.spin}deg`,
-            } as React.CSSProperties}
-          />
-        );
-      })}
+      {particles.map((p) => (
+        <ParticleDot key={p.id} p={p} />
+      ))}
     </div>,
     document.body
   );
