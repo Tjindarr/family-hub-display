@@ -2,6 +2,8 @@
 
 A high-density Home Assistant dashboard for wall-mounted displays. Built with React, Vite, and Tailwind CSS.
 
+Pre-built images are published to **GitHub Container Registry**: `ghcr.io/tjindarr/family-hub-display:latest`
+
 ---
 
 ## 📦 Installation
@@ -9,37 +11,50 @@ A high-density Home Assistant dashboard for wall-mounted displays. Built with Re
 ### Docker (Recommended)
 
 ```bash
-git clone <YOUR_GIT_URL>
-cd homedash
-docker compose up -d
+docker run -d \
+  --name homedash \
+  -p 8087:80 \
+  -v /path/to/appdata/homedash:/data \
+  --restart unless-stopped \
+  ghcr.io/tjindarr/family-hub-display:latest
 ```
 
-Dashboard available at `http://localhost:3000`. Config and photos persist in a Docker volume (`config-data` → `/data`).
+Or with `docker compose`:
 
-### Unraid
-
-1. In Unraid, go to **Docker → Add Container** (or use Community Applications to add a custom container)
-2. Configure the container:
-
-| Field | Value |
-|---|---|
-| **Name** | `homedash` |
-| **Repository** | Build from the cloned repo, or push your image to Docker Hub/GHCR and reference it here |
-| **Port Mapping** | Host: `3000` → Container: `80` |
-| **Path Mapping** | Host: `/mnt/user/appdata/homedash` → Container: `/data` |
-
-3. If building locally on Unraid:
-```bash
-cd /mnt/user/appdata/
-git clone <YOUR_GIT_URL> homedash-build
-cd homedash-build
-docker build -t homedash .
+```yaml
+services:
+  homedash:
+    image: ghcr.io/tjindarr/family-hub-display:latest
+    container_name: homedash
+    ports:
+      - "8087:80"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
 ```
-Then set **Repository** to `homedash` in the Unraid Docker UI.
 
-4. Click **Apply** — the dashboard will be available at `http://<UNRAID_IP>:3000`
+Dashboard available at `http://localhost:8087`. Config, chores, and photos persist in the mounted `/data` volume.
 
-> **Persistence**: The `/data` path stores `config.json` and uploaded photos. Mapping it to `/mnt/user/appdata/homedash` ensures data survives container updates.
+### Unraid (Community Applications)
+
+The easiest way to install on Unraid is via the bundled CA template.
+
+1. In Unraid, open the **Apps** tab → **Install from URL** (or paste this template URL into a new container):
+   ```
+   https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/unraid/ha-dashboard.xml
+   ```
+2. Defaults are already set:
+
+   | Field | Value |
+   |---|---|
+   | **Name** | `ha-dashboard` |
+   | **Repository** | `ghcr.io/tjindarr/family-hub-display:latest` |
+   | **WebUI Port** | Host `8087` → Container `80` |
+   | **Appdata** | `/mnt/user/appdata/ha-dashboard` → `/data` |
+
+3. Click **Apply** — dashboard available at `http://<UNRAID_IP>:8087`.
+
+> **Persistence**: `/data` stores `config.json`, `chores.json`, photos, and VAPID push keys. Mapping it to `/mnt/user/appdata/ha-dashboard` ensures data survives container updates.
 
 ### Manual / Development
 
@@ -50,6 +65,15 @@ npm install
 npm run dev          # development server (frontend only)
 npm run build        # production build
 node server.js       # production server (frontend + API)
+```
+
+### Building Your Own Image
+
+The repo includes a GitHub Actions workflow (`.github/workflows/docker-publish.yml`) that automatically builds and pushes to GHCR on every push to `main` and on version tags (`v1.2.3`). To build locally instead:
+
+```bash
+docker build -t homedash .
+docker run -d -p 8087:80 -v $(pwd)/data:/data homedash
 ```
 
 ---
@@ -756,10 +780,10 @@ The server automatically creates timestamped backups of `config.json` when savin
 ```yaml
 services:
   ha-dashboard:
-    build: .
+    image: ghcr.io/tjindarr/family-hub-display:latest
     container_name: ha-dashboard
     ports:
-      - "3000:80"
+      - "8087:80"
     volumes:
       - config-data:/data
     restart: unless-stopped
