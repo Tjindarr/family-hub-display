@@ -38,6 +38,6 @@
       <Mode>rw</Mode>
     </Volume>
   </Data>
-  <Config Name="WebUI Port" Target="80" Default="8080" Mode="tcp" Description="HTTP port for the dashboard" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="WebUI Port" Target="80" Default="8087" Mode="tcp" Description="HTTP port for the dashboard" Type="Port" Display="always" Required="true" Mask="false">8087</Config>
   <Config Name="App Data" Target="/data" Default="/mnt/user/appdata/ha-dashboard" Mode="rw" Description="Persistent config, chores, photos, vapid keys" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/ha-dashboard</Config>
 </Container>
