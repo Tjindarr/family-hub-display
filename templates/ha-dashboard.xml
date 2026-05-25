@@ -1,26 +1,29 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>HA-Dashboard</Name>
-  <Repository>ghcr.io/Tjindarr/family-hub-display:latest</Repository>
-  <Registry>https://ghcr.io/Tjindarr/family-hub-display</Registry>
+  <Repository>ghcr.io/tjindarr/family-hub-display:latest</Repository>
+  <Registry>https://ghcr.io/tjindarr/family-hub-display</Registry>
   <Network>bridge</Network>
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
   <Support>https://github.com/Tjindarr/family-hub-display/issues</Support>
   <Project>https://github.com/Tjindarr/family-hub-display</Project>
-  <Overview>A self-hosted Home Assistant dashboard with chores, sensors, calendar, weather and more. Optimized for kiosk mode on Raspberry Pi or any browser.</Overview>
+  <ReadMe>https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/README.md</ReadMe>
+  <Overview>A self-hosted Home Assistant dashboard with chores, sensors, calendar, weather, photos and push notifications. Optimised for wall-mounted kiosks (Raspberry Pi) and any modern browser. Configuration and data persist in /data.</Overview>
   <Category>HomeAutomation: Productivity:</Category>
   <WebUI>http://[IP]:[PORT:80]/</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/unraid/ha-dashboard.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/unraid/icon.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/templates/ha-dashboard.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/icon.png</Icon>
+  <License>MIT</License>
+  <MinVer>6.10</MinVer>
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
   <DateInstalled/>
   <DonateText/>
   <DonateLink/>
-  <Description>A self-hosted Home Assistant dashboard with chores, sensors, calendar, weather and more. Configuration and data persist in /data.</Description>
+  <Description>A self-hosted Home Assistant dashboard with chores, sensors, calendar, weather, photos and push notifications. Configuration and data persist in /data.</Description>
   <Networking>
     <Mode>bridge</Mode>
     <Publish>

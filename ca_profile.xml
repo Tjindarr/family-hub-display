@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<CommunityApplications>
+  <Profile>
+    Family Hub Display — a self-hosted Home Assistant dashboard with chores, sensors, calendar, weather, photos and push notifications. Optimised for wall-mounted kiosks (Raspberry Pi) and any modern browser. Maintained by @Tjindarr — please open issues on GitHub for support.
+  </Profile>
+  <Icon>https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/icon.png</Icon>
+  <WebPage>https://github.com/Tjindarr/family-hub-display</WebPage>
+</CommunityApplications>
