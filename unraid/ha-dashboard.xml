@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>HA-Dashboard</Name>
-  <Repository>ghcr.io/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME:latest</Repository>
-  <Registry>https://ghcr.io/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME</Registry>
+  <Repository>ghcr.io/Tjindarr/family-hub-display:latest</Repository>
+  <Registry>https://ghcr.io/Tjindarr/family-hub-display</Registry>
   <Network>bridge</Network>
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/issues</Support>
-  <Project>https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME</Project>
+  <Support>https://github.com/Tjindarr/family-hub-display/issues</Support>
+  <Project>https://github.com/Tjindarr/family-hub-display</Project>
   <Overview>A self-hosted Home Assistant dashboard with chores, sensors, calendar, weather and more. Optimized for kiosk mode on Raspberry Pi or any browser.</Overview>
   <Category>HomeAutomation: Productivity:</Category>
   <WebUI>http://[IP]:[PORT:80]/</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/unraid/ha-dashboard.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/unraid/icon.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/unraid/ha-dashboard.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/Tjindarr/family-hub-display/main/unraid/icon.png</Icon>
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
