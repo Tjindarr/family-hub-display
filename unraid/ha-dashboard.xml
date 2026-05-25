@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>HA-Dashboard</Name>
+  <Repository>ghcr.io/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME:latest</Repository>
+  <Registry>https://ghcr.io/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/issues</Support>
+  <Project>https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME</Project>
+  <Overview>A self-hosted Home Assistant dashboard with chores, sensors, calendar, weather and more. Optimized for kiosk mode on Raspberry Pi or any browser.</Overview>
+  <Category>HomeAutomation: Productivity:</Category>
+  <WebUI>http://[IP]:[PORT:80]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/unraid/ha-dashboard.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/unraid/icon.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Description>A self-hosted Home Assistant dashboard with chores, sensors, calendar, weather and more. Configuration and data persist in /data.</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>8080</HostPort>
+        <ContainerPort>80</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/user/appdata/ha-dashboard</HostDir>
+      <ContainerDir>/data</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Config Name="WebUI Port" Target="80" Default="8080" Mode="tcp" Description="HTTP port for the dashboard" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="App Data" Target="/data" Default="/mnt/user/appdata/ha-dashboard" Mode="rw" Description="Persistent config, chores, photos, vapid keys" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/ha-dashboard</Config>
+</Container>
