@@ -45,8 +45,6 @@ function formatEventTime(event: HACalendarEvent, display?: CalendarDisplayConfig
 
 function getDayLabel(event: HACalendarEvent): string {
   const date = getEventTime(event);
-  if (isToday(date)) return "Today";
-  if (isTomorrow(date)) return "Tomorrow";
   return format(date, "EEEE, yyyy-MM-dd");
 }
 
