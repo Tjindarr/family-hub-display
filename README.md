@@ -780,10 +780,10 @@ The server automatically creates timestamped backups of `config.json` when savin
 ```yaml
 services:
   ha-dashboard:
-    build: .
+    image: ghcr.io/tjindarr/family-hub-display:latest
     container_name: ha-dashboard
     ports:
-      - "3000:80"
+      - "8087:80"
     volumes:
       - config-data:/data
     restart: unless-stopped
