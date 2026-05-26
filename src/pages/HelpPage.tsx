@@ -56,6 +56,35 @@ function Table({ headers, rows }: { headers: string[]; rows: string[][] }) {
 
 const sections: Section[] = [
   {
+    id: "screenshots",
+    icon: "📸",
+    title: "Screenshots",
+    content: (
+      <>
+        <H4>Main Dashboard</H4>
+        <div className="grid gap-3 mb-4">
+          <img src="/screenshots/dashboard-main.png" alt="Main dashboard" className="rounded-lg border border-border w-full" loading="lazy" />
+          <img src="/screenshots/dashboard-top.png" alt="Top row — clock, weather, temperatures, calendar" className="rounded-lg border border-border w-full" loading="lazy" />
+        </div>
+        <H4>Edit Layout Mode</H4>
+        <img src="/screenshots/edit-layout.png" alt="Edit layout overlay" className="rounded-lg border border-border w-full mb-4" loading="lazy" />
+        <H4>Dashboard Settings</H4>
+        <img src="/screenshots/settings.png" alt="Settings panel" className="rounded-lg border border-border w-full mb-4" loading="lazy" />
+        <H4>Parent Page (/parent)</H4>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <img src="/screenshots/parent-chores.png" alt="Parent — Chores tab" className="rounded-lg border border-border w-full" loading="lazy" />
+          <img src="/screenshots/parent-leaderboard.png" alt="Parent — Leaderboard & Recent Activity" className="rounded-lg border border-border w-full" loading="lazy" />
+        </div>
+        <H4>Kids Page (/kids)</H4>
+        <div className="grid grid-cols-3 gap-3">
+          <img src="/screenshots/kids-main.png" alt="Kids — today's chores, stats & badges" className="rounded-lg border border-border w-full" loading="lazy" />
+          <img src="/screenshots/kids-history.png" alt="Kids — chore history" className="rounded-lg border border-border w-full" loading="lazy" />
+          <img src="/screenshots/kids-submit-grade.png" alt="Kids — submit a grade" className="rounded-lg border border-border w-full" loading="lazy" />
+        </div>
+      </>
+    ),
+  },
+  {
     id: "getting-started",
     icon: "🚀",
     title: "Getting Started",
