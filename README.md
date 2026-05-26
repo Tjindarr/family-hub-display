@@ -9,15 +9,16 @@ Pre-built images are published to **GitHub Container Registry**: `ghcr.io/tjinda
 ## 📸 Screenshots
 
 ### Main Dashboard
-![Main dashboard](docs/screenshots/dashboard-main.png)
-![Top row — clock, weather, temperatures, calendar](docs/screenshots/dashboard-top.png)
+![Main dashboard](public/screenshots/dashboard-main.png)
+![Top row — clock, weather, temperatures, calendar](public/screenshots/dashboard-top.png)
 
 
 ### Edit Layout Mode
-![Edit layout overlay](docs/screenshots/edit-layout.png)
+![Edit layout overlay](public/screenshots/edit-layout.png)
 
 ### Dashboard Settings
-![Settings panel](docs/screenshots/settings.png)
+![Settings panel](public/screenshots/settings.png)
+
 
 ---
 
@@ -537,6 +538,11 @@ A gamified chore management system for families with separate **Parent** (`/pare
 
 ### Parent Page (`/parent`)
 
+<p align="left">
+  <img src="public/screenshots/parent-chores.png" alt="Parent — Chores tab" width="320" />
+  <img src="public/screenshots/parent-leaderboard.png" alt="Parent — Leaderboard & Recent Activity" width="320" />
+</p>
+
 Manage kids, chores, rewards, approvals, grades, and settings via a hamburger-menu navigation with the following tabs:
 
 | Tab | Description |
@@ -552,7 +558,14 @@ Manage kids, chores, rewards, approvals, grades, and settings via a hamburger-me
 
 ### Kids Page (`/kids`)
 
+<p align="left">
+  <img src="public/screenshots/kids-main.png" alt="Kids — today's chores, stats & badges" width="280" />
+  <img src="public/screenshots/kids-history.png" alt="Kids — chore history" width="280" />
+  <img src="public/screenshots/kids-submit-grade.png" alt="Kids — submit a grade" width="280" />
+</p>
+
 Kid-facing interface optimized for simplicity:
+
 
 - **Kid picker** on launch — each kid sees only their chores
 - **Today's chores** grouped by time of day (Morning, Afternoon, Evening, Anytime)
