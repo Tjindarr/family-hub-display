@@ -6,6 +6,20 @@ Pre-built images are published to **GitHub Container Registry**: `ghcr.io/tjinda
 
 ---
 
+## 📸 Screenshots
+
+### Main Dashboard
+![Main dashboard](docs/screenshots/dashboard-main.png)
+
+### Edit Layout Mode
+![Edit layout overlay](docs/screenshots/edit-layout.png)
+
+### Dashboard Settings
+![Settings panel](docs/screenshots/settings.png)
+
+---
+
+
 ## 📦 Installation
 
 ### Docker (Recommended)
