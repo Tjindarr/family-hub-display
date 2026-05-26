@@ -1,9 +1,14 @@
-## Swap in user's real dashboard screenshot
+## Add second main-page screenshot
 
-Replace the demo-mode capture with the uploaded screenshot of the user's live dashboard, which shows real data (electricity, weather, chores with point totals, energy stats, vehicle, person trackers, temperature grid).
+Add the newly uploaded clock+weather+temperature+calendar strip as an additional image under the "Main Dashboard" section in the README.
 
 ### Steps
 
-1. Copy `user-uploads://homedash_main.png` → `docs/screenshots/dashboard-main.png` (overwrite the current demo capture).
-2. Leave `edit-layout.png` and `settings.png` (demo captures) as-is — they still illustrate those features correctly.
-3. No README changes needed; it already references `docs/screenshots/dashboard-main.png`.
+1. Copy `user-uploads://CleanShot_2026-05-26_at_08.31.13.png` → `docs/screenshots/dashboard-top.png`.
+2. Edit `README.md`: under the existing `### Main Dashboard` heading, add a second image reference right below `dashboard-main.png` so both shots appear together:
+
+   ```md
+   ### Main Dashboard
+   ![Main dashboard](docs/screenshots/dashboard-main.png)
+   ![Top row — clock, weather, temperatures, calendar](docs/screenshots/dashboard-top.png)
+   ```

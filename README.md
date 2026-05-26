@@ -10,6 +10,8 @@ Pre-built images are published to **GitHub Container Registry**: `ghcr.io/tjinda
 
 ### Main Dashboard
 ![Main dashboard](docs/screenshots/dashboard-main.png)
+![Top row — clock, weather, temperatures, calendar](docs/screenshots/dashboard-top.png)
+
 
 ### Edit Layout Mode
 ![Edit layout overlay](docs/screenshots/edit-layout.png)
