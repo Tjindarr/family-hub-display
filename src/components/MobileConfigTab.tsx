@@ -12,12 +12,12 @@ import EntityAutocomplete from "@/components/EntityAutocomplete";
 import type {
   ActionWidgetConfig, ActionButtonConfig, EntityAction,
   MobileLayoutConfig, MobileSection, MobileItem,
-  SensorGridConfig, GeneralSensorConfig,
+  SensorGridConfig, GeneralSensorConfig, DashboardConfig,
 } from "@/lib/config";
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
-export function ActionEditor({ value, onChange }: { value?: EntityAction; onChange: (v: EntityAction | undefined) => void }) {
+export function ActionEditor({ value, onChange, config }: { value?: EntityAction; onChange: (v: EntityAction | undefined) => void; config: DashboardConfig }) {
   const type = value?.type || "none";
   return (
     <div className="space-y-2 p-2 rounded border border-border/40 bg-muted/20">
