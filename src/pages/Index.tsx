@@ -541,6 +541,11 @@ const Index = () => {
           data={sensorData}
           loading={generalSensorLoading}
           fontSizes={sensorFs}
+          onInfoAction={handleInfoAction}
+          onHeaderAction={sensorConfig.headerAction ? () => {
+            if (sensorConfig.confirmAction && !window.confirm(`Run action for "${sensorConfig.label}"?`)) return;
+            runAction(sensorConfig.headerAction!);
+          } : undefined}
         />
       );
     }
@@ -549,7 +554,13 @@ const Index = () => {
       const gridConfig = effectiveSensorGrids.find((s) => s.id === gridId);
       if (!gridConfig) return null;
       const gridData = sensorGridData[gridId];
-      return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} fontSizes={fs} />;
+      return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} fontSizes={fs} onCellAction={handleCellAction} />;
+    }
+    if (id.startsWith("action_")) {
+      const aId = id.replace("action_", "");
+      const aCfg = (config.actionWidgets || []).find((a) => a.id === aId);
+      if (!aCfg) return null;
+      return <ActionWidget config={aCfg} getState={getCachedState} />;
     }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
