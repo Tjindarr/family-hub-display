@@ -92,7 +92,7 @@ export function ActionWidgetsEditor({ widgets, onChange, config }: { widgets: Ac
                   <ColorPicker value={b.color || ""} onChange={(v) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, color: v || undefined } : x) })} />
                   <Button size="icon" variant="ghost" onClick={() => upd(wi, { buttons: w.buttons.filter((_, i) => i !== bi) })}><Trash2 className="h-3 w-3" /></Button>
                 </div>
-                <ActionEditor value={b.action} onChange={(a) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, action: a || { type: "toggle", entityId: "" } } : x) })} />
+                <ActionEditor value={b.action} config={config} onChange={(a) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, action: a || { type: "toggle", entityId: "" } } : x) })} />
                 <div className="flex items-center gap-3 text-[11px]">
                   <label className="flex items-center gap-1"><Switch checked={!!b.confirm} onCheckedChange={(c) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, confirm: c } : x) })} /> Confirm</label>
                   <div className="flex items-center gap-1 flex-1">
