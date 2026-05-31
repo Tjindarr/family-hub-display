@@ -259,7 +259,7 @@
     --accent-foreground: 220 30% 8%;
     --destructive: 0 80% 62%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 30% 96%;
+    --border: 220 20% 26%;
     --input: 220 20% 22%;
     --ring: 210 100% 66%;
     --chart-1: 210 100% 66%;
@@ -295,10 +295,25 @@
     background-color: hsl(var(--card) / 0.45) !important;
     backdrop-filter: blur(22px) saturate(160%);
     -webkit-backdrop-filter: blur(22px) saturate(160%);
-    border: 1px solid hsl(var(--border) / 0.08);
+    border: 1px solid hsl(0 0% 100% / 0.06);
     box-shadow:
-      inset 0 1px 0 0 hsl(var(--border) / 0.12),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.08),
       0 8px 32px -8px hsl(220 50% 2% / 0.5);
+  }
+
+  /* Inner panels (food menu rows, calendar items) — keep edges whisper-soft */
+  [data-theme="liquid-glass"] .border-border\/50 {
+    border-color: hsl(0 0% 100% / 0.05) !important;
+  }
+  [data-theme="liquid-glass"] .border-border\/30 {
+    border-color: hsl(0 0% 100% / 0.04) !important;
+  }
+  [data-theme="liquid-glass"] .bg-muted\/30 {
+    background-color: hsl(0 0% 100% / 0.03) !important;
+  }
+  [data-theme="liquid-glass"] .bg-muted\/60:hover,
+  [data-theme="liquid-glass"] .hover\:bg-muted\/60:hover {
+    background-color: hsl(0 0% 100% / 0.06) !important;
   }
 
   [data-theme="liquid-glass"] .bg-popover {
