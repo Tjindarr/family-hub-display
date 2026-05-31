@@ -2813,7 +2813,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
 
           {/* ===== MOBILE TAB ===== */}
           <TabsContent value="mobile" className="space-y-6 mt-0">
-            <ActionWidgetsEditor widgets={actionWidgets} onChange={setActionWidgets} />
+            <ActionWidgetsEditor widgets={actionWidgets} onChange={setActionWidgets} config={config} />
             <MobileLayoutEditor
               layout={mobileLayout}
               onChange={setMobileLayout}
