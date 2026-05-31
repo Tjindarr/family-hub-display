@@ -74,6 +74,13 @@ class HomeAssistantAPI {
       return [];
     }
   }
+
+  async callService(domain: string, service: string, data?: Record<string, any>): Promise<any> {
+    return this.request<any>(`/services/${domain}/${service}`, {
+      method: "POST",
+      body: JSON.stringify(data || {}),
+    });
+  }
 }
 
 // Singleton — no config needed since server handles auth

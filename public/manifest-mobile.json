@@ -1,0 +1,19 @@
+{
+  "name": "HomeDash Mobile",
+  "short_name": "HomeDash",
+  "description": "Compact mobile control view for HomeDash",
+  "start_url": "/mobile",
+  "scope": "/mobile",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#0a0a1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-mobile.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
