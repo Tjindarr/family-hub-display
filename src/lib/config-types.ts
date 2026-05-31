@@ -205,6 +205,8 @@ export interface SensorInfoItem {
   label: string;
   unit: string;
   color: string;
+  action?: EntityAction;
+  confirmAction?: boolean;
 }
 
 export interface SensorChartSeries {
