@@ -24,6 +24,8 @@ interface GeneralSensorWidgetProps {
   data: GeneralSensorLiveData;
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
+  onInfoAction?: (item: { entityId: string; label: string; action: NonNullable<GeneralSensorConfig["topInfo"][number]["action"]>; confirmAction?: boolean }) => void;
+  onHeaderAction?: () => void;
 }
 
 function formatTickByGrouping(iso: string, grouping?: string): string {
@@ -41,7 +43,7 @@ function formatTickByGrouping(iso: string, grouping?: string): string {
   }
 }
 
-export default function GeneralSensorWidget({ config, data, loading, fontSizes }: GeneralSensorWidgetProps) {
+export default function GeneralSensorWidget({ config, data, loading, fontSizes, onInfoAction, onHeaderAction }: GeneralSensorWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const iconPx = config.iconSize || 20;
   const { topValues, bottomValues, chartData, chartSeriesMeta } = data || { topValues: [], bottomValues: [], chartData: [], chartSeriesMeta: [] };
@@ -71,27 +73,42 @@ export default function GeneralSensorWidget({ config, data, loading, fontSizes }
   return (
     <div className="widget-card h-full flex flex-col">
       {/* Header: icon + label */}
-      <div className="flex items-center gap-3 mb-2">
+      <div
+        className={`flex items-center gap-3 mb-2 ${config.headerAction && onHeaderAction ? "cursor-pointer hover:opacity-80 active:scale-95 transition-transform" : ""}`}
+        onClick={config.headerAction && onHeaderAction ? onHeaderAction : undefined}
+      >
         {config.icon && (
           <Icon icon={toIconName(config.icon)} style={{ width: iconPx, height: iconPx }} className="text-primary shrink-0" />
         )}
         {config.showLabel && config.label && (
           <span className="font-medium text-foreground" style={{ fontSize: fs.body }}>{config.label}</span>
         )}
+        {config.headerAction && onHeaderAction && (
+          <Icon icon="mdi:gesture-tap" className="text-muted-foreground opacity-50" style={{ width: 12, height: 12 }} />
+        )}
       </div>
 
       {/* Top info values */}
       {topValues.length > 0 && (
         <div className="flex items-baseline gap-4 flex-wrap" style={{ marginTop: "-5px", marginBottom: "-5px" }}>
-          {topValues.map((tv, i) => (
-            <div key={i} className="flex items-baseline gap-1">
-              <span className="font-mono font-bold" style={{ color: tv.color || undefined, fontSize: fs.value }}>
-                {isNaN(Number(tv.value)) ? tv.value : Math.round(Number(tv.value))}
-              </span>
-              {tv.unit && <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{tv.unit}</span>}
-              {tv.label && <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{tv.label}</span>}
-            </div>
-          ))}
+          {topValues.map((tv, i) => {
+            const item = config.topInfo?.[i];
+            const hasAction = !!item?.action && !!onInfoAction;
+            return (
+              <div
+                key={i}
+                className={`flex items-baseline gap-1 ${hasAction ? "cursor-pointer hover:opacity-80 active:scale-95 transition-transform rounded px-1" : ""}`}
+                onClick={hasAction ? () => onInfoAction!({ entityId: item!.entityId, label: item!.label, action: item!.action!, confirmAction: item!.confirmAction }) : undefined}
+              >
+                <span className="font-mono font-bold" style={{ color: tv.color || undefined, fontSize: fs.value }}>
+                  {isNaN(Number(tv.value)) ? tv.value : Math.round(Number(tv.value))}
+                </span>
+                {tv.unit && <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{tv.unit}</span>}
+                {tv.label && <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{tv.label}</span>}
+                {hasAction && <Icon icon="mdi:gesture-tap" className="text-muted-foreground opacity-50 ml-0.5" style={{ width: 10, height: 10 }} />}
+              </div>
+            );
+          })}
         </div>
       )}
 

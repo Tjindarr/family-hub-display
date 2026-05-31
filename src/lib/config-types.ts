@@ -205,6 +205,8 @@ export interface SensorInfoItem {
   label: string;
   unit: string;
   color: string;
+  action?: EntityAction;
+  confirmAction?: boolean;
 }
 
 export interface SensorChartSeries {
@@ -228,6 +230,8 @@ export interface GeneralSensorConfig {
   topInfo: SensorInfoItem[];
   bottomInfo: SensorInfoItem[];
   fontSize?: WidgetFontSizes;
+  headerAction?: EntityAction;
+  confirmAction?: boolean;
 }
 
 export interface SensorGridCellInterval {
@@ -252,6 +256,11 @@ export interface SensorGridVisibilityFilter {
   exactValues?: string[];
 }
 
+export type EntityAction =
+  | { type: "toggle"; entityId: string }
+  | { type: "service"; domain: string; service: string; data?: Record<string, any> }
+  | { type: "navigate"; url: string };
+
 export interface SensorGridCellConfig {
   entityId: string;
   label: string;
@@ -271,6 +280,8 @@ export interface SensorGridCellConfig {
   order?: number;
   showChart?: boolean;
   chartType?: SensorChartType;
+  action?: EntityAction;
+  confirmAction?: boolean;
 }
 
 export interface SensorGridConfig {
@@ -279,6 +290,41 @@ export interface SensorGridConfig {
   rows: number;
   columns: number;
   cells: SensorGridCellConfig[];
+}
+
+export interface ActionButtonConfig {
+  id: string;
+  label: string;
+  icon: string;
+  color?: string;
+  action: EntityAction;
+  confirm?: boolean;
+  stateEntityId?: string;
+}
+
+export interface ActionWidgetConfig {
+  id: string;
+  label: string;
+  columns: number;
+  buttons: ActionButtonConfig[];
+}
+
+export type MobileItemKind = "sensorGrid" | "generalSensor" | "actionWidget";
+
+export interface MobileItem {
+  kind: MobileItemKind;
+  refId: string;
+}
+
+export interface MobileSection {
+  id: string;
+  title: string;
+  collapsed?: boolean;
+  items: MobileItem[];
+}
+
+export interface MobileLayoutConfig {
+  sections: MobileSection[];
 }
 
 export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black" | "macos-dark" | "liquid-glass";
@@ -412,6 +458,8 @@ export interface DashboardConfig {
   enableChores: boolean;
   choreWidgetConfig: ChoreWidgetConfig;
   choreReminderConfig: ChoreReminderConfig;
+  actionWidgets: ActionWidgetConfig[];
+  mobileLayout: MobileLayoutConfig;
 }
 
 // ── Home Assistant Data Types ──

@@ -112,4 +112,6 @@ export const DEFAULT_CONFIG: DashboardConfig = {
     streakReminderHour: 18,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   },
+  actionWidgets: [],
+  mobileLayout: { sections: [] },
 };

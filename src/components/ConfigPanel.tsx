@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig } from "@/lib/config";
+import { ActionWidgetsEditor, MobileLayoutEditor } from "@/components/MobileConfigTab";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -273,6 +274,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3, streakReminderEnabled: false, streakReminderHour: 18,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   });
+  const [actionWidgets, setActionWidgets] = useState<ActionWidgetConfig[]>(config.actionWidgets || []);
+  const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
@@ -395,6 +398,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       enableChores: enableChores || choreWidgetConfig.enabled,
       choreWidgetConfig,
       choreReminderConfig,
+      actionWidgets,
+      mobileLayout,
     });
     setOpen(false);
   };
@@ -490,6 +495,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
             <TabsTrigger value="connection" className="flex-1 text-xs">Connection</TabsTrigger>
             <TabsTrigger value="general" className="flex-1 text-xs">General</TabsTrigger>
             <TabsTrigger value="widgets" className="flex-1 text-xs">Widgets</TabsTrigger>
+            <TabsTrigger value="mobile" className="flex-1 text-xs">Mobile</TabsTrigger>
             <TabsTrigger value="photos" className="flex-1 text-xs">Photos</TabsTrigger>
           </TabsList>
 
@@ -2803,6 +2809,21 @@ function WidgetStyleControls({ style, onChange, fields }: {
               </div>
             </CollapsibleSection>}
 
+          </TabsContent>
+
+          {/* ===== MOBILE TAB ===== */}
+          <TabsContent value="mobile" className="space-y-6 mt-0">
+            <ActionWidgetsEditor widgets={actionWidgets} onChange={setActionWidgets} />
+            <MobileLayoutEditor
+              layout={mobileLayout}
+              onChange={setMobileLayout}
+              sensorGrids={sensorGrids}
+              generalSensors={generalSensors}
+              actionWidgets={actionWidgets}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Tip: to add a tap action to a sensor grid cell or general sensor info value, edit it in the Widgets tab — an Action field is now available there.
+            </p>
           </TabsContent>
 
           {/* ===== PHOTOS TAB ===== */}
