@@ -228,7 +228,7 @@ export interface GeneralSensorConfig {
   topInfo: SensorInfoItem[];
   bottomInfo: SensorInfoItem[];
   fontSize?: WidgetFontSizes;
-  headerAction?: import("./config-types").EntityAction;
+  headerAction?: EntityAction;
   confirmAction?: boolean;
 }
 
