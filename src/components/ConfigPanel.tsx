@@ -1839,6 +1839,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                           <Input value={ti.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-20 bg-muted border-border text-xs h-8" />
                           <ColorPicker value={ti.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], color: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} className="w-36" />
                         </div>
+                        <ActionEditor value={ti.action} config={config} onChange={(a) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], action: a }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} />
                       </div>
                     ))}
                   </div>
