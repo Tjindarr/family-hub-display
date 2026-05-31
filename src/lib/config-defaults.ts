@@ -7,6 +7,7 @@ export const THEMES: { id: ThemeId; label: string }[] = [
   { id: "warm-ember", label: "Warm Ember" },
   { id: "amoled-black", label: "AMOLED Black" },
   { id: "macos-dark", label: "macOS Dark" },
+  { id: "liquid-glass", label: "Liquid Glass" },
 ];
 
 export const DEFAULT_CONFIG: DashboardConfig = {
