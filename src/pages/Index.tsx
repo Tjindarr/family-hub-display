@@ -15,6 +15,8 @@ import NotificationWidget from "@/components/NotificationWidget";
 import VehicleWidget from "@/components/VehicleWidget";
 import PollenWidget from "@/components/PollenWidget";
 import ChoreWidget from "@/components/ChoreWidget";
+import ActionWidget from "@/components/ActionWidget";
+import { runAction } from "@/lib/actions";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,6 +66,7 @@ function getDefaultWidgetIds(
   vehicleIds: string[],
   hasPollen: boolean,
   hasFoodMenu = false,
+  actionWidgetIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -76,6 +79,7 @@ function getDefaultWidgetIds(
     "chores",
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
+    ...actionWidgetIds.map((id) => `action_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
