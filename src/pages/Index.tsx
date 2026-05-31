@@ -352,7 +352,18 @@ const Index = () => {
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
   const rssIds = rssFeeds.map((f) => f.id);
   const vehicleIds = effectiveVehicles.map((v) => v.id);
+  const actionWidgetIds = (config.actionWidgets || []).map((a) => a.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
+
+  const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
+    if (!cell.action) return;
+    if (cell.confirmAction && !window.confirm(`Run action for "${cell.label || ""}"?`)) return;
+    runAction(cell.action);
+  };
+  const handleInfoAction = (item: { action: any; confirmAction?: boolean; label?: string }) => {
+    if (item.confirmAction && !window.confirm(`Run action for "${item.label || ""}"?`)) return;
+    runAction(item.action);
+  };
 
   // Apply theme
   useEffect(() => {
