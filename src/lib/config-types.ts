@@ -281,7 +281,7 @@ export interface SensorGridConfig {
   cells: SensorGridCellConfig[];
 }
 
-export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black" | "macos-dark";
+export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black" | "macos-dark" | "liquid-glass";
 
 export interface ChoreReminderConfig {
   enabled: boolean;
