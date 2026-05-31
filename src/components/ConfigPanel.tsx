@@ -2088,6 +2088,11 @@ function WidgetStyleControls({ style, onChange, fields }: {
                           )}
                         </div>
 
+                        <div className="pl-5">
+                          <ActionEditor value={cell.action} config={config} onChange={(a) => updateCell({ action: a })} />
+                        </div>
+
+
                         {/* Value Mapping */}
                         <div className="pl-5 space-y-1">
                           <div className="flex items-center gap-2">
