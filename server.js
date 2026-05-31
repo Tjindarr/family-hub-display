@@ -1209,6 +1209,7 @@ app.get("*", (req, res) => {
   const htmlPath = "/usr/share/nginx/html/index.html";
   const isParent = req.path.startsWith("/parent");
   const isKids = req.path.startsWith("/kids");
+  const isMobile = req.path.startsWith("/mobile");
   
   try {
     let html = fs.readFileSync(htmlPath, "utf-8");
@@ -1222,6 +1223,11 @@ app.get("*", (req, res) => {
       html = html.replace('href="/favicon.png"', 'href="/icon-kids.png"');
       html = html.replace('content="HomeDash"', 'content="HomeDash Kids"');
       html = html.replace('<title>HomeDash</title>', '<title>HomeDash Kids</title>');
+    } else if (isMobile) {
+      html = html.replace('href="/manifest-dashboard.json"', 'href="/manifest-mobile.json"');
+      html = html.replace('href="/favicon.png"', 'href="/icon-mobile.png"');
+      html = html.replace('content="HomeDash"', 'content="HomeDash Mobile"');
+      html = html.replace('<title>HomeDash</title>', '<title>HomeDash Mobile</title>');
     }
     res.set("Content-Type", "text/html");
     res.send(html);
