@@ -12,12 +12,12 @@ import EntityAutocomplete from "@/components/EntityAutocomplete";
 import type {
   ActionWidgetConfig, ActionButtonConfig, EntityAction,
   MobileLayoutConfig, MobileSection, MobileItem,
-  SensorGridConfig, GeneralSensorConfig,
+  SensorGridConfig, GeneralSensorConfig, DashboardConfig,
 } from "@/lib/config";
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
-export function ActionEditor({ value, onChange }: { value?: EntityAction; onChange: (v: EntityAction | undefined) => void }) {
+export function ActionEditor({ value, onChange, config }: { value?: EntityAction; onChange: (v: EntityAction | undefined) => void; config: DashboardConfig }) {
   const type = value?.type || "none";
   return (
     <div className="space-y-2 p-2 rounded border border-border/40 bg-muted/20">
@@ -39,7 +39,7 @@ export function ActionEditor({ value, onChange }: { value?: EntityAction; onChan
         </Select>
       </div>
       {value?.type === "toggle" && (
-        <EntityAutocomplete value={value.entityId} onChange={(v) => onChange({ type: "toggle", entityId: v })} placeholder="light.kitchen" />
+        <EntityAutocomplete value={value.entityId} onChange={(v) => onChange({ type: "toggle", entityId: v })} config={config} placeholder="light.kitchen" />
       )}
       {value?.type === "service" && (
         <div className="grid grid-cols-2 gap-2">
@@ -64,7 +64,7 @@ export function ActionEditor({ value, onChange }: { value?: EntityAction; onChan
   );
 }
 
-export function ActionWidgetsEditor({ widgets, onChange }: { widgets: ActionWidgetConfig[]; onChange: (w: ActionWidgetConfig[]) => void }) {
+export function ActionWidgetsEditor({ widgets, onChange, config }: { widgets: ActionWidgetConfig[]; onChange: (w: ActionWidgetConfig[]) => void; config: DashboardConfig }) {
   const add = () => onChange([...widgets, { id: uid(), label: "Quick Actions", columns: 3, buttons: [] }]);
   const remove = (i: number) => onChange(widgets.filter((_, x) => x !== i));
   const upd = (i: number, p: Partial<ActionWidgetConfig>) => onChange(widgets.map((w, x) => x === i ? { ...w, ...p } : w));
@@ -92,7 +92,7 @@ export function ActionWidgetsEditor({ widgets, onChange }: { widgets: ActionWidg
                   <ColorPicker value={b.color || ""} onChange={(v) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, color: v || undefined } : x) })} />
                   <Button size="icon" variant="ghost" onClick={() => upd(wi, { buttons: w.buttons.filter((_, i) => i !== bi) })}><Trash2 className="h-3 w-3" /></Button>
                 </div>
-                <ActionEditor value={b.action} onChange={(a) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, action: a || { type: "toggle", entityId: "" } } : x) })} />
+                <ActionEditor value={b.action} config={config} onChange={(a) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, action: a || { type: "toggle", entityId: "" } } : x) })} />
                 <div className="flex items-center gap-3 text-[11px]">
                   <label className="flex items-center gap-1"><Switch checked={!!b.confirm} onCheckedChange={(c) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, confirm: c } : x) })} /> Confirm</label>
                   <div className="flex items-center gap-1 flex-1">

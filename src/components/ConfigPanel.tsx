@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import { ActionWidgetsEditor, MobileLayoutEditor } from "@/components/MobileConfigTab";
+import { ActionWidgetsEditor, MobileLayoutEditor, ActionEditor } from "@/components/MobileConfigTab";
 import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1839,6 +1839,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                           <Input value={ti.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-20 bg-muted border-border text-xs h-8" />
                           <ColorPicker value={ti.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], color: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} className="w-36" />
                         </div>
+                        <ActionEditor value={ti.action} config={config} onChange={(a) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], action: a }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} />
                       </div>
                     ))}
                   </div>
@@ -1906,6 +1907,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                           <Input value={bi.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-20 bg-muted border-border text-xs h-8" />
                           <ColorPicker value={bi.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], color: val }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} className="w-36" />
                         </div>
+                        <ActionEditor value={bi.action} config={config} onChange={(a) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], action: a }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} />
                       </div>
                     ))}
                   </div>
@@ -2087,6 +2089,11 @@ function WidgetStyleControls({ style, onChange, fields }: {
                             </Select>
                           )}
                         </div>
+
+                        <div className="pl-5">
+                          <ActionEditor value={cell.action} config={config} onChange={(a) => updateCell({ action: a })} />
+                        </div>
+
 
                         {/* Value Mapping */}
                         <div className="pl-5 space-y-1">
@@ -2813,7 +2820,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
 
           {/* ===== MOBILE TAB ===== */}
           <TabsContent value="mobile" className="space-y-6 mt-0">
-            <ActionWidgetsEditor widgets={actionWidgets} onChange={setActionWidgets} />
+            <ActionWidgetsEditor widgets={actionWidgets} onChange={setActionWidgets} config={config} />
             <MobileLayoutEditor
               layout={mobileLayout}
               onChange={setMobileLayout}
