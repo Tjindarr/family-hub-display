@@ -240,6 +240,73 @@
     --sidebar-border: 220 5% 22%;
     --sidebar-ring: 211 100% 50%;
   }
+
+  /* Liquid Glass — translucent surfaces, soft blur, clean iOS-inspired */
+  [data-theme="liquid-glass"] {
+    --background: 220 30% 6%;
+    --foreground: 210 25% 96%;
+    --card: 220 25% 14%;
+    --card-foreground: 210 25% 96%;
+    --popover: 220 25% 14%;
+    --popover-foreground: 210 25% 96%;
+    --primary: 210 100% 66%;
+    --primary-foreground: 220 30% 8%;
+    --secondary: 220 20% 20%;
+    --secondary-foreground: 210 20% 92%;
+    --muted: 220 18% 18%;
+    --muted-foreground: 215 15% 65%;
+    --accent: 280 80% 70%;
+    --accent-foreground: 220 30% 8%;
+    --destructive: 0 80% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 30% 96%;
+    --input: 220 20% 22%;
+    --ring: 210 100% 66%;
+    --chart-1: 210 100% 66%;
+    --chart-2: 280 80% 70%;
+    --chart-3: 160 70% 55%;
+    --chart-4: 32 95% 60%;
+    --chart-5: 340 80% 65%;
+    --glow-primary: 0 0 24px hsl(210 100% 66% / 0.35);
+    --glow-warm: 0 0 24px hsl(32 95% 60% / 0.3);
+    --glow-danger: 0 0 24px hsl(0 80% 62% / 0.3);
+    --sidebar-background: 220 30% 8%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 210 100% 66%;
+    --sidebar-primary-foreground: 220 30% 8%;
+    --sidebar-accent: 220 20% 16%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 220 20% 22%;
+    --sidebar-ring: 210 100% 66%;
+  }
+
+  /* Liquid Glass — ambient backdrop + glassmorphism on cards */
+  [data-theme="liquid-glass"] body {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(at 18% 12%, hsl(210 100% 50% / 0.22) 0px, transparent 55%),
+      radial-gradient(at 82% 22%, hsl(280 90% 60% / 0.18) 0px, transparent 55%),
+      radial-gradient(at 50% 95%, hsl(160 80% 50% / 0.14) 0px, transparent 60%);
+    background-attachment: fixed;
+  }
+
+  [data-theme="liquid-glass"] .bg-card,
+  [data-theme="liquid-glass"] [class*="bg-card"] {
+    background-color: hsl(var(--card) / 0.45) !important;
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid hsl(var(--border) / 0.08);
+    box-shadow:
+      inset 0 1px 0 0 hsl(var(--border) / 0.12),
+      0 8px 32px -8px hsl(220 50% 2% / 0.5);
+  }
+
+  [data-theme="liquid-glass"] .bg-popover {
+    background-color: hsl(var(--popover) / 0.7) !important;
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid hsl(var(--border) / 0.1);
+  }
 }
 
 @layer base {
