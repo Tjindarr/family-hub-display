@@ -438,6 +438,7 @@ const Index = () => {
       vehicleIds,
       hasPollen,
       hasFoodMenu || isDemo,
+      actionWidgetIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
