@@ -39,7 +39,7 @@ export function ActionEditor({ value, onChange, config }: { value?: EntityAction
         </Select>
       </div>
       {value?.type === "toggle" && (
-        <EntityAutocomplete value={value.entityId} onChange={(v) => onChange({ type: "toggle", entityId: v })} placeholder="light.kitchen" />
+        <EntityAutocomplete value={value.entityId} onChange={(v) => onChange({ type: "toggle", entityId: v })} config={config} placeholder="light.kitchen" />
       )}
       {value?.type === "service" && (
         <div className="grid grid-cols-2 gap-2">
