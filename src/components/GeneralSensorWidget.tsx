@@ -24,6 +24,8 @@ interface GeneralSensorWidgetProps {
   data: GeneralSensorLiveData;
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
+  onInfoAction?: (item: { entityId: string; label: string; action: NonNullable<GeneralSensorConfig["topInfo"][number]["action"]>; confirmAction?: boolean }) => void;
+  onHeaderAction?: () => void;
 }
 
 function formatTickByGrouping(iso: string, grouping?: string): string {
@@ -41,7 +43,7 @@ function formatTickByGrouping(iso: string, grouping?: string): string {
   }
 }
 
-export default function GeneralSensorWidget({ config, data, loading, fontSizes }: GeneralSensorWidgetProps) {
+export default function GeneralSensorWidget({ config, data, loading, fontSizes, onInfoAction, onHeaderAction }: GeneralSensorWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const iconPx = config.iconSize || 20;
   const { topValues, bottomValues, chartData, chartSeriesMeta } = data || { topValues: [], bottomValues: [], chartData: [], chartSeriesMeta: [] };
