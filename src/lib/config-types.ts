@@ -458,6 +458,8 @@ export interface DashboardConfig {
   enableChores: boolean;
   choreWidgetConfig: ChoreWidgetConfig;
   choreReminderConfig: ChoreReminderConfig;
+  actionWidgets: ActionWidgetConfig[];
+  mobileLayout: MobileLayoutConfig;
 }
 
 // ── Home Assistant Data Types ──
