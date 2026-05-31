@@ -64,7 +64,7 @@ export function ActionEditor({ value, onChange, config }: { value?: EntityAction
   );
 }
 
-export function ActionWidgetsEditor({ widgets, onChange }: { widgets: ActionWidgetConfig[]; onChange: (w: ActionWidgetConfig[]) => void }) {
+export function ActionWidgetsEditor({ widgets, onChange, config }: { widgets: ActionWidgetConfig[]; onChange: (w: ActionWidgetConfig[]) => void; config: DashboardConfig }) {
   const add = () => onChange([...widgets, { id: uid(), label: "Quick Actions", columns: 3, buttons: [] }]);
   const remove = (i: number) => onChange(widgets.filter((_, x) => x !== i));
   const upd = (i: number, p: Partial<ActionWidgetConfig>) => onChange(widgets.map((w, x) => x === i ? { ...w, ...p } : w));
