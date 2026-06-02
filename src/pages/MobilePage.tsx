@@ -404,6 +404,17 @@ export default function MobilePage() {
                   );
                 }
                 const node = renderWidget(id);
+                // Chart-heavy widgets need a definite height so recharts ResponsiveContainer renders
+                const chartWidgetMinHeights: Record<string, number> = {
+                  electricity: 260,
+                  weather: 220,
+                  photos: 250,
+                };
+                let intrinsicMin: string | undefined;
+                if (!heightPx && rSpan <= 1) {
+                  if (chartWidgetMinHeights[id]) intrinsicMin = `${chartWidgetMinHeights[id]}px`;
+                  else if (id.startsWith("temp_group_") || id.startsWith("general_")) intrinsicMin = "220px";
+                }
                 return (
                   <div
                     key={id}
@@ -411,7 +422,9 @@ export default function MobilePage() {
                       gridColumn: `span ${span}`,
                       gridRow: rSpan > 1 ? `span ${rSpan}` : undefined,
                       height: widgetHeight,
-                      minHeight: !heightPx ? (rSpan > 1 ? `${rSpan * 200}px` : undefined) : undefined,
+                      minHeight: !heightPx
+                        ? (rSpan > 1 ? `${rSpan * 200}px` : intrinsicMin)
+                        : undefined,
                       ...(lockHeights ? { overflow: "hidden" } : {}),
                       ...(!node ? { visibility: "hidden" as const } : {}),
                     }}
