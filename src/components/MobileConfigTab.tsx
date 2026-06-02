@@ -164,7 +164,7 @@ export function CameraGridsEditor({ widgets, onChange, config }: { widgets: Came
 }
 
 export function MobileLayoutEditor({
-  layout, onChange, sensorGrids, generalSensors, actionWidgets, cameraGrids,
+  layout, onChange, sensorGrids, generalSensors, actionWidgets, cameraGrids, availableWidgets,
 }: {
   layout: MobileLayoutConfig;
   onChange: (l: MobileLayoutConfig) => void;
@@ -172,6 +172,7 @@ export function MobileLayoutEditor({
   generalSensors: GeneralSensorConfig[];
   actionWidgets: ActionWidgetConfig[];
   cameraGrids?: CameraGridConfig[];
+  availableWidgets?: { id: string; label: string }[];
 }) {
   const sections = layout.sections || [];
   const setSections = (s: MobileSection[]) => onChange({ sections: s });
@@ -189,6 +190,7 @@ export function MobileLayoutEditor({
     if (kind === "generalSensor") return generalSensors.map((g) => ({ id: g.id, label: g.label || g.id }));
     if (kind === "actionWidget") return actionWidgets.map((g) => ({ id: g.id, label: g.label || g.id }));
     if (kind === "cameraGrid") return (cameraGrids || []).map((g) => ({ id: g.id, label: g.label || g.id }));
+    if (kind === "widget") return availableWidgets || [];
     return [];
   };
 
@@ -200,7 +202,7 @@ export function MobileLayoutEditor({
           <Plus className="h-3 w-3 mr-1" /> Add section
         </Button>
       </div>
-      <p className="text-[11px] text-muted-foreground">Compact phone view at <code>/mobile</code>. Add sections that reference your existing sensor grids, general sensors, and action widgets.</p>
+      <p className="text-[11px] text-muted-foreground">Compact phone view at <code>/mobile</code>. Add sections that reference existing sensor grids, general sensors, action widgets, camera grids — or pick "Any widget" to mirror a dashboard widget (weather, calendar, person, etc.).</p>
       {sections.map((sec, si) => (
         <div key={sec.id} className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/40">
           <div className="flex items-center gap-2">
@@ -221,6 +223,7 @@ export function MobileLayoutEditor({
                       <SelectItem value="generalSensor">General Sensor</SelectItem>
                       <SelectItem value="actionWidget">Action Widget</SelectItem>
                       <SelectItem value="cameraGrid">Camera Grid</SelectItem>
+                      <SelectItem value="widget">Any widget</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={it.refId || ""} onValueChange={(v) => updS(si, { items: sec.items.map((x, i) => i === ii ? { ...x, refId: v } : x) })}>
@@ -243,3 +246,4 @@ export function MobileLayoutEditor({
     </section>
   );
 }
+
