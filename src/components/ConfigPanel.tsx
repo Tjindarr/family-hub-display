@@ -10,7 +10,7 @@ import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
 import { ActionWidgetsEditor, MobileLayoutEditor, ActionEditor } from "@/components/MobileConfigTab";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, CameraGridConfig, CameraConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -275,6 +275,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   });
   const [actionWidgets, setActionWidgets] = useState<ActionWidgetConfig[]>(config.actionWidgets || []);
+  const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
@@ -399,6 +400,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       choreWidgetConfig,
       choreReminderConfig,
       actionWidgets,
+      cameraGrids,
       mobileLayout,
     });
     setOpen(false);
