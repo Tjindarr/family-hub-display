@@ -341,6 +341,23 @@ export interface MobileLayoutConfig {
   sections: MobileSection[];
 }
 
+export interface MobileDashboardConfig {
+  gridColumns: number;
+  widgetOrder: string[];
+  widgetLayouts: Record<string, WidgetLayout>;
+  rowColumns: Record<number, number>;
+  rowHeights: Record<number, number>;
+  lockWidgetHeights: boolean;
+  // Mobile-owned widget instances (independent from main dashboard)
+  generalSensors: GeneralSensorConfig[];
+  sensorGrids: SensorGridConfig[];
+  actionWidgets: ActionWidgetConfig[];
+  cameraGrids: CameraGridConfig[];
+  rssFeeds: RssNewsConfig[];
+  vehicles: VehicleConfig[];
+}
+
+
 export type ThemeId = "midnight-teal" | "charcoal" | "deep-ocean" | "warm-ember" | "amoled-black" | "macos-dark" | "liquid-glass";
 
 export interface ChoreReminderConfig {
