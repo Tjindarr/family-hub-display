@@ -115,6 +115,21 @@ export const DEFAULT_CONFIG: DashboardConfig = {
   actionWidgets: [],
   cameraGrids: [],
   mobileLayout: { sections: [] },
+  mobileDashboard: {
+    gridColumns: 2,
+    widgetOrder: [],
+    widgetLayouts: {},
+    rowColumns: {},
+    rowHeights: {},
+    lockWidgetHeights: false,
+    generalSensors: [],
+    sensorGrids: [],
+    actionWidgets: [],
+    cameraGrids: [],
+    rssFeeds: [],
+    vehicles: [],
+  },
   wallpaper: { enabled: false, url: "", fit: "cover", dim: 40, blur: 0, applyToMobile: true },
 };
+
 
