@@ -575,6 +575,102 @@ function WidgetStyleControls({ style, onChange, fields }: {
             </section>
 
             <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Wallpaper</h3>
+              <p className="text-[12px] text-muted-foreground">Image displayed behind all widgets on the main dashboard (and optionally the mobile page).</p>
+              <div className="flex items-center gap-3">
+                <Switch checked={wallpaper.enabled} onCheckedChange={(v) => setWallpaper({ ...wallpaper, enabled: v })} />
+                <Label className="text-sm text-foreground">Enable wallpaper</Label>
+              </div>
+              {wallpaper.enabled && (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Image URL</Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        value={wallpaper.url}
+                        onChange={(e) => setWallpaper({ ...wallpaper, url: e.target.value })}
+                        placeholder="https://… or /api/photos/file/…"
+                        className="bg-muted border-border text-sm flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={wallpaperUploading}
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = "image/*";
+                          input.onchange = async () => {
+                            const file = input.files?.[0];
+                            if (!file) return;
+                            setWallpaperUploading(true);
+                            try {
+                              const data = await new Promise<string>((resolve) => {
+                                const r = new FileReader();
+                                r.onload = () => resolve(r.result as string);
+                                r.readAsDataURL(file);
+                              });
+                              const safeName = `wallpaper_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+                              const res = await fetch("/api/photos/upload", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ files: [{ name: safeName, data }] }),
+                              });
+                              if (res.ok) {
+                                const json = await res.json();
+                                const url = json.uploaded?.[0]?.url;
+                                if (url) setWallpaper({ ...wallpaper, url });
+                              }
+                            } finally {
+                              setWallpaperUploading(false);
+                            }
+                          };
+                          input.click();
+                        }}
+                      >
+                        {wallpaperUploading ? "Uploading…" : "Upload"}
+                      </Button>
+                    </div>
+                  </div>
+                  {wallpaper.url && (
+                    <div className="rounded-lg overflow-hidden border border-border/50 bg-muted/30" style={{ height: 100, backgroundImage: `url(${wallpaper.url})`, backgroundSize: wallpaper.fit === "tile" ? "auto" : wallpaper.fit === "fill" ? "100% 100%" : wallpaper.fit, backgroundPosition: "center", backgroundRepeat: wallpaper.fit === "tile" ? "repeat" : "no-repeat" }} />
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Fit</Label>
+                      <Select value={wallpaper.fit} onValueChange={(v) => setWallpaper({ ...wallpaper, fit: v as any })}>
+                        <SelectTrigger className="mt-1 bg-muted border-border text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cover">Cover (fill screen)</SelectItem>
+                          <SelectItem value="contain">Contain (fit inside)</SelectItem>
+                          <SelectItem value="fill">Stretch</SelectItem>
+                          <SelectItem value="tile">Tile</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        <Switch checked={wallpaper.applyToMobile} onCheckedChange={(v) => setWallpaper({ ...wallpaper, applyToMobile: v })} />
+                        <Label className="text-xs text-foreground">Also on mobile page</Label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Dim ({wallpaper.dim}%)</Label>
+                      <Input type="range" min={0} max={90} value={wallpaper.dim} onChange={(e) => setWallpaper({ ...wallpaper, dim: Number(e.target.value) })} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Blur ({wallpaper.blur}px)</Label>
+                      <Input type="range" min={0} max={40} value={wallpaper.blur} onChange={(e) => setWallpaper({ ...wallpaper, blur: Number(e.target.value) })} className="mt-1" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
+
+            <section className="space-y-3">
               <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Date & Time Format</h3>
               <p className="text-[12px] text-muted-foreground">These settings affect formatting across all widgets.</p>
               <div className="grid grid-cols-2 gap-3">
