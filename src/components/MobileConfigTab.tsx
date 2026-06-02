@@ -220,6 +220,7 @@ export function MobileLayoutEditor({
                       <SelectItem value="sensorGrid">Sensor Grid</SelectItem>
                       <SelectItem value="generalSensor">General Sensor</SelectItem>
                       <SelectItem value="actionWidget">Action Widget</SelectItem>
+                      <SelectItem value="cameraGrid">Camera Grid</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={it.refId || ""} onValueChange={(v) => updS(si, { items: sec.items.map((x, i) => i === ii ? { ...x, refId: v } : x) })}>
