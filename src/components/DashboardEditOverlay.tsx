@@ -22,17 +22,31 @@ import type { DashboardConfig, WidgetLayout } from "@/lib/config";
 
 const WIDGET_GROUPS = ["", "A", "B", "C", "D", "E", "F", "G", "H"];
 
+interface LayoutSlice {
+  widgetOrder: string[];
+  widgetLayouts: Record<string, WidgetLayout>;
+  gridColumns: number;
+  rowColumns: Record<number, number>;
+  rowHeights?: Record<number, number>;
+  lockWidgetHeights?: boolean;
+}
+
 interface DashboardEditOverlayProps {
   allWidgetIds: string[];
   config: DashboardConfig;
-  onSave: (updates: Partial<DashboardConfig>) => void;
+  onSave: (updates: Partial<DashboardConfig> | Partial<LayoutSlice>) => void;
   renderWidget: (id: string) => React.ReactNode;
   getColSpan: (id: string) => number;
   getRow: (id: string) => number;
   getRowSpan: (id: string) => number;
   gridColumns: number;
   isMobile: boolean;
+  /** Optional scoped slice (e.g. for /mobile dashboard). When provided, the overlay
+   *  reads/writes these values instead of the matching `config` fields. */
+  slice?: LayoutSlice;
+  label?: string;
 }
+
 
 function SortableWidget({
   id,
