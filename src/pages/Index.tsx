@@ -443,6 +443,7 @@ const Index = () => {
       hasPollen,
       hasFoodMenu || isDemo,
       actionWidgetIds,
+      cameraGridIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
