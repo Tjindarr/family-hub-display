@@ -11,10 +11,11 @@ import ColorPicker from "@/components/ColorPicker";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import type {
   ActionWidgetConfig, ActionButtonConfig, EntityAction,
-  MobileLayoutConfig, MobileSection, MobileItem,
+  MobileLayoutConfig, MobileSection, MobileItem, MobileDashboardConfig,
   SensorGridConfig, GeneralSensorConfig, DashboardConfig,
-  CameraGridConfig, CameraConfig,
+  CameraGridConfig, CameraConfig, RssNewsConfig, VehicleConfig,
 } from "@/lib/config";
+
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
