@@ -2831,12 +2831,14 @@ function WidgetStyleControls({ style, onChange, fields }: {
           {/* ===== MOBILE TAB ===== */}
           <TabsContent value="mobile" className="space-y-6 mt-0">
             <ActionWidgetsEditor widgets={actionWidgets} onChange={setActionWidgets} config={config} />
+            <CameraGridsEditor widgets={cameraGrids} onChange={setCameraGrids} config={config} />
             <MobileLayoutEditor
               layout={mobileLayout}
               onChange={setMobileLayout}
               sensorGrids={sensorGrids}
               generalSensors={generalSensors}
               actionWidgets={actionWidgets}
+              cameraGrids={cameraGrids}
             />
             <p className="text-[11px] text-muted-foreground">
               Tip: to add a tap action to a sensor grid cell or general sensor info value, edit it in the Widgets tab — an Action field is now available there.
