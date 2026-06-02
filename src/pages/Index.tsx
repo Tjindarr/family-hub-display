@@ -15,6 +15,9 @@ import NotificationWidget from "@/components/NotificationWidget";
 import VehicleWidget from "@/components/VehicleWidget";
 import PollenWidget from "@/components/PollenWidget";
 import ChoreWidget from "@/components/ChoreWidget";
+import ActionWidget from "@/components/ActionWidget";
+import CameraGridWidget from "@/components/CameraGridWidget";
+import { runAction } from "@/lib/actions";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +38,8 @@ import { useVehicleData } from "@/hooks/useVehicleData";
 import { usePollenData } from "@/hooks/usePollenData";
 import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
+import WallpaperBackground from "@/components/WallpaperBackground";
+
 
 // Lazy-load heavy components not needed in kiosk mode
 const ConfigPanel = lazy(() => import("@/components/ConfigPanel"));
@@ -64,6 +69,8 @@ function getDefaultWidgetIds(
   vehicleIds: string[],
   hasPollen: boolean,
   hasFoodMenu = false,
+  actionWidgetIds: string[] = [],
+  cameraGridIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -76,6 +83,8 @@ function getDefaultWidgetIds(
     "chores",
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
+    ...cameraGridIds.map((id) => `cameragrid_${id}`),
+    ...actionWidgetIds.map((id) => `action_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
@@ -348,7 +357,19 @@ const Index = () => {
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
   const rssIds = rssFeeds.map((f) => f.id);
   const vehicleIds = effectiveVehicles.map((v) => v.id);
+  const actionWidgetIds = (config.actionWidgets || []).map((a) => a.id);
+  const cameraGridIds = (config.cameraGrids || []).map((c) => c.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
+
+  const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
+    if (!cell.action) return;
+    if (cell.confirmAction && !window.confirm(`Run action for "${cell.label || ""}"?`)) return;
+    runAction(cell.action);
+  };
+  const handleInfoAction = (item: { action: any; confirmAction?: boolean; label?: string }) => {
+    if (item.confirmAction && !window.confirm(`Run action for "${item.label || ""}"?`)) return;
+    runAction(item.action);
+  };
 
   // Apply theme
   useEffect(() => {
@@ -423,6 +444,8 @@ const Index = () => {
       vehicleIds,
       hasPollen,
       hasFoodMenu || isDemo,
+      actionWidgetIds,
+      cameraGridIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
@@ -525,6 +548,11 @@ const Index = () => {
           data={sensorData}
           loading={generalSensorLoading}
           fontSizes={sensorFs}
+          onInfoAction={handleInfoAction}
+          onHeaderAction={sensorConfig.headerAction ? () => {
+            if (sensorConfig.confirmAction && !window.confirm(`Run action for "${sensorConfig.label}"?`)) return;
+            runAction(sensorConfig.headerAction!);
+          } : undefined}
         />
       );
     }
@@ -533,7 +561,19 @@ const Index = () => {
       const gridConfig = effectiveSensorGrids.find((s) => s.id === gridId);
       if (!gridConfig) return null;
       const gridData = sensorGridData[gridId];
-      return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} fontSizes={fs} />;
+      return <SensorGridWidget config={gridConfig} data={gridData} loading={sensorGridLoading} fontSizes={fs} onCellAction={handleCellAction} />;
+    }
+    if (id.startsWith("action_")) {
+      const aId = id.replace("action_", "");
+      const aCfg = (config.actionWidgets || []).find((a) => a.id === aId);
+      if (!aCfg) return null;
+      return <ActionWidget config={aCfg} getState={getCachedState} />;
+    }
+    if (id.startsWith("cameragrid_")) {
+      const cId = id.replace("cameragrid_", "");
+      const cCfg = (config.cameraGrids || []).find((c) => c.id === cId);
+      if (!cCfg) return null;
+      return <CameraGridWidget config={cCfg} />;
     }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
@@ -623,7 +663,10 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" style={{ padding: "5px" }}>
+    <div className={`min-h-screen relative ${config.wallpaper?.enabled && config.wallpaper.url ? "" : "bg-background"}`} style={{ padding: "5px" }}>
+      <WallpaperBackground wallpaper={config.wallpaper} context="main" />
+
+
       {!isKiosk && (
         <>
           <Suspense fallback={null}>

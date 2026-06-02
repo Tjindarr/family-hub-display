@@ -216,9 +216,11 @@ app.get("/api/photos", (_req, res) => {
     const files = fs.readdirSync(PHOTOS_DIR).filter((f) => {
       const ext = path.extname(f).toLowerCase();
       if (![".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"].includes(ext)) return false;
-      // Exclude chore proof photos from the gallery widget
+      // Exclude chore proof photos and wallpapers from the gallery widget
       if (f.startsWith("chore_")) return false;
+      if (f.startsWith("wallpaper_")) return false;
       return true;
+
     });
     const photos = files.map((f) => {
       const stats = fs.statSync(path.join(PHOTOS_DIR, f));
@@ -1209,6 +1211,7 @@ app.get("*", (req, res) => {
   const htmlPath = "/usr/share/nginx/html/index.html";
   const isParent = req.path.startsWith("/parent");
   const isKids = req.path.startsWith("/kids");
+  const isMobile = req.path.startsWith("/mobile");
   
   try {
     let html = fs.readFileSync(htmlPath, "utf-8");
@@ -1222,6 +1225,11 @@ app.get("*", (req, res) => {
       html = html.replace('href="/favicon.png"', 'href="/icon-kids.png"');
       html = html.replace('content="HomeDash"', 'content="HomeDash Kids"');
       html = html.replace('<title>HomeDash</title>', '<title>HomeDash Kids</title>');
+    } else if (isMobile) {
+      html = html.replace('href="/manifest-dashboard.json"', 'href="/manifest-mobile.json"');
+      html = html.replace('href="/favicon.png"', 'href="/icon-mobile.png"');
+      html = html.replace('content="HomeDash"', 'content="HomeDash Mobile"');
+      html = html.replace('<title>HomeDash</title>', '<title>HomeDash Mobile</title>');
     }
     res.set("Content-Type", "text/html");
     res.send(html);

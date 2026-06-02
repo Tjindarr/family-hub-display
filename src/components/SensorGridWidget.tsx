@@ -17,6 +17,7 @@ interface SensorGridWidgetProps {
   data: SensorGridLiveData | undefined;
   loading: boolean;
   fontSizes?: ResolvedFontSizes;
+  onCellAction?: (cell: SensorGridCellConfig) => void;
 }
 
 function resolveCell(cell: SensorGridCellConfig, rawValue: string | undefined) {
@@ -95,7 +96,7 @@ function CellChart({ history, color, chartType }: { history: { time: string; val
   );
 }
 
-export default function SensorGridWidget({ config, data, loading, fontSizes }: SensorGridWidgetProps) {
+export default function SensorGridWidget({ config, data, loading, fontSizes, onCellAction }: SensorGridWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
 
   if (loading) {
@@ -118,10 +119,15 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
           const cellData = values[i];
           if (!isCellVisible(cell.visibilityFilter, cellData?.value)) return <div key={i} style={{ order: cell.order ?? i }} />;
           const { displayValue, icon, iconColor, valueColor } = resolveCell(cell, cellData?.value);
+          const hasAction = !!cell.action && !!onCellAction;
           return (
             <div
               key={i}
-              className="relative flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 min-w-0 text-center overflow-hidden"
+              role={hasAction ? "button" : undefined}
+              tabIndex={hasAction ? 0 : undefined}
+              onClick={hasAction ? () => onCellAction!(cell) : undefined}
+              onKeyDown={hasAction ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onCellAction!(cell); } } : undefined}
+              className={`relative flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 min-w-0 text-center overflow-hidden ${hasAction ? "cursor-pointer hover:bg-muted/60 active:scale-95 transition-transform" : ""}`}
               style={{
                 padding: "3px",
                 gridColumn: cell.colSpan && cell.colSpan > 1 ? `span ${cell.colSpan}` : undefined,
@@ -129,6 +135,9 @@ export default function SensorGridWidget({ config, data, loading, fontSizes }: S
                 order: cell.order ?? i,
               }}
             >
+              {hasAction && (
+                <Icon icon="mdi:gesture-tap" className="absolute top-0.5 right-0.5 opacity-40 z-10" style={{ width: 10, height: 10 }} />
+              )}
               {cell.showChart && cellData?.history && (
                 <CellChart history={cellData.history} color={iconColor || "hsl(var(--primary))"} chartType={cell.chartType || "line"} />
               )}

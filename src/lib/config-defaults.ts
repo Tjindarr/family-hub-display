@@ -7,6 +7,7 @@ export const THEMES: { id: ThemeId; label: string }[] = [
   { id: "warm-ember", label: "Warm Ember" },
   { id: "amoled-black", label: "AMOLED Black" },
   { id: "macos-dark", label: "macOS Dark" },
+  { id: "liquid-glass", label: "Liquid Glass" },
 ];
 
 export const DEFAULT_CONFIG: DashboardConfig = {
@@ -111,4 +112,9 @@ export const DEFAULT_CONFIG: DashboardConfig = {
     streakReminderHour: 18,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   },
+  actionWidgets: [],
+  cameraGrids: [],
+  mobileLayout: { sections: [] },
+  wallpaper: { enabled: false, url: "", fit: "cover", dim: 40, blur: 0, applyToMobile: true },
 };
+

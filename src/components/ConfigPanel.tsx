@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig } from "@/lib/config";
+import { ActionWidgetsEditor, MobileLayoutEditor, ActionEditor, CameraGridsEditor } from "@/components/MobileConfigTab";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, CameraGridConfig, CameraConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -194,7 +195,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = []): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -206,6 +207,8 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...(hasChores ? ["chores"] : []),
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
+    ...cameraGridIds.map((id) => `cameragrid_${id}`),
+    ...actionWidgetIds.map((id) => `action_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
@@ -273,6 +276,12 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     enabled: false, weekdayHour: 16, weekendHour: 10, maxChoresInNotification: 3, streakReminderEnabled: false, streakReminderHour: 18,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   });
+  const [actionWidgets, setActionWidgets] = useState<ActionWidgetConfig[]>(config.actionWidgets || []);
+  const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
+  const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
+  const [wallpaper, setWallpaper] = useState(config.wallpaper || { enabled: false, url: "", fit: "cover" as const, dim: 40, blur: 0, applyToMobile: true });
+  const [wallpaperUploading, setWallpaperUploading] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
@@ -282,7 +291,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const vcIds = (config.vehicles || []).map((v) => v.id);
     const hn = (config.notificationConfig?.showHANotifications || (config.notificationConfig?.alertRules?.length > 0)) ?? false;
     const hasFM = !!(config.foodMenuConfig?.calendarEntity || config.foodMenuConfig?.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled);
+    const awIds = (config.actionWidgets || []).map((a) => a.id);
+    const cgIds = (config.cameraGrids || []).map((c) => c.id);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -308,6 +319,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
     generalSensors.forEach((gs) => { labelMap[`general_${gs.id}`] = gs.label || `Sensor ${gs.id}`; });
     sensorGrids.forEach((sg) => { labelMap[`sensorgrid_${sg.id}`] = sg.label || `Grid ${sg.id}`; });
+    cameraGrids.forEach((cg) => { labelMap[`cameragrid_${cg.id}`] = cg.label || `Cameras ${cg.id}`; });
+    actionWidgets.forEach((aw) => { labelMap[`action_${aw.id}`] = aw.label || `Actions ${aw.id}`; });
     rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
     vehicles.forEach((vc) => { labelMap[`vehicle_${vc.id}`] = vc.name || `Vehicle ${vc.id}`; });
 
@@ -315,8 +328,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const sgIds = sensorGrids.map((s) => s.id);
     const rsIds = rssFeeds.map((s) => s.id);
     const vcIds = vehicles.map((v) => v.id);
+    const awIds = actionWidgets.map((a) => a.id);
+    const cgIds = cameraGrids.map((c) => c.id);
     const hasFM = !!(foodMenuConfig.calendarEntity || foodMenuConfig.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -325,9 +340,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("rss_") ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, rssFeeds, vehicles, pollenConfig]);
+  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, rssFeeds, vehicles, pollenConfig]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -395,6 +410,11 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       enableChores: enableChores || choreWidgetConfig.enabled,
       choreWidgetConfig,
       choreReminderConfig,
+      actionWidgets,
+      cameraGrids,
+      mobileLayout,
+      wallpaper,
+
     });
     setOpen(false);
   };
@@ -490,6 +510,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
             <TabsTrigger value="connection" className="flex-1 text-xs">Connection</TabsTrigger>
             <TabsTrigger value="general" className="flex-1 text-xs">General</TabsTrigger>
             <TabsTrigger value="widgets" className="flex-1 text-xs">Widgets</TabsTrigger>
+            <TabsTrigger value="mobile" className="flex-1 text-xs">Mobile</TabsTrigger>
             <TabsTrigger value="photos" className="flex-1 text-xs">Photos</TabsTrigger>
           </TabsList>
 
@@ -552,6 +573,102 @@ function WidgetStyleControls({ style, onChange, fields }: {
                 ))}
               </div>
             </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Wallpaper</h3>
+              <p className="text-[12px] text-muted-foreground">Image displayed behind all widgets on the main dashboard (and optionally the mobile page).</p>
+              <div className="flex items-center gap-3">
+                <Switch checked={wallpaper.enabled} onCheckedChange={(v) => setWallpaper({ ...wallpaper, enabled: v })} />
+                <Label className="text-sm text-foreground">Enable wallpaper</Label>
+              </div>
+              {wallpaper.enabled && (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Image URL</Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        value={wallpaper.url}
+                        onChange={(e) => setWallpaper({ ...wallpaper, url: e.target.value })}
+                        placeholder="https://… or /api/photos/file/…"
+                        className="bg-muted border-border text-sm flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={wallpaperUploading}
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = "image/*";
+                          input.onchange = async () => {
+                            const file = input.files?.[0];
+                            if (!file) return;
+                            setWallpaperUploading(true);
+                            try {
+                              const data = await new Promise<string>((resolve) => {
+                                const r = new FileReader();
+                                r.onload = () => resolve(r.result as string);
+                                r.readAsDataURL(file);
+                              });
+                              const safeName = `wallpaper_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+                              const res = await fetch("/api/photos/upload", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ files: [{ name: safeName, data }] }),
+                              });
+                              if (res.ok) {
+                                const json = await res.json();
+                                const url = json.uploaded?.[0]?.url;
+                                if (url) setWallpaper({ ...wallpaper, url });
+                              }
+                            } finally {
+                              setWallpaperUploading(false);
+                            }
+                          };
+                          input.click();
+                        }}
+                      >
+                        {wallpaperUploading ? "Uploading…" : "Upload"}
+                      </Button>
+                    </div>
+                  </div>
+                  {wallpaper.url && (
+                    <div className="rounded-lg overflow-hidden border border-border/50 bg-muted/30" style={{ height: 100, backgroundImage: `url(${wallpaper.url})`, backgroundSize: wallpaper.fit === "tile" ? "auto" : wallpaper.fit === "fill" ? "100% 100%" : wallpaper.fit, backgroundPosition: "center", backgroundRepeat: wallpaper.fit === "tile" ? "repeat" : "no-repeat" }} />
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Fit</Label>
+                      <Select value={wallpaper.fit} onValueChange={(v) => setWallpaper({ ...wallpaper, fit: v as any })}>
+                        <SelectTrigger className="mt-1 bg-muted border-border text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cover">Cover (fill screen)</SelectItem>
+                          <SelectItem value="contain">Contain (fit inside)</SelectItem>
+                          <SelectItem value="fill">Stretch</SelectItem>
+                          <SelectItem value="tile">Tile</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        <Switch checked={wallpaper.applyToMobile} onCheckedChange={(v) => setWallpaper({ ...wallpaper, applyToMobile: v })} />
+                        <Label className="text-xs text-foreground">Also on mobile page</Label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Dim ({wallpaper.dim}%)</Label>
+                      <Input type="range" min={0} max={90} value={wallpaper.dim} onChange={(e) => setWallpaper({ ...wallpaper, dim: Number(e.target.value) })} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Blur ({wallpaper.blur}px)</Label>
+                      <Input type="range" min={0} max={40} value={wallpaper.blur} onChange={(e) => setWallpaper({ ...wallpaper, blur: Number(e.target.value) })} className="mt-1" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
 
             <section className="space-y-3">
               <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Date & Time Format</h3>
@@ -1833,6 +1950,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                           <Input value={ti.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-20 bg-muted border-border text-xs h-8" />
                           <ColorPicker value={ti.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], color: val }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} className="w-36" />
                         </div>
+                        <ActionEditor value={ti.action} config={config} onChange={(a) => { const u = [...generalSensors]; const info = [...u[gsIdx].topInfo]; info[tiIdx] = { ...info[tiIdx], action: a }; u[gsIdx] = { ...u[gsIdx], topInfo: info }; setGeneralSensors(u); }} />
                       </div>
                     ))}
                   </div>
@@ -1900,6 +2018,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
                           <Input value={bi.unit} onChange={(e) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], unit: e.target.value }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} placeholder="Unit" className="w-20 bg-muted border-border text-xs h-8" />
                           <ColorPicker value={bi.color} onChange={(val) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], color: val }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} className="w-36" />
                         </div>
+                        <ActionEditor value={bi.action} config={config} onChange={(a) => { const u = [...generalSensors]; const info = [...u[gsIdx].bottomInfo]; info[biIdx] = { ...info[biIdx], action: a }; u[gsIdx] = { ...u[gsIdx], bottomInfo: info }; setGeneralSensors(u); }} />
                       </div>
                     ))}
                   </div>
@@ -2081,6 +2200,11 @@ function WidgetStyleControls({ style, onChange, fields }: {
                             </Select>
                           )}
                         </div>
+
+                        <div className="pl-5">
+                          <ActionEditor value={cell.action} config={config} onChange={(a) => updateCell({ action: a })} />
+                        </div>
+
 
                         {/* Value Mapping */}
                         <div className="pl-5 space-y-1">
@@ -2803,6 +2927,33 @@ function WidgetStyleControls({ style, onChange, fields }: {
               </div>
             </CollapsibleSection>}
 
+            <CollapsibleSection title="Action Widgets">
+              <ActionWidgetsEditor widgets={actionWidgets} onChange={setActionWidgets} config={config} />
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Camera Grids">
+              <CameraGridsEditor widgets={cameraGrids} onChange={setCameraGrids} config={config} />
+            </CollapsibleSection>
+
+          </TabsContent>
+
+
+          {/* ===== MOBILE TAB ===== */}
+          <TabsContent value="mobile" className="space-y-6 mt-0">
+
+            <MobileLayoutEditor
+              layout={mobileLayout}
+              onChange={setMobileLayout}
+              sensorGrids={sensorGrids}
+              generalSensors={generalSensors}
+              actionWidgets={actionWidgets}
+              cameraGrids={cameraGrids}
+              availableWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
+            />
+
+            <p className="text-[11px] text-muted-foreground">
+              Tip: to add a tap action to a sensor grid cell or general sensor info value, edit it in the Widgets tab — an Action field is now available there.
+            </p>
           </TabsContent>
 
           {/* ===== PHOTOS TAB ===== */}

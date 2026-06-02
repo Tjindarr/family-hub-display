@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import ParentPage from "./pages/ParentPage";
 import KidsPage from "./pages/KidsPage";
 import HelpPage from "./pages/HelpPage";
+import MobilePage from "./pages/MobilePage";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/parent" element={<ParentPage />} />
           <Route path="/kids" element={<KidsPage />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route path="/mobile" element={<MobilePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
