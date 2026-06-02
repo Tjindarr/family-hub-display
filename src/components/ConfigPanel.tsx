@@ -279,6 +279,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [actionWidgets, setActionWidgets] = useState<ActionWidgetConfig[]>(config.actionWidgets || []);
   const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
+  const [mobileDashboard, setMobileDashboard] = useState<MobileDashboardConfig>(
+    config.mobileDashboard || {
+      gridColumns: 2, widgetOrder: [], widgetLayouts: {}, rowColumns: {}, rowHeights: {}, lockWidgetHeights: false,
+      generalSensors: [], sensorGrids: [], actionWidgets: [], cameraGrids: [], rssFeeds: [], vehicles: [],
+    },
+  );
+
   const [wallpaper, setWallpaper] = useState(config.wallpaper || { enabled: false, url: "", fit: "cover" as const, dim: 40, blur: 0, applyToMobile: true });
   const [wallpaperUploading, setWallpaperUploading] = useState(false);
 
