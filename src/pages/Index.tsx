@@ -663,8 +663,9 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative" style={{ padding: "5px" }}>
+    <div className={`min-h-screen relative ${config.wallpaper?.enabled && config.wallpaper.url ? "" : "bg-background"}`} style={{ padding: "5px" }}>
       <WallpaperBackground wallpaper={config.wallpaper} context="main" />
+
 
       {!isKiosk && (
         <>

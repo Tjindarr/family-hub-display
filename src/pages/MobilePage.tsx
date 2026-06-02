@@ -90,8 +90,9 @@ export default function MobilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative" style={{ padding: "8px" }}>
+    <div className={`min-h-screen text-foreground relative ${config.wallpaper?.enabled && config.wallpaper.url && config.wallpaper.applyToMobile !== false ? "" : "bg-background"}`} style={{ padding: "8px" }}>
       <WallpaperBackground wallpaper={config.wallpaper} context="mobile" />
+
 
       <header className="flex items-center justify-between mb-3 px-1">
         <h1 className="text-base font-semibold tracking-tight">HomeDash</h1>
