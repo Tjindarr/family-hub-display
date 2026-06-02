@@ -115,4 +115,6 @@ export const DEFAULT_CONFIG: DashboardConfig = {
   actionWidgets: [],
   cameraGrids: [],
   mobileLayout: { sections: [] },
+  wallpaper: { enabled: false, url: "", fit: "cover", dim: 40, blur: 0, applyToMobile: true },
 };
+
