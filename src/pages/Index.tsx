@@ -661,7 +661,9 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" style={{ padding: "5px" }}>
+    <div className="min-h-screen bg-background relative" style={{ padding: "5px" }}>
+      <WallpaperBackground wallpaper={config.wallpaper} context="main" />
+
       {!isKiosk && (
         <>
           <Suspense fallback={null}>
