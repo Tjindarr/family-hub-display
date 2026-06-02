@@ -312,6 +312,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     personEntities.forEach((p, i) => { labelMap[`person_${i}`] = p.name || `Person ${i + 1}`; });
     generalSensors.forEach((gs) => { labelMap[`general_${gs.id}`] = gs.label || `Sensor ${gs.id}`; });
     sensorGrids.forEach((sg) => { labelMap[`sensorgrid_${sg.id}`] = sg.label || `Grid ${sg.id}`; });
+    cameraGrids.forEach((cg) => { labelMap[`cameragrid_${cg.id}`] = cg.label || `Cameras ${cg.id}`; });
+    actionWidgets.forEach((aw) => { labelMap[`action_${aw.id}`] = aw.label || `Actions ${aw.id}`; });
     rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
     vehicles.forEach((vc) => { labelMap[`vehicle_${vc.id}`] = vc.name || `Vehicle ${vc.id}`; });
 
