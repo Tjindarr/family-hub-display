@@ -113,5 +113,6 @@ export const DEFAULT_CONFIG: DashboardConfig = {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Stockholm",
   },
   actionWidgets: [],
+  cameraGrids: [],
   mobileLayout: { sections: [] },
 };

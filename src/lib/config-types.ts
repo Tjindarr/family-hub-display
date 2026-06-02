@@ -473,6 +473,7 @@ export interface DashboardConfig {
   choreWidgetConfig: ChoreWidgetConfig;
   choreReminderConfig: ChoreReminderConfig;
   actionWidgets: ActionWidgetConfig[];
+  cameraGrids: CameraGridConfig[];
   mobileLayout: MobileLayoutConfig;
 }
 
