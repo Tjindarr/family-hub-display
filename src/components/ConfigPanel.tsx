@@ -2826,7 +2826,12 @@ function WidgetStyleControls({ style, onChange, fields }: {
               </div>
             </CollapsibleSection>}
 
+            <CollapsibleSection title="Camera Grids">
+              <CameraGridsEditor widgets={cameraGrids} onChange={setCameraGrids} config={config} />
+            </CollapsibleSection>
+
           </TabsContent>
+
 
           {/* ===== MOBILE TAB ===== */}
           <TabsContent value="mobile" className="space-y-6 mt-0">
