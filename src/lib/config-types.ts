@@ -300,6 +300,13 @@ export interface ActionButtonConfig {
   action: EntityAction;
   confirm?: boolean;
   stateEntityId?: string;
+  stateAttribute?: string;
+  activeColor?: string;
+  inactiveColor?: string;
+  activeBgColor?: string;
+  inactiveBgColor?: string;
+  activeIcon?: string;
+  activeStates?: string[];
 }
 
 export interface ActionWidgetConfig {

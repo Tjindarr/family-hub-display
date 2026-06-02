@@ -2,11 +2,14 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import type { ActionWidgetConfig, ActionButtonConfig, HAState } from "@/lib/config";
 import { runAction } from "@/lib/actions";
+import { resolveEntityValue } from "@/lib/entity-resolver";
 
 function toIconName(name: string): string {
   if (!name) return "mdi:gesture-tap-button";
   return name.includes(":") ? name : `mdi:${name}`;
 }
+
+const DEFAULT_ACTIVE_STATES = ["on", "open", "opening", "home", "playing", "heat", "cool", "active", "unlocked", "true"];
 
 interface Props {
   config: ActionWidgetConfig;
@@ -44,28 +47,41 @@ export default function ActionWidget({ config, getState, compact }: Props) {
         style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       >
         {buttons.map((btn) => {
-          const active = btn.stateEntityId && getState
-            ? ["on", "open", "home", "playing", "heat", "cool"].includes(
-                String(getState(btn.stateEntityId)?.state || "").toLowerCase(),
-              )
-            : false;
+          let active = false;
+          if (btn.stateEntityId && getState) {
+            const ref = btn.stateAttribute ? `${btn.stateEntityId}.${btn.stateAttribute}` : btn.stateEntityId;
+            const { value } = resolveEntityValue(ref, getState);
+            const v = String(value ?? "").toLowerCase().trim();
+            const activeList = (btn.activeStates && btn.activeStates.length > 0)
+              ? btn.activeStates.map((s) => s.toLowerCase().trim())
+              : DEFAULT_ACTIVE_STATES;
+            active = activeList.includes(v);
+          }
           const isPending = pending === btn.id;
+          const fgColor = btn.stateEntityId
+            ? (active ? (btn.activeColor || btn.color) : (btn.inactiveColor || btn.color))
+            : btn.color;
+          const bgColor = btn.stateEntityId
+            ? (active ? btn.activeBgColor : btn.inactiveBgColor)
+            : undefined;
+          const iconName = active && btn.activeIcon ? btn.activeIcon : btn.icon;
           return (
             <button
               key={btn.id}
               onClick={() => handleClick(btn)}
-              className={`relative flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/30 hover:bg-muted/60 transition-all active:scale-95 ${active ? "ring-2 ring-primary/60" : ""} ${isPending ? "opacity-60" : ""}`}
+              className={`relative flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95 ${bgColor ? "" : "bg-muted/30 hover:bg-muted/60"} ${active && !bgColor ? "ring-2 ring-primary/60" : ""} ${isPending ? "opacity-60" : ""}`}
               style={{
                 padding: compact ? "10px 6px" : "14px 8px",
                 minHeight: compact ? 56 : 72,
-                color: btn.color || undefined,
+                color: fgColor || undefined,
+                backgroundColor: bgColor || undefined,
               }}
             >
               <Icon
-                icon={toIconName(btn.icon)}
-                style={{ width: compact ? 22 : 28, height: compact ? 22 : 28, color: btn.color || undefined }}
+                icon={toIconName(iconName)}
+                style={{ width: compact ? 22 : 28, height: compact ? 22 : 28, color: fgColor || undefined }}
               />
-              <span className="text-[11px] text-foreground/90 leading-tight text-center break-words max-w-full">
+              <span className="text-[11px] leading-tight text-center break-words max-w-full" style={{ color: fgColor || undefined }}>
                 {btn.label}
               </span>
             </button>
