@@ -9,6 +9,7 @@ import { runAction } from "@/lib/actions";
 import SensorGridWidget from "@/components/SensorGridWidget";
 import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import ActionWidget from "@/components/ActionWidget";
+import CameraGridWidget from "@/components/CameraGridWidget";
 import { ChevronDown, ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -77,6 +78,11 @@ export default function MobilePage() {
       const aw = (config.actionWidgets || []).find((a) => a.id === refId);
       if (!aw) return <div key={key} className="text-xs text-muted-foreground">Missing action widget: {refId}</div>;
       return <ActionWidget key={key} config={aw} getState={getCachedState} compact />;
+    }
+    if (kind === "cameraGrid") {
+      const cg = (config.cameraGrids || []).find((c) => c.id === refId);
+      if (!cg) return <div key={key} className="text-xs text-muted-foreground">Missing camera grid: {refId}</div>;
+      return <CameraGridWidget key={key} config={cg} />;
     }
     return null;
   };
