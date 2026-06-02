@@ -329,10 +329,11 @@ export default function DashboardEditOverlay({
         className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
       >
         <Pencil className="h-3.5 w-3.5" />
-        Edit Layout
+        {label || "Edit Layout"}
       </Button>
     );
   }
+
 
   return (
     <div className="fixed inset-0 z-40 bg-background overflow-auto" style={{ padding: "5px" }}>
