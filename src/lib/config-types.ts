@@ -323,7 +323,7 @@ export interface CameraGridConfig {
   cameras: CameraConfig[];
 }
 
-export type MobileItemKind = "sensorGrid" | "generalSensor" | "actionWidget" | "cameraGrid";
+export type MobileItemKind = "sensorGrid" | "generalSensor" | "actionWidget" | "cameraGrid" | "widget";
 
 export interface MobileItem {
   kind: MobileItemKind;
