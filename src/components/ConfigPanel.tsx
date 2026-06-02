@@ -420,7 +420,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       actionWidgets,
       cameraGrids,
       mobileLayout,
+      mobileDashboard,
       wallpaper,
+
 
     });
     setOpen(false);
