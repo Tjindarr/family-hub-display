@@ -293,11 +293,12 @@ export default function DashboardEditOverlay({
 
   const handleCancel = () => {
     setLocalOrder(allWidgetIds);
-    setLocalLayouts(config.widgetLayouts || {});
-    setLocalGridColumns(config.gridColumns || 4);
-    setLocalRowColumns(config.rowColumns || {});
+    setLocalLayouts(sourceLayouts);
+    setLocalGridColumns(sourceGridCols);
+    setLocalRowColumns(sourceRowCols);
     setEditMode(false);
   };
+
 
   // Get used rows for per-row column overrides
   const usedRows = useMemo(() => {
