@@ -38,6 +38,8 @@ import { useVehicleData } from "@/hooks/useVehicleData";
 import { usePollenData } from "@/hooks/usePollenData";
 import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
+import WallpaperBackground from "@/components/WallpaperBackground";
+
 
 // Lazy-load heavy components not needed in kiosk mode
 const ConfigPanel = lazy(() => import("@/components/ConfigPanel"));

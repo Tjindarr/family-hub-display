@@ -10,6 +10,8 @@ import SensorGridWidget from "@/components/SensorGridWidget";
 import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
+import WallpaperBackground from "@/components/WallpaperBackground";
+
 import { ChevronDown, ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
