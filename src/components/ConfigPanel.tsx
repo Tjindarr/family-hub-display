@@ -2950,20 +2950,31 @@ function WidgetStyleControls({ style, onChange, fields }: {
           {/* ===== MOBILE TAB ===== */}
           <TabsContent value="mobile" className="space-y-6 mt-0">
 
-            <MobileLayoutEditor
-              layout={mobileLayout}
-              onChange={setMobileLayout}
-              sensorGrids={sensorGrids}
-              generalSensors={generalSensors}
-              actionWidgets={actionWidgets}
-              cameraGrids={cameraGrids}
-              availableWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
-            />
+            <CollapsibleSection title="Mobile Dashboard">
+              <MobileDashboardEditor
+                value={mobileDashboard}
+                onChange={setMobileDashboard}
+                config={config}
+                mainWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
+              />
+            </CollapsibleSection>
 
-            <p className="text-[11px] text-muted-foreground">
-              Tip: to add a tap action to a sensor grid cell or general sensor info value, edit it in the Widgets tab — an Action field is now available there.
-            </p>
+            <CollapsibleSection title="Legacy Sections (deprecated)">
+              <p className="text-[11px] text-muted-foreground mb-2">
+                These section-based mobile layouts have been replaced by the Mobile Dashboard above. If your mobile dashboard is empty, items from here are migrated automatically.
+              </p>
+              <MobileLayoutEditor
+                layout={mobileLayout}
+                onChange={setMobileLayout}
+                sensorGrids={sensorGrids}
+                generalSensors={generalSensors}
+                actionWidgets={actionWidgets}
+                cameraGrids={cameraGrids}
+                availableWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
+              />
+            </CollapsibleSection>
           </TabsContent>
+
 
           {/* ===== PHOTOS TAB ===== */}
           <TabsContent value="photos" className="space-y-6 mt-0">
