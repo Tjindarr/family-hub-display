@@ -235,7 +235,7 @@ export default function DashboardEditOverlay({
   const getEffectiveColSpan = (id: string) => localLayouts[id]?.colSpan || getColSpan(id);
   const getEffectiveRow = (id: string) => localLayouts[id]?.row || getRow(id);
   const getEffectiveRowSpan = (id: string) => localLayouts[id]?.rowSpan || getRowSpan(id);
-  const getWidgetGroup = (id: string) => localLayouts[id]?.widgetGroup ?? config.widgetLayouts?.[id]?.widgetGroup ?? "";
+  const getWidgetGroup = (id: string) => localLayouts[id]?.widgetGroup ?? sourceLayouts?.[id]?.widgetGroup ?? "";
 
   // Build sortable items: use lead widget id for groups
   const sortableItems = useMemo(() => {
