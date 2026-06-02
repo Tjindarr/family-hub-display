@@ -199,14 +199,19 @@ export default function DashboardEditOverlay({
   getRowSpan,
   gridColumns,
   isMobile,
+  slice,
+  label,
 }: DashboardEditOverlayProps) {
+  const sourceOrder = slice?.widgetOrder ?? config.widgetOrder ?? [];
+  const sourceLayouts = slice?.widgetLayouts ?? config.widgetLayouts ?? {};
+  const sourceGridCols = slice?.gridColumns ?? config.gridColumns ?? 4;
+  const sourceRowCols = slice?.rowColumns ?? config.rowColumns ?? {};
+
   const [editMode, setEditMode] = useState(false);
   const [localOrder, setLocalOrder] = useState<string[]>(allWidgetIds);
-  const [localLayouts, setLocalLayouts] = useState<Record<string, WidgetLayout>>(
-    config.widgetLayouts || {}
-  );
-  const [localGridColumns, setLocalGridColumns] = useState(config.gridColumns || 4);
-  const [localRowColumns, setLocalRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
+  const [localLayouts, setLocalLayouts] = useState<Record<string, WidgetLayout>>(sourceLayouts);
+  const [localGridColumns, setLocalGridColumns] = useState(sourceGridCols);
+  const [localRowColumns, setLocalRowColumns] = useState<Record<number, number>>(sourceRowCols);
   const [showSettings, setShowSettings] = useState(false);
 
   // Sync when allWidgetIds change
@@ -214,11 +219,12 @@ export default function DashboardEditOverlay({
   const [lastKey, setLastKey] = useState(currentKey);
   if (currentKey !== lastKey) {
     setLocalOrder(allWidgetIds);
-    setLocalLayouts(config.widgetLayouts || {});
-    setLocalGridColumns(config.gridColumns || 4);
-    setLocalRowColumns(config.rowColumns || {});
+    setLocalLayouts(sourceLayouts);
+    setLocalGridColumns(sourceGridCols);
+    setLocalRowColumns(sourceRowCols);
     setLastKey(currentKey);
   }
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
