@@ -279,6 +279,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [actionWidgets, setActionWidgets] = useState<ActionWidgetConfig[]>(config.actionWidgets || []);
   const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
+  const [wallpaper, setWallpaper] = useState(config.wallpaper || { enabled: false, url: "", fit: "cover" as const, dim: 40, blur: 0, applyToMobile: true });
+  const [wallpaperUploading, setWallpaperUploading] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
@@ -410,6 +413,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       actionWidgets,
       cameraGrids,
       mobileLayout,
+      wallpaper,
+
     });
     setOpen(false);
   };
