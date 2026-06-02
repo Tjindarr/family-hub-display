@@ -492,7 +492,9 @@ export interface DashboardConfig {
   actionWidgets: ActionWidgetConfig[];
   cameraGrids: CameraGridConfig[];
   mobileLayout: MobileLayoutConfig;
+  mobileDashboard?: MobileDashboardConfig;
   wallpaper?: WallpaperConfig;
+
 }
 
 export interface WallpaperConfig {
