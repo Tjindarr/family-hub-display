@@ -9,8 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
-import { ActionWidgetsEditor, MobileLayoutEditor, ActionEditor, CameraGridsEditor } from "@/components/MobileConfigTab";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, CameraGridConfig, CameraConfig } from "@/lib/config";
+import { ActionWidgetsEditor, MobileLayoutEditor, ActionEditor, CameraGridsEditor, MobileDashboardEditor } from "@/components/MobileConfigTab";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, MobileDashboardConfig, CameraGridConfig, CameraConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -279,6 +279,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [actionWidgets, setActionWidgets] = useState<ActionWidgetConfig[]>(config.actionWidgets || []);
   const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
+  const [mobileDashboard, setMobileDashboard] = useState<MobileDashboardConfig>(
+    config.mobileDashboard || {
+      gridColumns: 2, widgetOrder: [], widgetLayouts: {}, rowColumns: {}, rowHeights: {}, lockWidgetHeights: false,
+      generalSensors: [], sensorGrids: [], actionWidgets: [], cameraGrids: [], rssFeeds: [], vehicles: [],
+    },
+  );
+
   const [wallpaper, setWallpaper] = useState(config.wallpaper || { enabled: false, url: "", fit: "cover" as const, dim: 40, blur: 0, applyToMobile: true });
   const [wallpaperUploading, setWallpaperUploading] = useState(false);
 
@@ -413,7 +420,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       actionWidgets,
       cameraGrids,
       mobileLayout,
+      mobileDashboard,
       wallpaper,
+
 
     });
     setOpen(false);
@@ -2941,20 +2950,31 @@ function WidgetStyleControls({ style, onChange, fields }: {
           {/* ===== MOBILE TAB ===== */}
           <TabsContent value="mobile" className="space-y-6 mt-0">
 
-            <MobileLayoutEditor
-              layout={mobileLayout}
-              onChange={setMobileLayout}
-              sensorGrids={sensorGrids}
-              generalSensors={generalSensors}
-              actionWidgets={actionWidgets}
-              cameraGrids={cameraGrids}
-              availableWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
-            />
+            <CollapsibleSection title="Mobile Dashboard">
+              <MobileDashboardEditor
+                value={mobileDashboard}
+                onChange={setMobileDashboard}
+                config={config}
+                mainWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
+              />
+            </CollapsibleSection>
 
-            <p className="text-[11px] text-muted-foreground">
-              Tip: to add a tap action to a sensor grid cell or general sensor info value, edit it in the Widgets tab — an Action field is now available there.
-            </p>
+            <CollapsibleSection title="Legacy Sections (deprecated)">
+              <p className="text-[11px] text-muted-foreground mb-2">
+                These section-based mobile layouts have been replaced by the Mobile Dashboard above. If your mobile dashboard is empty, items from here are migrated automatically.
+              </p>
+              <MobileLayoutEditor
+                layout={mobileLayout}
+                onChange={setMobileLayout}
+                sensorGrids={sensorGrids}
+                generalSensors={generalSensors}
+                actionWidgets={actionWidgets}
+                cameraGrids={cameraGrids}
+                availableWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
+              />
+            </CollapsibleSection>
           </TabsContent>
+
 
           {/* ===== PHOTOS TAB ===== */}
           <TabsContent value="photos" className="space-y-6 mt-0">

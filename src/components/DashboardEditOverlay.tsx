@@ -22,17 +22,31 @@ import type { DashboardConfig, WidgetLayout } from "@/lib/config";
 
 const WIDGET_GROUPS = ["", "A", "B", "C", "D", "E", "F", "G", "H"];
 
+interface LayoutSlice {
+  widgetOrder: string[];
+  widgetLayouts: Record<string, WidgetLayout>;
+  gridColumns: number;
+  rowColumns: Record<number, number>;
+  rowHeights?: Record<number, number>;
+  lockWidgetHeights?: boolean;
+}
+
 interface DashboardEditOverlayProps {
   allWidgetIds: string[];
   config: DashboardConfig;
-  onSave: (updates: Partial<DashboardConfig>) => void;
+  onSave: (updates: Partial<DashboardConfig> | Partial<LayoutSlice>) => void;
   renderWidget: (id: string) => React.ReactNode;
   getColSpan: (id: string) => number;
   getRow: (id: string) => number;
   getRowSpan: (id: string) => number;
   gridColumns: number;
   isMobile: boolean;
+  /** Optional scoped slice (e.g. for /mobile dashboard). When provided, the overlay
+   *  reads/writes these values instead of the matching `config` fields. */
+  slice?: LayoutSlice;
+  label?: string;
 }
+
 
 function SortableWidget({
   id,
@@ -185,14 +199,19 @@ export default function DashboardEditOverlay({
   getRowSpan,
   gridColumns,
   isMobile,
+  slice,
+  label,
 }: DashboardEditOverlayProps) {
+  const sourceOrder = slice?.widgetOrder ?? config.widgetOrder ?? [];
+  const sourceLayouts = slice?.widgetLayouts ?? config.widgetLayouts ?? {};
+  const sourceGridCols = slice?.gridColumns ?? config.gridColumns ?? 4;
+  const sourceRowCols = slice?.rowColumns ?? config.rowColumns ?? {};
+
   const [editMode, setEditMode] = useState(false);
   const [localOrder, setLocalOrder] = useState<string[]>(allWidgetIds);
-  const [localLayouts, setLocalLayouts] = useState<Record<string, WidgetLayout>>(
-    config.widgetLayouts || {}
-  );
-  const [localGridColumns, setLocalGridColumns] = useState(config.gridColumns || 4);
-  const [localRowColumns, setLocalRowColumns] = useState<Record<number, number>>(config.rowColumns || {});
+  const [localLayouts, setLocalLayouts] = useState<Record<string, WidgetLayout>>(sourceLayouts);
+  const [localGridColumns, setLocalGridColumns] = useState(sourceGridCols);
+  const [localRowColumns, setLocalRowColumns] = useState<Record<number, number>>(sourceRowCols);
   const [showSettings, setShowSettings] = useState(false);
 
   // Sync when allWidgetIds change
@@ -200,11 +219,12 @@ export default function DashboardEditOverlay({
   const [lastKey, setLastKey] = useState(currentKey);
   if (currentKey !== lastKey) {
     setLocalOrder(allWidgetIds);
-    setLocalLayouts(config.widgetLayouts || {});
-    setLocalGridColumns(config.gridColumns || 4);
-    setLocalRowColumns(config.rowColumns || {});
+    setLocalLayouts(sourceLayouts);
+    setLocalGridColumns(sourceGridCols);
+    setLocalRowColumns(sourceRowCols);
     setLastKey(currentKey);
   }
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -215,7 +235,7 @@ export default function DashboardEditOverlay({
   const getEffectiveColSpan = (id: string) => localLayouts[id]?.colSpan || getColSpan(id);
   const getEffectiveRow = (id: string) => localLayouts[id]?.row || getRow(id);
   const getEffectiveRowSpan = (id: string) => localLayouts[id]?.rowSpan || getRowSpan(id);
-  const getWidgetGroup = (id: string) => localLayouts[id]?.widgetGroup ?? config.widgetLayouts?.[id]?.widgetGroup ?? "";
+  const getWidgetGroup = (id: string) => localLayouts[id]?.widgetGroup ?? sourceLayouts?.[id]?.widgetGroup ?? "";
 
   // Build sortable items: use lead widget id for groups
   const sortableItems = useMemo(() => {
@@ -273,11 +293,12 @@ export default function DashboardEditOverlay({
 
   const handleCancel = () => {
     setLocalOrder(allWidgetIds);
-    setLocalLayouts(config.widgetLayouts || {});
-    setLocalGridColumns(config.gridColumns || 4);
-    setLocalRowColumns(config.rowColumns || {});
+    setLocalLayouts(sourceLayouts);
+    setLocalGridColumns(sourceGridCols);
+    setLocalRowColumns(sourceRowCols);
     setEditMode(false);
   };
+
 
   // Get used rows for per-row column overrides
   const usedRows = useMemo(() => {
@@ -308,10 +329,11 @@ export default function DashboardEditOverlay({
         className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
       >
         <Pencil className="h-3.5 w-3.5" />
-        Edit Layout
+        {label || "Edit Layout"}
       </Button>
     );
   }
+
 
   return (
     <div className="fixed inset-0 z-40 bg-background overflow-auto" style={{ padding: "5px" }}>
