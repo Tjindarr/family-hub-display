@@ -248,3 +248,201 @@ export function MobileLayoutEditor({
   );
 }
 
+// ── Mobile Dashboard editor ──
+// Allows the user to:
+// 1. Manage mobile-only widget instances (sensor grids, general sensors, action widgets,
+//    camera grids, RSS feeds, vehicles).
+// 2. Mirror widgets from the main dashboard (just add their id to widgetOrder).
+// 3. Pick grid columns and lock-heights for the mobile grid.
+// Drag-to-reorder / sizing is handled by the standard DashboardEditOverlay on /mobile.
+export function MobileDashboardEditor({
+  value, onChange, config, mainWidgets,
+}: {
+  value: MobileDashboardConfig;
+  onChange: (v: MobileDashboardConfig) => void;
+  config: DashboardConfig;
+  mainWidgets: { id: string; label: string }[];
+}) {
+  const upd = (p: Partial<MobileDashboardConfig>) => onChange({ ...value, ...p });
+
+  const widgetOrder = value.widgetOrder || [];
+  const addToOrder = (id: string) => {
+    if (!id || widgetOrder.includes(id)) return;
+    upd({ widgetOrder: [...widgetOrder, id] });
+  };
+  const removeFromOrder = (id: string) => upd({ widgetOrder: widgetOrder.filter((x) => x !== id) });
+  const moveInOrder = (id: string, dir: -1 | 1) => {
+    const i = widgetOrder.indexOf(id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= widgetOrder.length) return;
+    const arr = [...widgetOrder];
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    upd({ widgetOrder: arr });
+  };
+
+  // Build label map: main widgets (mirror) + mobile-owned
+  const mobileLabels: Record<string, string> = {};
+  value.sensorGrids.forEach((g) => { mobileLabels[`sensorgrid_${g.id}`] = `📱 ${g.label || g.id}`; });
+  value.generalSensors.forEach((g) => { mobileLabels[`general_${g.id}`] = `📱 ${g.label || g.id}`; });
+  value.actionWidgets.forEach((g) => { mobileLabels[`action_${g.id}`] = `📱 ${g.label || g.id}`; });
+  value.cameraGrids.forEach((g) => { mobileLabels[`cameragrid_${g.id}`] = `📱 ${g.label || g.id}`; });
+  value.rssFeeds.forEach((g) => { mobileLabels[`rss_${g.id}`] = `📱 ${g.label || g.id}`; });
+  value.vehicles.forEach((g) => { mobileLabels[`vehicle_${g.id}`] = `📱 ${g.name || g.id}`; });
+  const mainLabels: Record<string, string> = Object.fromEntries(mainWidgets.map((w) => [w.id, w.label]));
+  const labelOf = (id: string) => mobileLabels[id] || mainLabels[id] || id;
+
+  // Selectable widgets to add: mobile-owned not yet in order + main widgets not yet in order
+  const addableMobile = Object.keys(mobileLabels).filter((id) => !widgetOrder.includes(id));
+  const addableMain = mainWidgets.filter((w) => !widgetOrder.includes(w.id));
+
+  return (
+    <div className="space-y-5">
+      {/* Grid settings */}
+      <section className="space-y-2">
+        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Grid</h4>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Label className="text-[11px] text-muted-foreground">Columns</Label>
+            <Select value={String(value.gridColumns || 2)} onValueChange={(v) => upd({ gridColumns: Number(v) })}>
+              <SelectTrigger className="h-7 w-16 bg-muted border-border text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <label className="flex items-center gap-2 text-[11px]">
+            <Switch checked={!!value.lockWidgetHeights} onCheckedChange={(c) => upd({ lockWidgetHeights: c })} />
+            Lock widget heights
+          </label>
+          <p className="text-[10px] text-muted-foreground basis-full">Use the "Edit" button on /mobile to drag, resize and arrange widgets in the grid.</p>
+        </div>
+      </section>
+
+      {/* Order list */}
+      <section className="space-y-2">
+        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Widgets on /mobile</h4>
+        {widgetOrder.length === 0 && (
+          <p className="text-[11px] text-muted-foreground">No widgets yet. Add mobile-only widgets below, or mirror widgets from the main dashboard.</p>
+        )}
+        <div className="space-y-1">
+          {widgetOrder.map((id) => (
+            <div key={id} className="flex items-center gap-2 px-2 py-1 rounded bg-muted/30 border border-border/40">
+              <span className="text-[11px] flex-1 truncate">{labelOf(id)}</span>
+              <span className="text-[9px] text-muted-foreground font-mono">{id}</span>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveInOrder(id, -1)}><ArrowUp className="h-3 w-3" /></Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveInOrder(id, 1)}><ArrowDown className="h-3 w-3" /></Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeFromOrder(id)}><Trash2 className="h-3 w-3" /></Button>
+            </div>
+          ))}
+        </div>
+
+        {/* Add widget */}
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          {addableMobile.length > 0 && (
+            <Select value="" onValueChange={(v) => v && addToOrder(v)}>
+              <SelectTrigger className="h-7 text-xs bg-muted border-border w-56"><SelectValue placeholder="+ Add mobile widget…" /></SelectTrigger>
+              <SelectContent>
+                {addableMobile.map((id) => <SelectItem key={id} value={id}>{labelOf(id)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          {addableMain.length > 0 && (
+            <Select value="" onValueChange={(v) => v && addToOrder(v)}>
+              <SelectTrigger className="h-7 text-xs bg-muted border-border w-56"><SelectValue placeholder="+ Mirror from main dashboard…" /></SelectTrigger>
+              <SelectContent>
+                {addableMain.map((w) => <SelectItem key={w.id} value={w.id}>{w.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      </section>
+
+      {/* Mobile-only widget instance editors */}
+      <section className="space-y-3">
+        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Sensor Grids</h4>
+        <MobileSensorGridList value={value.sensorGrids} onChange={(v) => upd({ sensorGrids: v })} config={config} />
+      </section>
+
+      <section className="space-y-3">
+        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Action Widgets</h4>
+        <ActionWidgetsEditor widgets={value.actionWidgets} onChange={(v) => upd({ actionWidgets: v })} config={config} />
+      </section>
+
+      <section className="space-y-3">
+        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Camera Grids</h4>
+        <CameraGridsEditor widgets={value.cameraGrids} onChange={(v) => upd({ cameraGrids: v })} config={config} />
+      </section>
+
+      <section className="space-y-3">
+        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only RSS Feeds</h4>
+        <MobileRssFeedList value={value.rssFeeds} onChange={(v) => upd({ rssFeeds: v })} />
+      </section>
+
+      <p className="text-[10px] text-muted-foreground">
+        Tip: General Sensor and Vehicle widgets are complex to configure — manage them in the Widgets tab on the main dashboard and mirror them here.
+      </p>
+    </div>
+  );
+}
+
+// Compact in-place sensor grid editor (minimal viable — full editor lives in the Widgets tab)
+function MobileSensorGridList({ value, onChange, config }: { value: SensorGridConfig[]; onChange: (v: SensorGridConfig[]) => void; config: DashboardConfig }) {
+  const add = () => onChange([...value, { id: uid(), label: "Sensors", rows: 2, columns: 3, cells: [] }]);
+  const remove = (i: number) => onChange(value.filter((_, x) => x !== i));
+  const upd = (i: number, p: Partial<SensorGridConfig>) => onChange(value.map((w, x) => x === i ? { ...w, ...p } : w));
+  return (
+    <div className="space-y-2">
+      {value.map((g, gi) => (
+        <div key={g.id} className="space-y-2 p-2 rounded bg-muted/30 border border-border/40">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Input className="h-7 text-xs bg-muted border-border flex-1 min-w-[120px]" value={g.label} onChange={(e) => upd(gi, { label: e.target.value })} placeholder="Label" />
+            <Label className="text-[10px] text-muted-foreground">Cols</Label>
+            <Input type="number" min={1} max={6} className="h-7 w-14 text-xs bg-muted border-border" value={g.columns} onChange={(e) => upd(gi, { columns: Math.max(1, Math.min(6, Number(e.target.value) || 3)) })} />
+            <Label className="text-[10px] text-muted-foreground">Rows</Label>
+            <Input type="number" min={1} max={8} className="h-7 w-14 text-xs bg-muted border-border" value={g.rows} onChange={(e) => upd(gi, { rows: Math.max(1, Math.min(8, Number(e.target.value) || 2)) })} />
+            <Button size="icon" variant="ghost" onClick={() => remove(gi)}><Trash2 className="h-3 w-3" /></Button>
+          </div>
+          <div className="space-y-1 pl-2 border-l border-border/40">
+            {g.cells.map((c, ci) => (
+              <div key={ci} className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-muted-foreground w-4">{ci + 1}</span>
+                <EntityAutocomplete value={c.entityId} onChange={(v) => upd(gi, { cells: g.cells.map((x, i) => i === ci ? { ...x, entityId: v } : x) })} config={config} placeholder="sensor.foo" />
+                <Input className="h-7 text-xs bg-muted border-border w-28" value={c.label} onChange={(e) => upd(gi, { cells: g.cells.map((x, i) => i === ci ? { ...x, label: e.target.value } : x) })} placeholder="Label" />
+                <IconPicker value={c.icon} onChange={(v) => upd(gi, { cells: g.cells.map((x, i) => i === ci ? { ...x, icon: v } : x) })} />
+                <Input className="h-7 text-xs bg-muted border-border w-16" value={c.unit} onChange={(e) => upd(gi, { cells: g.cells.map((x, i) => i === ci ? { ...x, unit: e.target.value } : x) })} placeholder="Unit" />
+                <ColorPicker value={c.color || ""} onChange={(v) => upd(gi, { cells: g.cells.map((x, i) => i === ci ? { ...x, color: v } : x) })} />
+                <Button size="icon" variant="ghost" onClick={() => upd(gi, { cells: g.cells.filter((_, i) => i !== ci) })}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => upd(gi, { cells: [...g.cells, { entityId: "", label: "", icon: "mdi:gauge", unit: "", color: "hsl(174, 72%, 50%)" }] })}>
+              <Plus className="h-3 w-3 mr-1" /> Add cell
+            </Button>
+          </div>
+        </div>
+      ))}
+      <Button size="sm" variant="outline" onClick={add}><Plus className="h-3 w-3 mr-1" /> Add sensor grid</Button>
+    </div>
+  );
+}
+
+function MobileRssFeedList({ value, onChange }: { value: RssNewsConfig[]; onChange: (v: RssNewsConfig[]) => void }) {
+  const add = () => onChange([...value, { id: uid(), label: "News", feedUrl: "", maxItems: 5 }]);
+  const remove = (i: number) => onChange(value.filter((_, x) => x !== i));
+  const upd = (i: number, p: Partial<RssNewsConfig>) => onChange(value.map((w, x) => x === i ? { ...w, ...p } : w));
+  return (
+    <div className="space-y-2">
+      {value.map((f, i) => (
+        <div key={f.id} className="flex items-center gap-2 flex-wrap p-2 rounded bg-muted/30 border border-border/40">
+          <Input className="h-7 text-xs bg-muted border-border w-28" value={f.label} onChange={(e) => upd(i, { label: e.target.value })} placeholder="Label" />
+          <Input className="h-7 text-xs bg-muted border-border flex-1 min-w-[200px]" value={f.feedUrl} onChange={(e) => upd(i, { feedUrl: e.target.value })} placeholder="https://example.com/feed.xml" />
+          <Label className="text-[10px] text-muted-foreground">Max</Label>
+          <Input type="number" min={1} max={50} className="h-7 w-14 text-xs bg-muted border-border" value={f.maxItems} onChange={(e) => upd(i, { maxItems: Math.max(1, Number(e.target.value) || 5) })} />
+          <Button size="icon" variant="ghost" onClick={() => remove(i)}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+      ))}
+      <Button size="sm" variant="outline" onClick={add}><Plus className="h-3 w-3 mr-1" /> Add RSS feed</Button>
+    </div>
+  );
+}
+
+
