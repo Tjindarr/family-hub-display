@@ -13,6 +13,7 @@ import type {
   ActionWidgetConfig, ActionButtonConfig, EntityAction,
   MobileLayoutConfig, MobileSection, MobileItem,
   SensorGridConfig, GeneralSensorConfig, DashboardConfig,
+  CameraGridConfig, CameraConfig,
 } from "@/lib/config";
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
@@ -112,14 +113,65 @@ export function ActionWidgetsEditor({ widgets, onChange, config }: { widgets: Ac
   );
 }
 
+export function CameraGridsEditor({ widgets, onChange, config }: { widgets: CameraGridConfig[]; onChange: (w: CameraGridConfig[]) => void; config: DashboardConfig }) {
+  const add = () => onChange([...widgets, { id: uid(), label: "Cameras", columns: 2, refreshSeconds: 30, aspectRatio: "16:9", cameras: [] }]);
+  const remove = (i: number) => onChange(widgets.filter((_, x) => x !== i));
+  const upd = (i: number, p: Partial<CameraGridConfig>) => onChange(widgets.map((w, x) => x === i ? { ...w, ...p } : w));
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium uppercase tracking-wider text-primary">Camera Grids</h3>
+        <Button size="sm" variant="outline" onClick={add}><Plus className="h-3 w-3 mr-1" /> Add</Button>
+      </div>
+      {widgets.length === 0 && <p className="text-[11px] text-muted-foreground">Add a widget that displays snapshots from Home Assistant camera entities, refreshed on an interval.</p>}
+      {widgets.map((w, wi) => (
+        <div key={w.id} className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/40">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Input className="h-7 text-xs bg-muted border-border flex-1 min-w-[120px]" value={w.label} onChange={(e) => upd(wi, { label: e.target.value })} placeholder="Label" />
+            <Label className="text-[10px] text-muted-foreground">Cols</Label>
+            <Input type="number" min={1} max={6} className="h-7 w-14 text-xs bg-muted border-border" value={w.columns} onChange={(e) => upd(wi, { columns: Math.max(1, Math.min(6, Number(e.target.value) || 2)) })} />
+            <Label className="text-[10px] text-muted-foreground">Every (s)</Label>
+            <Input type="number" min={2} max={3600} className="h-7 w-20 text-xs bg-muted border-border" value={w.refreshSeconds} onChange={(e) => upd(wi, { refreshSeconds: Math.max(2, Number(e.target.value) || 30) })} />
+            <Label className="text-[10px] text-muted-foreground">Aspect</Label>
+            <Select value={w.aspectRatio || "16:9"} onValueChange={(v) => upd(wi, { aspectRatio: v as any })}>
+              <SelectTrigger className="h-7 w-20 text-xs bg-muted border-border"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="16:9">16:9</SelectItem>
+                <SelectItem value="4:3">4:3</SelectItem>
+                <SelectItem value="3:2">3:2</SelectItem>
+                <SelectItem value="1:1">1:1</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="icon" variant="ghost" onClick={() => remove(wi)}><Trash2 className="h-3 w-3" /></Button>
+          </div>
+          <div className="space-y-1.5 pl-2 border-l border-border/40">
+            {w.cameras.map((c, ci) => (
+              <div key={ci} className="flex items-center gap-2">
+                <span className="text-[11px] text-muted-foreground w-4">{ci + 1}</span>
+                <EntityAutocomplete value={c.entityId} onChange={(v) => upd(wi, { cameras: w.cameras.map((x, i) => i === ci ? { ...x, entityId: v } : x) })} config={config} domainFilter="camera" placeholder="camera.front_door" />
+                <Input className="h-7 text-xs bg-muted border-border w-40" value={c.label} onChange={(e) => upd(wi, { cameras: w.cameras.map((x, i) => i === ci ? { ...x, label: e.target.value } : x) })} placeholder="Label" />
+                <Button size="icon" variant="ghost" onClick={() => upd(wi, { cameras: w.cameras.filter((_, i) => i !== ci) })}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => upd(wi, { cameras: [...w.cameras, { entityId: "", label: "" }] })}>
+              <Plus className="h-3 w-3 mr-1" /> Add camera
+            </Button>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 export function MobileLayoutEditor({
-  layout, onChange, sensorGrids, generalSensors, actionWidgets,
+  layout, onChange, sensorGrids, generalSensors, actionWidgets, cameraGrids,
 }: {
   layout: MobileLayoutConfig;
   onChange: (l: MobileLayoutConfig) => void;
   sensorGrids: SensorGridConfig[];
   generalSensors: GeneralSensorConfig[];
   actionWidgets: ActionWidgetConfig[];
+  cameraGrids?: CameraGridConfig[];
 }) {
   const sections = layout.sections || [];
   const setSections = (s: MobileSection[]) => onChange({ sections: s });
@@ -136,6 +188,7 @@ export function MobileLayoutEditor({
     if (kind === "sensorGrid") return sensorGrids.map((g) => ({ id: g.id, label: g.label || g.id }));
     if (kind === "generalSensor") return generalSensors.map((g) => ({ id: g.id, label: g.label || g.id }));
     if (kind === "actionWidget") return actionWidgets.map((g) => ({ id: g.id, label: g.label || g.id }));
+    if (kind === "cameraGrid") return (cameraGrids || []).map((g) => ({ id: g.id, label: g.label || g.id }));
     return [];
   };
 
