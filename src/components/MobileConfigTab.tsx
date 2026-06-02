@@ -86,24 +86,68 @@ export function ActionWidgetsEditor({ widgets, onChange, config }: { widgets: Ac
             <Button size="icon" variant="ghost" onClick={() => remove(wi)}><Trash2 className="h-3 w-3" /></Button>
           </div>
           <div className="space-y-2 pl-2 border-l border-border/40">
-            {w.buttons.map((b, bi) => (
+            {w.buttons.map((b, bi) => {
+              const updBtn = (patch: Partial<ActionButtonConfig>) =>
+                upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, ...patch } : x) });
+              return (
               <div key={b.id} className="space-y-2 p-2 rounded bg-background/40">
                 <div className="flex items-center gap-2">
-                  <Input className="h-7 text-xs bg-muted border-border flex-1" value={b.label} onChange={(e) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, label: e.target.value } : x) })} placeholder="Label" />
-                  <IconPicker value={b.icon} onChange={(v) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, icon: v } : x) })} />
-                  <ColorPicker value={b.color || ""} onChange={(v) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, color: v || undefined } : x) })} />
+                  <Input className="h-7 text-xs bg-muted border-border flex-1" value={b.label} onChange={(e) => updBtn({ label: e.target.value })} placeholder="Label" />
+                  <IconPicker value={b.icon} onChange={(v) => updBtn({ icon: v })} />
+                  <ColorPicker value={b.color || ""} onChange={(v) => updBtn({ color: v || undefined })} />
                   <Button size="icon" variant="ghost" onClick={() => upd(wi, { buttons: w.buttons.filter((_, i) => i !== bi) })}><Trash2 className="h-3 w-3" /></Button>
                 </div>
-                <ActionEditor value={b.action} config={config} onChange={(a) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, action: a || { type: "toggle", entityId: "" } } : x) })} />
+                <ActionEditor value={b.action} config={config} onChange={(a) => updBtn({ action: a || { type: "toggle", entityId: "" } })} />
                 <div className="flex items-center gap-3 text-[11px]">
-                  <label className="flex items-center gap-1"><Switch checked={!!b.confirm} onCheckedChange={(c) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, confirm: c } : x) })} /> Confirm</label>
+                  <label className="flex items-center gap-1"><Switch checked={!!b.confirm} onCheckedChange={(c) => updBtn({ confirm: c })} /> Confirm</label>
                   <div className="flex items-center gap-1 flex-1">
                     <Label className="text-[10px] text-muted-foreground">State entity</Label>
-                    <Input className="h-6 text-[11px] bg-muted border-border flex-1" placeholder="(optional)" value={b.stateEntityId || ""} onChange={(e) => upd(wi, { buttons: w.buttons.map((x, i) => i === bi ? { ...x, stateEntityId: e.target.value || undefined } : x) })} />
+                    <Input className="h-6 text-[11px] bg-muted border-border flex-1" placeholder="(optional) sensor.x or sensor.x.attribute" value={b.stateEntityId ? (b.stateAttribute ? `${b.stateEntityId}.${b.stateAttribute}` : b.stateEntityId) : ""} onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      if (!raw) { updBtn({ stateEntityId: undefined, stateAttribute: undefined }); return; }
+                      const parts = raw.split(".");
+                      if (parts.length >= 3) updBtn({ stateEntityId: `${parts[0]}.${parts[1]}`, stateAttribute: parts.slice(2).join(".") });
+                      else updBtn({ stateEntityId: raw, stateAttribute: undefined });
+                    }} />
                   </div>
                 </div>
+                {b.stateEntityId && (
+                  <div className="space-y-1.5 p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">State styling</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Active (on) color</Label>
+                        <ColorPicker value={b.activeColor || ""} onChange={(v) => updBtn({ activeColor: v || undefined })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Inactive (off) color</Label>
+                        <ColorPicker value={b.inactiveColor || ""} onChange={(v) => updBtn({ inactiveColor: v || undefined })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Active background</Label>
+                        <ColorPicker value={b.activeBgColor || ""} onChange={(v) => updBtn({ activeBgColor: v || undefined })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Inactive background</Label>
+                        <ColorPicker value={b.inactiveBgColor || ""} onChange={(v) => updBtn({ inactiveBgColor: v || undefined })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Active icon (optional)</Label>
+                        <IconPicker value={b.activeIcon || ""} onChange={(v) => updBtn({ activeIcon: v || undefined })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Active states (comma)</Label>
+                        <Input className="h-7 text-[11px] bg-muted border-border" placeholder="on, open, home" value={(b.activeStates || []).join(", ")} onChange={(e) => {
+                          const list = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+                          updBtn({ activeStates: list.length ? list : undefined });
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
             <Button size="sm" variant="outline" onClick={() => upd(wi, { buttons: [...w.buttons, { id: uid(), label: "Button", icon: "mdi:gesture-tap-button", action: { type: "toggle", entityId: "" } }] })}>
               <Plus className="h-3 w-3 mr-1" /> Add button
             </Button>
