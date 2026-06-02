@@ -216,9 +216,11 @@ app.get("/api/photos", (_req, res) => {
     const files = fs.readdirSync(PHOTOS_DIR).filter((f) => {
       const ext = path.extname(f).toLowerCase();
       if (![".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"].includes(ext)) return false;
-      // Exclude chore proof photos from the gallery widget
+      // Exclude chore proof photos and wallpapers from the gallery widget
       if (f.startsWith("chore_")) return false;
+      if (f.startsWith("wallpaper_")) return false;
       return true;
+
     });
     const photos = files.map((f) => {
       const stats = fs.statSync(path.join(PHOTOS_DIR, f));

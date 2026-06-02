@@ -475,7 +475,18 @@ export interface DashboardConfig {
   actionWidgets: ActionWidgetConfig[];
   cameraGrids: CameraGridConfig[];
   mobileLayout: MobileLayoutConfig;
+  wallpaper?: WallpaperConfig;
 }
+
+export interface WallpaperConfig {
+  enabled: boolean;
+  url: string;
+  fit: "cover" | "contain" | "fill" | "tile";
+  dim: number; // 0..100 darken overlay opacity %
+  blur: number; // 0..40 px
+  applyToMobile: boolean;
+}
+
 
 // ── Home Assistant Data Types ──
 

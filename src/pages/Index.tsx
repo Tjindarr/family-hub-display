@@ -38,6 +38,8 @@ import { useVehicleData } from "@/hooks/useVehicleData";
 import { usePollenData } from "@/hooks/usePollenData";
 import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
+import WallpaperBackground from "@/components/WallpaperBackground";
+
 
 // Lazy-load heavy components not needed in kiosk mode
 const ConfigPanel = lazy(() => import("@/components/ConfigPanel"));
@@ -661,7 +663,10 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" style={{ padding: "5px" }}>
+    <div className={`min-h-screen relative ${config.wallpaper?.enabled && config.wallpaper.url ? "" : "bg-background"}`} style={{ padding: "5px" }}>
+      <WallpaperBackground wallpaper={config.wallpaper} context="main" />
+
+
       {!isKiosk && (
         <>
           <Suspense fallback={null}>
