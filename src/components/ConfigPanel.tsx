@@ -2948,7 +2948,9 @@ function WidgetStyleControls({ style, onChange, fields }: {
               generalSensors={generalSensors}
               actionWidgets={actionWidgets}
               cameraGrids={cameraGrids}
+              availableWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
             />
+
             <p className="text-[11px] text-muted-foreground">
               Tip: to add a tap action to a sensor grid cell or general sensor info value, edit it in the Widgets tab — an Action field is now available there.
             </p>
