@@ -309,7 +309,21 @@ export interface ActionWidgetConfig {
   buttons: ActionButtonConfig[];
 }
 
-export type MobileItemKind = "sensorGrid" | "generalSensor" | "actionWidget";
+export interface CameraConfig {
+  entityId: string;
+  label: string;
+}
+
+export interface CameraGridConfig {
+  id: string;
+  label: string;
+  columns: number;
+  refreshSeconds: number;
+  aspectRatio?: "16:9" | "4:3" | "1:1" | "3:2";
+  cameras: CameraConfig[];
+}
+
+export type MobileItemKind = "sensorGrid" | "generalSensor" | "actionWidget" | "cameraGrid";
 
 export interface MobileItem {
   kind: MobileItemKind;
@@ -459,6 +473,7 @@ export interface DashboardConfig {
   choreWidgetConfig: ChoreWidgetConfig;
   choreReminderConfig: ChoreReminderConfig;
   actionWidgets: ActionWidgetConfig[];
+  cameraGrids: CameraGridConfig[];
   mobileLayout: MobileLayoutConfig;
 }
 

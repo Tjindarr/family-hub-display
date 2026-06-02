@@ -16,6 +16,7 @@ import VehicleWidget from "@/components/VehicleWidget";
 import PollenWidget from "@/components/PollenWidget";
 import ChoreWidget from "@/components/ChoreWidget";
 import ActionWidget from "@/components/ActionWidget";
+import CameraGridWidget from "@/components/CameraGridWidget";
 import { runAction } from "@/lib/actions";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
@@ -67,6 +68,7 @@ function getDefaultWidgetIds(
   hasPollen: boolean,
   hasFoodMenu = false,
   actionWidgetIds: string[] = [],
+  cameraGridIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -79,6 +81,7 @@ function getDefaultWidgetIds(
     "chores",
     ...generalSensorIds.map((id) => `general_${id}`),
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
+    ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
@@ -353,6 +356,7 @@ const Index = () => {
   const rssIds = rssFeeds.map((f) => f.id);
   const vehicleIds = effectiveVehicles.map((v) => v.id);
   const actionWidgetIds = (config.actionWidgets || []).map((a) => a.id);
+  const cameraGridIds = (config.cameraGrids || []).map((c) => c.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
@@ -439,6 +443,7 @@ const Index = () => {
       hasPollen,
       hasFoodMenu || isDemo,
       actionWidgetIds,
+      cameraGridIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
@@ -561,6 +566,12 @@ const Index = () => {
       const aCfg = (config.actionWidgets || []).find((a) => a.id === aId);
       if (!aCfg) return null;
       return <ActionWidget config={aCfg} getState={getCachedState} />;
+    }
+    if (id.startsWith("cameragrid_")) {
+      const cId = id.replace("cameragrid_", "");
+      const cCfg = (config.cameraGrids || []).find((c) => c.id === cId);
+      if (!cCfg) return null;
+      return <CameraGridWidget config={cCfg} />;
     }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
