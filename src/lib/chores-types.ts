@@ -487,7 +487,7 @@ export function getKidWeeklyChorePoints(kidId: string, logs: ChoreLog[], chores:
   return logs
     .filter((l) => l.kidId === kidId && !l.undoneAt && !l.choreId.startsWith("grade_") && new Date(l.completedAt) >= weekAgo)
     .reduce((sum, l) => {
-      const basePoints = choreMap.get(l.choreId)?.points ?? 0;
+      const basePoints = choreMap.get(l.choreId)?.points ?? l.points ?? 0;
       const multiplier = l.bonusMultiplier || 1;
       const earlyBonus = l.earlyBonusEarned || 0;
       return sum + (basePoints * multiplier) + earlyBonus;
