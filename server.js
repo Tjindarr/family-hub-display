@@ -696,6 +696,7 @@ app.put("/api/chores/submissions/:id/approve", (req, res) => {
     approved: true,
     approvedAt: new Date().toISOString(),
     undoneAt: null,
+    points: assignedPoints,
   };
   data.logs.push(log);
   writeChores(data);
