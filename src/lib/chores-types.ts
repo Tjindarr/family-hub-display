@@ -47,6 +47,7 @@ export interface ChoreLog {
   undoneAt?: string; // if undone
   bonusMultiplier?: number; // applied bonus day multiplier
   earlyBonusEarned?: number; // early completion bonus points earned
+  points?: number; // points override (for submission-based logs without a real chore)
 }
 
 export interface Badge {
