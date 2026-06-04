@@ -47,6 +47,7 @@ export interface ChoreLog {
   undoneAt?: string; // if undone
   bonusMultiplier?: number; // applied bonus day multiplier
   earlyBonusEarned?: number; // early completion bonus points earned
+  points?: number; // points override (for submission-based logs without a real chore)
 }
 
 export interface Badge {
@@ -463,7 +464,7 @@ export function getKidChorePoints(kidId: string, logs: ChoreLog[], chores: Chore
   return logs
     .filter((l) => l.kidId === kidId && !l.undoneAt && !l.choreId.startsWith("grade_"))
     .reduce((sum, l) => {
-      const basePoints = choreMap.get(l.choreId)?.points ?? 0;
+      const basePoints = choreMap.get(l.choreId)?.points ?? l.points ?? 0;
       const multiplier = l.bonusMultiplier || 1;
       const earlyBonus = l.earlyBonusEarned || 0;
       return sum + (basePoints * multiplier) + earlyBonus;
@@ -486,7 +487,7 @@ export function getKidWeeklyChorePoints(kidId: string, logs: ChoreLog[], chores:
   return logs
     .filter((l) => l.kidId === kidId && !l.undoneAt && !l.choreId.startsWith("grade_") && new Date(l.completedAt) >= weekAgo)
     .reduce((sum, l) => {
-      const basePoints = choreMap.get(l.choreId)?.points ?? 0;
+      const basePoints = choreMap.get(l.choreId)?.points ?? l.points ?? 0;
       const multiplier = l.bonusMultiplier || 1;
       const earlyBonus = l.earlyBonusEarned || 0;
       return sum + (basePoints * multiplier) + earlyBonus;
