@@ -546,15 +546,23 @@ function WidgetStyleControls({ style, onChange, fields }: {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+      <div className="absolute inset-0 bg-black/50" onClick={requestClose} />
       <div className="relative h-full flex flex-col border-l border-border bg-card shadow-2xl w-2/3 max-w-full">
         {/* Sticky header */}
         <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-          <h2 className="text-lg font-semibold text-foreground">Dashboard Settings</h2>
-          <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-foreground">Dashboard Settings</h2>
+            {isDirty && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Unsaved
+              </span>
+            )}
+          </div>
+          <Button variant="ghost" size="icon" onClick={requestClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
+
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-6">
