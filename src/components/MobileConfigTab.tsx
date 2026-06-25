@@ -469,29 +469,32 @@ export function MobileDashboardEditor({
       {/* Singleton override editors — only shown when an override exists */}
       <SingletonOverrides value={value} onChange={onChange} config={config} />
 
+      {/* Auto-add newly created mobile-only widgets to the widgetOrder so they actually render */}
+      {(() => null)()}
+
       {/* Mobile-only widget instance editors */}
       <MobileBlock title="Mobile-only Sensor Grids">
-        <MobileSensorGridList value={value.sensorGrids} onChange={(v) => upd({ sensorGrids: v })} config={config} />
+        <MobileSensorGridList value={value.sensorGrids} onChange={(v) => upd(autoAppend(value, { sensorGrids: v }, "sensorgrid_", value.sensorGrids))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Action Widgets">
-        <ActionWidgetsEditor widgets={value.actionWidgets} onChange={(v) => upd({ actionWidgets: v })} config={config} />
+        <ActionWidgetsEditor widgets={value.actionWidgets} onChange={(v) => upd(autoAppend(value, { actionWidgets: v }, "action_", value.actionWidgets))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Camera Grids">
-        <CameraGridsEditor widgets={value.cameraGrids} onChange={(v) => upd({ cameraGrids: v })} config={config} />
+        <CameraGridsEditor widgets={value.cameraGrids} onChange={(v) => upd(autoAppend(value, { cameraGrids: v }, "cameragrid_", value.cameraGrids))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Parcels">
-        <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd({ parcelWidgets: v })} config={config} />
+        <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd(autoAppend(value, { parcelWidgets: v }, "parcel_", value.parcelWidgets || []))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Persons">
-        <MobilePersonList value={value.personEntities || []} onChange={(v) => upd({ personEntities: v })} config={config} />
+        <MobilePersonList value={value.personEntities || []} onChange={(v) => upd(autoAppendPersons(value, v, (config.personEntities?.length || 0)))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only RSS Feeds">
-        <MobileRssFeedList value={value.rssFeeds} onChange={(v) => upd({ rssFeeds: v })} />
+        <MobileRssFeedList value={value.rssFeeds} onChange={(v) => upd(autoAppend(value, { rssFeeds: v }, "rss_", value.rssFeeds))} />
       </MobileBlock>
 
 
