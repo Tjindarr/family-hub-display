@@ -23,6 +23,18 @@ import type {
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
+function MobileBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2">
+      <h4 className="text-xs font-medium uppercase tracking-wider text-primary">{title}</h4>
+      <div className="space-y-3 rounded-lg border border-border/40 bg-muted/20 p-3">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+
 export function ActionEditor({ value, onChange, config }: { value?: EntityAction; onChange: (v: EntityAction | undefined) => void; config: DashboardConfig }) {
   const type = value?.type || "none";
   return (
@@ -458,35 +470,30 @@ export function MobileDashboardEditor({
       <SingletonOverrides value={value} onChange={onChange} config={config} />
 
       {/* Mobile-only widget instance editors */}
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Sensor Grids</h4>
+      <MobileBlock title="Mobile-only Sensor Grids">
         <MobileSensorGridList value={value.sensorGrids} onChange={(v) => upd({ sensorGrids: v })} config={config} />
-      </section>
+      </MobileBlock>
 
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Action Widgets</h4>
+      <MobileBlock title="Mobile-only Action Widgets">
         <ActionWidgetsEditor widgets={value.actionWidgets} onChange={(v) => upd({ actionWidgets: v })} config={config} />
-      </section>
+      </MobileBlock>
 
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Camera Grids</h4>
+      <MobileBlock title="Mobile-only Camera Grids">
         <CameraGridsEditor widgets={value.cameraGrids} onChange={(v) => upd({ cameraGrids: v })} config={config} />
-      </section>
+      </MobileBlock>
 
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Parcel Widgets</h4>
+      <MobileBlock title="Mobile-only Parcels">
         <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd({ parcelWidgets: v })} config={config} />
-      </section>
+      </MobileBlock>
 
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Persons</h4>
+      <MobileBlock title="Mobile-only Persons">
         <MobilePersonList value={value.personEntities || []} onChange={(v) => upd({ personEntities: v })} config={config} />
-      </section>
+      </MobileBlock>
 
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only RSS Feeds</h4>
+      <MobileBlock title="Mobile-only RSS Feeds">
         <MobileRssFeedList value={value.rssFeeds} onChange={(v) => upd({ rssFeeds: v })} />
-      </section>
+      </MobileBlock>
+
 
       <p className="text-[10px] text-muted-foreground">
         Tip: General Sensor and Vehicle widgets are complex to configure — manage them in the Widgets tab on the main dashboard and mirror them here.
