@@ -504,6 +504,7 @@ export interface DashboardConfig {
   choreReminderConfig: ChoreReminderConfig;
   actionWidgets: ActionWidgetConfig[];
   cameraGrids: CameraGridConfig[];
+  parcelWidgets?: ParcelWidgetConfig[];
   mobileLayout: MobileLayoutConfig;
   mobileDashboard?: MobileDashboardConfig;
   wallpaper?: WallpaperConfig;
