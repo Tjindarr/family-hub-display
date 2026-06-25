@@ -58,6 +58,9 @@ const DEFAULT_MOBILE_DASH: MobileDashboardConfig = {
   cameraGrids: [],
   rssFeeds: [],
   vehicles: [],
+  parcelWidgets: [],
+  personEntities: [],
+  temperatureEntities: [],
 };
 
 // Migrate legacy mobileLayout.sections into widgetOrder when mobileDashboard is empty
@@ -90,7 +93,7 @@ export default function MobilePage() {
     return md;
   }, [config.mobileDashboard, config.mobileLayout]);
 
-  // Merge mobile-owned widget arrays into a "view config" used by hooks + renderer
+  // Merge mobile-owned widget arrays + apply singleton overrides over main config
   const viewConfig: DashboardConfig = useMemo(() => ({
     ...config,
     generalSensors: [...(config.generalSensors || []), ...mobileDash.generalSensors],
@@ -99,23 +102,42 @@ export default function MobilePage() {
     cameraGrids: [...(config.cameraGrids || []), ...mobileDash.cameraGrids],
     rssFeeds: [...(config.rssFeeds || []), ...mobileDash.rssFeeds],
     vehicles: [...(config.vehicles || []), ...mobileDash.vehicles],
+    parcelWidgets: [...(config.parcelWidgets || []), ...(mobileDash.parcelWidgets || [])],
+    personEntities: [...(config.personEntities || []), ...(mobileDash.personEntities || [])],
+    temperatureEntities: [...(config.temperatureEntities || []), ...(mobileDash.temperatureEntities || [])],
+    weatherConfig: mobileDash.weatherConfig ?? config.weatherConfig,
+    calendarEntities: mobileDash.calendarEntities ?? config.calendarEntities,
+    calendarEntityConfigs: mobileDash.calendarEntityConfigs ?? config.calendarEntityConfigs,
+    calendarDisplay: mobileDash.calendarDisplay ?? config.calendarDisplay,
+    calendarForecastDays: mobileDash.calendarForecastDays ?? config.calendarForecastDays,
+    calendarDayColor: mobileDash.calendarDayColor ?? config.calendarDayColor,
+    calendarTimeColor: mobileDash.calendarTimeColor ?? config.calendarTimeColor,
+    electricityPriceEntity: mobileDash.electricityPriceEntity ?? config.electricityPriceEntity,
+    electricityForecastEntity: mobileDash.electricityForecastEntity ?? config.electricityForecastEntity,
+    electricitySurcharge: mobileDash.electricitySurcharge ?? config.electricitySurcharge,
+    photoWidget: mobileDash.photoWidget ?? config.photoWidget,
+    foodMenuConfig: mobileDash.foodMenuConfig ?? config.foodMenuConfig,
+    notificationConfig: mobileDash.notificationConfig ?? config.notificationConfig,
+    pollenConfig: mobileDash.pollenConfig ?? config.pollenConfig,
+    choreWidgetConfig: mobileDash.choreWidgetConfig ?? config.choreWidgetConfig,
+    enableChores: mobileDash.enableChores ?? config.enableChores,
   }), [config, mobileDash]);
 
   const { getState: getCachedState, getAllStates, onStateChange } = useHAWebSocket(config);
 
-  // Data hooks — fed the merged view config
+  // Data hooks — fed the merged view config so overrides take effect
   const { dataMap: generalData, loading: generalLoading } = useGeneralSensorData(viewConfig, getCachedState, onStateChange);
   const { dataMap: gridData, loading: gridLoading } = useSensorGridData(viewConfig, getCachedState, onStateChange);
-  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config, getCachedState, onStateChange);
-  const { events, loading: calLoading } = useCalendarData(config);
-  const { nordpool, loading: priceLoading } = useElectricityPrices(config, getCachedState, onStateChange);
-  const { persons, loading: personLoading } = usePersonData(config, getCachedState, onStateChange, getAllStates);
-  const { weather, loading: weatherLoading } = useWeatherData(config, getCachedState, onStateChange);
-  const { menuDays, loading: menuLoading } = useFoodMenuData(config);
+  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(viewConfig, getCachedState, onStateChange);
+  const { events, loading: calLoading } = useCalendarData(viewConfig);
+  const { nordpool, loading: priceLoading } = useElectricityPrices(viewConfig, getCachedState, onStateChange);
+  const { persons, loading: personLoading } = usePersonData(viewConfig, getCachedState, onStateChange, getAllStates);
+  const { weather, loading: weatherLoading } = useWeatherData(viewConfig, getCachedState, onStateChange);
+  const { menuDays, loading: menuLoading } = useFoodMenuData(viewConfig);
   const { dataMap: rssData, loading: rssLoading } = useRssNews(viewConfig.rssFeeds || [], config.refreshInterval);
   const { notifications, loading: notifLoading } = useNotificationData(viewConfig, getCachedState, onStateChange, getAllStates);
   const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(viewConfig, getCachedState, onStateChange);
-  const { pollenData, loading: pollenLoading } = usePollenData(config.pollenConfig, getCachedState, onStateChange);
+  const { pollenData, loading: pollenLoading } = usePollenData(viewConfig.pollenConfig, getCachedState, onStateChange);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", config.theme || "midnight-teal");
@@ -145,9 +167,9 @@ export default function MobilePage() {
           events={events}
           loading={calLoading}
           fontSizes={widgetFs}
-          dayColor={config.calendarDayColor}
-          timeColor={config.calendarTimeColor}
-          display={config.calendarDisplay}
+          dayColor={viewConfig.calendarDayColor}
+          timeColor={viewConfig.calendarTimeColor}
+          display={viewConfig.calendarDisplay}
           timeFormat={config.globalFormat?.timeFormat}
           widgetStyle={ws.calendar}
         />
@@ -157,31 +179,31 @@ export default function MobilePage() {
         <WeatherWidget
           weather={weather}
           loading={weatherLoading}
-          showPrecipitation={config.weatherConfig?.showPrecipitation ?? true}
-          showSunrise={config.weatherConfig?.showSunrise ?? true}
-          showSunset={config.weatherConfig?.showSunset ?? true}
-          weatherConfig={config.weatherConfig}
+          showPrecipitation={viewConfig.weatherConfig?.showPrecipitation ?? true}
+          showSunrise={viewConfig.weatherConfig?.showSunrise ?? true}
+          showSunset={viewConfig.weatherConfig?.showSunset ?? true}
+          weatherConfig={viewConfig.weatherConfig}
         />
       );
-    if (id === "photos") return <PhotoWidget config={config.photoWidget} isDemo={false} />;
+    if (id === "photos") return <PhotoWidget config={viewConfig.photoWidget} isDemo={false} />;
     if (id === "food_menu")
       return (
         <FoodMenuWidget
           days={menuDays}
           loading={menuLoading}
           fontSizes={widgetFs}
-          displayMode={config.foodMenuConfig?.displayMode}
-          style={config.foodMenuConfig?.style}
-          showTitle={config.foodMenuConfig?.showTitle !== false}
+          displayMode={viewConfig.foodMenuConfig?.displayMode}
+          style={viewConfig.foodMenuConfig?.style}
+          showTitle={viewConfig.foodMenuConfig?.showTitle !== false}
         />
       );
     if (id === "notifications") return <NotificationWidget notifications={notifications} loading={notifLoading} />;
-    if (id === "pollen") return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={config.pollenConfig} />;
-    if (id === "chores" && (config.enableChores || config.choreWidgetConfig?.enabled))
-      return <ChoreWidget config={config.choreWidgetConfig} />;
+    if (id === "pollen") return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={viewConfig.pollenConfig} />;
+    if (id === "chores" && (viewConfig.enableChores || viewConfig.choreWidgetConfig?.enabled))
+      return <ChoreWidget config={viewConfig.choreWidgetConfig} />;
     if (id.startsWith("temp_group_")) {
       const groupNum = parseInt(id.split("_")[2], 10);
-      const groupSensors = tempSensors.filter((_, i) => (config.temperatureEntities[i]?.group ?? i) === groupNum);
+      const groupSensors = tempSensors.filter((_, i) => (viewConfig.temperatureEntities[i]?.group ?? i) === groupNum);
       if (groupSensors.length === 0) return null;
       return <TemperatureWidget sensors={groupSensors} loading={tempLoading} fontSizes={widgetFs} />;
     }
@@ -240,7 +262,7 @@ export default function MobilePage() {
     }
     if (id.startsWith("parcel_")) {
       const pid = id.replace("parcel_", "");
-      const pCfg = (config.parcelWidgets || []).find((p) => p.id === pid);
+      const pCfg = (viewConfig.parcelWidgets || []).find((p) => p.id === pid);
       if (!pCfg) return null;
       return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={widgetFs} />;
     }
