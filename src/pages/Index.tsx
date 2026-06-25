@@ -580,6 +580,12 @@ const Index = () => {
       if (!cCfg) return null;
       return <CameraGridWidget config={cCfg} />;
     }
+    if (id.startsWith("parcel_")) {
+      const pId = id.replace("parcel_", "");
+      const pCfg = (config.parcelWidgets || []).find((p) => p.id === pId);
+      if (!pCfg) return null;
+      return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={fs} />;
+    }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
