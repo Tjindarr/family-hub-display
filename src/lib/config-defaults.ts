@@ -114,6 +114,7 @@ export const DEFAULT_CONFIG: DashboardConfig = {
   },
   actionWidgets: [],
   cameraGrids: [],
+  parcelWidgets: [],
   mobileLayout: { sections: [] },
   mobileDashboard: {
     gridColumns: 2,
