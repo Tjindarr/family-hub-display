@@ -11,7 +11,7 @@ import ColorPicker from "@/components/ColorPicker";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import type {
   ActionWidgetConfig, ActionButtonConfig, EntityAction,
-  MobileLayoutConfig, MobileBlock, MobileItem, MobileDashboardConfig,
+  MobileLayoutConfig, MobileSection, MobileItem, MobileDashboardConfig,
   SensorGridConfig, GeneralSensorConfig, DashboardConfig,
   CameraGridConfig, CameraConfig, RssNewsConfig, VehicleConfig,
   ParcelWidgetConfig, PersonEntityConfig, TemperatureEntityConfig,
@@ -224,8 +224,8 @@ export function MobileLayoutEditor({
   availableWidgets?: { id: string; label: string }[];
 }) {
   const sections = layout.sections || [];
-  const setSections = (s: MobileBlock[]) => onChange({ sections: s });
-  const updS = (i: number, p: Partial<MobileBlock>) => setSections(sections.map((s, x) => x === i ? { ...s, ...p } : s));
+  const setSections = (s: MobileSection[]) => onChange({ sections: s });
+  const updS = (i: number, p: Partial<MobileSection>) => setSections(sections.map((s, x) => x === i ? { ...s, ...p } : s));
   const move = (i: number, dir: -1 | 1) => {
     const j = i + dir;
     if (j < 0 || j >= sections.length) return;
