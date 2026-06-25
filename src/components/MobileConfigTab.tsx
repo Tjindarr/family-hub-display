@@ -14,6 +14,10 @@ import type {
   MobileLayoutConfig, MobileSection, MobileItem, MobileDashboardConfig,
   SensorGridConfig, GeneralSensorConfig, DashboardConfig,
   CameraGridConfig, CameraConfig, RssNewsConfig, VehicleConfig,
+  ParcelWidgetConfig, PersonEntityConfig, TemperatureEntityConfig,
+  WeatherConfig, CalendarEntityConfig, CalendarDisplayConfig,
+  PhotoWidgetConfig, FoodMenuConfig, PollenConfig, NotificationConfig,
+  ChoreWidgetConfig,
 } from "@/lib/config";
 
 
