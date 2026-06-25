@@ -11,7 +11,7 @@ import ColorPicker from "@/components/ColorPicker";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import type {
   ActionWidgetConfig, ActionButtonConfig, EntityAction,
-  MobileLayoutConfig, MobileSection, MobileItem, MobileDashboardConfig,
+  MobileLayoutConfig, MobileBlock, MobileItem, MobileDashboardConfig,
   SensorGridConfig, GeneralSensorConfig, DashboardConfig,
   CameraGridConfig, CameraConfig, RssNewsConfig, VehicleConfig,
   ParcelWidgetConfig, PersonEntityConfig, TemperatureEntityConfig,
@@ -224,8 +224,8 @@ export function MobileLayoutEditor({
   availableWidgets?: { id: string; label: string }[];
 }) {
   const sections = layout.sections || [];
-  const setSections = (s: MobileSection[]) => onChange({ sections: s });
-  const updS = (i: number, p: Partial<MobileSection>) => setSections(sections.map((s, x) => x === i ? { ...s, ...p } : s));
+  const setSections = (s: MobileBlock[]) => onChange({ sections: s });
+  const updS = (i: number, p: Partial<MobileBlock>) => setSections(sections.map((s, x) => x === i ? { ...s, ...p } : s));
   const move = (i: number, dir: -1 | 1) => {
     const j = i + dir;
     if (j < 0 || j >= sections.length) return;
@@ -458,29 +458,29 @@ export function MobileDashboardEditor({
       <SingletonOverrides value={value} onChange={onChange} config={config} />
 
       {/* Mobile-only widget instance editors */}
-      <MobileSection title="Mobile-only Sensor Grids">
+      <MobileBlock title="Mobile-only Sensor Grids">
         <MobileSensorGridList value={value.sensorGrids} onChange={(v) => upd({ sensorGrids: v })} config={config} />
-      </MobileSection>
+      </MobileBlock>
 
-      <MobileSection title="Mobile-only Action Widgets">
+      <MobileBlock title="Mobile-only Action Widgets">
         <ActionWidgetsEditor widgets={value.actionWidgets} onChange={(v) => upd({ actionWidgets: v })} config={config} />
-      </MobileSection>
+      </MobileBlock>
 
-      <MobileSection title="Mobile-only Camera Grids">
+      <MobileBlock title="Mobile-only Camera Grids">
         <CameraGridsEditor widgets={value.cameraGrids} onChange={(v) => upd({ cameraGrids: v })} config={config} />
-      </MobileSection>
+      </MobileBlock>
 
-      <MobileSection title="Mobile-only Parcels">
+      <MobileBlock title="Mobile-only Parcels">
         <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd({ parcelWidgets: v })} config={config} />
-      </MobileSection>
+      </MobileBlock>
 
-      <MobileSection title="Mobile-only Persons">
+      <MobileBlock title="Mobile-only Persons">
         <MobilePersonList value={value.personEntities || []} onChange={(v) => upd({ personEntities: v })} config={config} />
-      </MobileSection>
+      </MobileBlock>
 
-      <MobileSection title="Mobile-only RSS Feeds">
+      <MobileBlock title="Mobile-only RSS Feeds">
         <MobileRssFeedList value={value.rssFeeds} onChange={(v) => upd({ rssFeeds: v })} />
-      </MobileSection>
+      </MobileBlock>
 
 
       <p className="text-[10px] text-muted-foreground">
