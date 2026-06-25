@@ -167,9 +167,9 @@ export default function MobilePage() {
           events={events}
           loading={calLoading}
           fontSizes={widgetFs}
-          dayColor={config.calendarDayColor}
-          timeColor={config.calendarTimeColor}
-          display={config.calendarDisplay}
+          dayColor={viewConfig.calendarDayColor}
+          timeColor={viewConfig.calendarTimeColor}
+          display={viewConfig.calendarDisplay}
           timeFormat={config.globalFormat?.timeFormat}
           widgetStyle={ws.calendar}
         />
@@ -179,31 +179,31 @@ export default function MobilePage() {
         <WeatherWidget
           weather={weather}
           loading={weatherLoading}
-          showPrecipitation={config.weatherConfig?.showPrecipitation ?? true}
-          showSunrise={config.weatherConfig?.showSunrise ?? true}
-          showSunset={config.weatherConfig?.showSunset ?? true}
-          weatherConfig={config.weatherConfig}
+          showPrecipitation={viewConfig.weatherConfig?.showPrecipitation ?? true}
+          showSunrise={viewConfig.weatherConfig?.showSunrise ?? true}
+          showSunset={viewConfig.weatherConfig?.showSunset ?? true}
+          weatherConfig={viewConfig.weatherConfig}
         />
       );
-    if (id === "photos") return <PhotoWidget config={config.photoWidget} isDemo={false} />;
+    if (id === "photos") return <PhotoWidget config={viewConfig.photoWidget} isDemo={false} />;
     if (id === "food_menu")
       return (
         <FoodMenuWidget
           days={menuDays}
           loading={menuLoading}
           fontSizes={widgetFs}
-          displayMode={config.foodMenuConfig?.displayMode}
-          style={config.foodMenuConfig?.style}
-          showTitle={config.foodMenuConfig?.showTitle !== false}
+          displayMode={viewConfig.foodMenuConfig?.displayMode}
+          style={viewConfig.foodMenuConfig?.style}
+          showTitle={viewConfig.foodMenuConfig?.showTitle !== false}
         />
       );
     if (id === "notifications") return <NotificationWidget notifications={notifications} loading={notifLoading} />;
-    if (id === "pollen") return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={config.pollenConfig} />;
-    if (id === "chores" && (config.enableChores || config.choreWidgetConfig?.enabled))
-      return <ChoreWidget config={config.choreWidgetConfig} />;
+    if (id === "pollen") return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={viewConfig.pollenConfig} />;
+    if (id === "chores" && (viewConfig.enableChores || viewConfig.choreWidgetConfig?.enabled))
+      return <ChoreWidget config={viewConfig.choreWidgetConfig} />;
     if (id.startsWith("temp_group_")) {
       const groupNum = parseInt(id.split("_")[2], 10);
-      const groupSensors = tempSensors.filter((_, i) => (config.temperatureEntities[i]?.group ?? i) === groupNum);
+      const groupSensors = tempSensors.filter((_, i) => (viewConfig.temperatureEntities[i]?.group ?? i) === groupNum);
       if (groupSensors.length === 0) return null;
       return <TemperatureWidget sensors={groupSensors} loading={tempLoading} fontSizes={widgetFs} />;
     }
@@ -262,7 +262,7 @@ export default function MobilePage() {
     }
     if (id.startsWith("parcel_")) {
       const pid = id.replace("parcel_", "");
-      const pCfg = (config.parcelWidgets || []).find((p) => p.id === pid);
+      const pCfg = (viewConfig.parcelWidgets || []).find((p) => p.id === pid);
       if (!pCfg) return null;
       return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={widgetFs} />;
     }
