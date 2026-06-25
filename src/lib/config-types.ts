@@ -316,6 +316,12 @@ export interface ActionWidgetConfig {
   buttons: ActionButtonConfig[];
 }
 
+export interface ParcelWidgetConfig {
+  id: string;
+  label: string;
+  entityId: string;
+}
+
 export interface CameraConfig {
   entityId: string;
   label: string;
