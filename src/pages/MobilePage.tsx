@@ -23,6 +23,7 @@ import SensorGridWidget from "@/components/SensorGridWidget";
 import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
+import ParcelWidget from "@/components/ParcelWidget";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
@@ -236,6 +237,12 @@ export default function MobilePage() {
       const cCfg = (viewConfig.cameraGrids || []).find((c) => c.id === cid);
       if (!cCfg) return null;
       return <CameraGridWidget config={cCfg} />;
+    }
+    if (id.startsWith("parcel_")) {
+      const pid = id.replace("parcel_", "");
+      const pCfg = (config.parcelWidgets || []).find((p) => p.id === pid);
+      if (!pCfg) return null;
+      return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={widgetFs} />;
     }
     if (id.startsWith("rss_")) {
       const rid = id.replace("rss_", "");

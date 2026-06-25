@@ -316,6 +316,12 @@ export interface ActionWidgetConfig {
   buttons: ActionButtonConfig[];
 }
 
+export interface ParcelWidgetConfig {
+  id: string;
+  label: string;
+  entityId: string;
+}
+
 export interface CameraConfig {
   entityId: string;
   label: string;
@@ -498,6 +504,7 @@ export interface DashboardConfig {
   choreReminderConfig: ChoreReminderConfig;
   actionWidgets: ActionWidgetConfig[];
   cameraGrids: CameraGridConfig[];
+  parcelWidgets?: ParcelWidgetConfig[];
   mobileLayout: MobileLayoutConfig;
   mobileDashboard?: MobileDashboardConfig;
   wallpaper?: WallpaperConfig;

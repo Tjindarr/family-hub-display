@@ -17,6 +17,7 @@ import PollenWidget from "@/components/PollenWidget";
 import ChoreWidget from "@/components/ChoreWidget";
 import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
+import ParcelWidget from "@/components/ParcelWidget";
 import { runAction } from "@/lib/actions";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
@@ -71,6 +72,7 @@ function getDefaultWidgetIds(
   hasFoodMenu = false,
   actionWidgetIds: string[] = [],
   cameraGridIds: string[] = [],
+  parcelIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -85,6 +87,7 @@ function getDefaultWidgetIds(
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
+    ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
@@ -359,6 +362,7 @@ const Index = () => {
   const vehicleIds = effectiveVehicles.map((v) => v.id);
   const actionWidgetIds = (config.actionWidgets || []).map((a) => a.id);
   const cameraGridIds = (config.cameraGrids || []).map((c) => c.id);
+  const parcelIds = (config.parcelWidgets || []).map((p) => p.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
@@ -446,6 +450,7 @@ const Index = () => {
       hasFoodMenu || isDemo,
       actionWidgetIds,
       cameraGridIds,
+      parcelIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
@@ -574,6 +579,12 @@ const Index = () => {
       const cCfg = (config.cameraGrids || []).find((c) => c.id === cId);
       if (!cCfg) return null;
       return <CameraGridWidget config={cCfg} />;
+    }
+    if (id.startsWith("parcel_")) {
+      const pId = id.replace("parcel_", "");
+      const pCfg = (config.parcelWidgets || []).find((p) => p.id === pId);
+      if (!pCfg) return null;
+      return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={fs} />;
     }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");

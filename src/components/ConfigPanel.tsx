@@ -10,7 +10,7 @@ import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
 import { ActionWidgetsEditor, MobileLayoutEditor, ActionEditor, CameraGridsEditor, MobileDashboardEditor } from "@/components/MobileConfigTab";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, MobileDashboardConfig, CameraGridConfig, CameraConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, MobileDashboardConfig, CameraGridConfig, CameraConfig, ParcelWidgetConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -195,7 +195,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = []): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = [], parcelIds: string[] = []): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -209,6 +209,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
+    ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
@@ -278,6 +279,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   });
   const [actionWidgets, setActionWidgets] = useState<ActionWidgetConfig[]>(config.actionWidgets || []);
   const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
+  const [parcelWidgets, setParcelWidgets] = useState<ParcelWidgetConfig[]>(config.parcelWidgets || []);
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
   const [mobileDashboard, setMobileDashboard] = useState<MobileDashboardConfig>(
     config.mobileDashboard || {
@@ -300,7 +302,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const hasFM = !!(config.foodMenuConfig?.calendarEntity || config.foodMenuConfig?.skolmatenEntity);
     const awIds = (config.actionWidgets || []).map((a) => a.id);
     const cgIds = (config.cameraGrids || []).map((c) => c.id);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds);
+    const pkIds = (config.parcelWidgets || []).map((p) => p.id);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds, pkIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -328,6 +331,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     sensorGrids.forEach((sg) => { labelMap[`sensorgrid_${sg.id}`] = sg.label || `Grid ${sg.id}`; });
     cameraGrids.forEach((cg) => { labelMap[`cameragrid_${cg.id}`] = cg.label || `Cameras ${cg.id}`; });
     actionWidgets.forEach((aw) => { labelMap[`action_${aw.id}`] = aw.label || `Actions ${aw.id}`; });
+    parcelWidgets.forEach((pw) => { labelMap[`parcel_${pw.id}`] = pw.label || `Parcels ${pw.id}`; });
     rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
     vehicles.forEach((vc) => { labelMap[`vehicle_${vc.id}`] = vc.name || `Vehicle ${vc.id}`; });
 
@@ -337,8 +341,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const vcIds = vehicles.map((v) => v.id);
     const awIds = actionWidgets.map((a) => a.id);
     const cgIds = cameraGrids.map((c) => c.id);
+    const pkIds = parcelWidgets.map((p) => p.id);
     const hasFM = !!(foodMenuConfig.calendarEntity || foodMenuConfig.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds, pkIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -347,9 +352,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") || id.startsWith("parcel_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, rssFeeds, vehicles, pollenConfig]);
+  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, parcelWidgets, rssFeeds, vehicles, pollenConfig]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -419,6 +424,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       choreReminderConfig,
       actionWidgets,
       cameraGrids,
+      parcelWidgets,
       mobileLayout,
       mobileDashboard,
       wallpaper,
@@ -2943,6 +2949,58 @@ function WidgetStyleControls({ style, onChange, fields }: {
             <CollapsibleSection title="Camera Grids">
               <CameraGridsEditor widgets={cameraGrids} onChange={setCameraGrids} config={config} />
             </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Parcels (Home Assistant)"
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `pkg_${Date.now()}`;
+                    setParcelWidgets([...parcelWidgets, { id, label: "Parcels", entityId: "" }]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Parcel Widget
+                </Button>
+              }
+            >
+              <p className="text-[11px] text-muted-foreground">
+                Shows undelivered shipments from the Parcel integration's <code>Raw Shipment Data</code> sensor.
+              </p>
+              {parcelWidgets.map((pw, idx) => (
+                <div key={pw.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-6 w-6"
+                    onClick={() => setParcelWidgets(parcelWidgets.filter((_, i) => i !== idx))}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Label</Label>
+                    <Input
+                      value={pw.label}
+                      onChange={(e) => setParcelWidgets(parcelWidgets.map((p, i) => i === idx ? { ...p, label: e.target.value } : p))}
+                      className="mt-1 bg-muted border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Raw Shipment Data sensor</Label>
+                    <EntityAutocomplete
+                      value={pw.entityId}
+                      onChange={(v) => setParcelWidgets(parcelWidgets.map((p, i) => i === idx ? { ...p, entityId: v } : p))}
+                      config={config}
+                      domainFilter="sensor"
+                      placeholder="sensor.parcel_app_parcel_raw_shipment_data"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              ))}
+            </CollapsibleSection>
+
 
           </TabsContent>
 
