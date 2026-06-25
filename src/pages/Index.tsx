@@ -72,6 +72,7 @@ function getDefaultWidgetIds(
   hasFoodMenu = false,
   actionWidgetIds: string[] = [],
   cameraGridIds: string[] = [],
+  parcelIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -86,6 +87,7 @@ function getDefaultWidgetIds(
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
+    ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
