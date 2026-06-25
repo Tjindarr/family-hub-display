@@ -450,6 +450,7 @@ const Index = () => {
       hasFoodMenu || isDemo,
       actionWidgetIds,
       cameraGridIds,
+      parcelIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
