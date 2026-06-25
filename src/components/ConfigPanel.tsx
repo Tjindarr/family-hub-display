@@ -3021,20 +3021,6 @@ function WidgetStyleControls({ style, onChange, fields }: {
               />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Legacy Sections (deprecated)">
-              <p className="text-[11px] text-muted-foreground mb-2">
-                These section-based mobile layouts have been replaced by the Mobile Dashboard above. If your mobile dashboard is empty, items from here are migrated automatically.
-              </p>
-              <MobileLayoutEditor
-                layout={mobileLayout}
-                onChange={setMobileLayout}
-                sensorGrids={sensorGrids}
-                generalSensors={generalSensors}
-                actionWidgets={actionWidgets}
-                cameraGrids={cameraGrids}
-                availableWidgets={widgetItems.map((w) => ({ id: w.id, label: w.label }))}
-              />
-            </CollapsibleSection>
           </TabsContent>
 
 
