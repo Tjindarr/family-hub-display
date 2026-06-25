@@ -368,6 +368,26 @@ export interface MobileDashboardConfig {
   cameraGrids: CameraGridConfig[];
   rssFeeds: RssNewsConfig[];
   vehicles: VehicleConfig[];
+  parcelWidgets?: ParcelWidgetConfig[];
+  personEntities?: PersonEntityConfig[];
+  temperatureEntities?: TemperatureEntityConfig[];
+  // Optional singleton overrides — when undefined, the main dashboard config is used
+  weatherConfig?: WeatherConfig;
+  calendarEntities?: string[];
+  calendarEntityConfigs?: CalendarEntityConfig[];
+  calendarDisplay?: CalendarDisplayConfig;
+  calendarForecastDays?: number;
+  calendarDayColor?: string;
+  calendarTimeColor?: string;
+  electricityPriceEntity?: string;
+  electricityForecastEntity?: string;
+  electricitySurcharge?: number;
+  photoWidget?: PhotoWidgetConfig;
+  foodMenuConfig?: FoodMenuConfig;
+  notificationConfig?: NotificationConfig;
+  pollenConfig?: PollenConfig;
+  choreWidgetConfig?: ChoreWidgetConfig;
+  enableChores?: boolean;
 }
 
 
