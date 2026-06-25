@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Settings, X, Plus, Trash2, Save, GripVertical, Upload, Image, Download, ClipboardCopy, ClipboardPaste, ChevronDown, RotateCcw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
@@ -296,6 +296,39 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [wallpaperUploading, setWallpaperUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ----- Unsaved-changes tracking -----
+  const currentSnapshot = useMemo(() => JSON.stringify({
+    haUrl, haToken, refreshInterval, tempEntities, calendarEntityConfigs, calendarDayColor, calendarTimeColor,
+    calendarDisplay, weatherConfig, electricityEntity, electricitySurcharge, widgetLayouts, gridColumns, rowColumns,
+    rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
+    sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
+    personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
+    actionWidgets, cameraGrids, parcelWidgets, mobileLayout, mobileDashboard, wallpaper,
+  }), [haUrl, haToken, refreshInterval, tempEntities, calendarEntityConfigs, calendarDayColor, calendarTimeColor,
+    calendarDisplay, weatherConfig, electricityEntity, electricitySurcharge, widgetLayouts, gridColumns, rowColumns,
+    rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
+    sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
+    personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
+    actionWidgets, cameraGrids, parcelWidgets, mobileLayout, mobileDashboard, wallpaper]);
+  const savedSnapshotRef = useRef<string>(currentSnapshot);
+  // Re-baseline when panel opens (config may have changed from elsewhere)
+  useEffect(() => { if (open) savedSnapshotRef.current = currentSnapshot; /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [open]);
+  const isDirty = currentSnapshot !== savedSnapshotRef.current;
+
+  // Warn before tab close when there are unsaved changes
+  useEffect(() => {
+    if (!isDirty || !open) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty, open]);
+
+  const requestClose = () => {
+    if (isDirty && !window.confirm("You have unsaved changes. Discard them?")) return;
+    setOpen(false);
+  };
+
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const gsIds = (config.generalSensors || []).map((s) => s.id);
@@ -435,8 +468,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
 
     });
+    savedSnapshotRef.current = currentSnapshot;
     setOpen(false);
   };
+
 
   const addTempEntity = () => {
     const newEntity = { entityId: "", label: "", color: "hsl(174, 72%, 50%)", group: tempEntities.length };
@@ -511,15 +546,23 @@ function WidgetStyleControls({ style, onChange, fields }: {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+      <div className="absolute inset-0 bg-black/50" onClick={requestClose} />
       <div className="relative h-full flex flex-col border-l border-border bg-card shadow-2xl w-2/3 max-w-full">
         {/* Sticky header */}
         <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-          <h2 className="text-lg font-semibold text-foreground">Dashboard Settings</h2>
-          <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-foreground">Dashboard Settings</h2>
+            {isDirty && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Unsaved
+              </span>
+            )}
+          </div>
+          <Button variant="ghost" size="icon" onClick={requestClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
+
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-6">
@@ -3095,11 +3138,25 @@ function WidgetStyleControls({ style, onChange, fields }: {
         </div>
 
         {/* Sticky footer */}
-        <div className="shrink-0 border-t border-border p-4">
-          <Button onClick={handleSave} className="w-full">
-            <Save className="mr-2 h-4 w-4" /> Save Configuration
-          </Button>
+        <div className="shrink-0 border-t border-border p-4 bg-card/95 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 text-xs text-muted-foreground">
+              {isDirty ? (
+                <span className="inline-flex items-center gap-1.5 text-amber-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  Unsaved changes
+                </span>
+              ) : (
+                <span className="text-muted-foreground/60">All changes saved</span>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" onClick={requestClose}>Cancel</Button>
+            <Button onClick={handleSave} disabled={!isDirty} className="min-w-[180px]">
+              <Save className="mr-2 h-4 w-4" /> Save Configuration
+            </Button>
+          </div>
         </div>
+
       </div>
     </div>
   );
