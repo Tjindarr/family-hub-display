@@ -238,6 +238,12 @@ export default function MobilePage() {
       if (!cCfg) return null;
       return <CameraGridWidget config={cCfg} />;
     }
+    if (id.startsWith("parcel_")) {
+      const pid = id.replace("parcel_", "");
+      const pCfg = (config.parcelWidgets || []).find((p) => p.id === pid);
+      if (!pCfg) return null;
+      return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={widgetFs} />;
+    }
     if (id.startsWith("rss_")) {
       const rid = id.replace("rss_", "");
       const rCfg = (viewConfig.rssFeeds || []).find((f) => f.id === rid);
