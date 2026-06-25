@@ -17,6 +17,7 @@ import PollenWidget from "@/components/PollenWidget";
 import ChoreWidget from "@/components/ChoreWidget";
 import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
+import ParcelWidget from "@/components/ParcelWidget";
 import { runAction } from "@/lib/actions";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
