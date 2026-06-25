@@ -296,6 +296,39 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [wallpaperUploading, setWallpaperUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ----- Unsaved-changes tracking -----
+  const currentSnapshot = useMemo(() => JSON.stringify({
+    haUrl, haToken, refreshInterval, tempEntities, calendarEntityConfigs, calendarDayColor, calendarTimeColor,
+    calendarDisplay, weatherConfig, electricityEntity, electricitySurcharge, widgetLayouts, gridColumns, rowColumns,
+    rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
+    sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
+    personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
+    actionWidgets, cameraGrids, parcelWidgets, mobileLayout, mobileDashboard, wallpaper,
+  }), [haUrl, haToken, refreshInterval, tempEntities, calendarEntityConfigs, calendarDayColor, calendarTimeColor,
+    calendarDisplay, weatherConfig, electricityEntity, electricitySurcharge, widgetLayouts, gridColumns, rowColumns,
+    rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
+    sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
+    personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
+    actionWidgets, cameraGrids, parcelWidgets, mobileLayout, mobileDashboard, wallpaper]);
+  const savedSnapshotRef = useRef<string>(currentSnapshot);
+  // Re-baseline when panel opens (config may have changed from elsewhere)
+  useEffect(() => { if (open) savedSnapshotRef.current = currentSnapshot; /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [open]);
+  const isDirty = currentSnapshot !== savedSnapshotRef.current;
+
+  // Warn before tab close when there are unsaved changes
+  useEffect(() => {
+    if (!isDirty || !open) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty, open]);
+
+  const requestClose = () => {
+    if (isDirty && !window.confirm("You have unsaved changes. Discard them?")) return;
+    setOpen(false);
+  };
+
   const hasNotif = notificationConfig.showHANotifications || (notificationConfig.alertRules?.length > 0);
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     const gsIds = (config.generalSensors || []).map((s) => s.id);
