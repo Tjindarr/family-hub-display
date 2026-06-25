@@ -23,6 +23,7 @@ import SensorGridWidget from "@/components/SensorGridWidget";
 import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
+import ParcelWidget from "@/components/ParcelWidget";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
