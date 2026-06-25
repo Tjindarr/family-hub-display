@@ -3138,11 +3138,25 @@ function WidgetStyleControls({ style, onChange, fields }: {
         </div>
 
         {/* Sticky footer */}
-        <div className="shrink-0 border-t border-border p-4">
-          <Button onClick={handleSave} className="w-full">
-            <Save className="mr-2 h-4 w-4" /> Save Configuration
-          </Button>
+        <div className="shrink-0 border-t border-border p-4 bg-card/95 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 text-xs text-muted-foreground">
+              {isDirty ? (
+                <span className="inline-flex items-center gap-1.5 text-amber-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  Unsaved changes
+                </span>
+              ) : (
+                <span className="text-muted-foreground/60">All changes saved</span>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" onClick={requestClose}>Cancel</Button>
+            <Button onClick={handleSave} disabled={!isDirty} className="min-w-[180px]">
+              <Save className="mr-2 h-4 w-4" /> Save Configuration
+            </Button>
+          </div>
         </div>
+
       </div>
     </div>
   );
