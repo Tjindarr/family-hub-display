@@ -424,6 +424,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       choreReminderConfig,
       actionWidgets,
       cameraGrids,
+      parcelWidgets,
       mobileLayout,
       mobileDashboard,
       wallpaper,
