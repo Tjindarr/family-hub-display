@@ -2950,6 +2950,58 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <CameraGridsEditor widgets={cameraGrids} onChange={setCameraGrids} config={config} />
             </CollapsibleSection>
 
+            <CollapsibleSection
+              title="Parcels (Home Assistant)"
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `pkg_${Date.now()}`;
+                    setParcelWidgets([...parcelWidgets, { id, label: "Parcels", entityId: "" }]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Parcel Widget
+                </Button>
+              }
+            >
+              <p className="text-[11px] text-muted-foreground">
+                Shows undelivered shipments from the Parcel integration's <code>Raw Shipment Data</code> sensor.
+              </p>
+              {parcelWidgets.map((pw, idx) => (
+                <div key={pw.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-6 w-6"
+                    onClick={() => setParcelWidgets(parcelWidgets.filter((_, i) => i !== idx))}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Label</Label>
+                    <Input
+                      value={pw.label}
+                      onChange={(e) => setParcelWidgets(parcelWidgets.map((p, i) => i === idx ? { ...p, label: e.target.value } : p))}
+                      className="mt-1 bg-muted border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Raw Shipment Data sensor</Label>
+                    <EntityAutocomplete
+                      value={pw.entityId}
+                      onChange={(v) => setParcelWidgets(parcelWidgets.map((p, i) => i === idx ? { ...p, entityId: v } : p))}
+                      config={config}
+                      domainFilter="sensor"
+                      placeholder="sensor.parcel_app_parcel_raw_shipment_data"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              ))}
+            </CollapsibleSection>
+
+
           </TabsContent>
 
 
