@@ -7,7 +7,7 @@ import type { ResolvedFontSizes } from "@/lib/fontSizes";
 interface ParcelWidgetProps {
   config: ParcelWidgetConfig;
   getState?: (entityId: string) => HAState | undefined;
-  onStateChange?: (entityId: string, cb: (state: HAState) => void) => () => void;
+  onStateChange?: (cb: (entityId: string, state: HAState) => void) => () => void;
   fontSizes?: ResolvedFontSizes;
 }
 
