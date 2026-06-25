@@ -302,7 +302,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const hasFM = !!(config.foodMenuConfig?.calendarEntity || config.foodMenuConfig?.skolmatenEntity);
     const awIds = (config.actionWidgets || []).map((a) => a.id);
     const cgIds = (config.cameraGrids || []).map((c) => c.id);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds);
+    const pkIds = (config.parcelWidgets || []).map((p) => p.id);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds, pkIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
