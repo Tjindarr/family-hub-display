@@ -121,17 +121,38 @@ export default function PhotoWidget({ config, isDemo }: PhotoWidgetProps) {
     return () => clearInterval(interval);
   }, [isDemo]);
 
-  const advance = useCallback(() => {
+  const advance = useCallback(async () => {
     if (photos.length <= 1 || animating) return;
+    const nextIdx = (currentIndex + 1) % photos.length;
+    // Ensure the next image is fully decoded before starting the transition
+    try {
+      const pre = new Image();
+      pre.decoding = "async";
+      pre.src = photos[nextIdx].url;
+      if (pre.decode) await pre.decode();
+    } catch {
+      // ignore decode errors; proceed with transition
+    }
     setAnimating(true);
     setPrevIndex(currentIndex);
-    setCurrentIndex((prev) => (prev + 1) % photos.length);
+    setCurrentIndex(nextIdx);
     const duration = transition === "none" ? 0 : 900;
     setTimeout(() => {
       setPrevIndex(null);
       setAnimating(false);
     }, duration);
-  }, [photos.length, currentIndex, animating, transition]);
+  }, [photos, currentIndex, animating, transition]);
+
+  // Preload the next 1-2 upcoming images so transitions are instant on slow hardware
+  useEffect(() => {
+    if (photos.length <= 1) return;
+    [1, 2].forEach((offset) => {
+      const i = (currentIndex + offset) % photos.length;
+      const img = new Image();
+      img.decoding = "async";
+      img.src = photos[i].url;
+    });
+  }, [currentIndex, photos]);
 
   useEffect(() => {
     if (photos.length <= 1) return;
