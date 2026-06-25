@@ -85,7 +85,9 @@ export default function ParcelWidget({ config, getState, onStateChange, fontSize
     if (!config.entityId) return;
     if (getState) setState(getState(config.entityId));
     if (!onStateChange) return;
-    const unsub = onStateChange(config.entityId, (s) => setState(s));
+    const unsub = onStateChange((eid, s) => {
+      if (eid === config.entityId) setState(s);
+    });
     return () => unsub();
   }, [config.entityId, getState, onStateChange]);
 
