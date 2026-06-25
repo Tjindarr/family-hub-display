@@ -113,9 +113,12 @@ function CollapsibleSection({ title, actions, children, defaultOpen = false }: {
         </CollapsibleTrigger>
         {actions}
       </div>
-      <CollapsibleContent className="space-y-3 mt-3">
-        {children}
+      <CollapsibleContent className="mt-2">
+        <div className="space-y-3 rounded-lg border border-border/40 bg-muted/20 p-3">
+          {children}
+        </div>
       </CollapsibleContent>
+
     </Collapsible>
   );
 }
@@ -2951,7 +2954,7 @@ function WidgetStyleControls({ style, onChange, fields }: {
             </CollapsibleSection>
 
             <CollapsibleSection
-              title="Parcels (Home Assistant)"
+              title="Parcels"
               actions={
                 <Button
                   variant="ghost"
