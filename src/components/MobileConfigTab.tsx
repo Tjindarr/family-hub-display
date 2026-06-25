@@ -23,6 +23,41 @@ import type {
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
+// Auto-append newly created mobile-only widget IDs to widgetOrder so they actually render
+function autoAppend<K extends keyof MobileDashboardConfig>(
+  value: MobileDashboardConfig,
+  patch: Partial<MobileDashboardConfig>,
+  prefix: string,
+  oldArr: { id: string }[],
+): Partial<MobileDashboardConfig> {
+  const key = Object.keys(patch)[0] as K;
+  const newArr = (patch[key] as unknown as { id: string }[]) || [];
+  const oldIds = new Set(oldArr.map((x) => x.id));
+  const order = value.widgetOrder || [];
+  const toAdd = newArr.map((x) => `${prefix}${x.id}`).filter((id) => !oldIds.has(id.slice(prefix.length)) && !order.includes(id));
+  if (toAdd.length === 0) return patch;
+  return { ...patch, widgetOrder: [...order, ...toAdd] };
+}
+
+function autoAppendPersons(
+  value: MobileDashboardConfig,
+  newArr: PersonEntityConfig[],
+  mainCount: number,
+): Partial<MobileDashboardConfig> {
+  const oldLen = (value.personEntities || []).length;
+  const order = value.widgetOrder || [];
+  const patch: Partial<MobileDashboardConfig> = { personEntities: newArr };
+  if (newArr.length > oldLen) {
+    const toAdd: string[] = [];
+    for (let i = oldLen; i < newArr.length; i++) {
+      const id = `person_${mainCount + i}`;
+      if (!order.includes(id)) toAdd.push(id);
+    }
+    if (toAdd.length) patch.widgetOrder = [...order, ...toAdd];
+  }
+  return patch;
+}
+
 function MobileBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2">
