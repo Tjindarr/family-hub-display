@@ -104,15 +104,16 @@ function CollapsibleSection({ title, actions, children, defaultOpen = false }: {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between min-h-8 gap-2">
         <CollapsibleTrigger asChild>
-          <button className="flex items-center gap-1.5 text-sm font-medium uppercase tracking-wider text-primary hover:text-primary/80 transition-colors">
+          <button className="flex items-center gap-1.5 text-sm font-medium uppercase tracking-wider text-primary hover:text-primary/80 transition-colors py-1">
             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? '' : '-rotate-90'}`} />
             {title}
           </button>
         </CollapsibleTrigger>
-        {actions}
+        {actions && <div className="flex items-center gap-1 [&_button]:h-7 [&_button]:px-2 [&_button]:text-xs">{actions}</div>}
       </div>
+
       <CollapsibleContent className="mt-2">
         <div className="space-y-3 rounded-lg border border-border/40 bg-muted/20 p-3">
           {children}
