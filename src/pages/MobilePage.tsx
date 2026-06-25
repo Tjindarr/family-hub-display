@@ -58,6 +58,9 @@ const DEFAULT_MOBILE_DASH: MobileDashboardConfig = {
   cameraGrids: [],
   rssFeeds: [],
   vehicles: [],
+  parcelWidgets: [],
+  personEntities: [],
+  temperatureEntities: [],
 };
 
 // Migrate legacy mobileLayout.sections into widgetOrder when mobileDashboard is empty
@@ -90,7 +93,7 @@ export default function MobilePage() {
     return md;
   }, [config.mobileDashboard, config.mobileLayout]);
 
-  // Merge mobile-owned widget arrays into a "view config" used by hooks + renderer
+  // Merge mobile-owned widget arrays + apply singleton overrides over main config
   const viewConfig: DashboardConfig = useMemo(() => ({
     ...config,
     generalSensors: [...(config.generalSensors || []), ...mobileDash.generalSensors],
@@ -99,23 +102,42 @@ export default function MobilePage() {
     cameraGrids: [...(config.cameraGrids || []), ...mobileDash.cameraGrids],
     rssFeeds: [...(config.rssFeeds || []), ...mobileDash.rssFeeds],
     vehicles: [...(config.vehicles || []), ...mobileDash.vehicles],
+    parcelWidgets: [...(config.parcelWidgets || []), ...(mobileDash.parcelWidgets || [])],
+    personEntities: [...(config.personEntities || []), ...(mobileDash.personEntities || [])],
+    temperatureEntities: [...(config.temperatureEntities || []), ...(mobileDash.temperatureEntities || [])],
+    weatherConfig: mobileDash.weatherConfig ?? config.weatherConfig,
+    calendarEntities: mobileDash.calendarEntities ?? config.calendarEntities,
+    calendarEntityConfigs: mobileDash.calendarEntityConfigs ?? config.calendarEntityConfigs,
+    calendarDisplay: mobileDash.calendarDisplay ?? config.calendarDisplay,
+    calendarForecastDays: mobileDash.calendarForecastDays ?? config.calendarForecastDays,
+    calendarDayColor: mobileDash.calendarDayColor ?? config.calendarDayColor,
+    calendarTimeColor: mobileDash.calendarTimeColor ?? config.calendarTimeColor,
+    electricityPriceEntity: mobileDash.electricityPriceEntity ?? config.electricityPriceEntity,
+    electricityForecastEntity: mobileDash.electricityForecastEntity ?? config.electricityForecastEntity,
+    electricitySurcharge: mobileDash.electricitySurcharge ?? config.electricitySurcharge,
+    photoWidget: mobileDash.photoWidget ?? config.photoWidget,
+    foodMenuConfig: mobileDash.foodMenuConfig ?? config.foodMenuConfig,
+    notificationConfig: mobileDash.notificationConfig ?? config.notificationConfig,
+    pollenConfig: mobileDash.pollenConfig ?? config.pollenConfig,
+    choreWidgetConfig: mobileDash.choreWidgetConfig ?? config.choreWidgetConfig,
+    enableChores: mobileDash.enableChores ?? config.enableChores,
   }), [config, mobileDash]);
 
   const { getState: getCachedState, getAllStates, onStateChange } = useHAWebSocket(config);
 
-  // Data hooks — fed the merged view config
+  // Data hooks — fed the merged view config so overrides take effect
   const { dataMap: generalData, loading: generalLoading } = useGeneralSensorData(viewConfig, getCachedState, onStateChange);
   const { dataMap: gridData, loading: gridLoading } = useSensorGridData(viewConfig, getCachedState, onStateChange);
-  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(config, getCachedState, onStateChange);
-  const { events, loading: calLoading } = useCalendarData(config);
-  const { nordpool, loading: priceLoading } = useElectricityPrices(config, getCachedState, onStateChange);
-  const { persons, loading: personLoading } = usePersonData(config, getCachedState, onStateChange, getAllStates);
-  const { weather, loading: weatherLoading } = useWeatherData(config, getCachedState, onStateChange);
-  const { menuDays, loading: menuLoading } = useFoodMenuData(config);
+  const { sensors: tempSensors, loading: tempLoading } = useTemperatureData(viewConfig, getCachedState, onStateChange);
+  const { events, loading: calLoading } = useCalendarData(viewConfig);
+  const { nordpool, loading: priceLoading } = useElectricityPrices(viewConfig, getCachedState, onStateChange);
+  const { persons, loading: personLoading } = usePersonData(viewConfig, getCachedState, onStateChange, getAllStates);
+  const { weather, loading: weatherLoading } = useWeatherData(viewConfig, getCachedState, onStateChange);
+  const { menuDays, loading: menuLoading } = useFoodMenuData(viewConfig);
   const { dataMap: rssData, loading: rssLoading } = useRssNews(viewConfig.rssFeeds || [], config.refreshInterval);
   const { notifications, loading: notifLoading } = useNotificationData(viewConfig, getCachedState, onStateChange, getAllStates);
   const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(viewConfig, getCachedState, onStateChange);
-  const { pollenData, loading: pollenLoading } = usePollenData(config.pollenConfig, getCachedState, onStateChange);
+  const { pollenData, loading: pollenLoading } = usePollenData(viewConfig.pollenConfig, getCachedState, onStateChange);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", config.theme || "midnight-teal");
