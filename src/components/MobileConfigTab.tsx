@@ -23,6 +23,18 @@ import type {
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
+function MobileBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2">
+      <h4 className="text-xs font-medium uppercase tracking-wider text-primary">{title}</h4>
+      <div className="space-y-3 rounded-lg border border-border/40 bg-muted/20 p-3">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+
 export function ActionEditor({ value, onChange, config }: { value?: EntityAction; onChange: (v: EntityAction | undefined) => void; config: DashboardConfig }) {
   const type = value?.type || "none";
   return (
