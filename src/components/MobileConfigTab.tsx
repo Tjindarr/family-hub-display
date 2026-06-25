@@ -23,6 +23,41 @@ import type {
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
+// Auto-append newly created mobile-only widget IDs to widgetOrder so they actually render
+function autoAppend<K extends keyof MobileDashboardConfig>(
+  value: MobileDashboardConfig,
+  patch: Partial<MobileDashboardConfig>,
+  prefix: string,
+  oldArr: { id: string }[],
+): Partial<MobileDashboardConfig> {
+  const key = Object.keys(patch)[0] as K;
+  const newArr = (patch[key] as unknown as { id: string }[]) || [];
+  const oldIds = new Set(oldArr.map((x) => x.id));
+  const order = value.widgetOrder || [];
+  const toAdd = newArr.map((x) => `${prefix}${x.id}`).filter((id) => !oldIds.has(id.slice(prefix.length)) && !order.includes(id));
+  if (toAdd.length === 0) return patch;
+  return { ...patch, widgetOrder: [...order, ...toAdd] };
+}
+
+function autoAppendPersons(
+  value: MobileDashboardConfig,
+  newArr: PersonEntityConfig[],
+  mainCount: number,
+): Partial<MobileDashboardConfig> {
+  const oldLen = (value.personEntities || []).length;
+  const order = value.widgetOrder || [];
+  const patch: Partial<MobileDashboardConfig> = { personEntities: newArr };
+  if (newArr.length > oldLen) {
+    const toAdd: string[] = [];
+    for (let i = oldLen; i < newArr.length; i++) {
+      const id = `person_${mainCount + i}`;
+      if (!order.includes(id)) toAdd.push(id);
+    }
+    if (toAdd.length) patch.widgetOrder = [...order, ...toAdd];
+  }
+  return patch;
+}
+
 function MobileBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2">
@@ -469,29 +504,32 @@ export function MobileDashboardEditor({
       {/* Singleton override editors — only shown when an override exists */}
       <SingletonOverrides value={value} onChange={onChange} config={config} />
 
+      {/* Auto-add newly created mobile-only widgets to the widgetOrder so they actually render */}
+      {(() => null)()}
+
       {/* Mobile-only widget instance editors */}
       <MobileBlock title="Mobile-only Sensor Grids">
-        <MobileSensorGridList value={value.sensorGrids} onChange={(v) => upd({ sensorGrids: v })} config={config} />
+        <MobileSensorGridList value={value.sensorGrids} onChange={(v) => upd(autoAppend(value, { sensorGrids: v }, "sensorgrid_", value.sensorGrids))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Action Widgets">
-        <ActionWidgetsEditor widgets={value.actionWidgets} onChange={(v) => upd({ actionWidgets: v })} config={config} />
+        <ActionWidgetsEditor widgets={value.actionWidgets} onChange={(v) => upd(autoAppend(value, { actionWidgets: v }, "action_", value.actionWidgets))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Camera Grids">
-        <CameraGridsEditor widgets={value.cameraGrids} onChange={(v) => upd({ cameraGrids: v })} config={config} />
+        <CameraGridsEditor widgets={value.cameraGrids} onChange={(v) => upd(autoAppend(value, { cameraGrids: v }, "cameragrid_", value.cameraGrids))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Parcels">
-        <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd({ parcelWidgets: v })} config={config} />
+        <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd(autoAppend(value, { parcelWidgets: v }, "parcel_", value.parcelWidgets || []))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Persons">
-        <MobilePersonList value={value.personEntities || []} onChange={(v) => upd({ personEntities: v })} config={config} />
+        <MobilePersonList value={value.personEntities || []} onChange={(v) => upd(autoAppendPersons(value, v, (config.personEntities?.length || 0)))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only RSS Feeds">
-        <MobileRssFeedList value={value.rssFeeds} onChange={(v) => upd({ rssFeeds: v })} />
+        <MobileRssFeedList value={value.rssFeeds} onChange={(v) => upd(autoAppend(value, { rssFeeds: v }, "rss_", value.rssFeeds))} />
       </MobileBlock>
 
 
