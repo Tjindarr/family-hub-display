@@ -468,8 +468,10 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
 
 
     });
+    savedSnapshotRef.current = currentSnapshot;
     setOpen(false);
   };
+
 
   const addTempEntity = () => {
     const newEntity = { entityId: "", label: "", color: "hsl(174, 72%, 50%)", group: tempEntities.length };
