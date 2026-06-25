@@ -14,10 +14,26 @@ import type {
   MobileLayoutConfig, MobileSection, MobileItem, MobileDashboardConfig,
   SensorGridConfig, GeneralSensorConfig, DashboardConfig,
   CameraGridConfig, CameraConfig, RssNewsConfig, VehicleConfig,
+  ParcelWidgetConfig, PersonEntityConfig, TemperatureEntityConfig,
+  WeatherConfig, CalendarEntityConfig, CalendarDisplayConfig,
+  PhotoWidgetConfig, FoodMenuConfig, PollenConfig, NotificationConfig,
+  ChoreWidgetConfig,
 } from "@/lib/config";
 
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
+
+function MobileBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2">
+      <h4 className="text-xs font-medium uppercase tracking-wider text-primary">{title}</h4>
+      <div className="space-y-3 rounded-lg border border-border/40 bg-muted/20 p-3">
+        {children}
+      </div>
+    </section>
+  );
+}
+
 
 export function ActionEditor({ value, onChange, config }: { value?: EntityAction; onChange: (v: EntityAction | undefined) => void; config: DashboardConfig }) {
   const type = value?.type || "none";
@@ -332,12 +348,53 @@ export function MobileDashboardEditor({
   value.cameraGrids.forEach((g) => { mobileLabels[`cameragrid_${g.id}`] = `📱 ${g.label || g.id}`; });
   value.rssFeeds.forEach((g) => { mobileLabels[`rss_${g.id}`] = `📱 ${g.label || g.id}`; });
   value.vehicles.forEach((g) => { mobileLabels[`vehicle_${g.id}`] = `📱 ${g.name || g.id}`; });
+  (value.parcelWidgets || []).forEach((g) => { mobileLabels[`parcel_${g.id}`] = `📱 ${g.label || g.id}`; });
+  (value.personEntities || []).forEach((p, i) => { mobileLabels[`person_${(config.personEntities?.length || 0) + i}`] = `📱 ${p.name || `Person ${i + 1}`}`; });
   const mainLabels: Record<string, string> = Object.fromEntries(mainWidgets.map((w) => [w.id, w.label]));
   const labelOf = (id: string) => mobileLabels[id] || mainLabels[id] || id;
 
+  // Singleton widget kinds available as mobile overrides
+  const SINGLETON_KINDS: { id: string; label: string }[] = [
+    { id: "weather", label: "Weather" },
+    { id: "calendar", label: "Calendar" },
+    { id: "electricity", label: "Electricity Price" },
+    { id: "photos", label: "Photo Gallery" },
+    { id: "food_menu", label: "Food Menu" },
+    { id: "notifications", label: "Notifications" },
+    { id: "pollen", label: "Pollen Forecast" },
+    { id: "chores", label: "Chores" },
+  ];
+
+  const addSingleton = (id: string) => {
+    if (!id || widgetOrder.includes(id)) return;
+    const patch: Partial<MobileDashboardConfig> = { widgetOrder: [...widgetOrder, id] };
+    // Seed an override stub if none exists, so the override editor appears
+    if (id === "weather" && !value.weatherConfig)
+      patch.weatherConfig = { entityId: config.weatherConfig?.entityId || "weather.home", forecastDays: 5, showPrecipitation: true, showSunrise: true, showSunset: true };
+    if (id === "calendar" && !value.calendarEntityConfigs)
+      patch.calendarEntityConfigs = config.calendarEntityConfigs ? [...config.calendarEntityConfigs] : [{ entityId: "calendar.family", prefix: "", color: "hsl(var(--foreground))" }];
+    if (id === "electricity" && value.electricityPriceEntity === undefined)
+      patch.electricityPriceEntity = config.electricityPriceEntity || "";
+    if (id === "photos" && !value.photoWidget)
+      patch.photoWidget = { photos: [], intervalSeconds: 10, displayMode: "contain", transition: "fade" };
+    if (id === "food_menu" && !value.foodMenuConfig)
+      patch.foodMenuConfig = { source: "calendar", calendarEntity: "", skolmatenEntity: "", days: 5, skipWeekends: false, displayMode: "compact", style: { dayColor: "", dateColor: "", mealColor: "", dayFontSize: 0, dateFontSize: 0, mealFontSize: 0, dayFont: "", mealFont: "" } };
+    if (id === "notifications" && !value.notificationConfig)
+      patch.notificationConfig = { showHANotifications: true, alertRules: [] };
+    if (id === "pollen" && !value.pollenConfig)
+      patch.pollenConfig = { sensors: [], forecastDays: 4, showLabel: true, showForecast: true };
+    if (id === "chores") {
+      patch.enableChores = true;
+      if (!value.choreWidgetConfig)
+        patch.choreWidgetConfig = { enabled: true, label: "Chores", icon: "mdi:clipboard-check-outline", showScoreboard: true, showUpcoming: true, showFairness: true, showCompleted: true, showAllChores: false, maxVisible: 0 };
+    }
+    onChange({ ...value, ...patch });
+  };
+
   // Selectable widgets to add: mobile-owned not yet in order + main widgets not yet in order
   const addableMobile = Object.keys(mobileLabels).filter((id) => !widgetOrder.includes(id));
-  const addableMain = mainWidgets.filter((w) => !widgetOrder.includes(w.id));
+  const addableMain = mainWidgets.filter((w) => !widgetOrder.includes(w.id) && !mobileLabels[w.id]);
+  const addableSingletons = SINGLETON_KINDS.filter((s) => !widgetOrder.includes(s.id));
 
   return (
     <div className="space-y-5">
@@ -366,7 +423,7 @@ export function MobileDashboardEditor({
       <section className="space-y-2">
         <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Widgets on /mobile</h4>
         {widgetOrder.length === 0 && (
-          <p className="text-[11px] text-muted-foreground">No widgets yet. Add mobile-only widgets below, or mirror widgets from the main dashboard.</p>
+          <p className="text-[11px] text-muted-foreground">No widgets yet. Add widgets below — mobile-only instances are fully independent of the main dashboard.</p>
         )}
         <div className="space-y-1">
           {widgetOrder.map((id) => (
@@ -382,9 +439,17 @@ export function MobileDashboardEditor({
 
         {/* Add widget */}
         <div className="flex items-center gap-2 flex-wrap pt-1">
+          {addableSingletons.length > 0 && (
+            <Select value="" onValueChange={(v) => v && addSingleton(v)}>
+              <SelectTrigger className="h-7 text-xs bg-muted border-border w-56"><SelectValue placeholder="+ Add widget…" /></SelectTrigger>
+              <SelectContent>
+                {addableSingletons.map((s) => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
           {addableMobile.length > 0 && (
             <Select value="" onValueChange={(v) => v && addToOrder(v)}>
-              <SelectTrigger className="h-7 text-xs bg-muted border-border w-56"><SelectValue placeholder="+ Add mobile widget…" /></SelectTrigger>
+              <SelectTrigger className="h-7 text-xs bg-muted border-border w-56"><SelectValue placeholder="+ Mobile-only widget…" /></SelectTrigger>
               <SelectContent>
                 {addableMobile.map((id) => <SelectItem key={id} value={id}>{labelOf(id)}</SelectItem>)}
               </SelectContent>
@@ -401,26 +466,34 @@ export function MobileDashboardEditor({
         </div>
       </section>
 
+      {/* Singleton override editors — only shown when an override exists */}
+      <SingletonOverrides value={value} onChange={onChange} config={config} />
+
       {/* Mobile-only widget instance editors */}
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Sensor Grids</h4>
+      <MobileBlock title="Mobile-only Sensor Grids">
         <MobileSensorGridList value={value.sensorGrids} onChange={(v) => upd({ sensorGrids: v })} config={config} />
-      </section>
+      </MobileBlock>
 
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Action Widgets</h4>
+      <MobileBlock title="Mobile-only Action Widgets">
         <ActionWidgetsEditor widgets={value.actionWidgets} onChange={(v) => upd({ actionWidgets: v })} config={config} />
-      </section>
+      </MobileBlock>
 
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only Camera Grids</h4>
+      <MobileBlock title="Mobile-only Camera Grids">
         <CameraGridsEditor widgets={value.cameraGrids} onChange={(v) => upd({ cameraGrids: v })} config={config} />
-      </section>
+      </MobileBlock>
 
-      <section className="space-y-3">
-        <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile-only RSS Feeds</h4>
+      <MobileBlock title="Mobile-only Parcels">
+        <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd({ parcelWidgets: v })} config={config} />
+      </MobileBlock>
+
+      <MobileBlock title="Mobile-only Persons">
+        <MobilePersonList value={value.personEntities || []} onChange={(v) => upd({ personEntities: v })} config={config} />
+      </MobileBlock>
+
+      <MobileBlock title="Mobile-only RSS Feeds">
         <MobileRssFeedList value={value.rssFeeds} onChange={(v) => upd({ rssFeeds: v })} />
-      </section>
+      </MobileBlock>
+
 
       <p className="text-[10px] text-muted-foreground">
         Tip: General Sensor and Vehicle widgets are complex to configure — manage them in the Widgets tab on the main dashboard and mirror them here.
@@ -428,6 +501,184 @@ export function MobileDashboardEditor({
     </div>
   );
 }
+
+// Singleton override editor — only renders sections whose override is set on the mobile config
+function SingletonOverrides({
+  value, onChange, config,
+}: {
+  value: MobileDashboardConfig;
+  onChange: (v: MobileDashboardConfig) => void;
+  config: DashboardConfig;
+}) {
+  const upd = (p: Partial<MobileDashboardConfig>) => onChange({ ...value, ...p });
+  const has =
+    value.weatherConfig || value.calendarEntityConfigs || value.electricityPriceEntity !== undefined ||
+    value.photoWidget || value.foodMenuConfig || value.notificationConfig || value.pollenConfig || value.choreWidgetConfig;
+  if (!has) return null;
+  return (
+    <section className="space-y-3">
+      <h4 className="text-xs font-medium uppercase tracking-wider text-primary">Mobile Overrides (singletons)</h4>
+      <p className="text-[10px] text-muted-foreground">These override the main dashboard config when the widget is rendered on /mobile. Reset to remove the override and inherit from main.</p>
+
+      {value.weatherConfig && (
+        <OverrideBlock label="Weather" onReset={() => upd({ weatherConfig: undefined })}>
+          <EntityAutocomplete value={value.weatherConfig.entityId} onChange={(v) => upd({ weatherConfig: { ...value.weatherConfig!, entityId: v } })} config={config} domainFilter="weather" placeholder="weather.home" />
+          <div className="flex items-center gap-2">
+            <Label className="text-[10px] text-muted-foreground">Forecast days</Label>
+            <Input type="number" min={1} max={10} className="h-7 w-16 text-xs bg-muted border-border" value={value.weatherConfig.forecastDays} onChange={(e) => upd({ weatherConfig: { ...value.weatherConfig!, forecastDays: Math.max(1, Number(e.target.value) || 5) } })} />
+          </div>
+        </OverrideBlock>
+      )}
+
+      {value.calendarEntityConfigs && (
+        <OverrideBlock label="Calendar" onReset={() => upd({ calendarEntityConfigs: undefined, calendarEntities: undefined })}>
+          <div className="space-y-1">
+            {value.calendarEntityConfigs.map((c, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <EntityAutocomplete value={c.entityId} onChange={(v) => {
+                  const arr = [...value.calendarEntityConfigs!]; arr[i] = { ...c, entityId: v };
+                  upd({ calendarEntityConfigs: arr, calendarEntities: arr.map((x) => x.entityId) });
+                }} config={config} domainFilter="calendar" placeholder="calendar.family" />
+                <Input className="h-7 text-xs bg-muted border-border w-24" placeholder="Prefix" value={c.prefix} onChange={(e) => {
+                  const arr = [...value.calendarEntityConfigs!]; arr[i] = { ...c, prefix: e.target.value };
+                  upd({ calendarEntityConfigs: arr });
+                }} />
+                <Button size="icon" variant="ghost" onClick={() => {
+                  const arr = value.calendarEntityConfigs!.filter((_, x) => x !== i);
+                  upd({ calendarEntityConfigs: arr, calendarEntities: arr.map((x) => x.entityId) });
+                }}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => {
+              const arr = [...value.calendarEntityConfigs!, { entityId: "", prefix: "", color: "hsl(var(--foreground))" }];
+              upd({ calendarEntityConfigs: arr, calendarEntities: arr.map((x) => x.entityId) });
+            }}><Plus className="h-3 w-3 mr-1" /> Add calendar</Button>
+          </div>
+        </OverrideBlock>
+      )}
+
+      {value.electricityPriceEntity !== undefined && (
+        <OverrideBlock label="Electricity Price" onReset={() => upd({ electricityPriceEntity: undefined, electricityForecastEntity: undefined, electricitySurcharge: undefined })}>
+          <EntityAutocomplete value={value.electricityPriceEntity} onChange={(v) => upd({ electricityPriceEntity: v })} config={config} domainFilter="sensor" placeholder="sensor.nordpool_..." />
+          <div className="flex items-center gap-2">
+            <Label className="text-[10px] text-muted-foreground">Surcharge</Label>
+            <Input type="number" step="0.01" className="h-7 w-20 text-xs bg-muted border-border" value={value.electricitySurcharge ?? 0} onChange={(e) => upd({ electricitySurcharge: Number(e.target.value) || 0 })} />
+          </div>
+        </OverrideBlock>
+      )}
+
+      {value.photoWidget && (
+        <OverrideBlock label="Photo Gallery" onReset={() => upd({ photoWidget: undefined })}>
+          <div className="flex items-center gap-2">
+            <Label className="text-[10px] text-muted-foreground">Interval (s)</Label>
+            <Input type="number" min={1} className="h-7 w-20 text-xs bg-muted border-border" value={value.photoWidget.intervalSeconds} onChange={(e) => upd({ photoWidget: { ...value.photoWidget!, intervalSeconds: Math.max(1, Number(e.target.value) || 10) } })} />
+            <Label className="text-[10px] text-muted-foreground">Fit</Label>
+            <Select value={value.photoWidget.displayMode} onValueChange={(v) => upd({ photoWidget: { ...value.photoWidget!, displayMode: v as any } })}>
+              <SelectTrigger className="h-7 w-24 bg-muted border-border text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="contain">Contain</SelectItem>
+                <SelectItem value="cover">Cover</SelectItem>
+                <SelectItem value="blur-fill">Blur fill</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-[10px] text-muted-foreground">Mobile uses the same photo gallery files; manage uploads under Photos tab.</p>
+        </OverrideBlock>
+      )}
+
+      {value.foodMenuConfig && (
+        <OverrideBlock label="Food Menu" onReset={() => upd({ foodMenuConfig: undefined })}>
+          <div className="flex items-center gap-2">
+            <Label className="text-[10px] text-muted-foreground">Source</Label>
+            <Select value={value.foodMenuConfig.source} onValueChange={(v) => upd({ foodMenuConfig: { ...value.foodMenuConfig!, source: v as any } })}>
+              <SelectTrigger className="h-7 w-28 bg-muted border-border text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="calendar">Calendar</SelectItem>
+                <SelectItem value="skolmaten">Skolmaten</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <EntityAutocomplete value={value.foodMenuConfig.source === "calendar" ? value.foodMenuConfig.calendarEntity : value.foodMenuConfig.skolmatenEntity} onChange={(v) => upd({ foodMenuConfig: { ...value.foodMenuConfig!, [value.foodMenuConfig!.source === "calendar" ? "calendarEntity" : "skolmatenEntity"]: v } as FoodMenuConfig })} config={config} domainFilter={value.foodMenuConfig.source === "calendar" ? "calendar" : "sensor"} />
+        </OverrideBlock>
+      )}
+
+      {value.notificationConfig && (
+        <OverrideBlock label="Notifications" onReset={() => upd({ notificationConfig: undefined })}>
+          <label className="flex items-center gap-2 text-[11px]">
+            <Switch checked={value.notificationConfig.showHANotifications} onCheckedChange={(c) => upd({ notificationConfig: { ...value.notificationConfig!, showHANotifications: c } })} />
+            Show HA notifications
+          </label>
+          <p className="text-[10px] text-muted-foreground">Configure detailed alert rules on the main dashboard; this override controls visibility on /mobile.</p>
+        </OverrideBlock>
+      )}
+
+      {value.pollenConfig && (
+        <OverrideBlock label="Pollen" onReset={() => upd({ pollenConfig: undefined })}>
+          <p className="text-[10px] text-muted-foreground">Pollen sensors are inherited; remove this override to use the main config. Detailed sensor list is edited on the main dashboard.</p>
+        </OverrideBlock>
+      )}
+
+      {value.choreWidgetConfig && (
+        <OverrideBlock label="Chores" onReset={() => upd({ choreWidgetConfig: undefined, enableChores: undefined })}>
+          <Input className="h-7 text-xs bg-muted border-border" placeholder="Label" value={value.choreWidgetConfig.label} onChange={(e) => upd({ choreWidgetConfig: { ...value.choreWidgetConfig!, label: e.target.value } })} />
+        </OverrideBlock>
+      )}
+    </section>
+  );
+}
+
+function OverrideBlock({ label, onReset, children }: { label: string; onReset: () => void; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2 p-2 rounded bg-muted/20 border border-border/40">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium">{label}</span>
+        <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={onReset}>Reset to main</Button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function MobileParcelList({ value, onChange, config }: { value: ParcelWidgetConfig[]; onChange: (v: ParcelWidgetConfig[]) => void; config: DashboardConfig }) {
+  return (
+    <div className="space-y-2">
+      {value.map((p, i) => (
+        <div key={p.id} className="flex items-center gap-2 p-2 rounded bg-muted/30 border border-border/40">
+          <Input className="h-7 text-xs bg-muted border-border w-28" value={p.label} onChange={(e) => onChange(value.map((x, idx) => idx === i ? { ...x, label: e.target.value } : x))} placeholder="Label" />
+          <EntityAutocomplete value={p.entityId} onChange={(v) => onChange(value.map((x, idx) => idx === i ? { ...x, entityId: v } : x))} config={config} domainFilter="sensor" placeholder="sensor.parcel_raw_shipment_data" />
+          <Button size="icon" variant="ghost" onClick={() => onChange(value.filter((_, idx) => idx !== i))}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+      ))}
+      <Button size="sm" variant="outline" onClick={() => onChange([...value, { id: uid(), label: "Parcels", entityId: "" }])}>
+        <Plus className="h-3 w-3 mr-1" /> Add parcel widget
+      </Button>
+    </div>
+  );
+}
+
+function MobilePersonList({ value, onChange, config }: { value: PersonEntityConfig[]; onChange: (v: PersonEntityConfig[]) => void; config: DashboardConfig }) {
+  return (
+    <div className="space-y-2">
+      {value.map((p, i) => (
+        <div key={i} className="space-y-1 p-2 rounded bg-muted/30 border border-border/40">
+          <div className="flex items-center gap-2">
+            <Input className="h-7 text-xs bg-muted border-border w-28" value={p.name} onChange={(e) => onChange(value.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))} placeholder="Name" />
+            <Input className="h-7 text-xs bg-muted border-border flex-1" value={p.entityPicture} onChange={(e) => onChange(value.map((x, idx) => idx === i ? { ...x, entityPicture: e.target.value } : x))} placeholder="Avatar URL" />
+            <Button size="icon" variant="ghost" onClick={() => onChange(value.filter((_, idx) => idx !== i))}><Trash2 className="h-3 w-3" /></Button>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <EntityAutocomplete value={p.locationEntity} onChange={(v) => onChange(value.map((x, idx) => idx === i ? { ...x, locationEntity: v } : x))} config={config} domainFilter="person" placeholder="person.you" />
+            <EntityAutocomplete value={p.batteryEntity} onChange={(v) => onChange(value.map((x, idx) => idx === i ? { ...x, batteryEntity: v } : x))} config={config} domainFilter="sensor" placeholder="sensor.phone_battery" />
+          </div>
+        </div>
+      ))}
+      <Button size="sm" variant="outline" onClick={() => onChange([...value, { name: "Person", entityPicture: "", locationEntity: "", batteryEntity: "", batteryChargingEntity: "", distanceEntity: "" }])}>
+        <Plus className="h-3 w-3 mr-1" /> Add person
+      </Button>
+    </div>
+  );
+}
+
 
 // Compact in-place sensor grid editor (minimal viable — full editor lives in the Widgets tab)
 function MobileSensorGridList({ value, onChange, config }: { value: SensorGridConfig[]; onChange: (v: SensorGridConfig[]) => void; config: DashboardConfig }) {

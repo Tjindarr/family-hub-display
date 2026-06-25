@@ -129,6 +129,9 @@ export const DEFAULT_CONFIG: DashboardConfig = {
     cameraGrids: [],
     rssFeeds: [],
     vehicles: [],
+    parcelWidgets: [],
+    personEntities: [],
+    temperatureEntities: [],
   },
   wallpaper: { enabled: false, url: "", fit: "cover", dim: 40, blur: 0, applyToMobile: true },
 };
