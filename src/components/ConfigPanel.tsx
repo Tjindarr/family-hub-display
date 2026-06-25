@@ -195,7 +195,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = []): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = [], parcelIds: string[] = []): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -209,6 +209,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
+    ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
     ...vehicleIds.map((id) => `vehicle_${id}`),
