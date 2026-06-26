@@ -353,6 +353,12 @@ export interface EnergyFlowConfig {
   batterySocEntity?: string;     // %
   gridPowerEntity?: string;
   homePowerEntity?: string;      // optional; derived if absent
+  // Car / EV charger
+  carPowerEntity?: string;        // W draw by EV charger
+  carChargingStateEntity?: string; // optional binary/charging state
+  carEnergyTodayEntity?: string;  // kWh charged today
+  carLabel?: string;              // default "Car"
+  carColor?: string;
   // Sign conventions for ambiguous sensors
   batteryPowerSign?: "charge_positive" | "discharge_positive"; // default: discharge_positive
   gridPowerSign?: "import_positive" | "export_positive";       // default: import_positive
@@ -364,6 +370,10 @@ export interface EnergyFlowConfig {
   // Display
   showAnimations?: boolean;       // default true
   showDayTotals?: boolean;        // default true
+  showSocBar?: boolean;           // default true — large battery SoC bar
+  show24hChart?: boolean;         // default false — 24h history area chart
+  chart24hHeight?: number;        // px, default 90
+  chart24hStacked?: boolean;      // default true — stack solar/home/battery/grid/car
   solarColor?: string;
   batteryColor?: string;
   gridColor?: string;
