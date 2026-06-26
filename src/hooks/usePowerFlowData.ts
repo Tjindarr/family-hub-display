@@ -118,6 +118,17 @@ export function usePowerFlowData(
       arr.push({ time: now, value: v });
       if (arr.length > MAX_POINTS) arr.splice(0, arr.length - MAX_POINTS);
       historyRef.current[entityId] = arr;
+      // Also append to 24h history if tracked, throttled to once per minute
+      if (dayHistoryFetched.current.has(entityId)) {
+        const day = dayHistoryRef.current[entityId] || [];
+        const lastDay = day[day.length - 1];
+        if (!lastDay || now - lastDay.time >= 60_000) {
+          day.push({ time: now, value: v });
+          const dayCutoff = now - 24 * 60 * 60_000;
+          while (day.length && day[0].time < dayCutoff) day.shift();
+          dayHistoryRef.current[entityId] = day;
+        }
+      }
     },
     [getCachedState],
   );
