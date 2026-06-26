@@ -338,6 +338,9 @@ export interface PowerFlowConfig {
   sparklineMinutes: number;      // rolling window length
   showTotal: boolean;
   devices: PowerFlowDeviceConfig[];
+  show24hChart?: boolean;        // optional 24h stacked history chart
+  chart24hHeight?: number;       // px, default 80
+  chart24hStacked?: boolean;     // stacked per-device area (default true)
 }
 
 export interface CameraConfig {

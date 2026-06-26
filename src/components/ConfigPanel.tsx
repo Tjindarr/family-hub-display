@@ -3237,7 +3237,24 @@ function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowCon
               <Switch checked={w.showTotal !== false} onCheckedChange={(c) => upd(i, { showTotal: c })} />
               Show total
             </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={!!w.show24hChart} onCheckedChange={(c) => upd(i, { show24hChart: c })} />
+              24h chart
+            </label>
+            {w.show24hChart && (
+              <>
+                <label className="flex items-center gap-1 text-[10px] mb-1">
+                  <Switch checked={w.chart24hStacked !== false} onCheckedChange={(c) => upd(i, { chart24hStacked: c })} />
+                  Stacked
+                </label>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Chart H (px)</Label>
+                  <Input type="number" min={40} max={400} className="h-7 w-20 text-xs bg-muted border-border mt-1" value={w.chart24hHeight ?? 80} onChange={(e) => upd(i, { chart24hHeight: Math.max(40, Number(e.target.value) || 80) })} />
+                </div>
+              </>
+            )}
           </div>
+
 
           <div className="space-y-1 pl-2 border-l border-border/40">
             <Label className="text-[10px] text-muted-foreground">Power devices (W sensors)</Label>

@@ -5,6 +5,8 @@ import type { GetCachedState, OnStateChange } from "@/hooks/useDashboardData";
 import type { PowerFlowLiveData } from "@/components/PowerFlowWidget";
 
 const MAX_POINTS = 120;
+const DAY_BUCKETS = 96; // 24h / 15min
+
 
 export function usePowerFlowData(
   config: DashboardConfig,
@@ -16,6 +18,9 @@ export function usePowerFlowData(
   // Per-entity rolling history (kept in ref so we don't re-render on every push)
   const historyRef = useRef<Record<string, { time: number; value: number }[]>>({});
   const initialHistoryFetched = useRef<Set<string>>(new Set());
+  // 24h history per entity (sparse, ~96 buckets)
+  const dayHistoryRef = useRef<Record<string, { time: number; value: number }[]>>({});
+  const dayHistoryFetched = useRef<Set<string>>(new Set());
 
   const flows = config.powerFlows || [];
 
@@ -31,6 +36,7 @@ export function usePowerFlowData(
       const cutoff = Date.now() - windowMs;
       const devices = flow.devices.map((dev) => {
         const hist = (historyRef.current[dev.entityId] || []).filter((p) => p.time >= cutoff);
+        const dayHist = dayHistoryRef.current[dev.entityId] || [];
         const current = hist.length ? hist[hist.length - 1].value : 0;
         let energyToday: number | undefined;
         if (dev.energyEntityId && getCachedState) {
@@ -38,7 +44,7 @@ export function usePowerFlowData(
           const v = parseFloat(s?.state || "");
           if (!isNaN(v)) energyToday = v;
         }
-        return { entityId: dev.entityId, current, history: hist, energyToday };
+        return { entityId: dev.entityId, current, history: hist, dayHistory: dayHist, energyToday };
       });
       const total = devices.reduce((s, d) => s + (d.current || 0), 0);
       // Build aligned-ish total history by bucketing into ~60 buckets
@@ -54,7 +60,44 @@ export function usePowerFlowData(
       const totalHistory = Object.entries(totals)
         .map(([t, v]) => ({ time: Number(t), value: v }))
         .sort((a, b) => a.time - b.time);
-      result[flow.id] = { devices, total, totalHistory };
+
+      // Build stacked 24h series aligned to 15-min buckets
+      let dayStacked: Array<Record<string, number>> | undefined;
+      if (flow.show24hChart) {
+        const dayMs = 24 * 60 * 60_000;
+        const dayCutoff = Date.now() - dayMs;
+        const bucketMs = Math.floor(dayMs / DAY_BUCKETS);
+        const bucketMap: Record<number, Record<string, number>> = {};
+        for (const dev of flow.devices) {
+          const hist = dayHistoryRef.current[dev.entityId] || [];
+          for (const p of hist) {
+            if (p.time < dayCutoff) continue;
+            const bk = Math.floor(p.time / bucketMs) * bucketMs;
+            if (!bucketMap[bk]) bucketMap[bk] = { time: bk };
+            // last value wins within a bucket (most recent sample)
+            bucketMap[bk][dev.entityId] = p.value;
+          }
+        }
+        // Forward-fill missing buckets per device for stable stacked area
+        const sortedBuckets = Object.keys(bucketMap).map(Number).sort((a, b) => a - b);
+        const lastSeen: Record<string, number> = {};
+        dayStacked = sortedBuckets.map((bk) => {
+          const row: Record<string, number> = { time: bk };
+          let totalRow = 0;
+          for (const dev of flow.devices) {
+            if (bucketMap[bk][dev.entityId] !== undefined) {
+              lastSeen[dev.entityId] = bucketMap[bk][dev.entityId];
+            }
+            const v = lastSeen[dev.entityId] || 0;
+            row[dev.entityId] = v;
+            totalRow += v;
+          }
+          row.total = totalRow;
+          return row;
+        });
+      }
+
+      result[flow.id] = { devices, total, totalHistory, dayStacked };
     }
     setDataMap(result);
     setLoading(false);
@@ -75,6 +118,17 @@ export function usePowerFlowData(
       arr.push({ time: now, value: v });
       if (arr.length > MAX_POINTS) arr.splice(0, arr.length - MAX_POINTS);
       historyRef.current[entityId] = arr;
+      // Also append to 24h history if tracked, throttled to once per minute
+      if (dayHistoryFetched.current.has(entityId)) {
+        const day = dayHistoryRef.current[entityId] || [];
+        const lastDay = day[day.length - 1];
+        if (!lastDay || now - lastDay.time >= 60_000) {
+          day.push({ time: now, value: v });
+          const dayCutoff = now - 24 * 60 * 60_000;
+          while (day.length && day[0].time < dayCutoff) day.shift();
+          dayHistoryRef.current[entityId] = day;
+        }
+      }
     },
     [getCachedState],
   );
@@ -114,10 +168,51 @@ export function usePowerFlowData(
     recompute();
   }, [config, flows, recompute]);
 
+  // 24h history fetch from HA (only for flows with show24hChart enabled)
+  const fetchDayHistory = useCallback(async () => {
+    if (flows.length === 0) return;
+    if (!checkConfigured(config)) return;
+    const ids = new Set<string>();
+    for (const flow of flows) {
+      if (!flow.show24hChart) continue;
+      for (const d of flow.devices) if (d.entityId) ids.add(d.entityId);
+    }
+    if (ids.size === 0) return;
+    const client = createHAClient(config);
+    const now = new Date();
+    const start = new Date(now.getTime() - 24 * 60 * 60_000);
+    await Promise.all(
+      Array.from(ids).map(async (eid) => {
+        try {
+          const raw = await client.getHistory(eid, start.toISOString(), now.toISOString());
+          if (raw?.[0]) {
+            const points = raw[0]
+              .map((s: any) => ({ time: Date.parse(s.last_changed), value: parseFloat(s.state) }))
+              .filter((p: any) => !isNaN(p.time) && !isNaN(p.value));
+            const step = Math.max(1, Math.floor(points.length / (DAY_BUCKETS * 2)));
+            dayHistoryRef.current[eid] = points.filter((_: any, i: number) => i % step === 0);
+          }
+          dayHistoryFetched.current.add(eid);
+        } catch {
+          /* ignore */
+        }
+      }),
+    );
+    recompute();
+  }, [config, flows, recompute]);
+
   // Re-fetch initial history if new entities are added
   useEffect(() => {
     fetchInitialHistory();
   }, [fetchInitialHistory]);
+
+  // 24h history: fetch on mount and refresh every 15 min; also append live points
+  useEffect(() => {
+    fetchDayHistory();
+    const t = setInterval(fetchDayHistory, 15 * 60_000);
+    return () => clearInterval(t);
+  }, [fetchDayHistory]);
+
 
   // Seed from any already-cached states & recompute
   useEffect(() => {
