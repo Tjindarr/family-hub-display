@@ -494,10 +494,10 @@ const Index = () => {
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
   const rssIds = rssFeeds.map((f) => f.id);
   const vehicleIds = effectiveVehicles.map((v) => v.id);
-  const actionWidgetIds = (config.actionWidgets || []).map((a) => a.id);
-  const cameraGridIds = (config.cameraGrids || []).map((c) => c.id);
-  const parcelIds = (config.parcelWidgets || []).map((p) => p.id);
-  const powerFlowIds = (config.powerFlows || []).map((p) => p.id);
+  const actionWidgetIds = effectiveActionWidgets.map((a) => a.id);
+  const cameraGridIds = effectiveCameraGrids.map((c) => c.id);
+  const parcelIds = effectiveParcelWidgets.map((p) => p.id);
+  const powerFlowIds = effectivePowerFlows.map((p) => p.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
