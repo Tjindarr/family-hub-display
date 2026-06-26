@@ -78,7 +78,34 @@ function isDelivered(d: Delivery): boolean {
   return /delivered|levererat|utlämnad|picked up/.test(ev);
 }
 
-export default function ParcelWidget({ config, getState, onStateChange, fontSizes }: ParcelWidgetProps) {
+const DEMO_DELIVERIES: Delivery[] = [
+  {
+    carrier_code: "postnord",
+    description: "Mechanical keyboard",
+    tracking_number: "PN12345SE",
+    events: [
+      { event: "In transit – arrived at sorting center", date: new Date(Date.now() - 3 * 3600_000).toISOString() },
+    ],
+  },
+  {
+    carrier_code: "dhl",
+    description: "Shelly Plug S (4-pack)",
+    tracking_number: "DHL998877",
+    events: [
+      { event: "Out for delivery", date: new Date(Date.now() - 45 * 60_000).toISOString() },
+    ],
+  },
+  {
+    carrier_code: "aliexpress",
+    description: "USB-C cables",
+    tracking_number: "AE-77QX1",
+    events: [
+      { event: "Customs cleared", date: new Date(Date.now() - 26 * 3600_000).toISOString() },
+    ],
+  },
+];
+
+export default function ParcelWidget({ config, getState, onStateChange, fontSizes, demoMode }: ParcelWidgetProps) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
   const [state, setState] = useState<HAState | undefined>(() => (config.entityId && getState ? getState(config.entityId) : undefined));
 
@@ -93,14 +120,15 @@ export default function ParcelWidget({ config, getState, onStateChange, fontSize
   }, [config.entityId, getState, onStateChange]);
 
   const { deliveries, loading } = useMemo(() => {
+    if (demoMode) return { deliveries: DEMO_DELIVERIES, loading: false };
     if (!config.entityId) return { deliveries: [] as Delivery[], loading: false };
     if (!state) return { deliveries: [] as Delivery[], loading: true };
     const raw: Delivery[] = state.attributes?.deliveries || [];
     const filtered = raw.filter((d) => !isDelivered(d));
     return { deliveries: filtered, loading: false };
-  }, [state, config.entityId]);
+  }, [state, config.entityId, demoMode]);
 
-  if (!config.entityId) {
+  if (!demoMode && !config.entityId) {
     return (
       <div className="widget-card h-full p-3">
         <p className="text-muted-foreground" style={{ fontSize: fs.label }}>
