@@ -575,6 +575,7 @@ const Index = () => {
   const cameraGridIds = effectiveCameraGrids.map((c) => c.id);
   const parcelIds = effectiveParcelWidgets.map((p) => p.id);
   const powerFlowIds = effectivePowerFlows.map((p) => p.id);
+  const energyFlowIds = effectiveEnergyFlows.map((p) => p.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
