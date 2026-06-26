@@ -276,9 +276,3 @@ export default function PowerFlowWidget({ config, data, loading, fontSizes }: Pr
     </div>
   );
 }
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
