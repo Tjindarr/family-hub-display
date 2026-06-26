@@ -3302,6 +3302,9 @@ function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowCon
                 <Input className="h-7 text-xs bg-muted border-border w-32" value={d.label} onChange={(e) => updDevice(i, di, { label: e.target.value })} placeholder="Label" />
                 <IconPicker value={d.icon || ""} onChange={(v) => updDevice(i, di, { icon: v })} />
                 <ColorPicker value={d.color || ""} onChange={(v) => updDevice(i, di, { color: v })} />
+                {w.showEnergyToday && (
+                  <EntityAutocomplete value={d.energyEntityId || ""} onChange={(v) => updDevice(i, di, { energyEntityId: v })} config={config} domainFilter="sensor" placeholder="sensor.shelly_kitchen_energy_today (kWh, optional)" />
+                )}
                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeDevice(i, di)}><Trash2 className="h-3 w-3" /></Button>
               </div>
             ))}
