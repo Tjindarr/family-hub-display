@@ -522,6 +522,92 @@ Manage photos in Settings → **Photos** tab (upload, sort, delete). Photos can 
 
 ---
 
+### ⚡ Quick Actions
+
+Grid of tappable buttons that fire Home Assistant actions. Each button supports three action types:
+
+- **Toggle** — calls `homeassistant.toggle` on any entity (lights, switches, fans, covers, etc.)
+- **Service** — calls any service with custom data (e.g. `script.movie_night`, `scene.turn_on`)
+- **Navigate** — opens a URL or internal route
+
+| Setting | Description |
+|---|---|
+| Label | Card title |
+| Columns | 1–6 button columns |
+| Buttons | Label, MDI icon, color, optional confirmation prompt |
+| State Entity | Optional entity for live state coloring |
+| Active / Inactive Color | Foreground color in each state |
+| Active / Inactive BG Color | Background color in each state |
+| Active Icon | Optional icon swap when state is active |
+| Active States | Override list of state values considered "on" |
+
+Default active states: `on`, `open`, `home`, `playing`, `heat`, `cool`, `active`, `unlocked`, `true`.
+
+---
+
+### 📷 Camera Grid
+
+Grid of Home Assistant camera snapshots, pulled via the camera proxy on a configurable interval. Tap any tile to open fullscreen.
+
+| Setting | Description |
+|---|---|
+| Label | Card title |
+| Columns | 1–6 columns |
+| Aspect Ratio | `16:9`, `4:3`, `1:1`, or `3:2` |
+| Refresh Seconds | Snapshot refresh interval (min 2s) |
+| Cameras | List of `camera.*` entities with labels |
+
+---
+
+### 📦 Parcel Tracking
+
+Displays undelivered packages from the [Home Assistant parcel integration](https://github.com/jenslys/parcel) with carrier icons and the latest tracking event per shipment.
+
+| Setting | Description |
+|---|---|
+| Label | Card title |
+| Entity ID | `sensor.parcel_*` entity provided by the integration |
+
+---
+
+### 🔌 Power Flow
+
+Live power consumption widget designed for Shelly / smart-plug fleets. Shows per-device current draw with rolling sparklines, highlights the top consumers, and can show a stacked 24-hour history chart.
+
+| Setting | Description |
+|---|---|
+| Label | Card title |
+| Unit | `W` (auto-scales to kW above 1000) or `kW` |
+| Top Highlight Count | Number of top consumers to highlight |
+| Sparkline Minutes | Length of the rolling sparkline window |
+| Show Total | Toggle total power summary |
+| Show 24h Chart | Adds a stacked 24-hour history chart |
+| 24h Chart Height | Chart height in px (default 80) |
+| 24h Chart Stacked | Stacked vs overlaid per-device areas |
+| Devices | Power sensor (W), label, optional icon/color, optional kWh-today sensor |
+
+---
+
+## 📱 Mobile Dashboard (`/mobile`)
+
+A standalone PWA route optimized for phones, completely independent from the main dashboard.
+
+- Add **any** widget type to the mobile page — sensor grids, general sensors, actions, cameras, parcels, power flow, RSS, vehicles, person cards, temperatures, weather, calendar, electricity, photos, food menu, notifications, pollen, chores.
+- Mobile-only widget instances (e.g. a compact mobile sensor grid) live separately from the main dashboard so they don't bloat the wall display.
+- Singleton widgets (weather, calendar, electricity, photos, food menu, notifications, pollen, chores) can either inherit the main dashboard config or be overridden per-mobile.
+- Configure everything in Settings → **Mobile** tab.
+- Installable on iOS / Android as a separate PWA via its own manifest.
+
+---
+
+## 🎬 Demo Mode
+
+Append `?demo` to the URL (or visit `/?demo`) to render the dashboard with rich mock data — sample chores, kids, people with avatars, sensor values, camera placeholders (via picsum.photos), power flow waveforms, parcels, and a full default layout. Useful for screenshots and previewing widgets without a configured HA instance.
+
+---
+
+
+
 ### 🌿 Pollen
 
 Displays pollen levels from HA sensors with color-coded severity dots and optional multi-day forecast.
