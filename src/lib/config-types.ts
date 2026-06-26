@@ -544,6 +544,7 @@ export interface DashboardConfig {
   actionWidgets: ActionWidgetConfig[];
   cameraGrids: CameraGridConfig[];
   parcelWidgets?: ParcelWidgetConfig[];
+  powerFlows?: PowerFlowConfig[];
   mobileLayout: MobileLayoutConfig;
   mobileDashboard?: MobileDashboardConfig;
   wallpaper?: WallpaperConfig;
