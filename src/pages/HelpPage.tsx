@@ -379,7 +379,7 @@ climate.living_room.current_temperature → "22.0"`}
     title: "Themes & Styling",
     content: (
       <>
-        <P>HomeDash ships with 6 built-in themes. Select your theme in Settings → General → Theme.</P>
+        <P>HomeDash ships with 7 built-in themes. Select your theme in Settings → General → Theme.</P>
         <Table
           headers={["Theme", "Description"]}
           rows={[
@@ -389,6 +389,7 @@ climate.living_room.current_temperature → "22.0"`}
             ["Warm Ember", "Dark warm tones with orange/red accent"],
             ["AMOLED Black", "Pure black background, no shadows"],
             ["macOS Dark", "Dark gray with blue accent, macOS-inspired"],
+            ["Liquid Glass", "Translucent glass-like cards with 22px backdrop-blur (pair with a wallpaper)"],
           ]}
         />
         <H4>Global Font Sizes</H4>
