@@ -431,11 +431,65 @@ const Index = () => {
     getCachedState,
     onStateChange,
   );
-  const { dataMap: powerFlowData, loading: powerFlowLoading } = usePowerFlowData(
+  const { dataMap: rawPowerFlowData, loading: powerFlowLoading } = usePowerFlowData(
     effectiveConfig,
     getCachedState,
     onStateChange,
   );
+  const powerFlowData = useMemo(() => {
+    if (!isDemo) return rawPowerFlowData;
+    const out: Record<string, any> = { ...rawPowerFlowData };
+    for (const flow of effectivePowerFlows) {
+      const now = Date.now();
+      const windowMs = (flow.sparklineMinutes || 30) * 60_000;
+      const points = 60;
+      const step = windowMs / points;
+      const baseByEntity: Record<string, number> = {};
+      flow.devices.forEach((d, i) => {
+        baseByEntity[d.entityId] = [80, 1200, 110, 220, 1500][i % 5];
+      });
+      const devices = flow.devices.map((d, i) => {
+        const base = baseByEntity[d.entityId];
+        const history = Array.from({ length: points }, (_, k) => {
+          const t = now - windowMs + k * step;
+          const wave = Math.sin((k + i * 7) / 6) * base * 0.25;
+          const noise = (Math.sin(k * 1.7 + i) + 1) * base * 0.1;
+          return { time: t, value: Math.max(0, base + wave + noise) };
+        });
+        const dayHistory = Array.from({ length: 96 }, (_, k) => {
+          const t = now - 24 * 3600_000 + k * 15 * 60_000;
+          const hour = ((k * 15) / 60);
+          const dayWave = Math.sin((hour - 6) / 24 * Math.PI * 2) * base * 0.4;
+          return { time: t, value: Math.max(0, base + dayWave + Math.sin(k + i) * base * 0.15) };
+        });
+        return {
+          entityId: d.entityId,
+          current: history[history.length - 1].value,
+          history,
+          dayHistory,
+          energyToday: ((base * 24) / 1000) * (0.6 + i * 0.1),
+        };
+      });
+      const total = devices.reduce((s, x) => s + x.current, 0);
+      const totalHistory = Array.from({ length: points }, (_, k) => ({
+        time: devices[0]?.history[k]?.time ?? now,
+        value: devices.reduce((s, d) => s + (d.history[k]?.value || 0), 0),
+      }));
+      const dayStacked = Array.from({ length: 96 }, (_, k) => {
+        const row: Record<string, number> = { time: devices[0]?.dayHistory?.[k]?.time ?? now };
+        let tot = 0;
+        for (const d of devices) {
+          const v = d.dayHistory?.[k]?.value || 0;
+          row[d.entityId] = v;
+          tot += v;
+        }
+        row.total = tot;
+        return row;
+      });
+      out[flow.id] = { devices, total, totalHistory, dayStacked };
+    }
+    return out;
+  }, [isDemo, rawPowerFlowData, effectivePowerFlows]);
 
   // Provide mock pollen data in demo mode
   const pollenData = useMemo(() => {
