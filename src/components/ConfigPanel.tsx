@@ -388,8 +388,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const cgIds = cameraGrids.map((c) => c.id);
     const pkIds = parcelWidgets.map((p) => p.id);
     const pwIds = powerFlows.map((p) => p.id);
+    const efIds = energyFlows.map((p) => p.id);
     const hasFM = !!(foodMenuConfig.calendarEntity || foodMenuConfig.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds, pkIds, pwIds);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds, pkIds, pwIds, efIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -398,9 +399,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") || id.startsWith("parcel_") || id.startsWith("power_") ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") || id.startsWith("parcel_") || id.startsWith("power_") || id.startsWith("energy_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, parcelWidgets, powerFlows, rssFeeds, vehicles, pollenConfig]);
+  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, parcelWidgets, powerFlows, energyFlows, rssFeeds, vehicles, pollenConfig]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
