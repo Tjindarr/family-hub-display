@@ -157,10 +157,51 @@ export function usePowerFlowData(
     recompute();
   }, [config, flows, recompute]);
 
+  // 24h history fetch from HA (only for flows with show24hChart enabled)
+  const fetchDayHistory = useCallback(async () => {
+    if (flows.length === 0) return;
+    if (!checkConfigured(config)) return;
+    const ids = new Set<string>();
+    for (const flow of flows) {
+      if (!flow.show24hChart) continue;
+      for (const d of flow.devices) if (d.entityId) ids.add(d.entityId);
+    }
+    if (ids.size === 0) return;
+    const client = createHAClient(config);
+    const now = new Date();
+    const start = new Date(now.getTime() - 24 * 60 * 60_000);
+    await Promise.all(
+      Array.from(ids).map(async (eid) => {
+        try {
+          const raw = await client.getHistory(eid, start.toISOString(), now.toISOString());
+          if (raw?.[0]) {
+            const points = raw[0]
+              .map((s: any) => ({ time: Date.parse(s.last_changed), value: parseFloat(s.state) }))
+              .filter((p: any) => !isNaN(p.time) && !isNaN(p.value));
+            const step = Math.max(1, Math.floor(points.length / (DAY_BUCKETS * 2)));
+            dayHistoryRef.current[eid] = points.filter((_: any, i: number) => i % step === 0);
+          }
+          dayHistoryFetched.current.add(eid);
+        } catch {
+          /* ignore */
+        }
+      }),
+    );
+    recompute();
+  }, [config, flows, recompute]);
+
   // Re-fetch initial history if new entities are added
   useEffect(() => {
     fetchInitialHistory();
   }, [fetchInitialHistory]);
+
+  // 24h history: fetch on mount and refresh every 15 min; also append live points
+  useEffect(() => {
+    fetchDayHistory();
+    const t = setInterval(fetchDayHistory, 15 * 60_000);
+    return () => clearInterval(t);
+  }, [fetchDayHistory]);
+
 
   // Seed from any already-cached states & recompute
   useEffect(() => {
