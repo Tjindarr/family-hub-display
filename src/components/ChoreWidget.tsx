@@ -1,5 +1,5 @@
 import { useChoresData } from "@/hooks/useChoresData";
-import type { Kid, Chore } from "@/lib/chores-types";
+import type { Kid, Chore, ChoresData } from "@/lib/chores-types";
 import type { ChoreWidgetConfig } from "@/lib/config";
 import { isChoreDueToday, isChoreCompletedToday, isChoreCompletedInCycle, daysUntilDue, suggestFairKid } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
@@ -13,10 +13,13 @@ import { ChoreWidgetScoreboard } from "@/components/chores/ChoreWidgetScoreboard
 
 interface Props {
   config?: ChoreWidgetConfig;
+  demoData?: ChoresData;
 }
 
-export default function ChoreWidget({ config }: Props) {
-  const { data, loading } = useChoresData(10000);
+export default function ChoreWidget({ config, demoData }: Props) {
+  const live = useChoresData(10000);
+  const data = demoData || live.data;
+  const loading = demoData ? false : live.loading;
   const navigate = useNavigate();
 
   const label = config?.label || "Chores";

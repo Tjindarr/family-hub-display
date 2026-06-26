@@ -4,10 +4,15 @@ import type { CameraGridConfig } from "@/lib/config";
 
 interface Props {
   config: CameraGridConfig;
+  demoMode?: boolean;
 }
 
-function buildSrc(entityId: string, ts: number): string {
+function buildSrc(entityId: string, ts: number, demoMode?: boolean): string {
   if (!entityId) return "";
+  if (demoMode) {
+    // Stable placeholder image per camera, refreshes with tick
+    return `https://picsum.photos/seed/${encodeURIComponent(entityId)}-${Math.floor(ts / 30000)}/640/360`;
+  }
   return `/api/ha/camera_proxy/${encodeURIComponent(entityId)}?t=${ts}`;
 }
 
@@ -21,7 +26,7 @@ function aspectToPadding(ar?: string): string {
   }
 }
 
-export default function CameraGridWidget({ config }: Props) {
+export default function CameraGridWidget({ config, demoMode }: Props) {
   const interval = Math.max(2, config.refreshSeconds || 30);
   const cols = Math.max(1, Math.min(6, config.columns || 2));
   const cameras = config.cameras || [];
@@ -67,7 +72,7 @@ export default function CameraGridWidget({ config }: Props) {
           >
             {cam.entityId ? (
               <img
-                src={buildSrc(cam.entityId, tick)}
+                src={buildSrc(cam.entityId, tick, demoMode)}
                 alt={cam.label || cam.entityId}
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover"
@@ -100,7 +105,7 @@ export default function CameraGridWidget({ config }: Props) {
           onClick={() => setFullscreen(null)}
         >
           <img
-            src={buildSrc(fullscreen, tick)}
+            src={buildSrc(fullscreen, tick, demoMode)}
             alt={fullscreen}
             className="max-w-full max-h-full object-contain rounded"
           />
