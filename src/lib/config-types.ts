@@ -343,6 +343,33 @@ export interface PowerFlowConfig {
   chart24hStacked?: boolean;     // stacked per-device area (default true)
 }
 
+// ── Energy Flow (Solar / Battery / Grid / Home) ──
+export interface EnergyFlowConfig {
+  id: string;
+  label: string;
+  // Live power sensors (W). All optional — nodes hide if their power entity is missing.
+  solarPowerEntity?: string;
+  batteryPowerEntity?: string;
+  batterySocEntity?: string;     // %
+  gridPowerEntity?: string;
+  homePowerEntity?: string;      // optional; derived if absent
+  // Sign conventions for ambiguous sensors
+  batteryPowerSign?: "charge_positive" | "discharge_positive"; // default: discharge_positive
+  gridPowerSign?: "import_positive" | "export_positive";       // default: import_positive
+  // Today energy totals (kWh)
+  solarEnergyTodayEntity?: string;
+  homeEnergyTodayEntity?: string;
+  gridImportTodayEntity?: string;
+  gridExportTodayEntity?: string;
+  // Display
+  showAnimations?: boolean;       // default true
+  showDayTotals?: boolean;        // default true
+  solarColor?: string;
+  batteryColor?: string;
+  gridColor?: string;
+  homeColor?: string;
+}
+
 export interface CameraConfig {
   entityId: string;
   label: string;
@@ -391,6 +418,7 @@ export interface MobileDashboardConfig {
   vehicles: VehicleConfig[];
   parcelWidgets?: ParcelWidgetConfig[];
   powerFlows?: PowerFlowConfig[];
+  energyFlows?: EnergyFlowConfig[];
   personEntities?: PersonEntityConfig[];
   temperatureEntities?: TemperatureEntityConfig[];
   // Optional singleton overrides — when undefined, the main dashboard config is used
@@ -548,6 +576,7 @@ export interface DashboardConfig {
   cameraGrids: CameraGridConfig[];
   parcelWidgets?: ParcelWidgetConfig[];
   powerFlows?: PowerFlowConfig[];
+  energyFlows?: EnergyFlowConfig[];
   mobileLayout: MobileLayoutConfig;
   mobileDashboard?: MobileDashboardConfig;
   wallpaper?: WallpaperConfig;
