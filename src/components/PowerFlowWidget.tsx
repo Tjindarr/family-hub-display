@@ -259,8 +259,23 @@ export default function PowerFlowWidget({ config, data, loading, fontSizes }: Pr
                   <span style={{ fontSize: fs.body, color: d.color }}>{v.value}</span>
                   <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{v.unit}</span>
                 </div>
+                {config.showEnergyToday && d.energyToday !== undefined && (
+                  <div
+                    className="relative z-10 shrink-0 font-mono text-muted-foreground tabular-nums"
+                    style={{ fontSize: fs.label }}
+                    title="Energy consumed today (since 00:00)"
+                  >
+                    {d.energyToday.toFixed(d.energyToday >= 10 ? 1 : 2)} kWh
+                  </div>
+                )}
               </div>
             );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
           })}
         </div>
       )}
