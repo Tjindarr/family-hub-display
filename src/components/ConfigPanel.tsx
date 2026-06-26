@@ -308,13 +308,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
     sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
     personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
-    actionWidgets, cameraGrids, parcelWidgets, powerFlows, mobileLayout, mobileDashboard, wallpaper,
+    actionWidgets, cameraGrids, parcelWidgets, powerFlows, energyFlows, mobileLayout, mobileDashboard, wallpaper,
   }), [haUrl, haToken, refreshInterval, tempEntities, calendarEntityConfigs, calendarDayColor, calendarTimeColor,
     calendarDisplay, weatherConfig, electricityEntity, electricitySurcharge, widgetLayouts, gridColumns, rowColumns,
     rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
     sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
     personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
-    actionWidgets, cameraGrids, parcelWidgets, powerFlows, mobileLayout, mobileDashboard, wallpaper]);
+    actionWidgets, cameraGrids, parcelWidgets, powerFlows, energyFlows, mobileLayout, mobileDashboard, wallpaper]);
   const savedSnapshotRef = useRef<string>(currentSnapshot);
   // Re-baseline when panel opens (config may have changed from elsewhere)
   useEffect(() => { if (open) savedSnapshotRef.current = currentSnapshot; /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [open]);
