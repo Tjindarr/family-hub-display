@@ -1,5 +1,5 @@
 import { useChoresData } from "@/hooks/useChoresData";
-import type { Kid, Chore } from "@/lib/chores-types";
+import type { Kid, Chore, ChoresData } from "@/lib/chores-types";
 import type { ChoreWidgetConfig } from "@/lib/config";
 import { isChoreDueToday, isChoreCompletedToday, isChoreCompletedInCycle, daysUntilDue, suggestFairKid } from "@/lib/chores-types";
 import { KidAvatar } from "@/components/KidAvatar";
