@@ -653,13 +653,14 @@ const Index = () => {
         sensorgrid_demo_grid: { colSpan: 2, row: 4, rowSpan: 1 },
         action_demo_actions: { colSpan: 2, row: 5, rowSpan: 1 },
         power_demo_power_flow: { colSpan: 2, row: 5, rowSpan: 1 },
-        cameragrid_demo_cameras: { colSpan: 2, row: 6, rowSpan: 1 },
-        chores: { colSpan: 2, row: 6, rowSpan: 1 },
-        parcel_demo_parcels: { colSpan: 2, row: 7, rowSpan: 1 },
-        vehicle_demo_vehicle: { colSpan: 2, row: 7, rowSpan: 1 },
-        rss_demo_rss: { colSpan: 4, row: 8, rowSpan: 1 },
+        energy_demo_energy_flow: { colSpan: 4, row: 6, rowSpan: 1 },
+        cameragrid_demo_cameras: { colSpan: 2, row: 7, rowSpan: 1 },
+        chores: { colSpan: 2, row: 7, rowSpan: 1 },
+        parcel_demo_parcels: { colSpan: 2, row: 8, rowSpan: 1 },
+        vehicle_demo_vehicle: { colSpan: 2, row: 8, rowSpan: 1 },
+        rss_demo_rss: { colSpan: 4, row: 9, rowSpan: 1 },
       } as Record<string, any>,
-      rowHeights: { 1: 220, 2: 240, 3: 280, 4: 220, 5: 220, 6: 260, 7: 240, 8: 200 } as Record<number, number>,
+      rowHeights: { 1: 220, 2: 240, 3: 280, 4: 220, 5: 220, 6: 260, 7: 260, 8: 240, 9: 200 } as Record<number, number>,
     };
   }, [isDemo, config.widgetOrder]);
 
