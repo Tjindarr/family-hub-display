@@ -3329,12 +3329,33 @@ function EnergyFlowsEditor({ widgets, onChange }: { widgets: EnergyFlowConfig[];
             </div>
             <label className="flex items-center gap-1 text-[10px] mb-1">
               <Switch checked={w.showAnimations !== false} onCheckedChange={(c) => upd(i, { showAnimations: c })} />
-              Animate flows
+              Animate
             </label>
             <label className="flex items-center gap-1 text-[10px] mb-1">
               <Switch checked={w.showDayTotals !== false} onCheckedChange={(c) => upd(i, { showDayTotals: c })} />
               Day totals
             </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={w.showSocBar !== false} onCheckedChange={(c) => upd(i, { showSocBar: c })} />
+              SoC bar
+            </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={!!w.show24hChart} onCheckedChange={(c) => upd(i, { show24hChart: c })} />
+              24h chart
+            </label>
+            {w.show24hChart && (
+              <>
+                <label className="flex items-center gap-1 text-[10px] mb-1">
+                  <Switch checked={w.chart24hStacked !== false} onCheckedChange={(c) => upd(i, { chart24hStacked: c })} />
+                  Stacked
+                </label>
+                <div className="w-[80px]">
+                  <Label className="text-[10px] text-muted-foreground">Chart h (px)</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" type="number" value={w.chart24hHeight ?? 90}
+                    onChange={(e) => upd(i, { chart24hHeight: parseInt(e.target.value) || 90 })} />
+                </div>
+              </>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
