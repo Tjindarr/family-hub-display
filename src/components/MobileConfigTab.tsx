@@ -14,7 +14,7 @@ import type {
   MobileLayoutConfig, MobileSection, MobileItem, MobileDashboardConfig,
   SensorGridConfig, GeneralSensorConfig, DashboardConfig,
   CameraGridConfig, CameraConfig, RssNewsConfig, VehicleConfig,
-  ParcelWidgetConfig, PersonEntityConfig, TemperatureEntityConfig,
+  ParcelWidgetConfig, PersonEntityConfig, TemperatureEntityConfig, PowerFlowConfig, PowerFlowDeviceConfig,
   WeatherConfig, CalendarEntityConfig, CalendarDisplayConfig,
   PhotoWidgetConfig, FoodMenuConfig, PollenConfig, NotificationConfig,
   ChoreWidgetConfig,
@@ -384,6 +384,7 @@ export function MobileDashboardEditor({
   value.rssFeeds.forEach((g) => { mobileLabels[`rss_${g.id}`] = `📱 ${g.label || g.id}`; });
   value.vehicles.forEach((g) => { mobileLabels[`vehicle_${g.id}`] = `📱 ${g.name || g.id}`; });
   (value.parcelWidgets || []).forEach((g) => { mobileLabels[`parcel_${g.id}`] = `📱 ${g.label || g.id}`; });
+  ((value as any).powerFlows || []).forEach((g: PowerFlowConfig) => { mobileLabels[`power_${g.id}`] = `📱 ${g.label || g.id}`; });
   (value.personEntities || []).forEach((p, i) => { mobileLabels[`person_${(config.personEntities?.length || 0) + i}`] = `📱 ${p.name || `Person ${i + 1}`}`; });
   const mainLabels: Record<string, string> = Object.fromEntries(mainWidgets.map((w) => [w.id, w.label]));
   const labelOf = (id: string) => mobileLabels[id] || mainLabels[id] || id;
@@ -522,6 +523,10 @@ export function MobileDashboardEditor({
 
       <MobileBlock title="Mobile-only Parcels">
         <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd(autoAppend(value, { parcelWidgets: v }, "parcel_", value.parcelWidgets || []))} config={config} />
+      </MobileBlock>
+
+      <MobileBlock title="Mobile-only Power Flow">
+        <MobilePowerFlowList value={(value as any).powerFlows || []} onChange={(v) => upd(autoAppend(value, { powerFlows: v } as any, "power_", (value as any).powerFlows || []))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Persons">
@@ -779,3 +784,58 @@ function MobileRssFeedList({ value, onChange }: { value: RssNewsConfig[]; onChan
 }
 
 
+
+function MobilePowerFlowList({ value, onChange, config }: { value: PowerFlowConfig[]; onChange: (v: PowerFlowConfig[]) => void; config: DashboardConfig }) {
+  const upd = (i: number, p: Partial<PowerFlowConfig>) => onChange(value.map((w, x) => x === i ? { ...w, ...p } : w));
+  const updDev = (i: number, di: number, p: Partial<PowerFlowDeviceConfig>) =>
+    upd(i, { devices: value[i].devices.map((d, x) => x === di ? { ...d, ...p } : d) });
+  return (
+    <div className="space-y-2">
+      {value.map((w, i) => (
+        <div key={w.id} className="space-y-2 p-2 rounded bg-muted/30 border border-border/40">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Input className="h-7 text-xs bg-muted border-border flex-1 min-w-[120px]" value={w.label} onChange={(e) => upd(i, { label: e.target.value })} placeholder="Label" />
+            <Label className="text-[10px] text-muted-foreground">Top</Label>
+            <Input type="number" min={0} max={20} className="h-7 w-14 text-xs bg-muted border-border" value={w.topHighlightCount} onChange={(e) => upd(i, { topHighlightCount: Math.max(0, Number(e.target.value) || 0) })} />
+            <Label className="text-[10px] text-muted-foreground">Min</Label>
+            <Input type="number" min={1} max={1440} className="h-7 w-16 text-xs bg-muted border-border" value={w.sparklineMinutes} onChange={(e) => upd(i, { sparklineMinutes: Math.max(1, Number(e.target.value) || 30) })} />
+            <Button size="icon" variant="ghost" onClick={() => onChange(value.filter((_, x) => x !== i))}><Trash2 className="h-3 w-3" /></Button>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap text-[10px]">
+            <label className="flex items-center gap-1">
+              <Switch checked={!!w.show24hChart} onCheckedChange={(c) => upd(i, { show24hChart: c })} />
+              24h chart
+            </label>
+            {w.show24hChart && (
+              <>
+                <label className="flex items-center gap-1">
+                  <Switch checked={w.chart24hStacked !== false} onCheckedChange={(c) => upd(i, { chart24hStacked: c })} />
+                  Stacked
+                </label>
+                <Label className="text-muted-foreground">H</Label>
+                <Input type="number" min={40} max={400} className="h-7 w-16 text-xs bg-muted border-border" value={w.chart24hHeight ?? 80} onChange={(e) => upd(i, { chart24hHeight: Math.max(40, Number(e.target.value) || 80) })} />
+              </>
+            )}
+          </div>
+          <div className="space-y-1 pl-2 border-l border-border/40">
+            {w.devices.map((d, di) => (
+              <div key={di} className="flex items-center gap-1.5 flex-wrap">
+                <EntityAutocomplete value={d.entityId} onChange={(v) => updDev(i, di, { entityId: v })} config={config} domainFilter="sensor" placeholder="sensor.shelly_power" />
+                <Input className="h-7 text-xs bg-muted border-border w-28" value={d.label} onChange={(e) => updDev(i, di, { label: e.target.value })} placeholder="Label" />
+                <IconPicker value={d.icon || ""} onChange={(v) => updDev(i, di, { icon: v })} />
+                <ColorPicker value={d.color || ""} onChange={(v) => updDev(i, di, { color: v })} />
+                <Button size="icon" variant="ghost" onClick={() => upd(i, { devices: w.devices.filter((_, x) => x !== di) })}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => upd(i, { devices: [...w.devices, { entityId: "", label: "", color: "hsl(45, 90%, 55%)", icon: "mdi:flash" }] })}>
+              <Plus className="h-3 w-3 mr-1" /> Add device
+            </Button>
+          </div>
+        </div>
+      ))}
+      <Button size="sm" variant="outline" onClick={() => onChange([...value, { id: uid(), label: "Power Flow", unit: "W", topHighlightCount: 3, sparklineMinutes: 30, showTotal: true, devices: [] }])}>
+        <Plus className="h-3 w-3 mr-1" /> Add power flow widget
+      </Button>
+    </div>
+  );
+}

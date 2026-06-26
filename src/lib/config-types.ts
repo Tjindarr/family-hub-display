@@ -322,6 +322,27 @@ export interface ParcelWidgetConfig {
   entityId: string;
 }
 
+export interface PowerFlowDeviceConfig {
+  entityId: string;        // power sensor in W
+  label: string;
+  icon?: string;
+  color?: string;
+  energyEntityId?: string; // optional kWh today sensor
+}
+
+export interface PowerFlowConfig {
+  id: string;
+  label: string;
+  unit: "W" | "kW";              // display unit (auto-scales above 1 kW when "W")
+  topHighlightCount: number;     // top N devices highlighted
+  sparklineMinutes: number;      // rolling window length
+  showTotal: boolean;
+  devices: PowerFlowDeviceConfig[];
+  show24hChart?: boolean;        // optional 24h stacked history chart
+  chart24hHeight?: number;       // px, default 80
+  chart24hStacked?: boolean;     // stacked per-device area (default true)
+}
+
 export interface CameraConfig {
   entityId: string;
   label: string;
@@ -369,6 +390,7 @@ export interface MobileDashboardConfig {
   rssFeeds: RssNewsConfig[];
   vehicles: VehicleConfig[];
   parcelWidgets?: ParcelWidgetConfig[];
+  powerFlows?: PowerFlowConfig[];
   personEntities?: PersonEntityConfig[];
   temperatureEntities?: TemperatureEntityConfig[];
   // Optional singleton overrides — when undefined, the main dashboard config is used
@@ -525,6 +547,7 @@ export interface DashboardConfig {
   actionWidgets: ActionWidgetConfig[];
   cameraGrids: CameraGridConfig[];
   parcelWidgets?: ParcelWidgetConfig[];
+  powerFlows?: PowerFlowConfig[];
   mobileLayout: MobileLayoutConfig;
   mobileDashboard?: MobileDashboardConfig;
   wallpaper?: WallpaperConfig;

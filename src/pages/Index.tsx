@@ -18,6 +18,7 @@ import ChoreWidget from "@/components/ChoreWidget";
 import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
 import ParcelWidget from "@/components/ParcelWidget";
+import PowerFlowWidget from "@/components/PowerFlowWidget";
 import { runAction } from "@/lib/actions";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
@@ -37,6 +38,7 @@ import { useRssNews } from "@/hooks/useRssNews";
 import { useNotificationData } from "@/hooks/useNotificationData";
 import { useVehicleData } from "@/hooks/useVehicleData";
 import { usePollenData } from "@/hooks/usePollenData";
+import { usePowerFlowData } from "@/hooks/usePowerFlowData";
 import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
 import WallpaperBackground from "@/components/WallpaperBackground";
@@ -73,6 +75,7 @@ function getDefaultWidgetIds(
   actionWidgetIds: string[] = [],
   cameraGridIds: string[] = [],
   parcelIds: string[] = [],
+  powerFlowIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -87,6 +90,7 @@ function getDefaultWidgetIds(
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
+    ...powerFlowIds.map((id) => `power_${id}`),
     ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
@@ -248,6 +252,122 @@ const Index = () => {
     return config.pollenConfig;
   }, [isKiosk, isDemo, config.pollenConfig]);
 
+  // Inject demo action widget
+  const effectiveActionWidgets = useMemo(() => {
+    if (!isKiosk && isDemo && (config.actionWidgets || []).length === 0) {
+      return [
+        {
+          id: "demo_actions",
+          label: "Quick Actions",
+          columns: 4,
+          buttons: [
+            { id: "b1", label: "Living Room", icon: "mdi:floor-lamp", color: "hsl(45, 95%, 60%)",
+              action: { type: "service" as const, domain: "light", service: "toggle", entityId: "light.demo_living" } },
+            { id: "b2", label: "Kitchen", icon: "mdi:ceiling-light", color: "hsl(200, 80%, 60%)",
+              action: { type: "service" as const, domain: "light", service: "toggle", entityId: "light.demo_kitchen" } },
+            { id: "b3", label: "Movie Mode", icon: "mdi:movie-open", color: "hsl(280, 70%, 65%)",
+              action: { type: "service" as const, domain: "script", service: "movie_mode" } },
+            { id: "b4", label: "Good Night", icon: "mdi:weather-night", color: "hsl(258, 70%, 65%)",
+              action: { type: "service" as const, domain: "script", service: "good_night" } },
+          ],
+        },
+      ];
+    }
+    return config.actionWidgets || [];
+  }, [isKiosk, isDemo, config.actionWidgets]);
+
+  // Inject demo camera grid
+  const effectiveCameraGrids = useMemo(() => {
+    if (!isKiosk && isDemo && (config.cameraGrids || []).length === 0) {
+      return [
+        {
+          id: "demo_cameras",
+          label: "Cameras",
+          columns: 2,
+          refreshSeconds: 30,
+          aspectRatio: "16:9" as const,
+          cameras: [
+            { entityId: "camera.demo_front", label: "Front Door" },
+            { entityId: "camera.demo_drive", label: "Driveway" },
+            { entityId: "camera.demo_back", label: "Backyard" },
+            { entityId: "camera.demo_garage", label: "Garage" },
+          ],
+        },
+      ];
+    }
+    return config.cameraGrids || [];
+  }, [isKiosk, isDemo, config.cameraGrids]);
+
+  // Inject demo parcel widget
+  const effectiveParcelWidgets = useMemo(() => {
+    if (!isKiosk && isDemo && (config.parcelWidgets || []).length === 0) {
+      return [{ id: "demo_parcels", label: "Parcels", entityId: "sensor.demo_parcels" }];
+    }
+    return config.parcelWidgets || [];
+  }, [isKiosk, isDemo, config.parcelWidgets]);
+
+  // Inject demo power flow
+  const effectivePowerFlows = useMemo(() => {
+    if (!isKiosk && isDemo && (config.powerFlows || []).length === 0) {
+      return [
+        {
+          id: "demo_power_flow",
+          label: "Power Flow",
+          unit: "W" as const,
+          topHighlightCount: 3,
+          sparklineMinutes: 30,
+          showTotal: true,
+          show24hChart: true,
+          chart24hHeight: 80,
+          chart24hStacked: true,
+          devices: [
+            { entityId: "sensor.demo_pf_fridge", label: "Fridge", icon: "mdi:fridge", color: "hsl(200, 70%, 55%)" },
+            { entityId: "sensor.demo_pf_dishwasher", label: "Dishwasher", icon: "mdi:dishwasher", color: "hsl(174, 72%, 50%)" },
+            { entityId: "sensor.demo_pf_tv", label: "TV", icon: "mdi:television", color: "hsl(280, 60%, 60%)" },
+            { entityId: "sensor.demo_pf_office", label: "Office", icon: "mdi:desktop-tower", color: "hsl(45, 90%, 55%)" },
+            { entityId: "sensor.demo_pf_heater", label: "Heater", icon: "mdi:radiator", color: "hsl(0, 72%, 55%)" },
+          ],
+        },
+      ];
+    }
+    return config.powerFlows || [];
+  }, [isKiosk, isDemo, config.powerFlows]);
+
+  // Mock chores data for demo
+  const demoChoresData = useMemo(() => {
+    if (!isDemo) return undefined;
+    const today = new Date().toISOString();
+    return {
+      kids: [
+        { id: "k1", name: "Alex", avatar: "🦊", color: "hsl(200, 70%, 55%)" },
+        { id: "k2", name: "Sam", avatar: "🐼", color: "hsl(280, 60%, 60%)" },
+      ],
+      chores: [
+        { id: "c1", title: "Take out trash", icon: "🗑️", points: 5, difficulty: 1, timeOfDay: "evening" as const,
+          recurrence: { type: "daily" as const }, requirePhoto: false, requireApproval: false, paused: false, createdAt: today },
+        { id: "c2", title: "Feed the cat", icon: "🐱", points: 3, difficulty: 1, timeOfDay: "morning" as const,
+          recurrence: { type: "daily" as const }, requirePhoto: false, requireApproval: false, paused: false, createdAt: today },
+        { id: "c3", title: "Make bed", icon: "🛏️", points: 2, difficulty: 1, timeOfDay: "morning" as const,
+          recurrence: { type: "daily" as const }, requirePhoto: false, requireApproval: false, paused: false, createdAt: today, perKid: true },
+        { id: "c4", title: "Homework", icon: "📚", points: 10, difficulty: 3, timeOfDay: "afternoon" as const,
+          recurrence: { type: "weekly" as const, weekdays: [1,2,3,4,5] }, requirePhoto: false, requireApproval: true, paused: false, createdAt: today, perKid: true },
+      ],
+      logs: [
+        { id: "l1", choreId: "c2", kidId: "k1", completedAt: today, approved: true },
+        { id: "l2", choreId: "c3", kidId: "k1", completedAt: today, approved: true },
+      ],
+      badges: [],
+      kidBadges: [],
+      rewards: [],
+      rewardClaims: [],
+      settings: { rotationEnabled: false, showSuggestions: true, categoriesEnabled: false, categories: [],
+        streakBonuses: [], gradesEnabled: false, gradeScale: [], gradeSubjects: [] },
+      submissions: [],
+      grades: [],
+      gradeSubmissions: [],
+    } as any;
+  }, [isDemo]);
+
   const effectiveConfig = useMemo(
     () => ({
       ...config,
@@ -257,6 +377,10 @@ const Index = () => {
       generalSensors: effectiveGeneralSensors,
       notificationConfig: effectiveNotificationConfig,
       pollenConfig: effectivePollenConfig,
+      actionWidgets: effectiveActionWidgets,
+      cameraGrids: effectiveCameraGrids,
+      parcelWidgets: effectiveParcelWidgets,
+      powerFlows: effectivePowerFlows,
     }),
     [
       config,
@@ -266,6 +390,10 @@ const Index = () => {
       effectiveGeneralSensors,
       effectiveNotificationConfig,
       effectivePollenConfig,
+      effectiveActionWidgets,
+      effectiveCameraGrids,
+      effectiveParcelWidgets,
+      effectivePowerFlows,
     ],
   );
 
@@ -283,11 +411,33 @@ const Index = () => {
     getCachedState,
     onStateChange,
   );
-  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(
+  const { dataMap: rawSensorGridData, loading: sensorGridLoading } = useSensorGridData(
     effectiveConfig,
     getCachedState,
     onStateChange,
   );
+  const sensorGridData = useMemo(() => {
+    if (!isDemo) return rawSensorGridData;
+    const out: Record<string, any> = { ...rawSensorGridData };
+    const demoValues: Record<string, string> = {
+      "Humidity": "47", "Pressure": "1013", "Wind": "3.2",
+      "UV Index": "4", "CO₂": "612", "Noise": "38",
+      "Temperature": "21.4", "Light": "320", "Motion": "Clear",
+    };
+    for (const grid of effectiveSensorGrids) {
+      const existing = out[grid.id];
+      const allEmpty = !existing || existing.values.every((v: any) => !v.value || v.value === "—" || v.value === "");
+      if (allEmpty) {
+        out[grid.id] = {
+          values: grid.cells.map((c: any) => ({
+            value: demoValues[c.label || ""] ?? String(Math.floor(20 + Math.random() * 60)),
+            unit: c.unit || "",
+          })),
+        };
+      }
+    }
+    return out;
+  }, [isDemo, rawSensorGridData, effectiveSensorGrids]);
   const rssFeeds = effectiveRssFeeds;
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
   const { notifications, loading: notifLoading } = useNotificationData(
@@ -302,6 +452,65 @@ const Index = () => {
     getCachedState,
     onStateChange,
   );
+  const { dataMap: rawPowerFlowData, loading: powerFlowLoading } = usePowerFlowData(
+    effectiveConfig,
+    getCachedState,
+    onStateChange,
+  );
+  const powerFlowData = useMemo(() => {
+    if (!isDemo) return rawPowerFlowData;
+    const out: Record<string, any> = { ...rawPowerFlowData };
+    for (const flow of effectivePowerFlows) {
+      const now = Date.now();
+      const windowMs = (flow.sparklineMinutes || 30) * 60_000;
+      const points = 60;
+      const step = windowMs / points;
+      const baseByEntity: Record<string, number> = {};
+      flow.devices.forEach((d, i) => {
+        baseByEntity[d.entityId] = [80, 1200, 110, 220, 1500][i % 5];
+      });
+      const devices = flow.devices.map((d, i) => {
+        const base = baseByEntity[d.entityId];
+        const history = Array.from({ length: points }, (_, k) => {
+          const t = now - windowMs + k * step;
+          const wave = Math.sin((k + i * 7) / 6) * base * 0.25;
+          const noise = (Math.sin(k * 1.7 + i) + 1) * base * 0.1;
+          return { time: t, value: Math.max(0, base + wave + noise) };
+        });
+        const dayHistory = Array.from({ length: 96 }, (_, k) => {
+          const t = now - 24 * 3600_000 + k * 15 * 60_000;
+          const hour = ((k * 15) / 60);
+          const dayWave = Math.sin((hour - 6) / 24 * Math.PI * 2) * base * 0.4;
+          return { time: t, value: Math.max(0, base + dayWave + Math.sin(k + i) * base * 0.15) };
+        });
+        return {
+          entityId: d.entityId,
+          current: history[history.length - 1].value,
+          history,
+          dayHistory,
+          energyToday: ((base * 24) / 1000) * (0.6 + i * 0.1),
+        };
+      });
+      const total = devices.reduce((s, x) => s + x.current, 0);
+      const totalHistory = Array.from({ length: points }, (_, k) => ({
+        time: devices[0]?.history[k]?.time ?? now,
+        value: devices.reduce((s, d) => s + (d.history[k]?.value || 0), 0),
+      }));
+      const dayStacked = Array.from({ length: 96 }, (_, k) => {
+        const row: Record<string, number> = { time: devices[0]?.dayHistory?.[k]?.time ?? now };
+        let tot = 0;
+        for (const d of devices) {
+          const v = d.dayHistory?.[k]?.value || 0;
+          row[d.entityId] = v;
+          tot += v;
+        }
+        row.total = tot;
+        return row;
+      });
+      out[flow.id] = { devices, total, totalHistory, dayStacked };
+    }
+    return out;
+  }, [isDemo, rawPowerFlowData, effectivePowerFlows]);
 
   // Provide mock pollen data in demo mode
   const pollenData = useMemo(() => {
@@ -360,9 +569,10 @@ const Index = () => {
   const sensorGridIds = effectiveSensorGrids.map((s) => s.id);
   const rssIds = rssFeeds.map((f) => f.id);
   const vehicleIds = effectiveVehicles.map((v) => v.id);
-  const actionWidgetIds = (config.actionWidgets || []).map((a) => a.id);
-  const cameraGridIds = (config.cameraGrids || []).map((c) => c.id);
-  const parcelIds = (config.parcelWidgets || []).map((p) => p.id);
+  const actionWidgetIds = effectiveActionWidgets.map((a) => a.id);
+  const cameraGridIds = effectiveCameraGrids.map((c) => c.id);
+  const parcelIds = effectiveParcelWidgets.map((p) => p.id);
+  const powerFlowIds = effectivePowerFlows.map((p) => p.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
@@ -396,6 +606,11 @@ const Index = () => {
         "pollen",
         "general_demo_power",
         "sensorgrid_demo_grid",
+        "action_demo_actions",
+        "power_demo_power_flow",
+        "cameragrid_demo_cameras",
+        "chores",
+        "parcel_demo_parcels",
         "vehicle_demo_vehicle",
         "rss_demo_rss",
       ],
@@ -411,10 +626,15 @@ const Index = () => {
         pollen: { colSpan: 1, row: 3, rowSpan: 1, widgetGroup: "notif_pollen" },
         general_demo_power: { colSpan: 2, row: 4, rowSpan: 1 },
         sensorgrid_demo_grid: { colSpan: 2, row: 4, rowSpan: 1 },
-        vehicle_demo_vehicle: { colSpan: 2, row: 5, rowSpan: 1 },
-        rss_demo_rss: { colSpan: 2, row: 5, rowSpan: 1 },
+        action_demo_actions: { colSpan: 2, row: 5, rowSpan: 1 },
+        power_demo_power_flow: { colSpan: 2, row: 5, rowSpan: 1 },
+        cameragrid_demo_cameras: { colSpan: 2, row: 6, rowSpan: 1 },
+        chores: { colSpan: 2, row: 6, rowSpan: 1 },
+        parcel_demo_parcels: { colSpan: 2, row: 7, rowSpan: 1 },
+        vehicle_demo_vehicle: { colSpan: 2, row: 7, rowSpan: 1 },
+        rss_demo_rss: { colSpan: 4, row: 8, rowSpan: 1 },
       } as Record<string, any>,
-      rowHeights: { 1: 220, 2: 240, 3: 280, 4: 220, 5: 200 } as Record<number, number>,
+      rowHeights: { 1: 220, 2: 240, 3: 280, 4: 220, 5: 220, 6: 260, 7: 240, 8: 200 } as Record<number, number>,
     };
   }, [isDemo, config.widgetOrder]);
 
@@ -451,6 +671,7 @@ const Index = () => {
       actionWidgetIds,
       cameraGridIds,
       parcelIds,
+      powerFlowIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
@@ -570,21 +791,27 @@ const Index = () => {
     }
     if (id.startsWith("action_")) {
       const aId = id.replace("action_", "");
-      const aCfg = (config.actionWidgets || []).find((a) => a.id === aId);
+      const aCfg = effectiveActionWidgets.find((a) => a.id === aId);
       if (!aCfg) return null;
       return <ActionWidget config={aCfg} getState={getCachedState} />;
     }
     if (id.startsWith("cameragrid_")) {
       const cId = id.replace("cameragrid_", "");
-      const cCfg = (config.cameraGrids || []).find((c) => c.id === cId);
+      const cCfg = effectiveCameraGrids.find((c) => c.id === cId);
       if (!cCfg) return null;
-      return <CameraGridWidget config={cCfg} />;
+      return <CameraGridWidget config={cCfg} demoMode={isDemo} />;
     }
     if (id.startsWith("parcel_")) {
       const pId = id.replace("parcel_", "");
-      const pCfg = (config.parcelWidgets || []).find((p) => p.id === pId);
+      const pCfg = effectiveParcelWidgets.find((p) => p.id === pId);
       if (!pCfg) return null;
-      return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={fs} />;
+      return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={fs} demoMode={isDemo} />;
+    }
+    if (id.startsWith("power_")) {
+      const pid = id.replace("power_", "");
+      const pcfg = effectivePowerFlows.find((p) => p.id === pid);
+      if (!pcfg) return null;
+      return <PowerFlowWidget config={pcfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={fs} />;
     }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
@@ -614,8 +841,8 @@ const Index = () => {
     if (id === "pollen") {
       return <PollenWidget data={pollenData} loading={pollenLoading} pollenConfig={effectivePollenConfig} />;
     }
-    if (id === "chores" && (config.enableChores || config.choreWidgetConfig?.enabled)) {
-      return <ChoreWidget config={config.choreWidgetConfig} />;
+    if (id === "chores" && (isDemo || config.enableChores || config.choreWidgetConfig?.enabled)) {
+      return <ChoreWidget config={config.choreWidgetConfig} demoData={demoChoresData} />;
     }
     return null;
   };
@@ -624,6 +851,7 @@ const Index = () => {
     if (effectiveWidgetLayouts[id]?.colSpan) return effectiveWidgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
     if (id === "photos" || id === "food_menu") return 2;
+    if (id.startsWith("power_")) return 2;
     return 1;
   };
 
