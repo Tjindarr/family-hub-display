@@ -412,11 +412,33 @@ const Index = () => {
     getCachedState,
     onStateChange,
   );
-  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(
+  const { dataMap: rawSensorGridData, loading: sensorGridLoading } = useSensorGridData(
     effectiveConfig,
     getCachedState,
     onStateChange,
   );
+  const sensorGridData = useMemo(() => {
+    if (!isDemo) return rawSensorGridData;
+    const out: Record<string, any> = { ...rawSensorGridData };
+    const demoValues: Record<string, string> = {
+      "Humidity": "47", "Pressure": "1013", "Wind": "3.2",
+      "UV Index": "4", "CO₂": "612", "Noise": "38",
+      "Temperature": "21.4", "Light": "320", "Motion": "Clear",
+    };
+    for (const grid of effectiveSensorGrids) {
+      const existing = out[grid.id];
+      const allEmpty = !existing || existing.values.every((v: any) => !v.value || v.value === "—" || v.value === "");
+      if (allEmpty) {
+        out[grid.id] = {
+          values: grid.cells.map((c: any) => ({
+            value: demoValues[c.label || ""] ?? String(Math.floor(20 + Math.random() * 60)),
+            unit: c.unit || "",
+          })),
+        };
+      }
+    }
+    return out;
+  }, [isDemo, rawSensorGridData, effectiveSensorGrids]);
   const rssFeeds = effectiveRssFeeds;
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
   const { notifications, loading: notifLoading } = useNotificationData(
