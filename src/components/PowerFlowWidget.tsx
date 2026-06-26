@@ -61,6 +61,78 @@ function Sparkline({ history, color, height = 24 }: { history: { time: number; v
     </div>
   );
 }
+function Day24hChart({ data, devices, height, stacked, unit, fs }: {
+  data: Array<Record<string, number>>;
+  devices: { entityId: string; color: string; label: string }[];
+  height: number;
+  stacked: boolean;
+  unit: "W" | "kW";
+  fs: ResolvedFontSizes;
+}) {
+  const tickFmt = (t: number) => {
+    const d = new Date(t);
+    const h = d.getHours().toString().padStart(2, "0");
+    return `${h}:00`;
+  };
+  const domain = useMemo(() => {
+    const now = Date.now();
+    return [now - 24 * 60 * 60_000, now] as [number, number];
+  }, [data.length]);
+  const tooltipFmt = (v: number) => {
+    if (unit === "kW" || Math.abs(v) >= 1000) return `${(v / 1000).toFixed(2)} kW`;
+    return `${v.toFixed(v < 10 ? 1 : 0)} W`;
+  };
+  return (
+    <div className="px-1 mb-1" style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 2, right: 2, left: 0, bottom: 0 }}>
+          <defs>
+            {devices.map((d) => (
+              <linearGradient key={d.entityId} id={`pfDay_${d.entityId.replace(/[^a-zA-Z0-9]/g, "_")}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={d.color} stopOpacity={0.55} />
+                <stop offset="100%" stopColor={d.color} stopOpacity={0.05} />
+              </linearGradient>
+            ))}
+          </defs>
+          <XAxis
+            dataKey="time"
+            type="number"
+            domain={domain}
+            scale="time"
+            ticks={[domain[0], domain[0] + 6 * 3600_000, domain[0] + 12 * 3600_000, domain[0] + 18 * 3600_000, domain[1]]}
+            tickFormatter={tickFmt}
+            tick={{ fontSize: fs.label - 1, fill: "hsl(var(--muted-foreground))" }}
+            axisLine={false}
+            tickLine={false}
+            height={14}
+          />
+          <YAxis hide domain={[0, "dataMax"]} />
+          <Tooltip
+            contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 6, fontSize: fs.label }}
+            labelFormatter={(t) => new Date(t as number).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            formatter={(v: any, name: any) => {
+              const dev = devices.find((d) => d.entityId === name);
+              return [tooltipFmt(Number(v)), dev?.label || name];
+            }}
+          />
+          {devices.map((d) => (
+            <Area
+              key={d.entityId}
+              type="monotone"
+              dataKey={d.entityId}
+              stackId={stacked ? "1" : undefined}
+              stroke={d.color}
+              strokeWidth={1}
+              fill={`url(#pfDay_${d.entityId.replace(/[^a-zA-Z0-9]/g, "_")})`}
+              isAnimationActive={false}
+            />
+          ))}
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 
 export default function PowerFlowWidget({ config, data, loading, fontSizes }: Props) {
   const fs = fontSizes || { label: 10, heading: 12, body: 14, value: 18 };
