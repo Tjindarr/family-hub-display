@@ -3311,3 +3311,131 @@ function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowCon
   );
 }
 
+function EnergyFlowsEditor({ widgets, onChange }: { widgets: EnergyFlowConfig[]; onChange: (v: EnergyFlowConfig[]) => void }) {
+  const upd = (i: number, p: Partial<EnergyFlowConfig>) => onChange(widgets.map((w, x) => x === i ? { ...w, ...p } : w));
+  const remove = (i: number) => onChange(widgets.filter((_, x) => x !== i));
+
+  return (
+    <div className="space-y-3">
+      {widgets.map((w, i) => (
+        <div key={w.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+          <Button variant="ghost" size="icon" className="absolute right-1 top-1 h-6 w-6" onClick={() => remove(i)}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[140px]">
+              <Label className="text-[10px] text-muted-foreground">Label</Label>
+              <Input className="h-7 text-xs bg-muted border-border mt-1" value={w.label} onChange={(e) => upd(i, { label: e.target.value })} />
+            </div>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={w.showAnimations !== false} onCheckedChange={(c) => upd(i, { showAnimations: c })} />
+              Animate flows
+            </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={w.showDayTotals !== false} onCheckedChange={(c) => upd(i, { showDayTotals: c })} />
+              Day totals
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {/* Solar */}
+            <div className="space-y-1 border border-border/40 rounded p-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">☀️ Solar</div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Power (W)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.solar_power" value={w.solarPowerEntity || ""} onChange={(e) => upd(i, { solarPowerEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Today (kWh)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.solar_energy_today" value={w.solarEnergyTodayEntity || ""} onChange={(e) => upd(i, { solarEnergyTodayEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(45,95%,55%)" value={w.solarColor || ""} onChange={(e) => upd(i, { solarColor: e.target.value })} />
+              </div>
+            </div>
+            {/* Battery */}
+            <div className="space-y-1 border border-border/40 rounded p-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">🔋 Battery</div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Power (W)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.battery_power" value={w.batteryPowerEntity || ""} onChange={(e) => upd(i, { batteryPowerEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">SoC (%)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.battery_soc" value={w.batterySocEntity || ""} onChange={(e) => upd(i, { batterySocEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Sign convention</Label>
+                <Select value={w.batteryPowerSign || "discharge_positive"} onValueChange={(v) => upd(i, { batteryPowerSign: v as any })}>
+                  <SelectTrigger className="h-7 text-xs bg-muted border-border mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="discharge_positive">Discharge = positive</SelectItem>
+                    <SelectItem value="charge_positive">Charge = positive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(140,70%,50%)" value={w.batteryColor || ""} onChange={(e) => upd(i, { batteryColor: e.target.value })} />
+              </div>
+            </div>
+            {/* Grid */}
+            <div className="space-y-1 border border-border/40 rounded p-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">🏭 Grid</div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Power (W)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.grid_power" value={w.gridPowerEntity || ""} onChange={(e) => upd(i, { gridPowerEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Sign convention</Label>
+                <Select value={w.gridPowerSign || "import_positive"} onValueChange={(v) => upd(i, { gridPowerSign: v as any })}>
+                  <SelectTrigger className="h-7 text-xs bg-muted border-border mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="import_positive">Import = positive</SelectItem>
+                    <SelectItem value="export_positive">Export = positive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Import today</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.grid_import_today" value={w.gridImportTodayEntity || ""} onChange={(e) => upd(i, { gridImportTodayEntity: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Export today</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.grid_export_today" value={w.gridExportTodayEntity || ""} onChange={(e) => upd(i, { gridExportTodayEntity: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(210,80%,60%)" value={w.gridColor || ""} onChange={(e) => upd(i, { gridColor: e.target.value })} />
+              </div>
+            </div>
+            {/* Home */}
+            <div className="space-y-1 border border-border/40 rounded p-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">🏠 Home</div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Power (W) — optional</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.home_power (derived if blank)" value={w.homePowerEntity || ""} onChange={(e) => upd(i, { homePowerEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Today (kWh)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.home_energy_today" value={w.homeEnergyTodayEntity || ""} onChange={(e) => upd(i, { homeEnergyTodayEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(280,60%,65%)" value={w.homeColor || ""} onChange={(e) => upd(i, { homeColor: e.target.value })} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+      {widgets.length === 0 && (
+        <p className="text-[11px] text-muted-foreground italic">No energy flow widgets yet — click "Add Energy Flow" above.</p>
+      )}
+    </div>
+  );
+}
+
+
