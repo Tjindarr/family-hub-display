@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { Icon } from "@iconify/react";
-import { ResponsiveContainer, AreaChart, Area, YAxis } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, YAxis, XAxis, Tooltip } from "recharts";
 import type { PowerFlowConfig } from "@/lib/config";
 import type { ResolvedFontSizes } from "@/lib/fontSizes";
+
 
 function toIconName(name?: string): string {
   if (!name) return "mdi:flash";
