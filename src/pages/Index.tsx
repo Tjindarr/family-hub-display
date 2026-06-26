@@ -252,6 +252,123 @@ const Index = () => {
     return config.pollenConfig;
   }, [isKiosk, isDemo, config.pollenConfig]);
 
+  // Inject demo action widget
+  const effectiveActionWidgets = useMemo(() => {
+    if (!isKiosk && isDemo && (config.actionWidgets || []).length === 0) {
+      return [
+        {
+          id: "demo_actions",
+          label: "Quick Actions",
+          columns: 4,
+          buttons: [
+            { id: "b1", label: "Living Room", icon: "mdi:floor-lamp", color: "hsl(45, 90%, 60%)",
+              action: { type: "service" as const, domain: "light", service: "toggle", entityId: "light.demo_living" },
+              stateEntityId: "light.demo_living", activeColor: "hsl(45, 95%, 60%)", inactiveColor: "hsl(215, 12%, 55%)" },
+            { id: "b2", label: "Kitchen", icon: "mdi:ceiling-light", color: "hsl(200, 70%, 55%)",
+              action: { type: "service" as const, domain: "light", service: "toggle", entityId: "light.demo_kitchen" } },
+            { id: "b3", label: "Movie Mode", icon: "mdi:movie-open", color: "hsl(280, 60%, 60%)",
+              action: { type: "service" as const, domain: "script", service: "movie_mode" } },
+            { id: "b4", label: "Good Night", icon: "mdi:weather-night", color: "hsl(258, 60%, 60%)",
+              action: { type: "service" as const, domain: "script", service: "good_night" } },
+          ],
+        },
+      ];
+    }
+    return config.actionWidgets || [];
+  }, [isKiosk, isDemo, config.actionWidgets]);
+
+  // Inject demo camera grid
+  const effectiveCameraGrids = useMemo(() => {
+    if (!isKiosk && isDemo && (config.cameraGrids || []).length === 0) {
+      return [
+        {
+          id: "demo_cameras",
+          label: "Cameras",
+          columns: 2,
+          refreshSeconds: 30,
+          aspectRatio: "16:9" as const,
+          cameras: [
+            { entityId: "camera.demo_front", label: "Front Door" },
+            { entityId: "camera.demo_drive", label: "Driveway" },
+            { entityId: "camera.demo_back", label: "Backyard" },
+            { entityId: "camera.demo_garage", label: "Garage" },
+          ],
+        },
+      ];
+    }
+    return config.cameraGrids || [];
+  }, [isKiosk, isDemo, config.cameraGrids]);
+
+  // Inject demo parcel widget
+  const effectiveParcelWidgets = useMemo(() => {
+    if (!isKiosk && isDemo && (config.parcelWidgets || []).length === 0) {
+      return [{ id: "demo_parcels", label: "Parcels", entityId: "sensor.demo_parcels" }];
+    }
+    return config.parcelWidgets || [];
+  }, [isKiosk, isDemo, config.parcelWidgets]);
+
+  // Inject demo power flow
+  const effectivePowerFlows = useMemo(() => {
+    if (!isKiosk && isDemo && (config.powerFlows || []).length === 0) {
+      return [
+        {
+          id: "demo_power_flow",
+          label: "Power Flow",
+          unit: "W" as const,
+          topHighlightCount: 3,
+          sparklineMinutes: 30,
+          showTotal: true,
+          show24hChart: true,
+          chart24hHeight: 80,
+          chart24hStacked: true,
+          devices: [
+            { entityId: "sensor.demo_pf_fridge", label: "Fridge", icon: "mdi:fridge", color: "hsl(200, 70%, 55%)" },
+            { entityId: "sensor.demo_pf_dishwasher", label: "Dishwasher", icon: "mdi:dishwasher", color: "hsl(174, 72%, 50%)" },
+            { entityId: "sensor.demo_pf_tv", label: "TV", icon: "mdi:television", color: "hsl(280, 60%, 60%)" },
+            { entityId: "sensor.demo_pf_office", label: "Office", icon: "mdi:desktop-tower", color: "hsl(45, 90%, 55%)" },
+            { entityId: "sensor.demo_pf_heater", label: "Heater", icon: "mdi:radiator", color: "hsl(0, 72%, 55%)" },
+          ],
+        },
+      ];
+    }
+    return config.powerFlows || [];
+  }, [isKiosk, isDemo, config.powerFlows]);
+
+  // Mock chores data for demo
+  const demoChoresData = useMemo(() => {
+    if (!isDemo) return undefined;
+    const today = new Date().toISOString();
+    return {
+      kids: [
+        { id: "k1", name: "Alex", avatar: "🦊", color: "hsl(200, 70%, 55%)" },
+        { id: "k2", name: "Sam", avatar: "🐼", color: "hsl(280, 60%, 60%)" },
+      ],
+      chores: [
+        { id: "c1", title: "Take out trash", icon: "🗑️", points: 5, difficulty: 1, timeOfDay: "evening" as const,
+          recurrence: { type: "daily" as const }, requirePhoto: false, requireApproval: false, paused: false, createdAt: today },
+        { id: "c2", title: "Feed the cat", icon: "🐱", points: 3, difficulty: 1, timeOfDay: "morning" as const,
+          recurrence: { type: "daily" as const }, requirePhoto: false, requireApproval: false, paused: false, createdAt: today },
+        { id: "c3", title: "Make bed", icon: "🛏️", points: 2, difficulty: 1, timeOfDay: "morning" as const,
+          recurrence: { type: "daily" as const }, requirePhoto: false, requireApproval: false, paused: false, createdAt: today, perKid: true },
+        { id: "c4", title: "Homework", icon: "📚", points: 10, difficulty: 3, timeOfDay: "afternoon" as const,
+          recurrence: { type: "weekly" as const, weekdays: [1,2,3,4,5] }, requirePhoto: false, requireApproval: true, paused: false, createdAt: today, perKid: true },
+      ],
+      logs: [
+        { id: "l1", choreId: "c2", kidId: "k1", completedAt: today, approved: true },
+        { id: "l2", choreId: "c3", kidId: "k1", completedAt: today, approved: true },
+      ],
+      badges: [],
+      kidBadges: [],
+      rewards: [],
+      rewardClaims: [],
+      settings: { rotationEnabled: false, showSuggestions: true, categoriesEnabled: false, categories: [],
+        streakBonuses: [], gradesEnabled: false, gradeScale: [], gradeSubjects: [] },
+      submissions: [],
+      grades: [],
+      gradeSubmissions: [],
+    } as any;
+  }, [isDemo]);
+
   const effectiveConfig = useMemo(
     () => ({
       ...config,
@@ -261,6 +378,10 @@ const Index = () => {
       generalSensors: effectiveGeneralSensors,
       notificationConfig: effectiveNotificationConfig,
       pollenConfig: effectivePollenConfig,
+      actionWidgets: effectiveActionWidgets,
+      cameraGrids: effectiveCameraGrids,
+      parcelWidgets: effectiveParcelWidgets,
+      powerFlows: effectivePowerFlows,
     }),
     [
       config,
@@ -270,6 +391,10 @@ const Index = () => {
       effectiveGeneralSensors,
       effectiveNotificationConfig,
       effectivePollenConfig,
+      effectiveActionWidgets,
+      effectiveCameraGrids,
+      effectiveParcelWidgets,
+      effectivePowerFlows,
     ],
   );
 
