@@ -597,6 +597,12 @@ const Index = () => {
       if (!pCfg) return null;
       return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={fs} />;
     }
+    if (id.startsWith("power_")) {
+      const pid = id.replace("power_", "");
+      const pcfg = (config.powerFlows || []).find((p) => p.id === pid);
+      if (!pcfg) return null;
+      return <PowerFlowWidget config={pcfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={fs} />;
+    }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
