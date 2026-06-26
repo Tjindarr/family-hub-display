@@ -3055,6 +3055,28 @@ function WidgetStyleControls({ style, onChange, fields }: {
             </CollapsibleSection>
 
 
+            <CollapsibleSection
+              title="Power Flow"
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `pf_${Date.now()}`;
+                    setPowerFlows([...powerFlows, { id, label: "Power Flow", unit: "W", topHighlightCount: 3, sparklineMinutes: 30, showTotal: true, devices: [] }]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Power Flow
+                </Button>
+              }
+            >
+              <p className="text-[11px] text-muted-foreground">
+                Live power per device with sparklines. Highlights the biggest current consumers.
+              </p>
+              <PowerFlowsEditor widgets={powerFlows} onChange={setPowerFlows} config={config} />
+            </CollapsibleSection>
+
+
           </TabsContent>
 
 
