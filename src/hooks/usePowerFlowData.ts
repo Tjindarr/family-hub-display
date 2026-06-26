@@ -18,6 +18,9 @@ export function usePowerFlowData(
   // Per-entity rolling history (kept in ref so we don't re-render on every push)
   const historyRef = useRef<Record<string, { time: number; value: number }[]>>({});
   const initialHistoryFetched = useRef<Set<string>>(new Set());
+  // 24h history per entity (sparse, ~96 buckets)
+  const dayHistoryRef = useRef<Record<string, { time: number; value: number }[]>>({});
+  const dayHistoryFetched = useRef<Set<string>>(new Set());
 
   const flows = config.powerFlows || [];
 
