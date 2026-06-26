@@ -115,6 +115,19 @@ export default function PowerFlowWidget({ config, data, loading, fontSizes }: Pr
         </div>
       )}
 
+      {/* 24h history chart */}
+      {config.show24hChart && data?.dayStacked && data.dayStacked.length > 1 && (
+        <Day24hChart
+          data={data.dayStacked}
+          devices={sorted.map((d) => ({ entityId: d.entityId, color: d.color, label: d.label }))}
+          height={config.chart24hHeight || 80}
+          stacked={config.chart24hStacked !== false}
+          unit={unit}
+          fs={fs}
+        />
+      )}
+
+
       {/* Device list */}
       {sorted.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-muted-foreground" style={{ fontSize: fs.body }}>
