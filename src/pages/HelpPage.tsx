@@ -196,7 +196,10 @@ volumes:
             ["🚗 Vehicle", "Vehicle data organized in sections", "Sections, entities, icons, colors"],
             ["🌿 Pollen", "Pollen levels with severity dots and forecast", "Sensors, forecast days, show label/forecast"],
             ["✅ Chores", "HomeChores status widget (requires enabling)", "Auto-configured, click to manage"],
-          ]}
+            ["⚡ Quick Actions", "Tappable buttons that fire HA toggles, services, or navigation", "Buttons, columns, state-aware colors, confirm prompts"],
+            ["📷 Camera Grid", "Grid of HA camera snapshots with periodic refresh + fullscreen", "Cameras, columns, aspect ratio, refresh seconds"],
+            ["📦 Parcel", "Undelivered packages from the HA parcel integration", "Sensor entity"],
+            ["🔌 Power Flow", "Live power for Shelly/smart-plug devices with sparklines + 24h chart", "Devices, unit, sparkline window, 24h chart"],
         />
       </>
     ),
