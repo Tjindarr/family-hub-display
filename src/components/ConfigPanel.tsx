@@ -287,6 +287,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
   const [parcelWidgets, setParcelWidgets] = useState<ParcelWidgetConfig[]>(config.parcelWidgets || []);
   const [powerFlows, setPowerFlows] = useState<PowerFlowConfig[]>(config.powerFlows || []);
+  const [energyFlows, setEnergyFlows] = useState<EnergyFlowConfig[]>(config.energyFlows || []);
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
   const [mobileDashboard, setMobileDashboard] = useState<MobileDashboardConfig>(
     config.mobileDashboard || {
