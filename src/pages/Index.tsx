@@ -632,6 +632,7 @@ const Index = () => {
         "sensorgrid_demo_grid",
         "action_demo_actions",
         "power_demo_power_flow",
+        "energy_demo_energy_flow",
         "cameragrid_demo_cameras",
         "chores",
         "parcel_demo_parcels",
