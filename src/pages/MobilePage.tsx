@@ -107,6 +107,7 @@ export default function MobilePage() {
     vehicles: [...(config.vehicles || []), ...mobileDash.vehicles],
     parcelWidgets: [...(config.parcelWidgets || []), ...(mobileDash.parcelWidgets || [])],
     powerFlows: [...(config.powerFlows || []), ...((mobileDash as any).powerFlows || [])],
+    energyFlows: [...(config.energyFlows || []), ...((mobileDash as any).energyFlows || [])],
     personEntities: [...(config.personEntities || []), ...(mobileDash.personEntities || [])],
     temperatureEntities: [...(config.temperatureEntities || []), ...(mobileDash.temperatureEntities || [])],
     weatherConfig: mobileDash.weatherConfig ?? config.weatherConfig,
