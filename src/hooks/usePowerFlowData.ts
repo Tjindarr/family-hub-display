@@ -36,6 +36,7 @@ export function usePowerFlowData(
       const cutoff = Date.now() - windowMs;
       const devices = flow.devices.map((dev) => {
         const hist = (historyRef.current[dev.entityId] || []).filter((p) => p.time >= cutoff);
+        const dayHist = dayHistoryRef.current[dev.entityId] || [];
         const current = hist.length ? hist[hist.length - 1].value : 0;
         let energyToday: number | undefined;
         if (dev.energyEntityId && getCachedState) {
@@ -43,7 +44,7 @@ export function usePowerFlowData(
           const v = parseFloat(s?.state || "");
           if (!isNaN(v)) energyToday = v;
         }
-        return { entityId: dev.entityId, current, history: hist, energyToday };
+        return { entityId: dev.entityId, current, history: hist, dayHistory: dayHist, energyToday };
       });
       const total = devices.reduce((s, d) => s + (d.current || 0), 0);
       // Build aligned-ish total history by bucketing into ~60 buckets
@@ -59,7 +60,44 @@ export function usePowerFlowData(
       const totalHistory = Object.entries(totals)
         .map(([t, v]) => ({ time: Number(t), value: v }))
         .sort((a, b) => a.time - b.time);
-      result[flow.id] = { devices, total, totalHistory };
+
+      // Build stacked 24h series aligned to 15-min buckets
+      let dayStacked: Array<Record<string, number>> | undefined;
+      if (flow.show24hChart) {
+        const dayMs = 24 * 60 * 60_000;
+        const dayCutoff = Date.now() - dayMs;
+        const bucketMs = Math.floor(dayMs / DAY_BUCKETS);
+        const bucketMap: Record<number, Record<string, number>> = {};
+        for (const dev of flow.devices) {
+          const hist = dayHistoryRef.current[dev.entityId] || [];
+          for (const p of hist) {
+            if (p.time < dayCutoff) continue;
+            const bk = Math.floor(p.time / bucketMs) * bucketMs;
+            if (!bucketMap[bk]) bucketMap[bk] = { time: bk };
+            // last value wins within a bucket (most recent sample)
+            bucketMap[bk][dev.entityId] = p.value;
+          }
+        }
+        // Forward-fill missing buckets per device for stable stacked area
+        const sortedBuckets = Object.keys(bucketMap).map(Number).sort((a, b) => a - b);
+        const lastSeen: Record<string, number> = {};
+        dayStacked = sortedBuckets.map((bk) => {
+          const row: Record<string, number> = { time: bk };
+          let totalRow = 0;
+          for (const dev of flow.devices) {
+            if (bucketMap[bk][dev.entityId] !== undefined) {
+              lastSeen[dev.entityId] = bucketMap[bk][dev.entityId];
+            }
+            const v = lastSeen[dev.entityId] || 0;
+            row[dev.entityId] = v;
+            totalRow += v;
+          }
+          row.total = totalRow;
+          return row;
+        });
+      }
+
+      result[flow.id] = { devices, total, totalHistory, dayStacked };
     }
     setDataMap(result);
     setLoading(false);
