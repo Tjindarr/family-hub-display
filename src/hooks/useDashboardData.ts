@@ -597,10 +597,15 @@ export function usePersonData(
 
   const fetchData = useCallback(async () => {
     if (!isConfigured(config)) {
+      const demoAvatars = [
+        "https://api.dicebear.com/9.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4",
+        "https://api.dicebear.com/9.x/avataaars/svg?seed=Sam&backgroundColor=ffd5dc",
+        "https://api.dicebear.com/9.x/avataaars/svg?seed=Jordan&backgroundColor=c0aede",
+      ];
       const mockPersons = config.personEntities && config.personEntities.length > 0
-        ? config.personEntities.map((p) => ({
+        ? config.personEntities.map((p, idx) => ({
             name: p.name || "Person",
-            pictureUrl: null,
+            pictureUrl: demoAvatars[idx % demoAvatars.length],
             location: "Home",
             batteryPercent: 40 + Math.random() * 55,
             isCharging: Math.random() > 0.5,
@@ -609,7 +614,7 @@ export function usePersonData(
           }))
         : [{
             name: "Demo User",
-            pictureUrl: null,
+            pictureUrl: demoAvatars[0],
             location: "Home",
             batteryPercent: 72,
             isCharging: true,

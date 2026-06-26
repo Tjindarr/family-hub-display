@@ -261,14 +261,13 @@ const Index = () => {
           label: "Quick Actions",
           columns: 4,
           buttons: [
-            { id: "b1", label: "Living Room", icon: "mdi:floor-lamp", color: "hsl(45, 90%, 60%)",
-              action: { type: "service" as const, domain: "light", service: "toggle", entityId: "light.demo_living" },
-              stateEntityId: "light.demo_living", activeColor: "hsl(45, 95%, 60%)", inactiveColor: "hsl(215, 12%, 55%)" },
-            { id: "b2", label: "Kitchen", icon: "mdi:ceiling-light", color: "hsl(200, 70%, 55%)",
+            { id: "b1", label: "Living Room", icon: "mdi:floor-lamp", color: "hsl(45, 95%, 60%)",
+              action: { type: "service" as const, domain: "light", service: "toggle", entityId: "light.demo_living" } },
+            { id: "b2", label: "Kitchen", icon: "mdi:ceiling-light", color: "hsl(200, 80%, 60%)",
               action: { type: "service" as const, domain: "light", service: "toggle", entityId: "light.demo_kitchen" } },
-            { id: "b3", label: "Movie Mode", icon: "mdi:movie-open", color: "hsl(280, 60%, 60%)",
+            { id: "b3", label: "Movie Mode", icon: "mdi:movie-open", color: "hsl(280, 70%, 65%)",
               action: { type: "service" as const, domain: "script", service: "movie_mode" } },
-            { id: "b4", label: "Good Night", icon: "mdi:weather-night", color: "hsl(258, 60%, 60%)",
+            { id: "b4", label: "Good Night", icon: "mdi:weather-night", color: "hsl(258, 70%, 65%)",
               action: { type: "service" as const, domain: "script", service: "good_night" } },
           ],
         },
@@ -412,11 +411,33 @@ const Index = () => {
     getCachedState,
     onStateChange,
   );
-  const { dataMap: sensorGridData, loading: sensorGridLoading } = useSensorGridData(
+  const { dataMap: rawSensorGridData, loading: sensorGridLoading } = useSensorGridData(
     effectiveConfig,
     getCachedState,
     onStateChange,
   );
+  const sensorGridData = useMemo(() => {
+    if (!isDemo) return rawSensorGridData;
+    const out: Record<string, any> = { ...rawSensorGridData };
+    const demoValues: Record<string, string> = {
+      "Humidity": "47", "Pressure": "1013", "Wind": "3.2",
+      "UV Index": "4", "CO₂": "612", "Noise": "38",
+      "Temperature": "21.4", "Light": "320", "Motion": "Clear",
+    };
+    for (const grid of effectiveSensorGrids) {
+      const existing = out[grid.id];
+      const allEmpty = !existing || existing.values.every((v: any) => !v.value || v.value === "—" || v.value === "");
+      if (allEmpty) {
+        out[grid.id] = {
+          values: grid.cells.map((c: any) => ({
+            value: demoValues[c.label || ""] ?? String(Math.floor(20 + Math.random() * 60)),
+            unit: c.unit || "",
+          })),
+        };
+      }
+    }
+    return out;
+  }, [isDemo, rawSensorGridData, effectiveSensorGrids]);
   const rssFeeds = effectiveRssFeeds;
   const { dataMap: rssData, loading: rssLoading } = useRssNews(rssFeeds, config.refreshInterval);
   const { notifications, loading: notifLoading } = useNotificationData(
