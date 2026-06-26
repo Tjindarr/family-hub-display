@@ -335,6 +335,24 @@ const Index = () => {
     return config.powerFlows || [];
   }, [isKiosk, isDemo, config.powerFlows]);
 
+  // Inject demo energy flow (solar/battery/grid/home)
+  const effectiveEnergyFlows = useMemo(() => {
+    if (!isKiosk && isDemo && (config.energyFlows || []).length === 0) {
+      return [
+        {
+          id: "demo_energy_flow",
+          label: "Energy Flow",
+          // No entity IDs needed — demoMode synthesizes values
+          batteryPowerSign: "discharge_positive" as const,
+          gridPowerSign: "import_positive" as const,
+          showAnimations: true,
+          showDayTotals: true,
+        },
+      ];
+    }
+    return config.energyFlows || [];
+  }, [isKiosk, isDemo, config.energyFlows]);
+
   // Mock chores data for demo
   const demoChoresData = useMemo(() => {
     if (!isDemo) return undefined;
