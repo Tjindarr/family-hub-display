@@ -26,6 +26,7 @@ import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
 import ParcelWidget from "@/components/ParcelWidget";
 import PowerFlowWidget from "@/components/PowerFlowWidget";
+import EnergyFlowWidget from "@/components/EnergyFlowWidget";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
@@ -107,6 +108,7 @@ export default function MobilePage() {
     vehicles: [...(config.vehicles || []), ...mobileDash.vehicles],
     parcelWidgets: [...(config.parcelWidgets || []), ...(mobileDash.parcelWidgets || [])],
     powerFlows: [...(config.powerFlows || []), ...((mobileDash as any).powerFlows || [])],
+    energyFlows: [...(config.energyFlows || []), ...((mobileDash as any).energyFlows || [])],
     personEntities: [...(config.personEntities || []), ...(mobileDash.personEntities || [])],
     temperatureEntities: [...(config.temperatureEntities || []), ...(mobileDash.temperatureEntities || [])],
     weatherConfig: mobileDash.weatherConfig ?? config.weatherConfig,
@@ -276,6 +278,12 @@ export default function MobilePage() {
       const pCfg = (viewConfig.powerFlows || []).find((p) => p.id === pid);
       if (!pCfg) return null;
       return <PowerFlowWidget config={pCfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={widgetFs} />;
+    }
+    if (id.startsWith("energy_")) {
+      const eid = id.replace("energy_", "");
+      const eCfg = (viewConfig.energyFlows || []).find((e) => e.id === eid);
+      if (!eCfg) return null;
+      return <EnergyFlowWidget config={eCfg} getState={getCachedState} fontSizes={widgetFs} dashboardConfig={viewConfig} />;
     }
     if (id.startsWith("rss_")) {
       const rid = id.replace("rss_", "");

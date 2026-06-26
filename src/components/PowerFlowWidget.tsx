@@ -156,6 +156,9 @@ export default function PowerFlowWidget({ config, data, loading, fontSizes }: Pr
   const max = sorted.length ? Math.max(...sorted.map((d) => d.current || 0), 1) : 1;
   const total = data?.total ?? sorted.reduce((s, d) => s + (d.current || 0), 0);
   const totalFmt = formatPower(total, unit);
+  const totalEnergyToday = config.showEnergyToday
+    ? sorted.reduce((s, d) => s + (d.energyToday || 0), 0)
+    : 0;
 
   if (loading && !data) {
     return <div className="widget-card h-full animate-pulse" />;
@@ -173,7 +176,12 @@ export default function PowerFlowWidget({ config, data, loading, fontSizes }: Pr
           {config.label || "Power Flow"}
         </span>
         {config.showTotal !== false && (
-          <div className="ml-auto flex items-baseline gap-0.5">
+          <div className="ml-auto flex items-baseline gap-1">
+            {config.showEnergyToday && totalEnergyToday > 0 && (
+              <span className="font-mono text-muted-foreground" style={{ fontSize: fs.label }}>
+                {totalEnergyToday.toFixed(totalEnergyToday >= 10 ? 1 : 2)} kWh
+              </span>
+            )}
             <span className="font-mono font-semibold" style={{ fontSize: fs.value, color: "hsl(45, 90%, 55%)" }}>
               {totalFmt.value}
             </span>
@@ -251,6 +259,15 @@ export default function PowerFlowWidget({ config, data, loading, fontSizes }: Pr
                   <span style={{ fontSize: fs.body, color: d.color }}>{v.value}</span>
                   <span className="text-muted-foreground" style={{ fontSize: fs.label }}>{v.unit}</span>
                 </div>
+                {config.showEnergyToday && d.energyToday !== undefined && (
+                  <div
+                    className="relative z-10 shrink-0 font-mono text-muted-foreground tabular-nums"
+                    style={{ fontSize: fs.label }}
+                    title="Energy consumed today (since 00:00)"
+                  >
+                    {d.energyToday.toFixed(d.energyToday >= 10 ? 1 : 2)} kWh
+                  </div>
+                )}
               </div>
             );
           })}

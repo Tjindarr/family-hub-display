@@ -385,6 +385,7 @@ export function MobileDashboardEditor({
   value.vehicles.forEach((g) => { mobileLabels[`vehicle_${g.id}`] = `📱 ${g.name || g.id}`; });
   (value.parcelWidgets || []).forEach((g) => { mobileLabels[`parcel_${g.id}`] = `📱 ${g.label || g.id}`; });
   ((value as any).powerFlows || []).forEach((g: PowerFlowConfig) => { mobileLabels[`power_${g.id}`] = `📱 ${g.label || g.id}`; });
+  ((value as any).energyFlows || []).forEach((g: any) => { mobileLabels[`energy_${g.id}`] = `📱 ${g.label || g.id}`; });
   (value.personEntities || []).forEach((p, i) => { mobileLabels[`person_${(config.personEntities?.length || 0) + i}`] = `📱 ${p.name || `Person ${i + 1}`}`; });
   const mainLabels: Record<string, string> = Object.fromEntries(mainWidgets.map((w) => [w.id, w.label]));
   const labelOf = (id: string) => mobileLabels[id] || mainLabels[id] || id;

@@ -10,7 +10,7 @@ import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
 import { ActionWidgetsEditor, MobileLayoutEditor, ActionEditor, CameraGridsEditor, MobileDashboardEditor } from "@/components/MobileConfigTab";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, MobileDashboardConfig, CameraGridConfig, CameraConfig, ParcelWidgetConfig, PowerFlowConfig, PowerFlowDeviceConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, MobileDashboardConfig, CameraGridConfig, CameraConfig, ParcelWidgetConfig, PowerFlowConfig, PowerFlowDeviceConfig, EnergyFlowConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -199,7 +199,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = [], parcelIds: string[] = [], powerFlowIds: string[] = []): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = [], parcelIds: string[] = [], powerFlowIds: string[] = [], energyFlowIds: string[] = []): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -214,6 +214,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
     ...powerFlowIds.map((id) => `power_${id}`),
+    ...energyFlowIds.map((id) => `energy_${id}`),
     ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
@@ -286,6 +287,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
   const [parcelWidgets, setParcelWidgets] = useState<ParcelWidgetConfig[]>(config.parcelWidgets || []);
   const [powerFlows, setPowerFlows] = useState<PowerFlowConfig[]>(config.powerFlows || []);
+  const [energyFlows, setEnergyFlows] = useState<EnergyFlowConfig[]>(config.energyFlows || []);
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
   const [mobileDashboard, setMobileDashboard] = useState<MobileDashboardConfig>(
     config.mobileDashboard || {
@@ -306,13 +308,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
     sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
     personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
-    actionWidgets, cameraGrids, parcelWidgets, powerFlows, mobileLayout, mobileDashboard, wallpaper,
+    actionWidgets, cameraGrids, parcelWidgets, powerFlows, energyFlows, mobileLayout, mobileDashboard, wallpaper,
   }), [haUrl, haToken, refreshInterval, tempEntities, calendarEntityConfigs, calendarDayColor, calendarTimeColor,
     calendarDisplay, weatherConfig, electricityEntity, electricitySurcharge, widgetLayouts, gridColumns, rowColumns,
     rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
     sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
     personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
-    actionWidgets, cameraGrids, parcelWidgets, powerFlows, mobileLayout, mobileDashboard, wallpaper]);
+    actionWidgets, cameraGrids, parcelWidgets, powerFlows, energyFlows, mobileLayout, mobileDashboard, wallpaper]);
   const savedSnapshotRef = useRef<string>(currentSnapshot);
   // Re-baseline when panel opens (config may have changed from elsewhere)
   useEffect(() => { if (open) savedSnapshotRef.current = currentSnapshot; /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [open]);
@@ -343,7 +345,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const cgIds = (config.cameraGrids || []).map((c) => c.id);
     const pkIds = (config.parcelWidgets || []).map((p) => p.id);
     const pwIds = (config.powerFlows || []).map((p) => p.id);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds, pkIds, pwIds);
+    const efIds = (config.energyFlows || []).map((p) => p.id);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds, pkIds, pwIds, efIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -373,6 +376,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     actionWidgets.forEach((aw) => { labelMap[`action_${aw.id}`] = aw.label || `Actions ${aw.id}`; });
     parcelWidgets.forEach((pw) => { labelMap[`parcel_${pw.id}`] = pw.label || `Parcels ${pw.id}`; });
     powerFlows.forEach((pf) => { labelMap[`power_${pf.id}`] = pf.label || `Power Flow ${pf.id}`; });
+    energyFlows.forEach((ef) => { labelMap[`energy_${ef.id}`] = ef.label || `Energy Flow ${ef.id}`; });
     rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
     vehicles.forEach((vc) => { labelMap[`vehicle_${vc.id}`] = vc.name || `Vehicle ${vc.id}`; });
 
@@ -384,8 +388,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const cgIds = cameraGrids.map((c) => c.id);
     const pkIds = parcelWidgets.map((p) => p.id);
     const pwIds = powerFlows.map((p) => p.id);
+    const efIds = energyFlows.map((p) => p.id);
     const hasFM = !!(foodMenuConfig.calendarEntity || foodMenuConfig.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds, pkIds, pwIds);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds, pkIds, pwIds, efIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -394,9 +399,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") || id.startsWith("parcel_") || id.startsWith("power_") ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") || id.startsWith("parcel_") || id.startsWith("power_") || id.startsWith("energy_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, parcelWidgets, powerFlows, rssFeeds, vehicles, pollenConfig]);
+  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, parcelWidgets, powerFlows, energyFlows, rssFeeds, vehicles, pollenConfig]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -468,6 +473,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       cameraGrids,
       parcelWidgets,
       powerFlows,
+      energyFlows,
       mobileLayout,
       mobileDashboard,
       wallpaper,
@@ -3076,6 +3082,34 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <PowerFlowsEditor widgets={powerFlows} onChange={setPowerFlows} config={config} />
             </CollapsibleSection>
 
+            <CollapsibleSection
+              title="Energy Flow (Solar / Battery / Grid)"
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `ef_${Date.now()}`;
+                    setEnergyFlows([...energyFlows, {
+                      id, label: "Energy Flow",
+                      batteryPowerSign: "discharge_positive",
+                      gridPowerSign: "import_positive",
+                      showAnimations: true,
+                      showDayTotals: true,
+                    }]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Energy Flow
+                </Button>
+              }
+            >
+              <p className="text-[11px] text-muted-foreground">
+                Whole-home energy view with animated flow between solar, battery, grid, and home.
+                Leave any entity blank to hide that node.
+              </p>
+              <EnergyFlowsEditor widgets={energyFlows} onChange={setEnergyFlows} />
+            </CollapsibleSection>
+
 
           </TabsContent>
 
@@ -3241,6 +3275,10 @@ function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowCon
               <Switch checked={!!w.show24hChart} onCheckedChange={(c) => upd(i, { show24hChart: c })} />
               24h chart
             </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1" title="Show kWh consumed since 00:00 per device + total. Integrated from power history, or read from an HA energy-today sensor if you set one per device.">
+              <Switch checked={!!w.showEnergyToday} onCheckedChange={(c) => upd(i, { showEnergyToday: c })} />
+              kWh today
+            </label>
             {w.show24hChart && (
               <>
                 <label className="flex items-center gap-1 text-[10px] mb-1">
@@ -3264,6 +3302,9 @@ function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowCon
                 <Input className="h-7 text-xs bg-muted border-border w-32" value={d.label} onChange={(e) => updDevice(i, di, { label: e.target.value })} placeholder="Label" />
                 <IconPicker value={d.icon || ""} onChange={(v) => updDevice(i, di, { icon: v })} />
                 <ColorPicker value={d.color || ""} onChange={(v) => updDevice(i, di, { color: v })} />
+                {w.showEnergyToday && (
+                  <EntityAutocomplete value={d.energyEntityId || ""} onChange={(v) => updDevice(i, di, { energyEntityId: v })} config={config} domainFilter="sensor" placeholder="sensor.shelly_kitchen_energy_today (kWh, optional)" />
+                )}
                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeDevice(i, di)}><Trash2 className="h-3 w-3" /></Button>
               </div>
             ))}
@@ -3276,4 +3317,179 @@ function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowCon
     </div>
   );
 }
+
+function EnergyFlowsEditor({ widgets, onChange }: { widgets: EnergyFlowConfig[]; onChange: (v: EnergyFlowConfig[]) => void }) {
+  const upd = (i: number, p: Partial<EnergyFlowConfig>) => onChange(widgets.map((w, x) => x === i ? { ...w, ...p } : w));
+  const remove = (i: number) => onChange(widgets.filter((_, x) => x !== i));
+
+  return (
+    <div className="space-y-3">
+      {widgets.map((w, i) => (
+        <div key={w.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+          <Button variant="ghost" size="icon" className="absolute right-1 top-1 h-6 w-6" onClick={() => remove(i)}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[140px]">
+              <Label className="text-[10px] text-muted-foreground">Label</Label>
+              <Input className="h-7 text-xs bg-muted border-border mt-1" value={w.label} onChange={(e) => upd(i, { label: e.target.value })} />
+            </div>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={w.showAnimations !== false} onCheckedChange={(c) => upd(i, { showAnimations: c })} />
+              Animate
+            </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={w.showDayTotals !== false} onCheckedChange={(c) => upd(i, { showDayTotals: c })} />
+              Day totals
+            </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={w.showSocBar !== false} onCheckedChange={(c) => upd(i, { showSocBar: c })} />
+              SoC bar
+            </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={!!w.show24hChart} onCheckedChange={(c) => upd(i, { show24hChart: c })} />
+              24h chart
+            </label>
+            {w.show24hChart && (
+              <>
+                <label className="flex items-center gap-1 text-[10px] mb-1">
+                  <Switch checked={w.chart24hStacked !== false} onCheckedChange={(c) => upd(i, { chart24hStacked: c })} />
+                  Stacked
+                </label>
+                <div className="w-[80px]">
+                  <Label className="text-[10px] text-muted-foreground">Chart h (px)</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" type="number" value={w.chart24hHeight ?? 90}
+                    onChange={(e) => upd(i, { chart24hHeight: parseInt(e.target.value) || 90 })} />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {/* Solar */}
+            <div className="space-y-1 border border-border/40 rounded p-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">☀️ Solar</div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Power (W)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.solar_power" value={w.solarPowerEntity || ""} onChange={(e) => upd(i, { solarPowerEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Today (kWh)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.solar_energy_today" value={w.solarEnergyTodayEntity || ""} onChange={(e) => upd(i, { solarEnergyTodayEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(45,95%,55%)" value={w.solarColor || ""} onChange={(e) => upd(i, { solarColor: e.target.value })} />
+              </div>
+            </div>
+            {/* Battery */}
+            <div className="space-y-1 border border-border/40 rounded p-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">🔋 Battery</div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Power (W)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.battery_power" value={w.batteryPowerEntity || ""} onChange={(e) => upd(i, { batteryPowerEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">SoC (%)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.battery_soc" value={w.batterySocEntity || ""} onChange={(e) => upd(i, { batterySocEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Sign convention</Label>
+                <Select value={w.batteryPowerSign || "discharge_positive"} onValueChange={(v) => upd(i, { batteryPowerSign: v as any })}>
+                  <SelectTrigger className="h-7 text-xs bg-muted border-border mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="discharge_positive">Discharge = positive</SelectItem>
+                    <SelectItem value="charge_positive">Charge = positive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(140,70%,50%)" value={w.batteryColor || ""} onChange={(e) => upd(i, { batteryColor: e.target.value })} />
+              </div>
+            </div>
+            {/* Grid */}
+            <div className="space-y-1 border border-border/40 rounded p-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">🏭 Grid</div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Power (W)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.grid_power" value={w.gridPowerEntity || ""} onChange={(e) => upd(i, { gridPowerEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Sign convention</Label>
+                <Select value={w.gridPowerSign || "import_positive"} onValueChange={(v) => upd(i, { gridPowerSign: v as any })}>
+                  <SelectTrigger className="h-7 text-xs bg-muted border-border mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="import_positive">Import = positive</SelectItem>
+                    <SelectItem value="export_positive">Export = positive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Import today</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.grid_import_today" value={w.gridImportTodayEntity || ""} onChange={(e) => upd(i, { gridImportTodayEntity: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Export today</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.grid_export_today" value={w.gridExportTodayEntity || ""} onChange={(e) => upd(i, { gridExportTodayEntity: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(210,80%,60%)" value={w.gridColor || ""} onChange={(e) => upd(i, { gridColor: e.target.value })} />
+              </div>
+            </div>
+            {/* Home */}
+            <div className="space-y-1 border border-border/40 rounded p-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">🏠 Home</div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Power (W) — optional</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.home_power (derived if blank)" value={w.homePowerEntity || ""} onChange={(e) => upd(i, { homePowerEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Today (kWh)</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.home_energy_today" value={w.homeEnergyTodayEntity || ""} onChange={(e) => upd(i, { homeEnergyTodayEntity: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Color</Label>
+                <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(280,60%,65%)" value={w.homeColor || ""} onChange={(e) => upd(i, { homeColor: e.target.value })} />
+              </div>
+            </div>
+            {/* Car / EV charger */}
+            <div className="space-y-1 border border-border/40 rounded p-2 md:col-span-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">🚗 Car / EV charger</div>
+              <div className="grid grid-cols-2 gap-1">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Charger power (W)</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.wallbox_power" value={w.carPowerEntity || ""} onChange={(e) => upd(i, { carPowerEntity: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Charging state (optional)</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="binary_sensor.car_charging" value={w.carChargingStateEntity || ""} onChange={(e) => upd(i, { carChargingStateEntity: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Charged today (kWh)</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.wallbox_energy_today" value={w.carEnergyTodayEntity || ""} onChange={(e) => upd(i, { carEnergyTodayEntity: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Label</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="Car" value={w.carLabel || ""} onChange={(e) => upd(i, { carLabel: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-[10px] text-muted-foreground">Color</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(190,80%,55%)" value={w.carColor || ""} onChange={(e) => upd(i, { carColor: e.target.value })} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+      {widgets.length === 0 && (
+        <p className="text-[11px] text-muted-foreground italic">No energy flow widgets yet — click "Add Energy Flow" above.</p>
+      )}
+    </div>
+  );
+}
+
 

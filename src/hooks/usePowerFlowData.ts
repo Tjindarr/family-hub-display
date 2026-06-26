@@ -34,15 +34,31 @@ export function usePowerFlowData(
     for (const flow of flows) {
       const windowMs = (flow.sparklineMinutes || 30) * 60_000;
       const cutoff = Date.now() - windowMs;
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const midnightMs = todayStart.getTime();
       const devices = flow.devices.map((dev) => {
         const hist = (historyRef.current[dev.entityId] || []).filter((p) => p.time >= cutoff);
         const dayHist = dayHistoryRef.current[dev.entityId] || [];
         const current = hist.length ? hist[hist.length - 1].value : 0;
         let energyToday: number | undefined;
+        // Prefer an explicit HA "energy today" sensor (kWh) if provided
         if (dev.energyEntityId && getCachedState) {
           const s = getCachedState(dev.energyEntityId);
           const v = parseFloat(s?.state || "");
           if (!isNaN(v)) energyToday = v;
+        }
+        // Otherwise integrate power samples since midnight (trapezoid → kWh)
+        if (energyToday === undefined && flow.showEnergyToday) {
+          const pts = dayHist.filter((p) => p.time >= midnightMs);
+          if (pts.length >= 2) {
+            let wh = 0;
+            for (let k = 1; k < pts.length; k++) {
+              const dtH = (pts[k].time - pts[k - 1].time) / 3_600_000;
+              const avgW = (pts[k].value + pts[k - 1].value) / 2;
+              wh += avgW * dtH;
+            }
+            energyToday = wh / 1000;
+          }
         }
         return { entityId: dev.entityId, current, history: hist, dayHistory: dayHist, energyToday };
       });
@@ -174,7 +190,7 @@ export function usePowerFlowData(
     if (!checkConfigured(config)) return;
     const ids = new Set<string>();
     for (const flow of flows) {
-      if (!flow.show24hChart) continue;
+      if (!flow.show24hChart && !flow.showEnergyToday) continue;
       for (const d of flow.devices) if (d.entityId) ids.add(d.entityId);
     }
     if (ids.size === 0) return;

@@ -19,6 +19,7 @@ import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
 import ParcelWidget from "@/components/ParcelWidget";
 import PowerFlowWidget from "@/components/PowerFlowWidget";
+import EnergyFlowWidget from "@/components/EnergyFlowWidget";
 import { runAction } from "@/lib/actions";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
@@ -76,6 +77,7 @@ function getDefaultWidgetIds(
   cameraGridIds: string[] = [],
   parcelIds: string[] = [],
   powerFlowIds: string[] = [],
+  energyFlowIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -91,6 +93,7 @@ function getDefaultWidgetIds(
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
     ...powerFlowIds.map((id) => `power_${id}`),
+    ...energyFlowIds.map((id) => `energy_${id}`),
     ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
@@ -333,6 +336,27 @@ const Index = () => {
     return config.powerFlows || [];
   }, [isKiosk, isDemo, config.powerFlows]);
 
+  // Inject demo energy flow (solar/battery/grid/home)
+  const effectiveEnergyFlows = useMemo(() => {
+    if (!isKiosk && isDemo && (config.energyFlows || []).length === 0) {
+      return [
+        {
+          id: "demo_energy_flow",
+          label: "Energy Flow",
+          batteryPowerSign: "discharge_positive" as const,
+          gridPowerSign: "import_positive" as const,
+          showAnimations: true,
+          showDayTotals: true,
+          showSocBar: true,
+          show24hChart: true,
+          chart24hHeight: 90,
+          chart24hStacked: true,
+        },
+      ];
+    }
+    return config.energyFlows || [];
+  }, [isKiosk, isDemo, config.energyFlows]);
+
   // Mock chores data for demo
   const demoChoresData = useMemo(() => {
     if (!isDemo) return undefined;
@@ -381,6 +405,7 @@ const Index = () => {
       cameraGrids: effectiveCameraGrids,
       parcelWidgets: effectiveParcelWidgets,
       powerFlows: effectivePowerFlows,
+      energyFlows: effectiveEnergyFlows,
     }),
     [
       config,
@@ -394,6 +419,7 @@ const Index = () => {
       effectiveCameraGrids,
       effectiveParcelWidgets,
       effectivePowerFlows,
+      effectiveEnergyFlows,
     ],
   );
 
@@ -573,6 +599,7 @@ const Index = () => {
   const cameraGridIds = effectiveCameraGrids.map((c) => c.id);
   const parcelIds = effectiveParcelWidgets.map((p) => p.id);
   const powerFlowIds = effectivePowerFlows.map((p) => p.id);
+  const energyFlowIds = effectiveEnergyFlows.map((p) => p.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
@@ -608,6 +635,7 @@ const Index = () => {
         "sensorgrid_demo_grid",
         "action_demo_actions",
         "power_demo_power_flow",
+        "energy_demo_energy_flow",
         "cameragrid_demo_cameras",
         "chores",
         "parcel_demo_parcels",
@@ -628,13 +656,14 @@ const Index = () => {
         sensorgrid_demo_grid: { colSpan: 2, row: 4, rowSpan: 1 },
         action_demo_actions: { colSpan: 2, row: 5, rowSpan: 1 },
         power_demo_power_flow: { colSpan: 2, row: 5, rowSpan: 1 },
-        cameragrid_demo_cameras: { colSpan: 2, row: 6, rowSpan: 1 },
-        chores: { colSpan: 2, row: 6, rowSpan: 1 },
-        parcel_demo_parcels: { colSpan: 2, row: 7, rowSpan: 1 },
-        vehicle_demo_vehicle: { colSpan: 2, row: 7, rowSpan: 1 },
-        rss_demo_rss: { colSpan: 4, row: 8, rowSpan: 1 },
+        energy_demo_energy_flow: { colSpan: 4, row: 6, rowSpan: 2 },
+        cameragrid_demo_cameras: { colSpan: 2, row: 7, rowSpan: 1 },
+        chores: { colSpan: 2, row: 7, rowSpan: 1 },
+        parcel_demo_parcels: { colSpan: 2, row: 8, rowSpan: 1 },
+        vehicle_demo_vehicle: { colSpan: 2, row: 8, rowSpan: 1 },
+        rss_demo_rss: { colSpan: 4, row: 9, rowSpan: 1 },
       } as Record<string, any>,
-      rowHeights: { 1: 220, 2: 240, 3: 280, 4: 220, 5: 220, 6: 260, 7: 240, 8: 200 } as Record<number, number>,
+      rowHeights: { 1: 220, 2: 240, 3: 280, 4: 220, 5: 220, 6: 260, 7: 260, 8: 240, 9: 200 } as Record<number, number>,
     };
   }, [isDemo, config.widgetOrder]);
 
@@ -672,6 +701,7 @@ const Index = () => {
       cameraGridIds,
       parcelIds,
       powerFlowIds,
+      energyFlowIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
@@ -813,6 +843,12 @@ const Index = () => {
       if (!pcfg) return null;
       return <PowerFlowWidget config={pcfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={fs} />;
     }
+    if (id.startsWith("energy_")) {
+      const eid = id.replace("energy_", "");
+      const ecfg = effectiveEnergyFlows.find((e) => e.id === eid);
+      if (!ecfg) return null;
+      return <EnergyFlowWidget config={ecfg} getState={getCachedState} demoMode={isDemo} fontSizes={fs} dashboardConfig={config} />;
+    }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
@@ -852,6 +888,7 @@ const Index = () => {
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
     if (id === "photos" || id === "food_menu") return 2;
     if (id.startsWith("power_")) return 2;
+    if (id.startsWith("energy_")) return 2;
     return 1;
   };
 
