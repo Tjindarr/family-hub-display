@@ -14,12 +14,15 @@ export interface PowerFlowDeviceLive {
   entityId: string;
   current: number; // W
   history: { time: number; value: number }[];
+  dayHistory?: { time: number; value: number }[]; // ~24h, ~96 points
   energyToday?: number; // kWh
 }
 export interface PowerFlowLiveData {
   devices: PowerFlowDeviceLive[];
   total: number;
   totalHistory: { time: number; value: number }[];
+  /** Aligned per-bucket stacked day series. Each entry: { time, [entityId]: W, total: W } */
+  dayStacked?: Array<Record<string, number>>;
 }
 
 interface Props {
