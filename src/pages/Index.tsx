@@ -844,7 +844,7 @@ const Index = () => {
       const eid = id.replace("energy_", "");
       const ecfg = effectiveEnergyFlows.find((e) => e.id === eid);
       if (!ecfg) return null;
-      return <EnergyFlowWidget config={ecfg} getState={getCachedState} demoMode={isDemo} fontSizes={fs} />;
+      return <EnergyFlowWidget config={ecfg} getState={getCachedState} demoMode={isDemo} fontSizes={fs} dashboardConfig={config} />;
     }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
