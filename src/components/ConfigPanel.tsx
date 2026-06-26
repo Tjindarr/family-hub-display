@@ -3275,6 +3275,10 @@ function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowCon
               <Switch checked={!!w.show24hChart} onCheckedChange={(c) => upd(i, { show24hChart: c })} />
               24h chart
             </label>
+            <label className="flex items-center gap-1 text-[10px] mb-1" title="Show kWh consumed since 00:00 per device + total. Integrated from power history, or read from an HA energy-today sensor if you set one per device.">
+              <Switch checked={!!w.showEnergyToday} onCheckedChange={(c) => upd(i, { showEnergyToday: c })} />
+              kWh today
+            </label>
             {w.show24hChart && (
               <>
                 <label className="flex items-center gap-1 text-[10px] mb-1">
