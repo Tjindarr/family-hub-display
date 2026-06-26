@@ -343,11 +343,14 @@ const Index = () => {
         {
           id: "demo_energy_flow",
           label: "Energy Flow",
-          // No entity IDs needed — demoMode synthesizes values
           batteryPowerSign: "discharge_positive" as const,
           gridPowerSign: "import_positive" as const,
           showAnimations: true,
           showDayTotals: true,
+          showSocBar: true,
+          show24hChart: true,
+          chart24hHeight: 90,
+          chart24hStacked: true,
         },
       ];
     }
