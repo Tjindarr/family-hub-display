@@ -283,7 +283,7 @@ export default function MobilePage() {
       const eid = id.replace("energy_", "");
       const eCfg = (viewConfig.energyFlows || []).find((e) => e.id === eid);
       if (!eCfg) return null;
-      return <EnergyFlowWidget config={eCfg} getState={getCachedState} fontSizes={widgetFs} />;
+      return <EnergyFlowWidget config={eCfg} getState={getCachedState} fontSizes={widgetFs} dashboardConfig={config} />;
     }
     if (id.startsWith("rss_")) {
       const rid = id.replace("rss_", "");
