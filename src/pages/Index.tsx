@@ -343,11 +343,14 @@ const Index = () => {
         {
           id: "demo_energy_flow",
           label: "Energy Flow",
-          // No entity IDs needed — demoMode synthesizes values
           batteryPowerSign: "discharge_positive" as const,
           gridPowerSign: "import_positive" as const,
           showAnimations: true,
           showDayTotals: true,
+          showSocBar: true,
+          show24hChart: true,
+          chart24hHeight: 90,
+          chart24hStacked: true,
         },
       ];
     }
@@ -653,7 +656,7 @@ const Index = () => {
         sensorgrid_demo_grid: { colSpan: 2, row: 4, rowSpan: 1 },
         action_demo_actions: { colSpan: 2, row: 5, rowSpan: 1 },
         power_demo_power_flow: { colSpan: 2, row: 5, rowSpan: 1 },
-        energy_demo_energy_flow: { colSpan: 4, row: 6, rowSpan: 1 },
+        energy_demo_energy_flow: { colSpan: 4, row: 6, rowSpan: 2 },
         cameragrid_demo_cameras: { colSpan: 2, row: 7, rowSpan: 1 },
         chores: { colSpan: 2, row: 7, rowSpan: 1 },
         parcel_demo_parcels: { colSpan: 2, row: 8, rowSpan: 1 },
@@ -844,7 +847,7 @@ const Index = () => {
       const eid = id.replace("energy_", "");
       const ecfg = effectiveEnergyFlows.find((e) => e.id === eid);
       if (!ecfg) return null;
-      return <EnergyFlowWidget config={ecfg} getState={getCachedState} demoMode={isDemo} fontSizes={fs} />;
+      return <EnergyFlowWidget config={ecfg} getState={getCachedState} demoMode={isDemo} fontSizes={fs} dashboardConfig={config} />;
     }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
