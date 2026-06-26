@@ -3189,3 +3189,74 @@ function WidgetStyleControls({ style, onChange, fields }: {
     </div>
   );
 }
+
+function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowConfig[]; onChange: (v: PowerFlowConfig[]) => void; config: DashboardConfig }) {
+  const upd = (i: number, p: Partial<PowerFlowConfig>) => onChange(widgets.map((w, x) => x === i ? { ...w, ...p } : w));
+  const remove = (i: number) => onChange(widgets.filter((_, x) => x !== i));
+  const addDevice = (i: number) => upd(i, { devices: [...widgets[i].devices, { entityId: "", label: "", color: "hsl(45, 90%, 55%)", icon: "mdi:flash" }] });
+  const updDevice = (i: number, di: number, p: Partial<PowerFlowDeviceConfig>) =>
+    upd(i, { devices: widgets[i].devices.map((d, x) => x === di ? { ...d, ...p } : d) });
+  const removeDevice = (i: number, di: number) => upd(i, { devices: widgets[i].devices.filter((_, x) => x !== di) });
+
+  return (
+    <div className="space-y-3">
+      {widgets.map((w, i) => (
+        <div key={w.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1 h-6 w-6"
+            onClick={() => remove(i)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[140px]">
+              <Label className="text-[10px] text-muted-foreground">Label</Label>
+              <Input className="h-7 text-xs bg-muted border-border mt-1" value={w.label} onChange={(e) => upd(i, { label: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Unit</Label>
+              <Select value={w.unit} onValueChange={(v) => upd(i, { unit: v as "W" | "kW" })}>
+                <SelectTrigger className="h-7 w-20 text-xs bg-muted border-border mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="W">W (auto)</SelectItem>
+                  <SelectItem value="kW">kW</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Highlight top</Label>
+              <Input type="number" min={0} max={20} className="h-7 w-16 text-xs bg-muted border-border mt-1" value={w.topHighlightCount} onChange={(e) => upd(i, { topHighlightCount: Math.max(0, Number(e.target.value) || 0) })} />
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Window (min)</Label>
+              <Input type="number" min={1} max={1440} className="h-7 w-20 text-xs bg-muted border-border mt-1" value={w.sparklineMinutes} onChange={(e) => upd(i, { sparklineMinutes: Math.max(1, Number(e.target.value) || 30) })} />
+            </div>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={w.showTotal !== false} onCheckedChange={(c) => upd(i, { showTotal: c })} />
+              Show total
+            </label>
+          </div>
+
+          <div className="space-y-1 pl-2 border-l border-border/40">
+            <Label className="text-[10px] text-muted-foreground">Power devices (W sensors)</Label>
+            {w.devices.map((d, di) => (
+              <div key={di} className="flex items-center gap-1.5 flex-wrap">
+                <EntityAutocomplete value={d.entityId} onChange={(v) => updDevice(i, di, { entityId: v })} config={config} domainFilter="sensor" placeholder="sensor.shelly_kitchen_power" />
+                <Input className="h-7 text-xs bg-muted border-border w-32" value={d.label} onChange={(e) => updDevice(i, di, { label: e.target.value })} placeholder="Label" />
+                <IconPicker value={d.icon || ""} onChange={(v) => updDevice(i, di, { icon: v })} />
+                <ColorPicker value={d.color || ""} onChange={(v) => updDevice(i, di, { color: v })} />
+                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeDevice(i, di)}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => addDevice(i)}>
+              <Plus className="h-3 w-3 mr-1" /> Add device
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
