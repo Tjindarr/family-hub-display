@@ -13,10 +13,13 @@ import { ChoreWidgetScoreboard } from "@/components/chores/ChoreWidgetScoreboard
 
 interface Props {
   config?: ChoreWidgetConfig;
+  demoData?: ChoresData;
 }
 
-export default function ChoreWidget({ config }: Props) {
-  const { data, loading } = useChoresData(10000);
+export default function ChoreWidget({ config, demoData }: Props) {
+  const live = useChoresData(10000);
+  const data = demoData || live.data;
+  const loading = demoData ? false : live.loading;
   const navigate = useNavigate();
 
   const label = config?.label || "Chores";
