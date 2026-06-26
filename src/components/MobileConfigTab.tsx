@@ -801,6 +801,22 @@ function MobilePowerFlowList({ value, onChange, config }: { value: PowerFlowConf
             <Input type="number" min={1} max={1440} className="h-7 w-16 text-xs bg-muted border-border" value={w.sparklineMinutes} onChange={(e) => upd(i, { sparklineMinutes: Math.max(1, Number(e.target.value) || 30) })} />
             <Button size="icon" variant="ghost" onClick={() => onChange(value.filter((_, x) => x !== i))}><Trash2 className="h-3 w-3" /></Button>
           </div>
+          <div className="flex items-center gap-3 flex-wrap text-[10px]">
+            <label className="flex items-center gap-1">
+              <Switch checked={!!w.show24hChart} onCheckedChange={(c) => upd(i, { show24hChart: c })} />
+              24h chart
+            </label>
+            {w.show24hChart && (
+              <>
+                <label className="flex items-center gap-1">
+                  <Switch checked={w.chart24hStacked !== false} onCheckedChange={(c) => upd(i, { chart24hStacked: c })} />
+                  Stacked
+                </label>
+                <Label className="text-muted-foreground">H</Label>
+                <Input type="number" min={40} max={400} className="h-7 w-16 text-xs bg-muted border-border" value={w.chart24hHeight ?? 80} onChange={(e) => upd(i, { chart24hHeight: Math.max(40, Number(e.target.value) || 80) })} />
+              </>
+            )}
+          </div>
           <div className="space-y-1 pl-2 border-l border-border/40">
             {w.devices.map((d, di) => (
               <div key={di} className="flex items-center gap-1.5 flex-wrap">
