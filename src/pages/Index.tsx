@@ -432,7 +432,7 @@ const Index = () => {
     onStateChange,
   );
   const { dataMap: powerFlowData, loading: powerFlowLoading } = usePowerFlowData(
-    config,
+    effectiveConfig,
     getCachedState,
     onStateChange,
   );
