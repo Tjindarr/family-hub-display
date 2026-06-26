@@ -376,6 +376,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     actionWidgets.forEach((aw) => { labelMap[`action_${aw.id}`] = aw.label || `Actions ${aw.id}`; });
     parcelWidgets.forEach((pw) => { labelMap[`parcel_${pw.id}`] = pw.label || `Parcels ${pw.id}`; });
     powerFlows.forEach((pf) => { labelMap[`power_${pf.id}`] = pf.label || `Power Flow ${pf.id}`; });
+    energyFlows.forEach((ef) => { labelMap[`energy_${ef.id}`] = ef.label || `Energy Flow ${ef.id}`; });
     rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
     vehicles.forEach((vc) => { labelMap[`vehicle_${vc.id}`] = vc.name || `Vehicle ${vc.id}`; });
 
