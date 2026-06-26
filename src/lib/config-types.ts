@@ -418,6 +418,7 @@ export interface MobileDashboardConfig {
   vehicles: VehicleConfig[];
   parcelWidgets?: ParcelWidgetConfig[];
   powerFlows?: PowerFlowConfig[];
+  energyFlows?: EnergyFlowConfig[];
   personEntities?: PersonEntityConfig[];
   temperatureEntities?: TemperatureEntityConfig[];
   // Optional singleton overrides — when undefined, the main dashboard config is used
