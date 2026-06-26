@@ -196,6 +196,10 @@ volumes:
             ["🚗 Vehicle", "Vehicle data organized in sections", "Sections, entities, icons, colors"],
             ["🌿 Pollen", "Pollen levels with severity dots and forecast", "Sensors, forecast days, show label/forecast"],
             ["✅ Chores", "HomeChores status widget (requires enabling)", "Auto-configured, click to manage"],
+            ["⚡ Quick Actions", "Tappable buttons that fire HA toggles, services, or navigation", "Buttons, columns, state-aware colors, confirm prompts"],
+            ["📷 Camera Grid", "Grid of HA camera snapshots with periodic refresh + fullscreen", "Cameras, columns, aspect ratio, refresh seconds"],
+            ["📦 Parcel", "Undelivered packages from the HA parcel integration", "Sensor entity"],
+            ["🔌 Power Flow", "Live power for Shelly/smart-plug devices with sparklines + 24h chart", "Devices, unit, sparkline window, 24h chart"],
           ]}
         />
       </>
@@ -353,6 +357,130 @@ volumes:
     ),
   },
   {
+    id: "quick-actions",
+    icon: "⚡",
+    title: "Quick Actions Widget",
+    content: (
+      <>
+        <P>Grid of tappable buttons that fire Home Assistant actions. Available on the main dashboard and mobile page.</P>
+        <H4>Action Types</H4>
+        <Ul>
+          <li><strong>Toggle</strong> — calls <Code>homeassistant.toggle</Code> on any entity (lights, switches, fans, covers)</li>
+          <li><strong>Service</strong> — calls any HA service with custom data (e.g. <Code>script.movie_night</Code>, <Code>scene.turn_on</Code>)</li>
+          <li><strong>Navigate</strong> — opens a URL or internal route</li>
+        </Ul>
+        <H4>State-aware Styling</H4>
+        <P>Optionally bind a button to a <strong>State Entity</strong> (with optional attribute) to color it differently when "active". You can customize foreground color, background color, and even swap the icon based on state. Override the active states list per button (defaults: <Code>on</Code>, <Code>open</Code>, <Code>home</Code>, <Code>playing</Code>, <Code>heat</Code>, <Code>cool</Code>, <Code>active</Code>, <Code>unlocked</Code>, <Code>true</Code>).</P>
+        <H4>Confirmation</H4>
+        <P>Enable per-button confirm prompts to prevent accidental taps on destructive actions.</P>
+      </>
+    ),
+  },
+  {
+    id: "camera-grid",
+    icon: "📷",
+    title: "Camera Grid Widget",
+    content: (
+      <>
+        <P>Grid of Home Assistant camera snapshots pulled via the camera proxy on a configurable interval. Tap any tile to open fullscreen.</P>
+        <Ul>
+          <li><strong>Columns</strong> — 1–6 columns</li>
+          <li><strong>Aspect Ratio</strong> — 16:9, 4:3, 1:1, or 3:2</li>
+          <li><strong>Refresh Seconds</strong> — snapshot interval (min 2s)</li>
+          <li><strong>Cameras</strong> — list of <Code>camera.*</Code> entities with labels</li>
+        </Ul>
+        <P>Snapshots are fetched server-side through <Code>/api/ha/camera_proxy/&lt;entity&gt;</Code>, so HA credentials never reach the browser.</P>
+      </>
+    ),
+  },
+  {
+    id: "parcel",
+    icon: "📦",
+    title: "Parcel Tracking Widget",
+    content: (
+      <>
+        <P>Displays undelivered packages from the <a href="https://github.com/jenslys/parcel" target="_blank" rel="noopener noreferrer" className="text-primary underline">Home Assistant parcel integration</a> with carrier icons and the latest tracking event per shipment.</P>
+        <Ul>
+          <li><strong>Label</strong> — card title</li>
+          <li><strong>Entity ID</strong> — <Code>sensor.parcel_*</Code> entity provided by the integration</li>
+        </Ul>
+      </>
+    ),
+  },
+  {
+    id: "power-flow",
+    icon: "🔌",
+    title: "Power Flow Widget",
+    content: (
+      <>
+        <P>Live power consumption widget designed for Shelly / smart-plug fleets. Shows per-device current draw with rolling sparklines, highlights top consumers, and can include a stacked 24-hour history chart.</P>
+        <H4>Configuration</H4>
+        <Ul>
+          <li><strong>Unit</strong> — <Code>W</Code> (auto-scales to kW above 1000) or <Code>kW</Code></li>
+          <li><strong>Top Highlight Count</strong> — number of top consumers to highlight</li>
+          <li><strong>Sparkline Minutes</strong> — rolling sparkline window length</li>
+          <li><strong>Show Total</strong> — toggle total power summary</li>
+          <li><strong>Show 24h Chart</strong> — adds a stacked 24-hour history chart (height + stacked toggle)</li>
+          <li><strong>Devices</strong> — power sensor in W, label, optional icon/color, optional kWh-today sensor</li>
+        </Ul>
+        <P>History is fetched from HA in 15-minute buckets via the REST history API.</P>
+      </>
+    ),
+  },
+  {
+    id: "wallpaper",
+    icon: "🖼️",
+    title: "Wallpaper Background",
+    content: (
+      <>
+        <P>Upload a background image rendered behind all widgets on the main dashboard (and optionally on <Code>/mobile</Code>). Configure in Settings → General → Wallpaper.</P>
+        <Ul>
+          <li><strong>Fit</strong> — cover, contain, fill, or tile</li>
+          <li><strong>Dim</strong> — 0–100% darken overlay for readability</li>
+          <li><strong>Blur</strong> — 0–40 px Gaussian blur</li>
+          <li><strong>Apply to Mobile</strong> — also use on the mobile page</li>
+        </Ul>
+        <P>Pairs especially well with the <strong>Liquid Glass</strong> theme.</P>
+      </>
+    ),
+  },
+  {
+    id: "mobile-dashboard",
+    icon: "📱",
+    title: "Mobile Dashboard (/mobile)",
+    content: (
+      <>
+        <P>A standalone PWA route at <Code>/mobile</Code> optimized for phones, completely independent from the main dashboard. Configure it in Settings → <strong>Mobile</strong> tab.</P>
+        <Ul>
+          <li>Add <strong>any</strong> widget type to the mobile page — sensor grids, general sensors, actions, cameras, parcels, power flow, RSS, vehicles, person cards, temperatures, weather, calendar, electricity, photos, food menu, notifications, pollen, chores.</li>
+          <li>Mobile-only widget instances live separately from the main dashboard so a compact mobile sensor grid doesn't bloat the wall display.</li>
+          <li>Singleton widgets (weather, calendar, electricity, photos, food menu, notifications, pollen, chores) can either inherit the main dashboard config or be overridden per-mobile.</li>
+          <li>Installable on iOS / Android as a separate PWA via its own manifest at <Code>/manifest-mobile.json</Code>.</li>
+        </Ul>
+      </>
+    ),
+  },
+  {
+    id: "demo-mode",
+    icon: "🎬",
+    title: "Demo Mode",
+    content: (
+      <>
+        <P>Append <Code>?demo</Code> to the URL (or visit <Code>/?demo</Code>) to render the dashboard with rich mock data — sample chores, kids, people with avatars, sensor grid values, camera placeholders (via picsum.photos), synthetic power flow waveforms, parcels, and a full default layout. Useful for screenshots or previewing widgets without a configured Home Assistant instance.</P>
+      </>
+    ),
+  },
+  {
+    id: "settings-ux",
+    icon: "💾",
+    title: "Unsaved Changes & Sticky Save Bar",
+    content: (
+      <>
+        <P>The Settings panel tracks unsaved edits and shows an <strong>Unsaved</strong> badge in the header. A sticky footer at the bottom of the panel displays the current state and provides <strong>Save</strong> and <strong>Cancel</strong> buttons. Closing the panel or browser tab with unsaved changes triggers a confirmation prompt.</P>
+      </>
+    ),
+  },
+  {
     id: "entity-attributes",
     icon: "🔗",
     title: "Entity Attribute Access",
@@ -379,7 +507,7 @@ climate.living_room.current_temperature → "22.0"`}
     title: "Themes & Styling",
     content: (
       <>
-        <P>HomeDash ships with 6 built-in themes. Select your theme in Settings → General → Theme.</P>
+        <P>HomeDash ships with 7 built-in themes. Select your theme in Settings → General → Theme.</P>
         <Table
           headers={["Theme", "Description"]}
           rows={[
@@ -389,6 +517,7 @@ climate.living_room.current_temperature → "22.0"`}
             ["Warm Ember", "Dark warm tones with orange/red accent"],
             ["AMOLED Black", "Pure black background, no shadows"],
             ["macOS Dark", "Dark gray with blue accent, macOS-inspired"],
+            ["Liquid Glass", "Translucent glass-like cards with 22px backdrop-blur (pair with a wallpaper)"],
           ]}
         />
         <H4>Global Font Sizes</H4>
