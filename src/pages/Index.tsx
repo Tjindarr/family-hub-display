@@ -837,6 +837,12 @@ const Index = () => {
       if (!pcfg) return null;
       return <PowerFlowWidget config={pcfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={fs} />;
     }
+    if (id.startsWith("energy_")) {
+      const eid = id.replace("energy_", "");
+      const ecfg = effectiveEnergyFlows.find((e) => e.id === eid);
+      if (!ecfg) return null;
+      return <EnergyFlowWidget config={ecfg} getState={getCachedState} demoMode={isDemo} fontSizes={fs} />;
+    }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
