@@ -341,6 +341,7 @@ export interface PowerFlowConfig {
   show24hChart?: boolean;        // optional 24h stacked history chart
   chart24hHeight?: number;       // px, default 80
   chart24hStacked?: boolean;     // stacked per-device area (default true)
+  showEnergyToday?: boolean;     // show kWh consumed since 00:00 per device + total
 }
 
 // ── Energy Flow (Solar / Battery / Grid / Home) ──
