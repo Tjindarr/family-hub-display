@@ -3449,6 +3449,32 @@ function EnergyFlowsEditor({ widgets, onChange }: { widgets: EnergyFlowConfig[];
                 <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(280,60%,65%)" value={w.homeColor || ""} onChange={(e) => upd(i, { homeColor: e.target.value })} />
               </div>
             </div>
+            {/* Car / EV charger */}
+            <div className="space-y-1 border border-border/40 rounded p-2 md:col-span-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">🚗 Car / EV charger</div>
+              <div className="grid grid-cols-2 gap-1">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Charger power (W)</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.wallbox_power" value={w.carPowerEntity || ""} onChange={(e) => upd(i, { carPowerEntity: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Charging state (optional)</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="binary_sensor.car_charging" value={w.carChargingStateEntity || ""} onChange={(e) => upd(i, { carChargingStateEntity: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Charged today (kWh)</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="sensor.wallbox_energy_today" value={w.carEnergyTodayEntity || ""} onChange={(e) => upd(i, { carEnergyTodayEntity: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Label</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="Car" value={w.carLabel || ""} onChange={(e) => upd(i, { carLabel: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-[10px] text-muted-foreground">Color</Label>
+                  <Input className="h-7 text-xs bg-muted border-border mt-1" placeholder="hsl(190,80%,55%)" value={w.carColor || ""} onChange={(e) => upd(i, { carColor: e.target.value })} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ))}
