@@ -18,6 +18,7 @@ import ChoreWidget from "@/components/ChoreWidget";
 import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
 import ParcelWidget from "@/components/ParcelWidget";
+import PowerFlowWidget from "@/components/PowerFlowWidget";
 import { runAction } from "@/lib/actions";
 import { useKioskMode } from "@/hooks/useKioskMode";
 import { Monitor } from "lucide-react";
@@ -37,6 +38,7 @@ import { useRssNews } from "@/hooks/useRssNews";
 import { useNotificationData } from "@/hooks/useNotificationData";
 import { useVehicleData } from "@/hooks/useVehicleData";
 import { usePollenData } from "@/hooks/usePollenData";
+import { usePowerFlowData } from "@/hooks/usePowerFlowData";
 import { useHAWebSocket } from "@/hooks/useHAWebSocket";
 import { resolveFontSizes } from "@/lib/fontSizes";
 import WallpaperBackground from "@/components/WallpaperBackground";
@@ -73,6 +75,7 @@ function getDefaultWidgetIds(
   actionWidgetIds: string[] = [],
   cameraGridIds: string[] = [],
   parcelIds: string[] = [],
+  powerFlowIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -87,6 +90,7 @@ function getDefaultWidgetIds(
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
+    ...powerFlowIds.map((id) => `power_${id}`),
     ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
@@ -302,6 +306,11 @@ const Index = () => {
     getCachedState,
     onStateChange,
   );
+  const { dataMap: powerFlowData, loading: powerFlowLoading } = usePowerFlowData(
+    config,
+    getCachedState,
+    onStateChange,
+  );
 
   // Provide mock pollen data in demo mode
   const pollenData = useMemo(() => {
@@ -363,6 +372,7 @@ const Index = () => {
   const actionWidgetIds = (config.actionWidgets || []).map((a) => a.id);
   const cameraGridIds = (config.cameraGrids || []).map((c) => c.id);
   const parcelIds = (config.parcelWidgets || []).map((p) => p.id);
+  const powerFlowIds = (config.powerFlows || []).map((p) => p.id);
   const personCount = isDemo ? Math.max(1, (config.personEntities || []).length) : (config.personEntities || []).length;
 
   const handleCellAction = (cell: { action?: any; confirmAction?: boolean; label?: string }) => {
@@ -451,6 +461,7 @@ const Index = () => {
       actionWidgetIds,
       cameraGridIds,
       parcelIds,
+      powerFlowIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
@@ -586,6 +597,12 @@ const Index = () => {
       if (!pCfg) return null;
       return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={fs} />;
     }
+    if (id.startsWith("power_")) {
+      const pid = id.replace("power_", "");
+      const pcfg = (config.powerFlows || []).find((p) => p.id === pid);
+      if (!pcfg) return null;
+      return <PowerFlowWidget config={pcfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={fs} />;
+    }
     if (id.startsWith("rss_")) {
       const rssId = id.replace("rss_", "");
       const rssCfg = rssFeeds.find((f) => f.id === rssId);
@@ -624,6 +641,7 @@ const Index = () => {
     if (effectiveWidgetLayouts[id]?.colSpan) return effectiveWidgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
     if (id === "photos" || id === "food_menu") return 2;
+    if (id.startsWith("power_")) return 2;
     return 1;
   };
 

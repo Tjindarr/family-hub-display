@@ -16,6 +16,7 @@ import { useRssNews } from "@/hooks/useRssNews";
 import { useNotificationData } from "@/hooks/useNotificationData";
 import { useVehicleData } from "@/hooks/useVehicleData";
 import { usePollenData } from "@/hooks/usePollenData";
+import { usePowerFlowData } from "@/hooks/usePowerFlowData";
 import { resolveFontSizes } from "@/lib/fontSizes";
 import { runAction } from "@/lib/actions";
 
@@ -24,6 +25,7 @@ import GeneralSensorWidget from "@/components/GeneralSensorWidget";
 import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
 import ParcelWidget from "@/components/ParcelWidget";
+import PowerFlowWidget from "@/components/PowerFlowWidget";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
@@ -59,6 +61,7 @@ const DEFAULT_MOBILE_DASH: MobileDashboardConfig = {
   rssFeeds: [],
   vehicles: [],
   parcelWidgets: [],
+  powerFlows: [],
   personEntities: [],
   temperatureEntities: [],
 };
@@ -103,6 +106,7 @@ export default function MobilePage() {
     rssFeeds: [...(config.rssFeeds || []), ...mobileDash.rssFeeds],
     vehicles: [...(config.vehicles || []), ...mobileDash.vehicles],
     parcelWidgets: [...(config.parcelWidgets || []), ...(mobileDash.parcelWidgets || [])],
+    powerFlows: [...(config.powerFlows || []), ...((mobileDash as any).powerFlows || [])],
     personEntities: [...(config.personEntities || []), ...(mobileDash.personEntities || [])],
     temperatureEntities: [...(config.temperatureEntities || []), ...(mobileDash.temperatureEntities || [])],
     weatherConfig: mobileDash.weatherConfig ?? config.weatherConfig,
@@ -138,6 +142,7 @@ export default function MobilePage() {
   const { notifications, loading: notifLoading } = useNotificationData(viewConfig, getCachedState, onStateChange, getAllStates);
   const { vehicleDataMap, loading: vehicleLoading } = useVehicleData(viewConfig, getCachedState, onStateChange);
   const { pollenData, loading: pollenLoading } = usePollenData(viewConfig.pollenConfig, getCachedState, onStateChange);
+  const { dataMap: powerFlowData, loading: powerFlowLoading } = usePowerFlowData(viewConfig, getCachedState, onStateChange);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", config.theme || "midnight-teal");
@@ -265,6 +270,12 @@ export default function MobilePage() {
       const pCfg = (viewConfig.parcelWidgets || []).find((p) => p.id === pid);
       if (!pCfg) return null;
       return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={widgetFs} />;
+    }
+    if (id.startsWith("power_")) {
+      const pid = id.replace("power_", "");
+      const pCfg = (viewConfig.powerFlows || []).find((p) => p.id === pid);
+      if (!pCfg) return null;
+      return <PowerFlowWidget config={pCfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={widgetFs} />;
     }
     if (id.startsWith("rss_")) {
       const rid = id.replace("rss_", "");

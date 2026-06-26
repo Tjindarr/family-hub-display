@@ -10,7 +10,7 @@ import EntityAutocomplete from "@/components/EntityAutocomplete";
 import PhotoManager from "@/components/PhotoManager";
 import IconPicker from "@/components/IconPicker";
 import { ActionWidgetsEditor, MobileLayoutEditor, ActionEditor, CameraGridsEditor, MobileDashboardEditor } from "@/components/MobileConfigTab";
-import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, MobileDashboardConfig, CameraGridConfig, CameraConfig, ParcelWidgetConfig } from "@/lib/config";
+import type { DashboardConfig, TemperatureEntityConfig, WidgetLayout, PhotoWidgetConfig, PersonEntityConfig, PersonCardFontSizes, CalendarEntityConfig, CalendarDisplayConfig, WeatherConfig, ThemeId, FoodMenuConfig, GeneralSensorConfig, SensorChartType, SensorInfoItem, SensorChartSeries, ChartGrouping, ChartAggregation, SensorGridConfig, SensorGridCellConfig, SensorGridCellInterval, SensorGridValueMap, SensorGridVisibilityFilter, RssNewsConfig, GlobalFontSizes, WidgetFontSizes, NotificationConfig, NotificationAlertRule, GlobalFormatConfig, DateFormatStyle, TimeFormatStyle, VehicleConfig, VehicleSection, VehicleEntityMapping, WidgetStyleConfig, PollenConfig, PollenSensorConfig, ChoreWidgetConfig, ChoreReminderConfig, ActionWidgetConfig, MobileLayoutConfig, MobileDashboardConfig, CameraGridConfig, CameraConfig, ParcelWidgetConfig, PowerFlowConfig, PowerFlowDeviceConfig } from "@/lib/config";
 import { DEFAULT_FONT_SIZES } from "@/lib/fontSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -199,7 +199,7 @@ function getTempGroupIds(entities: { group?: number }[]): string[] {
   return ids;
 }
 
-function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = [], parcelIds: string[] = []): string[] {
+function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: number, generalSensorIds: string[], sensorGridIds: string[], rssIds: string[], hasNotifications = false, vehicleIds: string[] = [], hasPollen = false, hasFoodMenu = false, hasChores = false, actionWidgetIds: string[] = [], cameraGridIds: string[] = [], parcelIds: string[] = [], powerFlowIds: string[] = []): string[] {
   return [
     ...getTempGroupIds(tempEntities),
     ...Array.from({ length: personCount }, (_, i) => `person_${i}`),
@@ -213,6 +213,7 @@ function getDefaultWidgetIds(tempEntities: { group?: number }[], personCount: nu
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
+    ...powerFlowIds.map((id) => `power_${id}`),
     ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
@@ -284,6 +285,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
   const [actionWidgets, setActionWidgets] = useState<ActionWidgetConfig[]>(config.actionWidgets || []);
   const [cameraGrids, setCameraGrids] = useState<CameraGridConfig[]>(config.cameraGrids || []);
   const [parcelWidgets, setParcelWidgets] = useState<ParcelWidgetConfig[]>(config.parcelWidgets || []);
+  const [powerFlows, setPowerFlows] = useState<PowerFlowConfig[]>(config.powerFlows || []);
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutConfig>(config.mobileLayout || { sections: [] });
   const [mobileDashboard, setMobileDashboard] = useState<MobileDashboardConfig>(
     config.mobileDashboard || {
@@ -304,13 +306,13 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
     sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
     personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
-    actionWidgets, cameraGrids, parcelWidgets, mobileLayout, mobileDashboard, wallpaper,
+    actionWidgets, cameraGrids, parcelWidgets, powerFlows, mobileLayout, mobileDashboard, wallpaper,
   }), [haUrl, haToken, refreshInterval, tempEntities, calendarEntityConfigs, calendarDayColor, calendarTimeColor,
     calendarDisplay, weatherConfig, electricityEntity, electricitySurcharge, widgetLayouts, gridColumns, rowColumns,
     rowHeights, lockWidgetHeights, photoConfig, personEntities, theme, blackout, foodMenuConfig, generalSensors,
     sensorGrids, rssFeeds, notificationConfig, vehicles, pollenConfig, globalFontSizes, widgetFontSizes,
     personCardFontSizes, widgetStyles, globalFormat, enableChores, choreWidgetConfig, choreReminderConfig,
-    actionWidgets, cameraGrids, parcelWidgets, mobileLayout, mobileDashboard, wallpaper]);
+    actionWidgets, cameraGrids, parcelWidgets, powerFlows, mobileLayout, mobileDashboard, wallpaper]);
   const savedSnapshotRef = useRef<string>(currentSnapshot);
   // Re-baseline when panel opens (config may have changed from elsewhere)
   useEffect(() => { if (open) savedSnapshotRef.current = currentSnapshot; /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [open]);
@@ -340,7 +342,8 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const awIds = (config.actionWidgets || []).map((a) => a.id);
     const cgIds = (config.cameraGrids || []).map((c) => c.id);
     const pkIds = (config.parcelWidgets || []).map((p) => p.id);
-    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds, pkIds);
+    const pwIds = (config.powerFlows || []).map((p) => p.id);
+    const defaults = getDefaultWidgetIds(config.temperatureEntities, (config.personEntities || []).length, gsIds, sgIds, rsIds, hn, vcIds, (config.pollenConfig?.sensors?.length ?? 0) > 0, hasFM, config.enableChores || config.choreWidgetConfig?.enabled, awIds, cgIds, pkIds, pwIds);
     if (config.widgetOrder && config.widgetOrder.length > 0) {
       const validSet = new Set(defaults);
       const ordered = config.widgetOrder.filter((id) => validSet.has(id));
@@ -369,6 +372,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     cameraGrids.forEach((cg) => { labelMap[`cameragrid_${cg.id}`] = cg.label || `Cameras ${cg.id}`; });
     actionWidgets.forEach((aw) => { labelMap[`action_${aw.id}`] = aw.label || `Actions ${aw.id}`; });
     parcelWidgets.forEach((pw) => { labelMap[`parcel_${pw.id}`] = pw.label || `Parcels ${pw.id}`; });
+    powerFlows.forEach((pf) => { labelMap[`power_${pf.id}`] = pf.label || `Power Flow ${pf.id}`; });
     rssFeeds.forEach((rf) => { labelMap[`rss_${rf.id}`] = rf.label || `RSS ${rf.id}`; });
     vehicles.forEach((vc) => { labelMap[`vehicle_${vc.id}`] = vc.name || `Vehicle ${vc.id}`; });
 
@@ -379,8 +383,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     const awIds = actionWidgets.map((a) => a.id);
     const cgIds = cameraGrids.map((c) => c.id);
     const pkIds = parcelWidgets.map((p) => p.id);
+    const pwIds = powerFlows.map((p) => p.id);
     const hasFM = !!(foodMenuConfig.calendarEntity || foodMenuConfig.skolmatenEntity);
-    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds, pkIds);
+    const defaults = getDefaultWidgetIds(tempEntities, personEntities.length, gsIds, sgIds, rsIds, hasNotif, vcIds, pollenConfig.sensors.length > 0, hasFM, enableChores || choreWidgetConfig.enabled, awIds, cgIds, pkIds, pwIds);
     const validSet = new Set(defaults);
     const currentValid = widgetOrder.filter((id) => validSet.has(id));
     const missing = defaults.filter((id) => !currentValid.includes(id));
@@ -389,9 +394,9 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
     return finalOrder.map((id) => ({
       id,
       label: labelMap[id] || id,
-      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") || id.startsWith("parcel_") ? 2 : 1,
+      defaultSpan: ["electricity", "calendar", "photos", "food_menu"].includes(id) || id.startsWith("general_") || id.startsWith("sensorgrid_") || id.startsWith("cameragrid_") || id.startsWith("rss_") || id.startsWith("parcel_") || id.startsWith("power_") ? 2 : 1,
     }));
-  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, parcelWidgets, rssFeeds, vehicles, pollenConfig]);
+  }, [widgetOrder, tempEntities, personEntities, generalSensors, sensorGrids, cameraGrids, actionWidgets, parcelWidgets, powerFlows, rssFeeds, vehicles, pollenConfig]);
 
   const getColSpan = (id: string, fallback = 1) => widgetLayouts[id]?.colSpan || fallback;
   const getRow = (id: string, fallback = 1) => widgetLayouts[id]?.row || fallback;
@@ -462,6 +467,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       actionWidgets,
       cameraGrids,
       parcelWidgets,
+      powerFlows,
       mobileLayout,
       mobileDashboard,
       wallpaper,
@@ -3049,6 +3055,28 @@ function WidgetStyleControls({ style, onChange, fields }: {
             </CollapsibleSection>
 
 
+            <CollapsibleSection
+              title="Power Flow"
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `pf_${Date.now()}`;
+                    setPowerFlows([...powerFlows, { id, label: "Power Flow", unit: "W", topHighlightCount: 3, sparklineMinutes: 30, showTotal: true, devices: [] }]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Power Flow
+                </Button>
+              }
+            >
+              <p className="text-[11px] text-muted-foreground">
+                Live power per device with sparklines. Highlights the biggest current consumers.
+              </p>
+              <PowerFlowsEditor widgets={powerFlows} onChange={setPowerFlows} config={config} />
+            </CollapsibleSection>
+
+
           </TabsContent>
 
 
@@ -3161,3 +3189,74 @@ function WidgetStyleControls({ style, onChange, fields }: {
     </div>
   );
 }
+
+function PowerFlowsEditor({ widgets, onChange, config }: { widgets: PowerFlowConfig[]; onChange: (v: PowerFlowConfig[]) => void; config: DashboardConfig }) {
+  const upd = (i: number, p: Partial<PowerFlowConfig>) => onChange(widgets.map((w, x) => x === i ? { ...w, ...p } : w));
+  const remove = (i: number) => onChange(widgets.filter((_, x) => x !== i));
+  const addDevice = (i: number) => upd(i, { devices: [...widgets[i].devices, { entityId: "", label: "", color: "hsl(45, 90%, 55%)", icon: "mdi:flash" }] });
+  const updDevice = (i: number, di: number, p: Partial<PowerFlowDeviceConfig>) =>
+    upd(i, { devices: widgets[i].devices.map((d, x) => x === di ? { ...d, ...p } : d) });
+  const removeDevice = (i: number, di: number) => upd(i, { devices: widgets[i].devices.filter((_, x) => x !== di) });
+
+  return (
+    <div className="space-y-3">
+      {widgets.map((w, i) => (
+        <div key={w.id} className="space-y-2 border border-border/50 rounded-lg p-3 relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1 h-6 w-6"
+            onClick={() => remove(i)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[140px]">
+              <Label className="text-[10px] text-muted-foreground">Label</Label>
+              <Input className="h-7 text-xs bg-muted border-border mt-1" value={w.label} onChange={(e) => upd(i, { label: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Unit</Label>
+              <Select value={w.unit} onValueChange={(v) => upd(i, { unit: v as "W" | "kW" })}>
+                <SelectTrigger className="h-7 w-20 text-xs bg-muted border-border mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="W">W (auto)</SelectItem>
+                  <SelectItem value="kW">kW</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Highlight top</Label>
+              <Input type="number" min={0} max={20} className="h-7 w-16 text-xs bg-muted border-border mt-1" value={w.topHighlightCount} onChange={(e) => upd(i, { topHighlightCount: Math.max(0, Number(e.target.value) || 0) })} />
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Window (min)</Label>
+              <Input type="number" min={1} max={1440} className="h-7 w-20 text-xs bg-muted border-border mt-1" value={w.sparklineMinutes} onChange={(e) => upd(i, { sparklineMinutes: Math.max(1, Number(e.target.value) || 30) })} />
+            </div>
+            <label className="flex items-center gap-1 text-[10px] mb-1">
+              <Switch checked={w.showTotal !== false} onCheckedChange={(c) => upd(i, { showTotal: c })} />
+              Show total
+            </label>
+          </div>
+
+          <div className="space-y-1 pl-2 border-l border-border/40">
+            <Label className="text-[10px] text-muted-foreground">Power devices (W sensors)</Label>
+            {w.devices.map((d, di) => (
+              <div key={di} className="flex items-center gap-1.5 flex-wrap">
+                <EntityAutocomplete value={d.entityId} onChange={(v) => updDevice(i, di, { entityId: v })} config={config} domainFilter="sensor" placeholder="sensor.shelly_kitchen_power" />
+                <Input className="h-7 text-xs bg-muted border-border w-32" value={d.label} onChange={(e) => updDevice(i, di, { label: e.target.value })} placeholder="Label" />
+                <IconPicker value={d.icon || ""} onChange={(v) => updDevice(i, di, { icon: v })} />
+                <ColorPicker value={d.color || ""} onChange={(v) => updDevice(i, di, { color: v })} />
+                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeDevice(i, di)}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => addDevice(i)}>
+              <Plus className="h-3 w-3 mr-1" /> Add device
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
