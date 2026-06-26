@@ -784,3 +784,42 @@ function MobileRssFeedList({ value, onChange }: { value: RssNewsConfig[]; onChan
 }
 
 
+
+function MobilePowerFlowList({ value, onChange, config }: { value: PowerFlowConfig[]; onChange: (v: PowerFlowConfig[]) => void; config: DashboardConfig }) {
+  const upd = (i: number, p: Partial<PowerFlowConfig>) => onChange(value.map((w, x) => x === i ? { ...w, ...p } : w));
+  const updDev = (i: number, di: number, p: Partial<PowerFlowDeviceConfig>) =>
+    upd(i, { devices: value[i].devices.map((d, x) => x === di ? { ...d, ...p } : d) });
+  return (
+    <div className="space-y-2">
+      {value.map((w, i) => (
+        <div key={w.id} className="space-y-2 p-2 rounded bg-muted/30 border border-border/40">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Input className="h-7 text-xs bg-muted border-border flex-1 min-w-[120px]" value={w.label} onChange={(e) => upd(i, { label: e.target.value })} placeholder="Label" />
+            <Label className="text-[10px] text-muted-foreground">Top</Label>
+            <Input type="number" min={0} max={20} className="h-7 w-14 text-xs bg-muted border-border" value={w.topHighlightCount} onChange={(e) => upd(i, { topHighlightCount: Math.max(0, Number(e.target.value) || 0) })} />
+            <Label className="text-[10px] text-muted-foreground">Min</Label>
+            <Input type="number" min={1} max={1440} className="h-7 w-16 text-xs bg-muted border-border" value={w.sparklineMinutes} onChange={(e) => upd(i, { sparklineMinutes: Math.max(1, Number(e.target.value) || 30) })} />
+            <Button size="icon" variant="ghost" onClick={() => onChange(value.filter((_, x) => x !== i))}><Trash2 className="h-3 w-3" /></Button>
+          </div>
+          <div className="space-y-1 pl-2 border-l border-border/40">
+            {w.devices.map((d, di) => (
+              <div key={di} className="flex items-center gap-1.5 flex-wrap">
+                <EntityAutocomplete value={d.entityId} onChange={(v) => updDev(i, di, { entityId: v })} config={config} domainFilter="sensor" placeholder="sensor.shelly_power" />
+                <Input className="h-7 text-xs bg-muted border-border w-28" value={d.label} onChange={(e) => updDev(i, di, { label: e.target.value })} placeholder="Label" />
+                <IconPicker value={d.icon || ""} onChange={(v) => updDev(i, di, { icon: v })} />
+                <ColorPicker value={d.color || ""} onChange={(v) => updDev(i, di, { color: v })} />
+                <Button size="icon" variant="ghost" onClick={() => upd(i, { devices: w.devices.filter((_, x) => x !== di) })}><Trash2 className="h-3 w-3" /></Button>
+              </div>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => upd(i, { devices: [...w.devices, { entityId: "", label: "", color: "hsl(45, 90%, 55%)", icon: "mdi:flash" }] })}>
+              <Plus className="h-3 w-3 mr-1" /> Add device
+            </Button>
+          </div>
+        </div>
+      ))}
+      <Button size="sm" variant="outline" onClick={() => onChange([...value, { id: uid(), label: "Power Flow", unit: "W", topHighlightCount: 3, sparklineMinutes: 30, showTotal: true, devices: [] }])}>
+        <Plus className="h-3 w-3 mr-1" /> Add power flow widget
+      </Button>
+    </div>
+  );
+}
