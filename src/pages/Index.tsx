@@ -656,7 +656,7 @@ const Index = () => {
         sensorgrid_demo_grid: { colSpan: 2, row: 4, rowSpan: 1 },
         action_demo_actions: { colSpan: 2, row: 5, rowSpan: 1 },
         power_demo_power_flow: { colSpan: 2, row: 5, rowSpan: 1 },
-        energy_demo_energy_flow: { colSpan: 4, row: 6, rowSpan: 1 },
+        energy_demo_energy_flow: { colSpan: 4, row: 6, rowSpan: 2 },
         cameragrid_demo_cameras: { colSpan: 2, row: 7, rowSpan: 1 },
         chores: { colSpan: 2, row: 7, rowSpan: 1 },
         parcel_demo_parcels: { colSpan: 2, row: 8, rowSpan: 1 },
