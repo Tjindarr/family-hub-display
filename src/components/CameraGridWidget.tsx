@@ -105,7 +105,7 @@ export default function CameraGridWidget({ config, demoMode }: Props) {
           onClick={() => setFullscreen(null)}
         >
           <img
-            src={buildSrc(fullscreen, tick)}
+            src={buildSrc(fullscreen, tick, demoMode)}
             alt={fullscreen}
             className="max-w-full max-h-full object-contain rounded"
           />
