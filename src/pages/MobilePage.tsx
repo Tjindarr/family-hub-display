@@ -279,6 +279,12 @@ export default function MobilePage() {
       if (!pCfg) return null;
       return <PowerFlowWidget config={pCfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={widgetFs} />;
     }
+    if (id.startsWith("energy_")) {
+      const eid = id.replace("energy_", "");
+      const eCfg = (viewConfig.energyFlows || []).find((e) => e.id === eid);
+      if (!eCfg) return null;
+      return <EnergyFlowWidget config={eCfg} getState={getCachedState} fontSizes={widgetFs} />;
+    }
     if (id.startsWith("rss_")) {
       const rid = id.replace("rss_", "");
       const rCfg = (viewConfig.rssFeeds || []).find((f) => f.id === rid);
