@@ -72,7 +72,7 @@ export default function CameraGridWidget({ config, demoMode }: Props) {
           >
             {cam.entityId ? (
               <img
-                src={buildSrc(cam.entityId, tick)}
+                src={buildSrc(cam.entityId, tick, demoMode)}
                 alt={cam.label || cam.entityId}
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover"
