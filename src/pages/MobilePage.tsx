@@ -26,6 +26,7 @@ import ActionWidget from "@/components/ActionWidget";
 import CameraGridWidget from "@/components/CameraGridWidget";
 import ParcelWidget from "@/components/ParcelWidget";
 import PowerFlowWidget from "@/components/PowerFlowWidget";
+import EnergyFlowWidget from "@/components/EnergyFlowWidget";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import CalendarWidget from "@/components/CalendarWidget";
 import TemperatureWidget from "@/components/TemperatureWidget";
