@@ -14,7 +14,7 @@ import type {
   MobileLayoutConfig, MobileSection, MobileItem, MobileDashboardConfig,
   SensorGridConfig, GeneralSensorConfig, DashboardConfig,
   CameraGridConfig, CameraConfig, RssNewsConfig, VehicleConfig,
-  ParcelWidgetConfig, PersonEntityConfig, TemperatureEntityConfig,
+  ParcelWidgetConfig, PersonEntityConfig, TemperatureEntityConfig, PowerFlowConfig, PowerFlowDeviceConfig,
   WeatherConfig, CalendarEntityConfig, CalendarDisplayConfig,
   PhotoWidgetConfig, FoodMenuConfig, PollenConfig, NotificationConfig,
   ChoreWidgetConfig,
@@ -384,6 +384,7 @@ export function MobileDashboardEditor({
   value.rssFeeds.forEach((g) => { mobileLabels[`rss_${g.id}`] = `📱 ${g.label || g.id}`; });
   value.vehicles.forEach((g) => { mobileLabels[`vehicle_${g.id}`] = `📱 ${g.name || g.id}`; });
   (value.parcelWidgets || []).forEach((g) => { mobileLabels[`parcel_${g.id}`] = `📱 ${g.label || g.id}`; });
+  ((value as any).powerFlows || []).forEach((g: PowerFlowConfig) => { mobileLabels[`power_${g.id}`] = `📱 ${g.label || g.id}`; });
   (value.personEntities || []).forEach((p, i) => { mobileLabels[`person_${(config.personEntities?.length || 0) + i}`] = `📱 ${p.name || `Person ${i + 1}`}`; });
   const mainLabels: Record<string, string> = Object.fromEntries(mainWidgets.map((w) => [w.id, w.label]));
   const labelOf = (id: string) => mobileLabels[id] || mainLabels[id] || id;
@@ -522,6 +523,10 @@ export function MobileDashboardEditor({
 
       <MobileBlock title="Mobile-only Parcels">
         <MobileParcelList value={value.parcelWidgets || []} onChange={(v) => upd(autoAppend(value, { parcelWidgets: v }, "parcel_", value.parcelWidgets || []))} config={config} />
+      </MobileBlock>
+
+      <MobileBlock title="Mobile-only Power Flow">
+        <MobilePowerFlowList value={(value as any).powerFlows || []} onChange={(v) => upd(autoAppend(value, { powerFlows: v } as any, "power_", (value as any).powerFlows || []))} config={config} />
       </MobileBlock>
 
       <MobileBlock title="Mobile-only Persons">
