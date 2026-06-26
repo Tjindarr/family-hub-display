@@ -3082,6 +3082,34 @@ function WidgetStyleControls({ style, onChange, fields }: {
               <PowerFlowsEditor widgets={powerFlows} onChange={setPowerFlows} config={config} />
             </CollapsibleSection>
 
+            <CollapsibleSection
+              title="Energy Flow (Solar / Battery / Grid)"
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const id = `ef_${Date.now()}`;
+                    setEnergyFlows([...energyFlows, {
+                      id, label: "Energy Flow",
+                      batteryPowerSign: "discharge_positive",
+                      gridPowerSign: "import_positive",
+                      showAnimations: true,
+                      showDayTotals: true,
+                    }]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Add Energy Flow
+                </Button>
+              }
+            >
+              <p className="text-[11px] text-muted-foreground">
+                Whole-home energy view with animated flow between solar, battery, grid, and home.
+                Leave any entity blank to hide that node.
+              </p>
+              <EnergyFlowsEditor widgets={energyFlows} onChange={setEnergyFlows} />
+            </CollapsibleSection>
+
 
           </TabsContent>
 
