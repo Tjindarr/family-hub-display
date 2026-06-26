@@ -132,6 +132,8 @@ export const DEFAULT_CONFIG: DashboardConfig = {
     rssFeeds: [],
     vehicles: [],
     parcelWidgets: [],
+    powerFlows: [],
+    energyFlows: [],
     personEntities: [],
     temperatureEntities: [],
   },
