@@ -716,25 +716,25 @@ const Index = () => {
     }
     if (id.startsWith("action_")) {
       const aId = id.replace("action_", "");
-      const aCfg = (config.actionWidgets || []).find((a) => a.id === aId);
+      const aCfg = effectiveActionWidgets.find((a) => a.id === aId);
       if (!aCfg) return null;
       return <ActionWidget config={aCfg} getState={getCachedState} />;
     }
     if (id.startsWith("cameragrid_")) {
       const cId = id.replace("cameragrid_", "");
-      const cCfg = (config.cameraGrids || []).find((c) => c.id === cId);
+      const cCfg = effectiveCameraGrids.find((c) => c.id === cId);
       if (!cCfg) return null;
-      return <CameraGridWidget config={cCfg} />;
+      return <CameraGridWidget config={cCfg} demoMode={isDemo} />;
     }
     if (id.startsWith("parcel_")) {
       const pId = id.replace("parcel_", "");
-      const pCfg = (config.parcelWidgets || []).find((p) => p.id === pId);
+      const pCfg = effectiveParcelWidgets.find((p) => p.id === pId);
       if (!pCfg) return null;
-      return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={fs} />;
+      return <ParcelWidget config={pCfg} getState={getCachedState} onStateChange={onStateChange} fontSizes={fs} demoMode={isDemo} />;
     }
     if (id.startsWith("power_")) {
       const pid = id.replace("power_", "");
-      const pcfg = (config.powerFlows || []).find((p) => p.id === pid);
+      const pcfg = effectivePowerFlows.find((p) => p.id === pid);
       if (!pcfg) return null;
       return <PowerFlowWidget config={pcfg} data={powerFlowData[pid]} loading={powerFlowLoading} fontSizes={fs} />;
     }
