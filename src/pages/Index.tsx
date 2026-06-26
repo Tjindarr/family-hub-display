@@ -75,6 +75,7 @@ function getDefaultWidgetIds(
   actionWidgetIds: string[] = [],
   cameraGridIds: string[] = [],
   parcelIds: string[] = [],
+  powerFlowIds: string[] = [],
 ): string[] {
   return [
     ...getTempGroupIds(tempEntities),
@@ -89,6 +90,7 @@ function getDefaultWidgetIds(
     ...sensorGridIds.map((id) => `sensorgrid_${id}`),
     ...cameraGridIds.map((id) => `cameragrid_${id}`),
     ...actionWidgetIds.map((id) => `action_${id}`),
+    ...powerFlowIds.map((id) => `power_${id}`),
     ...parcelIds.map((id) => `parcel_${id}`),
     ...rssIds.map((id) => `rss_${id}`),
     ...(hasNotifications ? ["notifications"] : []),
