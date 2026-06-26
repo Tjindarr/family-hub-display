@@ -5,6 +5,8 @@ import type { GetCachedState, OnStateChange } from "@/hooks/useDashboardData";
 import type { PowerFlowLiveData } from "@/components/PowerFlowWidget";
 
 const MAX_POINTS = 120;
+const DAY_BUCKETS = 96; // 24h / 15min
+
 
 export function usePowerFlowData(
   config: DashboardConfig,
