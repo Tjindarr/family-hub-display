@@ -200,6 +200,7 @@ volumes:
             ["📷 Camera Grid", "Grid of HA camera snapshots with periodic refresh + fullscreen", "Cameras, columns, aspect ratio, refresh seconds"],
             ["📦 Parcel", "Undelivered packages from the HA parcel integration", "Sensor entity"],
             ["🔌 Power Flow", "Live power for Shelly/smart-plug devices with sparklines + 24h chart", "Devices, unit, sparkline window, 24h chart"],
+          ]}
         />
       </>
     ),
