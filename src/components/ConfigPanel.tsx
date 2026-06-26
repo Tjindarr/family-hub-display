@@ -473,6 +473,7 @@ export default function ConfigPanel({ config, onSave }: ConfigPanelProps) {
       cameraGrids,
       parcelWidgets,
       powerFlows,
+      energyFlows,
       mobileLayout,
       mobileDashboard,
       wallpaper,
