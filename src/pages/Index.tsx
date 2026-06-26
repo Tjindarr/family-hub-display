@@ -641,6 +641,7 @@ const Index = () => {
     if (effectiveWidgetLayouts[id]?.colSpan) return effectiveWidgetLayouts[id].colSpan;
     if (id === "electricity" || id === "calendar" || id === "weather") return 2;
     if (id === "photos" || id === "food_menu") return 2;
+    if (id.startsWith("power_")) return 2;
     return 1;
   };
 
