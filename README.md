@@ -215,7 +215,7 @@ Widgets with the same group ID (A–H) stack vertically inside a shared card. Th
 
 ### Themes
 
-Six themes optimized for always-on displays:
+Seven themes optimized for always-on displays:
 
 | Theme | Description |
 |---|---|
@@ -225,6 +225,20 @@ Six themes optimized for always-on displays:
 | **Warm Ember** | Dark with warm orange/amber accents |
 | **AMOLED Black** | Pure black for OLED screens |
 | **macOS Dark** | Dark gray with blue accent |
+| **Liquid Glass** | Translucent glass-like cards with 22px backdrop-blur and softened borders — pairs well with a Wallpaper background |
+
+### Wallpaper
+
+Settings → General → **Wallpaper**: upload a background image rendered behind all widgets on the main dashboard and (optionally) the mobile page.
+
+| Setting | Description |
+|---|---|
+| Enabled | Toggle wallpaper on/off |
+| Image | Upload any image (stored under `/data`) |
+| Fit | `cover`, `contain`, `fill`, or `tile` |
+| Dim | 0–100% darken overlay |
+| Blur | 0–40 px background blur |
+| Apply to Mobile | Also use on `/mobile` page |
 
 ### Global Font Sizes
 
