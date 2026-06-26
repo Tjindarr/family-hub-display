@@ -26,7 +26,7 @@ function aspectToPadding(ar?: string): string {
   }
 }
 
-export default function CameraGridWidget({ config }: Props) {
+export default function CameraGridWidget({ config, demoMode }: Props) {
   const interval = Math.max(2, config.refreshSeconds || 30);
   const cols = Math.max(1, Math.min(6, config.columns || 2));
   const cameras = config.cameras || [];
