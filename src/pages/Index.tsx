@@ -695,6 +695,7 @@ const Index = () => {
       cameraGridIds,
       parcelIds,
       powerFlowIds,
+      energyFlowIds,
     );
     const order = demoLayout?.widgetOrder || config.widgetOrder;
     if (order && order.length > 0) {
