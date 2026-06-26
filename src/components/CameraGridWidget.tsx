@@ -4,10 +4,15 @@ import type { CameraGridConfig } from "@/lib/config";
 
 interface Props {
   config: CameraGridConfig;
+  demoMode?: boolean;
 }
 
-function buildSrc(entityId: string, ts: number): string {
+function buildSrc(entityId: string, ts: number, demoMode?: boolean): string {
   if (!entityId) return "";
+  if (demoMode) {
+    // Stable placeholder image per camera, refreshes with tick
+    return `https://picsum.photos/seed/${encodeURIComponent(entityId)}-${Math.floor(ts / 30000)}/640/360`;
+  }
   return `/api/ha/camera_proxy/${encodeURIComponent(entityId)}?t=${ts}`;
 }
 
