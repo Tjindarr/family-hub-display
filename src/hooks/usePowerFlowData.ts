@@ -190,7 +190,7 @@ export function usePowerFlowData(
     if (!checkConfigured(config)) return;
     const ids = new Set<string>();
     for (const flow of flows) {
-      if (!flow.show24hChart) continue;
+      if (!flow.show24hChart && !flow.showEnergyToday) continue;
       for (const d of flow.devices) if (d.entityId) ids.add(d.entityId);
     }
     if (ids.size === 0) return;
