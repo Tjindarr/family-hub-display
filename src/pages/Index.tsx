@@ -401,6 +401,7 @@ const Index = () => {
       cameraGrids: effectiveCameraGrids,
       parcelWidgets: effectiveParcelWidgets,
       powerFlows: effectivePowerFlows,
+      energyFlows: effectiveEnergyFlows,
     }),
     [
       config,
@@ -414,6 +415,7 @@ const Index = () => {
       effectiveCameraGrids,
       effectiveParcelWidgets,
       effectivePowerFlows,
+      effectiveEnergyFlows,
     ],
   );
 
