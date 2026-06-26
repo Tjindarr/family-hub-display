@@ -9,6 +9,7 @@ interface ParcelWidgetProps {
   getState?: (entityId: string) => HAState | undefined;
   onStateChange?: (cb: (entityId: string, state: HAState) => void) => () => void;
   fontSizes?: ResolvedFontSizes;
+  demoMode?: boolean;
 }
 
 interface ParcelEvent {
